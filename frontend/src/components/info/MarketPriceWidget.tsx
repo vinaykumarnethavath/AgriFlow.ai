@@ -51,37 +51,37 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
 
     if (filterCrops && prices.length === 0) {
         return (
-            <Card className="bg-white border text-card-foreground shadow-sm h-full flex flex-col justify-center items-center p-6 text-center">
-                <div className="bg-gray-100 p-3 rounded-full mb-3">
-                    <TrendingUp className="h-6 w-6 text-gray-400" />
+            <Card className="bg-card border text-card-foreground shadow-sm h-full flex flex-col justify-center items-center p-6 text-center">
+                <div className="bg-muted p-3 rounded-full mb-3">
+                    <TrendingUp className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="font-medium text-gray-900">No Active Market Data</h3>
-                <p className="text-sm text-gray-500 mt-1">Start growing crops to see their market rates here.</p>
+                <h3 className="font-medium text-foreground">No Active Market Data</h3>
+                <p className="text-sm text-muted-foreground mt-1">Start growing crops to see their market rates here.</p>
             </Card>
         );
     }
 
     return (
-        <Card className="bg-white border text-card-foreground shadow-sm h-full">
-            <CardHeader className="pb-3 border-b bg-gray-50/50">
+        <Card className="bg-card border text-card-foreground shadow-sm h-full">
+            <CardHeader className="pb-3 border-b bg-muted/50">
                 <CardTitle className="text-lg font-bold flex items-center justify-between">
                     <span className="flex items-center gap-2">
                         <TrendingUp className="h-5 w-5 text-green-600" />
                         {filterCrops ? 'My Crop Prices' : 'Market Rates'}
                     </span>
-                    <span className="text-xs font-normal text-muted-foreground bg-gray-200 px-2 py-1 rounded-full">
+                    <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded-full">
                         Live (₹/Qtl)
                     </span>
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-border">
                     {prices.map((crop, idx) => (
-                        <div key={idx} className="p-4 hover:bg-gray-50/50 transition-colors">
+                        <div key={idx} className="p-4 hover:bg-muted/50 transition-colors">
                             {/* Crop Header */}
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                    <h4 className="font-bold text-gray-900">{crop.crop_name}</h4>
+                                    <h4 className="font-bold text-foreground">{crop.crop_name}</h4>
                                     {crop.msp_comparison === 'above' && (
                                         <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200">
                                             Above MSP
@@ -107,9 +107,9 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                                 <div className="relative">
                                     <button
                                         onClick={() => scrollMarkets(crop.crop_name, 'left')}
-                                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 shadow-md rounded-full p-1 border border-gray-200 hover:bg-gray-50 -ml-1"
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/90 shadow-md rounded-full p-1 border border-border hover:bg-accent -ml-1"
                                     >
-                                        <ChevronLeft className="h-3 w-3 text-gray-600" />
+                                        <ChevronLeft className="h-3 w-3 text-foreground" />
                                     </button>
                                     <div
                                         ref={el => { scrollRefs.current[crop.crop_name] = el; }}
@@ -119,10 +119,10 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                                         {crop.markets.map((market: any, mIdx: number) => (
                                             <div
                                                 key={mIdx}
-                                                className="flex-shrink-0 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 min-w-[140px] hover:border-green-200 transition-colors"
+                                                className="flex-shrink-0 bg-muted/50 border border-border rounded-lg px-3 py-2 min-w-[140px] hover:border-green-200 transition-colors"
                                             >
-                                                <p className="text-xs font-bold text-gray-700 truncate">{market.market_name}</p>
-                                                <p className="text-sm font-bold text-gray-900 mt-0.5">₹{market.price.toLocaleString()}</p>
+                                                <p className="text-xs font-bold text-muted-foreground truncate">{market.market_name}</p>
+                                                <p className="text-sm font-bold text-foreground mt-0.5">₹{market.price.toLocaleString()}</p>
                                                 <div className="flex items-center justify-between mt-1">
                                                     <span className="text-[10px] text-gray-400">{market.distance_km} km</span>
                                                     <span className={`text-[10px] font-bold flex items-center gap-0.5 ${market.trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
@@ -134,9 +134,9 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                                     </div>
                                     <button
                                         onClick={() => scrollMarkets(crop.crop_name, 'right')}
-                                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 shadow-md rounded-full p-1 border border-gray-200 hover:bg-gray-50 -mr-1"
+                                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/90 shadow-md rounded-full p-1 border border-border hover:bg-accent -mr-1"
                                     >
-                                        <ChevronRight className="h-3 w-3 text-gray-600" />
+                                        <ChevronRight className="h-3 w-3 text-foreground" />
                                     </button>
                                 </div>
                             )}

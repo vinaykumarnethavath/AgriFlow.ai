@@ -28,13 +28,13 @@ export const TraceabilityTimeline: React.FC<TimelineProps> = ({ events }) => {
                 <div className="relative border-l-2 border-green-200 ml-3 space-y-8 pb-4">
                     {events.map((event, index) => (
                         <div key={event.id} className="mb-8 ml-6 relative">
-                            <span className="absolute -left-10 bg-white border-2 border-green-500 rounded-full p-1">
+                            <span className="absolute -left-10 bg-background border-2 border-green-500 rounded-full p-1">
                                 {getIcon(event.action)}
                             </span>
-                            <div className="bg-white p-4 rounded-lg border shadow-sm">
-                                <h4 className="font-bold text-gray-800">{event.action}</h4>
-                                <span className="text-xs text-gray-400">{new Date(event.timestamp).toLocaleString()}</span>
-                                <p className="text-sm text-gray-600 mt-2">{event.details}</p>
+                            <div className="bg-card p-4 rounded-lg border shadow-sm">
+                                <h4 className="font-bold text-foreground">{event.action}</h4>
+                                <span className="text-xs text-muted-foreground">{new Date(event.timestamp).toLocaleString()}</span>
+                                <p className="text-sm text-muted-foreground mt-2">{event.details}</p>
                             </div>
                         </div>
                     ))}

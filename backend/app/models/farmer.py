@@ -36,6 +36,7 @@ class FarmerProfileBase(SQLModel):
 class FarmerProfile(FarmerProfileBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(unique=True, foreign_key="user.id")
+    user: Optional["User"] = Relationship(back_populates="farmer_profile")
     land_records: List[LandRecord] = Relationship(back_populates="farmer_profile")
 
 class FarmerProfileCreate(FarmerProfileBase):

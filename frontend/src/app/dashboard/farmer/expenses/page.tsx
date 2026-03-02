@@ -57,13 +57,13 @@ export default function ExpensesPage() {
                 <Button variant="ghost" onClick={() => router.back()} className="mr-4">
                     <ArrowLeft className="w-4 h-4 mr-2" /> Back
                 </Button>
-                <h1 className="text-2xl font-bold text-gray-800">All Expenses</h1>
+                <h1 className="text-2xl font-bold text-foreground">All Expenses</h1>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Total Expenses Logged</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses Logged</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{expenses.length}</div>
@@ -71,7 +71,7 @@ export default function ExpensesPage() {
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Total Cost (Filtered)</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Cost (Filtered)</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600">₹ {totalCost.toLocaleString()}</div>
@@ -110,13 +110,13 @@ export default function ExpensesPage() {
                 <CardContent>
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b">
+                            <thead className="bg-muted border-b">
                                 <tr>
-                                    <th className="text-left p-4 font-medium text-gray-600">Date</th>
-                                    <th className="text-left p-4 font-medium text-gray-600">Crop</th>
-                                    <th className="text-left p-4 font-medium text-gray-600">Category</th>
-                                    <th className="text-left p-4 font-medium text-gray-600">Details</th>
-                                    <th className="text-right p-4 font-medium text-gray-600">Cost</th>
+                                    <th className="text-left p-4 font-medium text-muted-foreground">Date</th>
+                                    <th className="text-left p-4 font-medium text-muted-foreground">Crop</th>
+                                    <th className="text-left p-4 font-medium text-muted-foreground">Category</th>
+                                    <th className="text-left p-4 font-medium text-muted-foreground">Details</th>
+                                    <th className="text-right p-4 font-medium text-muted-foreground">Cost</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -126,15 +126,15 @@ export default function ExpensesPage() {
                                     </tr>
                                 ) : (
                                     filteredExpenses.map(expense => (
-                                        <tr key={expense.id} className="border-b last:border-0 hover:bg-gray-50">
-                                            <td className="p-4 whitespace-nowrap text-sm text-gray-600">
+                                        <tr key={expense.id} className="border-b last:border-0 hover:bg-muted/50">
+                                            <td className="p-4 whitespace-nowrap text-sm text-muted-foreground">
                                                 {new Date(expense.date).toLocaleDateString()}
                                             </td>
-                                            <td className="p-4 font-medium text-gray-800">
+                                            <td className="p-4 font-medium text-foreground">
                                                 {expense.crop_name}
                                             </td>
                                             <td className="p-4">
-                                                <span className="px-2 py-1 rounded-md bg-gray-100 text-xs font-medium text-gray-700">
+                                                <span className="px-2 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground">
                                                     {expense.category}
                                                 </span>
                                             </td>

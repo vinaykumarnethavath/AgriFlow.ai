@@ -174,9 +174,18 @@ export default function CropDetailPage() {
         if (expense.category === "Labor") {
             const duration = expense.duration || 1;
             return qty * cost * duration;
-        } else if (expense.category === "Input" && expense.unit === "bags") {
+        } else if (expense.category === "Input") {
             const size = expense.unit_size || 1;
-            return qty * size * cost;
+            if (expense.unit === "bags") {
+                // No. of bags × size of each bag (kg) × cost per kg
+                return qty * size * cost;
+            } else if (expense.unit === "liters") {
+                // No. of bottles × quantity per bottle (ml/L) × cost per bottle
+                return qty * cost;
+            } else if (expense.unit === "packets") {
+                // No. of packets × weight per packet × cost per packet
+                return qty * cost;
+            }
         }
         return qty * cost;
     };
@@ -473,12 +482,12 @@ export default function CropDetailPage() {
                                     const total = calculateCategoryTotal(cat.value);
                                     const Icon = cat.icon;
                                     return (
-                                        <div key={cat.value} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center text-center gap-2">
-                                            <div className="p-2 bg-gray-50 rounded-full text-gray-600">
+                                        <div key={cat.value} className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col items-center text-center gap-2">
+                                            <div className="p-2 bg-muted rounded-full text-muted-foreground">
                                                 <Icon className="w-5 h-5" />
                                             </div>
-                                            <span className="text-xs font-medium text-gray-500">{cat.label.split(' ')[0]}</span>
-                                            <span className="font-bold text-gray-900">₹{total.toLocaleString()}</span>
+                                            <span className="text-xs font-medium text-muted-foreground">{cat.label.split(' ')[0]}</span>
+                                            <span className="font-bold text-foreground">₹{total.toLocaleString()}</span>
                                         </div>
                                     )
                                 })}
@@ -567,7 +576,9 @@ export default function CropDetailPage() {
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium">
                                                 {newExpense.category === "Labor" ? "No. of Workers" :
-                                                    (newExpense.category === "Input" && newExpense.unit === "bags") ? "No. of Bags" : "Quantity"}
+                                                    newExpense.unit === "bags" ? "No. of Bags" :
+                                                        newExpense.unit === "liters" ? "No. of Bottles" :
+                                                            newExpense.unit === "packets" ? "No. of Packets" : "Quantity"}
                                             </label>
                                             <div className="flex gap-2">
                                                 <Input
@@ -589,7 +600,8 @@ export default function CropDetailPage() {
                                                         <>
                                                             <option value="kg">kg</option>
                                                             <option value="bags">bags</option>
-                                                            <option value="liters">liters</option>
+                                                            <option value="liters">liters (bottles)</option>
+                                                            <option value="packets">packets</option>
                                                             <option value="units">units</option>
                                                         </>
                                                     )}
@@ -608,9 +620,13 @@ export default function CropDetailPage() {
                                             </div>
                                         )}
 
-                                        {newExpense.category === "Input" && newExpense.unit === "bags" && (
+                                        {newExpense.category === "Input" && (newExpense.unit === "bags" || newExpense.unit === "liters" || newExpense.unit === "packets") && (
                                             <div className="space-y-2">
-                                                <label className="text-sm font-medium">Bag Size (kg)</label>
+                                                <label className="text-sm font-medium">
+                                                    {newExpense.unit === "bags" ? "Size per Bag (kg)" :
+                                                        newExpense.unit === "liters" ? "Volume per Bottle (ml/L)" :
+                                                            "Weight per Packet (g/kg)"}
+                                                </label>
                                                 <Input
                                                     type="number"
                                                     value={newExpense.unit_size}
@@ -622,7 +638,9 @@ export default function CropDetailPage() {
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium">
                                                 {newExpense.category === "Labor" ? "Wage per Person/Day (₹)" :
-                                                    (newExpense.category === "Input" && newExpense.unit === "bags") ? "Cost per kg (₹)" : "Unit Cost (₹)"}
+                                                    newExpense.unit === "bags" ? "Cost per kg (₹)" :
+                                                        newExpense.unit === "liters" ? "Cost per Bottle (₹)" :
+                                                            newExpense.unit === "packets" ? "Cost per Packet (₹)" : "Unit Cost (₹)"}
                                             </label>
                                             <Input
                                                 type="number"
@@ -631,17 +649,19 @@ export default function CropDetailPage() {
                                             />
                                         </div>
 
-                                        {newExpense.category === "Input" && newExpense.unit === "bags" && (
+                                        {newExpense.category === "Input" && (newExpense.unit === "bags" || newExpense.unit === "liters" || newExpense.unit === "packets") && (
                                             <div className="space-y-2">
                                                 <label className="text-sm font-medium">Total Quantity</label>
-                                                <div className="p-2 bg-gray-100 border rounded-md text-gray-700">
-                                                    {(newExpense.quantity || 0) * (newExpense.unit_size || 0)} kg
+                                                <div className="p-2 bg-muted border rounded-md text-foreground">
+                                                    {newExpense.unit === "bags" ? `${(newExpense.quantity || 0) * (newExpense.unit_size || 0)} kg` :
+                                                        newExpense.unit === "liters" ? `${(newExpense.quantity || 0)} bottles × ${newExpense.unit_size || 0} ml each` :
+                                                            `${(newExpense.quantity || 0)} packets × ${newExpense.unit_size || 0} g each`}
                                                 </div>
                                             </div>
                                         )}
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium">Total Cost (₹)</label>
-                                            <div className="p-2 bg-gray-50 border rounded-md font-bold text-gray-700">
+                                            <div className="p-2 bg-muted border rounded-md font-bold text-foreground">
                                                 ₹ {calculateTotalCost(newExpense).toLocaleString()}
                                             </div>
                                         </div>
@@ -700,15 +720,15 @@ export default function CropDetailPage() {
                             </Card>
                         )}
 
-                        <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                        <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
                             <table className="w-full">
-                                <thead className="bg-gray-50 border-b">
+                                <thead className="bg-muted border-b">
                                     <tr>
-                                        <th className="text-left p-4 font-medium text-gray-600">Date</th>
-                                        <th className="text-left p-4 font-medium text-gray-600">Category</th>
-                                        <th className="text-left p-4 font-medium text-gray-600">Details</th>
-                                        <th className="text-left p-4 font-medium text-gray-600">Description</th>
-                                        <th className="text-right p-4 font-medium text-gray-600">Cost</th>
+                                        <th className="text-left p-4 font-medium text-muted-foreground">Date</th>
+                                        <th className="text-left p-4 font-medium text-muted-foreground">Category</th>
+                                        <th className="text-left p-4 font-medium text-muted-foreground">Details</th>
+                                        <th className="text-left p-4 font-medium text-muted-foreground">Description</th>
+                                        <th className="text-right p-4 font-medium text-muted-foreground">Cost</th>
                                         <th className="p-4"></th>
                                     </tr>
                                 </thead>
@@ -719,33 +739,41 @@ export default function CropDetailPage() {
                                         </tr>
                                     ) : (
                                         expenses.map(expense => (
-                                            <tr key={expense.id} className="border-b last:border-0 hover:bg-gray-50">
+                                            <tr key={expense.id} className="border-b last:border-0 hover:bg-muted/50">
                                                 <td className="p-4">{new Date(expense.date).toLocaleDateString()}</td>
                                                 <td className="p-4">
-                                                    <span className="px-2 py-1 rounded-md bg-gray-100 text-xs font-medium">
+                                                    <span className="px-2 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground">
                                                         {expense.category}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
-                                                    <div className="font-bold text-teal-900 text-base mb-1">{expense.type}</div>
+                                                    <div className="font-bold text-foreground text-base mb-1">{expense.type}</div>
                                                     {expense.unit === 'bags' ? (
-                                                        <div className="text-sm text-gray-600">
+                                                        <div className="text-sm text-muted-foreground">
                                                             {expense.quantity} bags * {expense.unit_size || 1} kg/bag * ₹{expense.unit_cost}/kg
                                                         </div>
+                                                    ) : expense.unit === 'liters' ? (
+                                                        <div className="text-sm text-muted-foreground">
+                                                            {expense.quantity} bottles × ₹{expense.unit_cost}/bottle
+                                                        </div>
+                                                    ) : expense.unit === 'packets' ? (
+                                                        <div className="text-sm text-muted-foreground">
+                                                            {expense.quantity} packets × ₹{expense.unit_cost}/packet
+                                                        </div>
                                                     ) : expense.category === 'Labor' ? (
-                                                        <div className="text-sm text-gray-600">
+                                                        <div className="text-sm text-muted-foreground">
                                                             {expense.quantity} workers * {expense.duration || 1} days * ₹{expense.unit_cost}/day
                                                         </div>
                                                     ) : (
-                                                        <div className="text-sm text-gray-600">
+                                                        <div className="text-sm text-muted-foreground">
                                                             {expense.quantity} {expense.unit} @ ₹{expense.unit_cost}/{expense.unit}
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="p-4 text-sm text-gray-600">
+                                                <td className="p-4 text-sm text-muted-foreground">
                                                     {expense.notes || "-"}
                                                 </td>
-                                                <td className="p-4 text-right font-bold text-gray-900">
+                                                <td className="p-4 text-right font-bold text-foreground">
                                                     ₹{expense.total_cost.toLocaleString()}
                                                 </td>
                                                 <td className="p-4 text-right">
@@ -937,8 +965,8 @@ export default function CropDetailPage() {
                         <h2 className="text-xl font-semibold">Inputs Used</h2>
 
                         {/* Input Summary Section */}
-                        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm mb-6">
-                            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <div className="bg-card p-6 rounded-xl border border-border shadow-sm mb-6">
+                            <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
                                 <Sprout className="w-5 h-5 text-green-600" /> Total Usage Summary
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -2,6 +2,7 @@ from typing import Optional, List
 from sqlmodel import Field, SQLModel, Relationship
 from datetime import datetime
 from .trade import Product
+# from .user import User  # Removed circular import
 
 # 1. Shopping Cart
 class Cart(SQLModel, table=True):
@@ -67,3 +68,37 @@ class CustomerOrderItemRead(SQLModel):
     quantity: float
     price: float
     seller_id: int
+
+# --- Customer Profile ---
+class CustomerProfileBase(SQLModel):
+    father_name: str
+    id_number: str # Aadhaar/PAN
+    
+    # Detailed Address
+    house_no: Optional[str] = None
+    street: Optional[str] = None
+    village: Optional[str] = None
+    mandal: Optional[str] = None
+    district: Optional[str] = None
+    state: Optional[str] = None
+    country: str = Field(default="India")
+    pincode: Optional[str] = None
+    
+    bank_name: str
+    account_number: str
+    ifsc_code: str
+    profile_picture_url: Optional[str] = None
+
+class CustomerProfile(CustomerProfileBase, table=True):
+    __tablename__ = "customer_profiles"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(unique=True, foreign_key="user.id")
+    user: Optional["User"] = Relationship(back_populates="customer_profile")
+
+class CustomerProfileCreate(CustomerProfileBase):
+    full_name: Optional[str] = None
+
+class CustomerProfileRead(CustomerProfileBase):
+    id: int
+    user_id: int
+    full_name: Optional[str] = None

@@ -66,15 +66,15 @@ function ResetPasswordContent() {
 
     if (success) {
         return (
-            <div className="w-full max-w-md bg-white rounded-xl border border-green-100 shadow-lg overflow-hidden p-8 text-center space-y-4">
+            <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden p-8 text-center space-y-4">
                 <div className="flex justify-center">
-                    <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <div className="h-16 w-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                         <KeyRound className="h-8 w-8 text-green-600" />
                     </div>
                 </div>
-                <h1 className="text-2xl font-bold text-green-900">Password Reset!</h1>
-                <p className="text-gray-600 font-medium pb-4">Your password has been reset successfully. We are redirecting you to the login page now...</p>
-                <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                <h1 className="text-2xl font-bold text-foreground">Password Reset!</h1>
+                <p className="text-muted-foreground font-medium pb-4">Your password has been reset successfully. We are redirecting you to the login page now...</p>
+                <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                     <div className="h-full bg-green-600 animate-[progress_3s_linear]" style={{ width: '100%' }} />
                 </div>
             </div>
@@ -82,21 +82,21 @@ function ResetPasswordContent() {
     }
 
     return (
-        <div className="w-full max-w-md bg-white rounded-xl border border-green-100 shadow-lg overflow-hidden">
-            <div className="p-6 text-center space-y-2 border-b border-gray-50">
+        <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
+            <div className="p-6 text-center space-y-2 border-b border-border">
                 <div className="flex justify-center mt-2">
-                    <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <div className="h-12 w-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                         <KeyRound className="h-6 w-6 text-green-600" />
                     </div>
                 </div>
-                <h1 className="text-2xl font-bold text-green-900">New Password</h1>
-                <p className="text-sm text-gray-500">Create a secure new password for your account</p>
+                <h1 className="text-2xl font-bold text-foreground">New Password</h1>
+                <p className="text-sm text-muted-foreground">Create a secure new password for your account</p>
             </div>
 
             <div className="p-8 pb-10">
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-1.5">
-                        <label htmlFor="new_password" title="new password" className="text-sm font-semibold text-gray-700 block">New Password</label>
+                        <label htmlFor="new_password" title="new password" className="text-sm font-semibold text-muted-foreground block">New Password</label>
                         <input
                             id="new_password"
                             name="new_password"
@@ -105,12 +105,12 @@ function ResetPasswordContent() {
                             ref={newPasswordRef}
                             onChange={handlePasswordChange}
                             required
-                            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-gray-400 text-black"
+                            className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground"
                         />
                     </div>
 
                     <div className="space-y-1.5">
-                        <label htmlFor="confirm_password" title="confirm password" className="text-sm font-semibold text-gray-700 block">Confirm New Password</label>
+                        <label htmlFor="confirm_password" title="confirm password" className="text-sm font-semibold text-muted-foreground block">Confirm New Password</label>
                         <input
                             id="confirm_password"
                             name="confirm_password"
@@ -119,7 +119,7 @@ function ResetPasswordContent() {
                             ref={confirmPasswordRef}
                             onChange={handlePasswordChange}
                             required
-                            className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition-all focus:ring-2 placeholder:text-gray-400 text-black ${!passwordsMatch ? "border-red-500 focus:ring-red-500/10" : "border-gray-200 focus:border-green-500 focus:ring-green-500/10"}`}
+                            className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition-all focus:ring-2 placeholder:text-muted-foreground text-foreground ${!passwordsMatch ? "border-red-500 focus:ring-red-500/10" : "border-input bg-background focus:border-green-500 focus:ring-green-500/10"}`}
                         />
                         {!passwordsMatch && (
                             <p className="text-xs text-red-500 font-bold">Passwords do not match</p>
@@ -147,7 +147,7 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-green-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300">
             <Suspense fallback={<div className="text-green-600 font-bold animate-pulse">Loading...</div>}>
                 <ResetPasswordContent />
             </Suspense>

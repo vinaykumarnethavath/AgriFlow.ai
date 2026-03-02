@@ -21,6 +21,7 @@ import {
     TrendingUp,
     User
 } from "lucide-react";
+import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
 
 const Sidebar = () => {
@@ -39,7 +40,6 @@ const Sidebar = () => {
                     { name: "Market Prices", href: "/dashboard/farmer/market-prices", icon: TrendingUp },
                     { name: "Weather", href: "/dashboard/farmer/weather", icon: Sun },
                     { name: "Farmer News", href: "/dashboard/farmer/news", icon: PackageSearch },
-                    { name: "Profile", href: "/dashboard/farmer/profile", icon: User },
                 ];
             case UserRole.SHOP:
                 return [
@@ -47,6 +47,7 @@ const Sidebar = () => {
                     { name: "Inventory", href: "/dashboard/shop/inventory", icon: PackageSearch },
                     { name: "Orders", href: "/dashboard/shop/orders", icon: Box },
                     { name: "Sales Analytics", href: "/dashboard/shop/analytics", icon: LineChart },
+                    { name: "Profile", href: "/dashboard/shop/profile", icon: User },
                 ];
             case UserRole.MANUFACTURER:
                 return [
@@ -55,6 +56,7 @@ const Sidebar = () => {
                     { name: "Production", href: "/dashboard/manufacturer/production", icon: Factory },
                     { name: "Inventory", href: "/dashboard/manufacturer/inventory", icon: Box },
                     { name: "Sales", href: "/dashboard/manufacturer/sales", icon: LineChart },
+                    { name: "Profile", href: "/dashboard/manufacturer/profile", icon: User },
                 ];
             case UserRole.CUSTOMER:
                 return [
@@ -96,9 +98,12 @@ const Sidebar = () => {
             </nav>
 
             <div className="pt-4 border-t border-green-800">
-                <div className="mb-4 px-2">
-                    <p className="font-semibold">{user?.full_name}</p>
-                    <p className="text-xs text-green-300 capitalize">{user?.role === 'manufacturer' ? 'Mill Owner' : user?.role}</p>
+                <div className="mb-4 px-2 flex items-center justify-between">
+                    <div>
+                        <p className="font-semibold">{user?.full_name}</p>
+                        <p className="text-xs text-green-300 capitalize">{user?.role === 'manufacturer' ? 'Mill Owner' : user?.role}</p>
+                    </div>
+                    <ThemeToggle />
                 </div>
                 <Button
                     variant="ghost"

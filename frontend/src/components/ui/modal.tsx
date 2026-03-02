@@ -45,17 +45,17 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
         >
             <div
                 ref={modalRef}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200"
+                className="bg-background rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border"
             >
                 <div className="flex items-center justify-between p-6 border-b">
-                    <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+                    <h2 className="text-xl font-bold text-foreground">{title}</h2>
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={onClose}
-                        className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
+                        className="h-8 w-8 p-0 rounded-full hover:bg-accent"
                     >
-                        <X className="h-5 w-5 text-gray-500" />
+                        <X className="h-5 w-5 text-muted-foreground" />
                     </Button>
                 </div>
                 <div className="p-6 overflow-y-auto max-h-[80vh]">

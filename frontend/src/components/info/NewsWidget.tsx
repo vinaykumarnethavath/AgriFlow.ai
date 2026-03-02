@@ -66,24 +66,24 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
 
     if (news.length === 0) {
         return (
-            <Card className="bg-white border text-card-foreground shadow-sm h-full flex items-center justify-center p-6 text-center">
-                <p className="text-gray-500">No recent updates.</p>
+            <Card className="bg-card border text-card-foreground shadow-sm h-full flex items-center justify-center p-6 text-center">
+                <p className="text-muted-foreground">No recent updates.</p>
             </Card>
         )
     }
 
     return (
-        <Card className="bg-white border text-card-foreground shadow-sm h-full flex flex-col">
-            <CardHeader className="pb-3 border-b bg-gray-50/50">
+        <Card className="bg-card border text-card-foreground shadow-sm h-full flex flex-col">
+            <CardHeader className="pb-3 border-b bg-muted/50">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
-                    <Newspaper className="h-5 w-5 text-gray-700" />
+                    <Newspaper className="h-5 w-5 text-foreground" />
                     {filterCategory === 'scheme' ? 'Latest Government Schemes' : 'Farmer News & Schemes'}
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-y-auto max-h-[400px]">
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-border">
                     {news.map((item) => (
-                        <div key={item.id} className="p-4 hover:bg-gray-50 transition-colors group cursor-pointer">
+                        <div key={item.id} className="p-4 hover:bg-muted/50 transition-colors group cursor-pointer">
                             <div className="flex items-start justify-between mb-2">
                                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${getCategoryBadge(item.category)}`}>
                                     {getCategoryIcon(item.category)}
@@ -92,16 +92,16 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
                                 <span className="text-[10px] text-gray-400">{item.date}</span>
                             </div>
 
-                            <h4 className="font-bold text-gray-900 group-hover:text-green-700 transition-colors mb-1 line-clamp-2">
+                            <h4 className="font-bold text-foreground group-hover:text-green-700 transition-colors mb-1 line-clamp-2">
                                 {item.title}
                             </h4>
 
-                            <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                                 {item.summary}
                             </p>
 
                             <div className="flex items-center gap-2 mt-2">
-                                <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                     Source: {item.source}
                                 </span>
                                 {item.verified && (

@@ -11,7 +11,7 @@ import { ShoppingCart, Search, Filter } from "lucide-react";
 import Link from "next/link";
 import { addToCart } from "@/lib/api";
 
-export default function MarketplacePage() {
+function MarketplaceContent() {
     const searchParams = useSearchParams();
     const categoryParam = searchParams.get("category");
 
@@ -124,5 +124,13 @@ export default function MarketplacePage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function MarketplacePage() {
+    return (
+        <React.Suspense fallback={<div className="text-center py-12 text-gray-500">Loading marketplace...</div>}>
+            <MarketplaceContent />
+        </React.Suspense>
     );
 }

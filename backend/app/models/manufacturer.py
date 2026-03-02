@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlmodel import Field, SQLModel, Relationship
 from datetime import datetime
-from .trade import Product
+# from .user import User  # Removed circular import
 
 # 1. Raw Material Purchase from Farmer
 class ManufacturerPurchase(SQLModel, table=True):
@@ -92,3 +92,40 @@ class ManufacturerSaleCreate(SQLModel):
     selling_price: float
     discount: float = 0.0
     payment_mode: str = "cash"
+
+# --- Mill Profile ---
+class MillProfileBase(SQLModel):
+    mill_name: str
+    license_number: str
+    father_name: str
+    
+    # Detailed Address
+    house_no: Optional[str] = None
+    street: Optional[str] = None
+    village: Optional[str] = None
+    mandal: Optional[str] = None
+    district: Optional[str] = None
+    state: Optional[str] = None
+    country: str = Field(default="India")
+    pincode: Optional[str] = None
+    
+    location_text: Optional[str] = None # Physical location description
+    
+    bank_name: str
+    account_number: str
+    ifsc_code: str
+    profile_picture_url: Optional[str] = None
+
+class MillProfile(MillProfileBase, table=True):
+    __tablename__ = "mill_profiles"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(unique=True, foreign_key="user.id")
+    user: Optional["User"] = Relationship(back_populates="mill_profile")
+    
+class MillProfileCreate(MillProfileBase):
+    full_name: Optional[str] = None
+
+class MillProfileRead(MillProfileBase):
+    id: int
+    user_id: int
+    full_name: Optional[str] = None

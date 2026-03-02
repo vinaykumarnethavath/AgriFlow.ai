@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import {
     Sprout, User, Plus, Trash2, ArrowRight, AlertTriangle,
     CloudRain, Sun, Wind, Droplets, Newspaper, Clock,
-    PenSquare, Wallet, ShoppingCart, ChevronDown, ChevronUp
+    PenSquare, Wallet, ShoppingCart, ChevronDown, ChevronUp, ShoppingBag,
+    Eye, EyeOff, Calendar
 } from "lucide-react";
 import Link from "next/link";
 import api, { Crop, WeatherData } from "@/lib/api";
@@ -360,13 +361,16 @@ export default function FarmerDashboard() {
     if (showForm && !profile) {
         return (
             <div className="max-w-4xl mx-auto space-y-6 p-4">
-                <div className="bg-white rounded-2xl border-2 border-green-100 shadow-xl overflow-hidden">
+                <div className="bg-card rounded-2xl border-2 border-green-100 shadow-xl overflow-hidden">
                     <div className="bg-green-600 p-6 text-white">
-                        <h2 className="text-2xl font-bold flex items-center gap-2">
-                            <User className="h-6 w-6" />
-                            Complete Your Farmer Profile
-                        </h2>
-                        <p className="text-green-100 text-sm">Please provide your details to manage your crops and transactions.</p>
+                        <div className="flex-1">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                <User className="h-5 w-5 text-white" />
+                                Complete Your Farmer Profile
+                                <span className="text-xs font-normal text-green-100 ml-2">(Please provide your details)</span>
+                            </h2>
+                            <div className="h-0.5 w-16 bg-green-500 mt-1 mb-4"></div>
+                        </div>
                     </div>
 
                     <form onSubmit={handleSubmitProfile} className="p-8 space-y-8">
@@ -375,58 +379,58 @@ export default function FarmerDashboard() {
                             <h3 className="text-lg font-bold text-green-900 border-l-4 border-green-500 pl-2">Personal Information</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Full Name</label>
-                                    <input ref={fullNameRef} defaultValue={user?.full_name} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="Your Name" />
+                                    <label className="text-sm font-bold text-muted-foreground">Full Name</label>
+                                    <input ref={fullNameRef} defaultValue={user?.full_name} required className="w-full border-2 border-border rounded-xl p-3 focus:border-green-500 outline-none text-foreground bg-background" placeholder="Your Name" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Profile Picture</label>
+                                    <label className="text-sm font-bold text-muted-foreground">Profile Picture</label>
                                     <div className="flex gap-2 items-center">
                                         <input
                                             type="file"
                                             accept="image/*"
                                             onChange={handleFileUpload}
-                                            className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                                            className="w-full border-2 border-border rounded-xl p-3 focus:border-green-500 outline-none text-foreground bg-background file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
                                         />
                                         {uploadingImage && <span className="text-sm text-green-600 animate-pulse">Uploading...</span>}
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Farmer ID / Registration No.</label>
-                                    <input ref={farmerIdRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="AGRI-123456" />
+                                    <label className="text-sm font-bold text-muted-foreground">Farmer ID / Registration No.</label>
+                                    <input ref={farmerIdRef} required className="w-full border-2 border-border rounded-xl p-3 focus:border-green-500 outline-none text-foreground bg-background" placeholder="AGRI-123456" />
                                 </div>
                                 {/* Gender Selection */}
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Gender</label>
+                                    <label className="text-sm font-bold text-muted-foreground">Gender</label>
                                     <div className="flex gap-4 pt-2">
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input type="radio" name="gender" value="male" checked={gender === "male"} onChange={() => setGender("male")} className="accent-green-600 w-4 h-4" />
-                                            <span className="text-sm font-medium text-gray-700">Male</span>
+                                            <span className="text-sm font-medium text-muted-foreground">Male</span>
                                         </label>
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input type="radio" name="gender" value="female" checked={gender === "female"} onChange={() => setGender("female")} className="accent-green-600 w-4 h-4" />
-                                            <span className="text-sm font-medium text-gray-700">Female</span>
+                                            <span className="text-sm font-medium text-muted-foreground">Female</span>
                                         </label>
                                     </div>
                                 </div>
                                 {/* Relation Type */}
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Relation Type</label>
+                                    <label className="text-sm font-bold text-muted-foreground">Relation Type</label>
                                     <select
                                         value={relationType}
                                         onChange={(e) => setRelationType(e.target.value)}
-                                        className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black bg-white"
+                                        className="w-full border-2 border-border rounded-xl p-3 focus:border-green-500 outline-none text-foreground bg-background"
                                     >
                                         <option value="son_of">Son of (S/o)</option>
                                         <option value="wife_of">Wife of (W/o)</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">{relationType === "wife_of" ? "Husband Name" : "Father Name"}</label>
-                                    <input ref={fatherRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder={relationType === "wife_of" ? "Husband's Name" : "Father's Name"} />
+                                    <label className="text-sm font-bold text-muted-foreground">{relationType === "wife_of" ? "Husband Name" : "Father Name"}</label>
+                                    <input ref={fatherRef} required className="w-full border-2 border-border rounded-xl p-3 focus:border-green-500 outline-none text-foreground bg-background" placeholder={relationType === "wife_of" ? "Husband's Name" : "Father's Name"} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Aadhaar (Last 4 Digits)</label>
-                                    <input ref={aadhaarRef} required maxLength={4} className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="XXXX" />
+                                    <label className="text-sm font-bold text-muted-foreground">Aadhaar (Last 4 Digits)</label>
+                                    <input ref={aadhaarRef} required maxLength={4} className="w-full border-2 border-border rounded-xl p-3 focus:border-green-500 outline-none text-foreground bg-background" placeholder="XXXX" />
                                 </div>
                             </div>
                         </div>
@@ -577,15 +581,14 @@ export default function FarmerDashboard() {
                     </Button>
                 </div>
 
-                {/* Compact Profile Details (Expandable) */}
-                <div className="mt-4 pt-3 border-t border-white/20">
+                {/* Profile Details Toggle - Eye icon below Edit Profile */}
+                <div className="mt-3">
                     <button
                         onClick={() => setShowProfileDetails(!showProfileDetails)}
-                        className="text-white text-sm flex items-center gap-1 hover:text-green-100 transition-colors font-medium"
+                        className="flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors font-medium bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm"
                     >
-                        👤 Show Profile Details
-                        {showProfileDetails ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
-                        <span className="ml-2 text-xs opacity-90">{showProfileDetails ? 'Hide' : 'Show'} Details</span>
+                        {showProfileDetails ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showProfileDetails ? 'Hide Details' : 'Show Details'}
                     </button>
 
                     {showProfileDetails && (
@@ -639,8 +642,13 @@ export default function FarmerDashboard() {
                 >
                     <Plus className="h-4 w-4 mr-1" /> Add Crop
                 </Button>
+                <Link href="/dashboard/farmer/market">
+                    <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-md font-bold">
+                        <ShoppingBag className="h-4 w-4 mr-1" /> Buy Fertilizer
+                    </Button>
+                </Link>
                 <Link href="/dashboard/farmer/crops">
-                    <Button size="sm" variant="outline" className="border-gray-200 text-gray-700 rounded-full hover:bg-gray-50">
+                    <Button size="sm" variant="outline" className="border-gray-200 text-gray-700 bg-white rounded-full hover:bg-gray-50">
                         <Wallet className="h-4 w-4 mr-1" /> Add Expense
                     </Button>
                 </Link>
@@ -696,7 +704,7 @@ export default function FarmerDashboard() {
             <Card className="border border-gray-100 shadow-sm">
                 <CardContent className="p-5">
                     <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                        <h3 className="font-bold text-foreground flex items-center gap-2">
                             📊 Land Utilization
                         </h3>
                         <div className="flex items-center gap-3">
@@ -721,21 +729,47 @@ export default function FarmerDashboard() {
                         />
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-center">
-                        <div className="bg-gray-50 rounded-lg p-2">
-                            <p className="text-xs text-gray-500">Total Land</p>
-                            <p className="font-bold text-gray-800">{totalLandArea.toFixed(2)} Ac</p>
+                        <div className="bg-muted/50 rounded-lg p-2">
+                            <p className="text-xs text-muted-foreground">Total Land</p>
+                            <p className="font-bold text-foreground">{totalLandArea.toFixed(2)} Ac</p>
                         </div>
-                        <div className="bg-green-50 rounded-lg p-2">
-                            <p className="text-xs text-gray-500">Active Crops</p>
-                            <p className="font-bold text-green-700">{activeCropArea.toFixed(2)} Ac</p>
+                        <div className="bg-green-50/10 rounded-lg p-2 border border-green-500/20">
+                            <p className="text-xs text-muted-foreground">Active Crops</p>
+                            <p className="font-bold text-green-700 dark:text-green-500">{activeCropArea.toFixed(2)} Ac</p>
                         </div>
-                        <div className="bg-amber-50 rounded-lg p-2">
-                            <p className="text-xs text-gray-500">Available</p>
-                            <p className={`font-bold ${remainingLand < 0 ? 'text-red-600' : 'text-amber-700'}`}>{remainingLand.toFixed(2)} Ac</p>
+                        <div className="bg-amber-50/10 rounded-lg p-2 border border-amber-500/20">
+                            <p className="text-xs text-muted-foreground">Available</p>
+                            <p className={`font-bold ${remainingLand < 0 ? 'text-red-600' : 'text-amber-700 dark:text-amber-500'}`}>{remainingLand.toFixed(2)} Ac</p>
                         </div>
                     </div>
                 </CardContent>
             </Card>
+
+            {/* ═══════════════════════════════════════════════════
+                CALENDAR / UPCOMING ACTIVITIES (Below Land Utilization)
+               ═══════════════════════════════════════════════════ */}
+            {upcomingActivities.length > 0 && (
+                <Card className="border border-amber-200 shadow-sm bg-amber-50/30 dark:bg-amber-950/20 dark:border-amber-800">
+                    <CardContent className="p-5">
+                        <h3 className="font-bold text-foreground flex items-center gap-2 mb-3">
+                            <Calendar className="h-5 w-5 text-amber-600" /> Upcoming Activities
+                        </h3>
+                        <div className="space-y-2">
+                            {upcomingActivities.slice(0, 5).map((activity, idx) => (
+                                <div key={idx} className="flex items-center gap-3 bg-card p-3 rounded-lg border border-amber-100 dark:border-amber-800">
+                                    <span className="text-lg">{activity.type === 'harvest' ? '🌾' : '💧'}</span>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-foreground">{activity.text}</p>
+                                    </div>
+                                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 px-2 py-1 rounded-full">
+                                        {activity.daysLeft}d
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
 
             {/* ═══════════════════════════════════════════════════
@@ -743,7 +777,7 @@ export default function FarmerDashboard() {
                ═══════════════════════════════════════════════════ */}
             <div>
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                         <Sprout className="h-5 w-5 text-green-600" />
                         Active Crops
                     </h2>
@@ -771,8 +805,22 @@ export default function FarmerDashboard() {
                                     <CardContent className="p-5">
                                         <div className="flex justify-between items-start mb-3">
                                             <div>
-                                                <h3 className="font-bold text-lg text-gray-800 group-hover:text-green-700 transition-colors">{crop.name}</h3>
-                                                <p className="text-xs text-gray-400">Sown on: {new Date(crop.sowing_date).toLocaleDateString()} • {crop.area} Acres</p>
+                                                <h3 className="font-bold text-lg text-foreground group-hover:text-green-700 transition-colors">
+                                                    <span className="mr-1.5">{crop.name.toLowerCase().includes('chili') || crop.name.toLowerCase().includes('chilli') ? '🌶️' :
+                                                        crop.name.toLowerCase().includes('groundnut') || crop.name.toLowerCase().includes('peanut') ? '🥜' :
+                                                            crop.name.toLowerCase().includes('rice') || crop.name.toLowerCase().includes('paddy') ? '🌾' :
+                                                                crop.name.toLowerCase().includes('cotton') ? '☁️' :
+                                                                    crop.name.toLowerCase().includes('wheat') ? '🌾' :
+                                                                        crop.name.toLowerCase().includes('corn') || crop.name.toLowerCase().includes('maize') ? '🌽' :
+                                                                            crop.name.toLowerCase().includes('tomato') ? '🍅' :
+                                                                                crop.name.toLowerCase().includes('sugar') ? '🎋' :
+                                                                                    crop.name.toLowerCase().includes('soybean') || crop.name.toLowerCase().includes('soya') ? '🫘' :
+                                                                                        crop.name.toLowerCase().includes('onion') ? '🧅' :
+                                                                                            crop.name.toLowerCase().includes('potato') ? '🥔' :
+                                                                                                '🌿'}</span>
+                                                    {crop.name}
+                                                </h3>
+                                                <p className="text-xs text-muted-foreground">Sown on: {new Date(crop.sowing_date).toLocaleDateString()} • {crop.area} Acres</p>
                                             </div>
                                             <div className="flex flex-col items-end gap-1">
                                                 <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold">
@@ -863,31 +911,6 @@ export default function FarmerDashboard() {
             )}
 
 
-            {/* ═══════════════════════════════════════════════════
-                UPCOMING ACTIVITY REMINDERS
-               ═══════════════════════════════════════════════════ */}
-            {upcomingActivities.length > 0 && (
-                <Card className="border border-amber-200 shadow-sm bg-amber-50/50">
-                    <CardContent className="p-5">
-                        <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-3">
-                            📅 Upcoming Activities
-                        </h3>
-                        <div className="space-y-2">
-                            {upcomingActivities.slice(0, 3).map((activity, idx) => (
-                                <div key={idx} className="flex items-center gap-3 bg-white p-3 rounded-lg border border-amber-100">
-                                    <span className="text-lg">{activity.type === 'harvest' ? '🌾' : '💧'}</span>
-                                    <div className="flex-1">
-                                        <p className="text-sm font-medium text-gray-800">{activity.text}</p>
-                                    </div>
-                                    <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">
-                                        {activity.daysLeft}d
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
 
 
             {/* ═══════════════════════════════════════════════════

@@ -77,22 +77,22 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-green-50 p-4">
-            <div className="w-full max-w-md bg-white rounded-xl border border-green-100 shadow-lg overflow-hidden">
-                <div className="p-6 text-center space-y-2 border-b border-gray-50">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300">
+            <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
+                <div className="p-6 text-center space-y-2 border-b border-border">
                     <div className="flex justify-center mt-2">
-                        <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <div className="h-12 w-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                             <Sprout className="h-6 w-6 text-green-600" />
                         </div>
                     </div>
-                    <h1 className="text-2xl font-bold text-green-900">Join AgriChain</h1>
-                    <p className="text-sm text-gray-500">Create an account to get started</p>
+                    <h1 className="text-2xl font-bold text-foreground">Join AgriChain</h1>
+                    <p className="text-sm text-muted-foreground">Create an account to get started</p>
                 </div>
 
                 <div className="p-8 pb-10">
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-1.5">
-                            <label htmlFor="full_name" className="text-sm font-semibold text-gray-700 block">Full Name</label>
+                            <label htmlFor="full_name" className="text-sm font-semibold text-muted-foreground block">Full Name</label>
                             <input
                                 id="full_name"
                                 name="full_name"
@@ -101,12 +101,12 @@ export default function RegisterPage() {
                                 ref={fullNameRef}
                                 required
                                 autoComplete="name"
-                                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-gray-400 text-black"
+                                className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground"
                             />
                         </div>
 
                         <div className="space-y-1.5">
-                            <label htmlFor="email" className="text-sm font-semibold text-gray-700 block">Email Address</label>
+                            <label htmlFor="email" className="text-sm font-semibold text-muted-foreground block">Email Address</label>
                             <input
                                 id="email"
                                 name="email"
@@ -115,13 +115,13 @@ export default function RegisterPage() {
                                 ref={emailRef}
                                 required
                                 autoComplete="email"
-                                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-gray-400 text-black"
+                                className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground"
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label htmlFor="password" title="password" className="text-sm font-semibold text-gray-700 block">Password</label>
+                                <label htmlFor="password" title="password" className="text-sm font-semibold text-muted-foreground block">Password</label>
                                 <input
                                     id="password"
                                     name="password"
@@ -131,11 +131,11 @@ export default function RegisterPage() {
                                     required
                                     autoComplete="new-password"
                                     placeholder="••••••••"
-                                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-gray-400 text-black"
+                                    className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label htmlFor="confirm_password" title="confirm password" className="text-sm font-semibold text-gray-700 block">Confirm</label>
+                                <label htmlFor="confirm_password" title="confirm password" className="text-sm font-semibold text-muted-foreground block">Confirm</label>
                                 <input
                                     id="confirm_password"
                                     name="confirm_password"
@@ -145,18 +145,18 @@ export default function RegisterPage() {
                                     required
                                     autoComplete="new-password"
                                     placeholder="••••••••"
-                                    className={`w-full rounded-lg border px-4 py-2 text-sm outline-none transition-all focus:ring-2 placeholder:text-gray-400 text-black ${!passwordsMatch ? "border-red-500 focus:ring-red-500/10" : "border-gray-200 focus:border-green-500 focus:ring-green-500/10"}`}
+                                    className={`w-full rounded-lg border px-4 py-2 text-sm outline-none transition-all focus:ring-2 placeholder:text-muted-foreground text-foreground ${!passwordsMatch ? "border-red-500 focus:ring-red-500/10" : "border-input bg-background focus:border-green-500 focus:ring-green-500/10"}`}
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-1.5">
-                            <label htmlFor="role" className="text-sm font-semibold text-gray-700 block">Your Role</label>
+                            <label htmlFor="role" className="text-sm font-semibold text-muted-foreground block">Your Role</label>
                             <select
                                 id="role"
                                 name="role"
                                 ref={roleRef}
-                                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-black"
+                                className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-foreground"
                                 required
                             >
                                 <option value={UserRole.FARMER}>Farmer</option>
@@ -186,7 +186,7 @@ export default function RegisterPage() {
                         </button>
 
                         <div className="text-center text-sm pt-2">
-                            <span className="text-gray-500">Already have an account? </span>
+                            <span className="text-muted-foreground">Already have an account? </span>
                             <Link href="/login" className="text-green-600 font-bold hover:underline">
                                 Login Here
                             </Link>

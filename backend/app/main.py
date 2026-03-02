@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 import traceback
 from .database import init_db
 from fastapi.staticfiles import StaticFiles
-from .routers import auth, crops, products, orders, traceability, farmer, upload, analytics, manufacturer, customer
+from .routers import auth, crops, products, orders, traceability, farmer, upload, analytics, manufacturer, customer, profile_routers
 
 app = FastAPI(title="AgriChain API")
 
@@ -48,6 +48,7 @@ app.include_router(upload.router)
 app.include_router(analytics.router)
 app.include_router(manufacturer.router)
 app.include_router(customer.router)
+app.include_router(profile_routers.router)
 from .routers import weather, market_prices, news
 app.include_router(weather.router)
 app.include_router(market_prices.router)

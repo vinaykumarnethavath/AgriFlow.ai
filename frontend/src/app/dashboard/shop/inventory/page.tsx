@@ -51,6 +51,7 @@ export default function InventoryPage() {
                 price: parseFloat(data.price),
                 quantity: parseInt(data.quantity),
                 cost_price: data.cost_price ? parseFloat(data.cost_price) : undefined,
+                expiry_date: data.expiry_date ? new Date(data.expiry_date).toISOString() : null,
                 user_id: user?.id
             };
 
@@ -153,7 +154,7 @@ export default function InventoryPage() {
             <Card>
                 <CardContent className="p-0">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 text-gray-700 font-medium border-b">
+                        <thead className="bg-muted text-muted-foreground font-medium border-b">
                             <tr>
                                 <th className="px-6 py-3">Product Info</th>
                                 <th className="px-6 py-3">Category</th>
@@ -163,7 +164,7 @@ export default function InventoryPage() {
                                 <th className="px-6 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-border">
                             {filteredProducts.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
@@ -178,7 +179,7 @@ export default function InventoryPage() {
                                             <div className="text-xs text-gray-500">{product.brand}</div>
                                         </td>
                                         <td className="px-6 py-4 capitalize">
-                                            <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
+                                            <span className="bg-muted text-muted-foreground px-2 py-1 rounded text-xs border border-border">
                                                 {product.category}
                                             </span>
                                         </td>

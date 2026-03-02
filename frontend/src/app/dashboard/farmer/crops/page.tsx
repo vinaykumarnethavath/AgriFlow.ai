@@ -180,10 +180,16 @@ export default function CropsListPage() {
                                     <CardContent className="p-6">
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
-                                                <h3 className="font-bold text-xl text-gray-800 group-hover:text-purple-700 transition-colors">
+                                                <h3 className="font-bold text-xl text-foreground group-hover:text-purple-700 transition-colors">
+                                                    <span className="mr-1.5">{crop.name.toLowerCase().includes('chili') || crop.name.toLowerCase().includes('chilli') ? '🌶️' :
+                                                        crop.name.toLowerCase().includes('groundnut') || crop.name.toLowerCase().includes('peanut') ? '🥜' :
+                                                            crop.name.toLowerCase().includes('rice') || crop.name.toLowerCase().includes('paddy') ? '🌾' :
+                                                                crop.name.toLowerCase().includes('cotton') ? '☁️' :
+                                                                    crop.name.toLowerCase().includes('wheat') ? '🌾' :
+                                                                        '🌿'}</span>
                                                     {crop.name}
                                                 </h3>
-                                                <p className="text-sm text-gray-500">{crop.area} Acres</p>
+                                                <p className="text-sm text-muted-foreground">{crop.area} Acres</p>
                                             </div>
                                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${crop.status === 'Harvested' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                                                 {crop.status}
@@ -270,14 +276,20 @@ export default function CropsListPage() {
                     ) : (
                         activeCrops.map(crop => (
                             <Link key={crop.id} href={`/dashboard/farmer/crops/${crop.id}`} className="block group">
-                                <Card className="h-full border-green-100 hover:border-green-300 hover:shadow-lg transition-all bg-gradient-to-br from-green-50/50 to-white">
+                                <Card className="h-full border-green-100 hover:border-green-300 hover:shadow-lg transition-all bg-gradient-to-br from-green-50/50 to-white dark:from-green-950/20 dark:to-card">
                                     <CardContent className="p-6">
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
-                                                <h3 className="font-bold text-xl text-gray-800 group-hover:text-green-700 transition-colors">
+                                                <h3 className="font-bold text-xl text-foreground group-hover:text-green-700 transition-colors">
+                                                    <span className="mr-1.5">{crop.name.toLowerCase().includes('chili') || crop.name.toLowerCase().includes('chilli') ? '🌶️' :
+                                                        crop.name.toLowerCase().includes('groundnut') || crop.name.toLowerCase().includes('peanut') ? '🥜' :
+                                                            crop.name.toLowerCase().includes('rice') || crop.name.toLowerCase().includes('paddy') ? '🌾' :
+                                                                crop.name.toLowerCase().includes('cotton') ? '☁️' :
+                                                                    crop.name.toLowerCase().includes('wheat') ? '🌾' :
+                                                                        '🌿'}</span>
                                                     {crop.name}
                                                 </h3>
-                                                <p className="text-sm text-gray-500">{crop.area} Acres</p>
+                                                <p className="text-sm text-muted-foreground">{crop.area} Acres</p>
                                             </div>
                                             <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
                                                 {crop.status}

@@ -42,21 +42,21 @@ function VerifyOTPContent() {
     };
 
     return (
-        <div className="w-full max-w-md bg-white rounded-xl border border-green-100 shadow-lg overflow-hidden">
-            <div className="p-6 text-center space-y-2 border-b border-gray-50">
+        <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
+            <div className="p-6 text-center space-y-2 border-b border-border">
                 <div className="flex justify-center mt-2">
-                    <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <div className="h-12 w-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                         <ShieldCheck className="h-6 w-6 text-green-600" />
                     </div>
                 </div>
-                <h1 className="text-2xl font-bold text-green-900">Verify OTP</h1>
-                <p className="text-sm text-gray-500 px-4">Enter the 6-digit code sent to <span className="text-gray-900 font-bold">{email}</span></p>
+                <h1 className="text-2xl font-bold text-foreground">Verify OTP</h1>
+                <p className="text-sm text-muted-foreground px-4">Enter the 6-digit code sent to <span className="text-foreground font-bold">{email}</span></p>
             </div>
 
             <div className="p-8 pb-10">
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <label htmlFor="otp" className="text-sm font-semibold text-gray-700 block text-center">Enter 6-digit Code</label>
+                        <label htmlFor="otp" className="text-sm font-semibold text-muted-foreground block text-center">Enter 6-digit Code</label>
                         <input
                             id="otp"
                             name="otp"
@@ -66,7 +66,7 @@ function VerifyOTPContent() {
                             required
                             maxLength={6}
                             autoComplete="one-time-code"
-                            className="w-full text-center text-3xl font-mono tracking-[0.5em] rounded-lg border border-gray-200 bg-gray-50 px-4 py-4 outline-none transition-all focus:border-green-500 focus:bg-white focus:ring-4 focus:ring-green-500/5 text-black"
+                            className="w-full text-center text-3xl font-mono tracking-[0.5em] rounded-lg border border-input bg-muted/30 px-4 py-4 outline-none transition-all focus:border-green-500 focus:bg-background focus:ring-4 focus:ring-green-500/5 text-foreground"
                             onInput={(e) => {
                                 e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, "");
                             }}
@@ -100,7 +100,7 @@ function VerifyOTPContent() {
 
 export default function VerifyOTPPage() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-green-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300">
             <Suspense fallback={<div className="text-green-600 font-bold animate-pulse">Loading...</div>}>
                 <VerifyOTPContent />
             </Suspense>

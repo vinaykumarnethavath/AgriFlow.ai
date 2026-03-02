@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Sprout } from "lucide-react";
 import { UserRole } from "@/types";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function LoginPage() {
     // Refs are 100% stable and won't cause focus loss
@@ -62,23 +63,26 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-green-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300 relative">
+            <div className="absolute top-4 right-4">
+                <ThemeToggle />
+            </div>
             {/* Plain DIV Card to avoid any logic in Shadcn Card component */}
-            <div className="w-full max-w-md bg-white rounded-xl border border-green-100 shadow-lg overflow-hidden">
-                <div className="p-6 text-center space-y-2 border-b border-gray-50">
+            <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
+                <div className="p-6 text-center space-y-2 border-b border-border">
                     <div className="flex justify-center mt-2">
-                        <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <div className="h-12 w-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                             <Sprout className="h-6 w-6 text-green-600" />
                         </div>
                     </div>
-                    <h1 className="text-2xl font-bold text-green-900">AgriChain Login</h1>
-                    <p className="text-sm text-gray-500">Enter your credentials to access the platform</p>
+                    <h1 className="text-2xl font-bold text-foreground">AgriChain Login</h1>
+                    <p className="text-sm text-muted-foreground">Enter your credentials to access the platform</p>
                 </div>
 
                 <div className="p-8">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-1.5">
-                            <label htmlFor="email" className="text-sm font-semibold text-gray-700 block">Email Address</label>
+                            <label htmlFor="email" className="text-sm font-semibold text-muted-foreground block">Email Address</label>
                             <input
                                 id="email"
                                 name="email"
@@ -87,13 +91,13 @@ export default function LoginPage() {
                                 ref={emailRef}
                                 required
                                 autoComplete="email"
-                                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-gray-400 text-black"
+                                className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground"
                             />
                         </div>
 
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                                <label htmlFor="password" title="password" className="text-sm font-semibold text-gray-700">Password</label>
+                                <label htmlFor="password" title="password" className="text-sm font-semibold text-muted-foreground">Password</label>
                                 <Link
                                     href="/forgot-password"
                                     className="text-xs text-green-600 hover:underline font-bold"
@@ -109,21 +113,21 @@ export default function LoginPage() {
                                 required
                                 autoComplete="current-password"
                                 placeholder="••••••••"
-                                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-gray-400 text-black"
+                                className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground"
                             />
                         </div>
 
                         <div className="space-y-1.5">
-                            <label htmlFor="role" className="text-sm font-semibold text-gray-700 block">Role (Optional)</label>
+                            <label htmlFor="role" className="text-sm font-semibold text-muted-foreground block">Role (Optional)</label>
                             <select
                                 id="role"
                                 name="role"
                                 ref={roleRef}
-                                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-black"
+                                className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-foreground"
                             >
                                 <option value="">Select a role (if you have multiple)</option>
                                 <option value={UserRole.FARMER}>Farmer</option>
-                                <option value={UserRole.SHOP}>Shop Owner</option>
+                                <option value={UserRole.SHOP}>Shop Owner / Fertilizer Shop</option>
                                 <option value={UserRole.MANUFACTURER}>Mill Owner</option>
                                 <option value={UserRole.CUSTOMER}>Customer</option>
                             </select>
@@ -149,7 +153,7 @@ export default function LoginPage() {
                         </button>
 
                         <div className="text-center text-sm pt-2">
-                            <span className="text-gray-500">Don't have an account? </span>
+                            <span className="text-muted-foreground">Don't have an account? </span>
                             <Link href="/register" className="text-green-600 font-bold hover:underline">
                                 Create Account
                             </Link>

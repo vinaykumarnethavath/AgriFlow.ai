@@ -1,6 +1,6 @@
 from typing import Optional
 from enum import Enum
-from sqlmodel import Field, SQLModel, UniqueConstraint
+from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship
 from pydantic import EmailStr
 
 class UserRole(str, Enum):
@@ -20,6 +20,12 @@ class UserBase(SQLModel):
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str
+
+    # Relationships
+    farmer_profile: Optional["FarmerProfile"] = Relationship(back_populates="user")
+    mill_profile: Optional["MillProfile"] = Relationship(back_populates="user")
+    shop_profile: Optional["ShopProfile"] = Relationship(back_populates="user")
+    customer_profile: Optional["CustomerProfile"] = Relationship(back_populates="user")
 
 class UserCreate(UserBase):
     password: str
