@@ -81,11 +81,14 @@ export default function FarmerDashboard() {
     const [newCrop, setNewCrop] = useState({
         name: "",
         area: "",
+        season: "Kharif",
+        variety: "",
         sowing_date: new Date().toISOString().split("T")[0],
         expected_harvest_date: "",
         notes: ""
     });
     const [addingCrop, setAddingCrop] = useState(false);
+    const [isLandEditOpen, setIsLandEditOpen] = useState(false);
 
     const handleCreateCrop = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -121,6 +124,8 @@ export default function FarmerDashboard() {
             setNewCrop({
                 name: "",
                 area: "",
+                season: "Kharif",
+                variety: "",
                 sowing_date: new Date().toISOString().split("T")[0],
                 expected_harvest_date: "",
                 notes: ""
@@ -234,14 +239,68 @@ export default function FarmerDashboard() {
 
         try {
             await api.post("/farmer/profile", data);
-            for (const lr of landRecords) {
-                if (lr.serial_number && lr.area > 0) {
-                    await api.post("/farmer/land-records", lr);
-                }
+
+            // Sync land records using PUT to prevent duplication
+            const validLandRecords = landRecords.filter(lr => lr.serial_number && lr.area > 0);
+            if (validLandRecords.length > 0) {
+                await api.put("/farmer/land-records", validLandRecords);
             }
+
             fetchData();
         } catch (err: any) {
             alert("Failed to save profile");
+        }
+    };
+
+    const handleSubmitLandDetails = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!profile) return;
+
+        const newTotalArea = landRecords.reduce((acc, curr) => acc + (curr.area || 0), 0);
+        const currentActiveCropArea = crops.filter(c => c.status === 'Growing').reduce((sum, c) => sum + (c.area || 0), 0);
+
+        if (newTotalArea > 0 && newTotalArea < currentActiveCropArea) {
+            alert(`Total land area (${newTotalArea.toFixed(2)} Ac) cannot be less than your active crop area (${currentActiveCropArea.toFixed(2)} Ac). Please reduce crop area first.`);
+            return;
+        }
+
+        const data = {
+            full_name: profile.full_name || user?.full_name || "",
+            profile_picture_url: profile.profile_picture_url || "",
+            farmer_id: profile.farmer_id || "",
+            father_husband_name: profile.father_husband_name || "",
+            gender: profile.gender || "",
+            relation_type: profile.relation_type || "",
+            house_no: profile.house_no || "",
+            street: profile.street || "",
+            village: profile.village || "",
+            mandal: profile.mandal || "",
+            district: profile.district || "",
+            state: profile.state || "",
+            country: profile.country || "India",
+            pincode: profile.pincode || "",
+            total_area: landRecords.reduce((acc, curr) => acc + (curr.area || 0), 0),
+            aadhaar_last_4: profile.aadhaar_last_4 || "",
+            bank_name: profile.bank_name || "",
+            account_number: profile.account_number || "",
+            ifsc_code: profile.ifsc_code || "",
+        };
+
+        try {
+            await api.post("/farmer/profile", data);
+
+            const validLandRecords = landRecords.filter(lr => lr.serial_number && lr.area > 0);
+            if (validLandRecords.length > 0) {
+                await api.put("/farmer/land-records", validLandRecords);
+            } else {
+                // If they cleared all records, pass empty array to delete all
+                await api.put("/farmer/land-records", []);
+            }
+
+            setIsLandEditOpen(false);
+            fetchData();
+        } catch (err: any) {
+            alert("Failed to update land details");
         }
     };
 
@@ -498,10 +557,10 @@ export default function FarmerDashboard() {
                             </div>
                         )}
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-                                {farmerDisplayName} {relationName && <span className="font-medium text-green-100">{relationLabel} {relationName}</span>}
+                            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white mb-1">
+                                {farmerDisplayName} {relationName && <span className="font-medium text-green-50">{relationLabel} {relationName}</span>}
                             </h1>
-                            <div className="flex items-center gap-3 mt-1">
+                            <div className="flex items-center gap-3">
                                 <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
                                     🆔 {profile?.farmer_id}
                                 </span>
@@ -511,7 +570,7 @@ export default function FarmerDashboard() {
                     <Button
                         onClick={() => setShowForm(true)}
                         variant="outline"
-                        className="border-white/30 text-white hover:bg-white/10 bg-white/5 backdrop-blur-sm self-start"
+                        className="border-white/30 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm self-start"
                     >
                         <PenSquare className="h-4 w-4 mr-2" />
                         Edit Profile
@@ -519,39 +578,50 @@ export default function FarmerDashboard() {
                 </div>
 
                 {/* Compact Profile Details (Expandable) */}
-                <div className="mt-4 pt-3 border-t border-white/15">
+                <div className="mt-4 pt-3 border-t border-white/20">
                     <button
                         onClick={() => setShowProfileDetails(!showProfileDetails)}
-                        className="text-green-200 text-sm flex items-center gap-1 hover:text-white transition-colors"
+                        className="text-white text-sm flex items-center gap-1 hover:text-green-100 transition-colors font-medium"
                     >
                         👤 Show Profile Details
                         {showProfileDetails ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
-                        <span className="ml-2 text-xs opacity-70">{showProfileDetails ? 'Hide' : 'Show'} Details</span>
+                        <span className="ml-2 text-xs opacity-90">{showProfileDetails ? 'Hide' : 'Show'} Details</span>
                     </button>
 
                     {showProfileDetails && (
                         <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm animate-in slide-in-from-top-2">
                             {profile?.land_records && profile.land_records.length > 0 && (
                                 <div className="col-span-2 bg-white/10 rounded-lg p-3">
-                                    <p className="text-green-200 text-xs font-bold uppercase mb-2">Land Plots</p>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="text-green-50 text-xs font-bold uppercase">Land Plots</p>
+                                        <button
+                                            onClick={() => {
+                                                setLandRecords(profile.land_records && profile.land_records.length > 0 ? profile.land_records.map(lr => ({ serial_number: lr.serial_number || "", area: lr.area || 0 })) : [{ serial_number: "", area: 0 }]);
+                                                setIsLandEditOpen(true);
+                                            }}
+                                            className="text-white hover:text-green-100 underline text-xs transition-colors"
+                                        >
+                                            Edit Land Details
+                                        </button>
+                                    </div>
                                     {profile.land_records.map((lr, idx) => (
-                                        <div key={idx} className="flex justify-between text-xs">
+                                        <div key={idx} className="flex justify-between text-xs text-white">
                                             <span>Khasra: {lr.serial_number}</span>
-                                            <span className="font-bold">{lr.area} Ac</span>
+                                            <span className="font-bold text-white">{lr.area} Ac</span>
                                         </div>
                                     ))}
                                 </div>
                             )}
                             <div className="bg-white/10 rounded-lg p-3">
-                                <p className="text-green-200 text-xs font-bold uppercase">Full Address</p>
-                                <p className="text-xs mt-1">
+                                <p className="text-green-50 text-xs font-bold uppercase">Full Address</p>
+                                <p className="text-xs mt-1 text-white">
                                     {[profile?.house_no, profile?.street, profile?.village, profile?.mandal, profile?.district, profile?.state, profile?.pincode].filter(Boolean).join(', ')}
                                 </p>
                             </div>
                             <div className="bg-white/10 rounded-lg p-3">
-                                <p className="text-green-200 text-xs font-bold uppercase">Bank</p>
-                                <p className="text-xs mt-1 font-bold">{profile?.bank_name}</p>
-                                <p className="text-xs opacity-70">A/C: {profile?.account_number?.replace(/\d(?=\d{4})/g, "*")}</p>
+                                <p className="text-green-50 text-xs font-bold uppercase">Bank</p>
+                                <p className="text-xs mt-1 font-bold text-white">{profile?.bank_name}</p>
+                                <p className="text-xs opacity-90 text-white">A/C: {profile?.account_number?.replace(/\d(?=\d{4})/g, "*")}</p>
                             </div>
                         </div>
                     )}
@@ -572,11 +642,6 @@ export default function FarmerDashboard() {
                 <Link href="/dashboard/farmer/crops">
                     <Button size="sm" variant="outline" className="border-gray-200 text-gray-700 rounded-full hover:bg-gray-50">
                         <Wallet className="h-4 w-4 mr-1" /> Add Expense
-                    </Button>
-                </Link>
-                <Link href="/dashboard/farmer/market">
-                    <Button size="sm" variant="outline" className="border-gray-200 text-gray-700 rounded-full hover:bg-gray-50">
-                        <ShoppingCart className="h-4 w-4 mr-1" /> Buy Fertilizer
                     </Button>
                 </Link>
             </div>
@@ -637,7 +702,10 @@ export default function FarmerDashboard() {
                         <div className="flex items-center gap-3">
                             <span className="text-2xl font-black text-green-700">{utilizationPercent.toFixed(0)}%</span>
                             <Button
-                                onClick={() => setShowForm(true)}
+                                onClick={() => {
+                                    setLandRecords(profile?.land_records && profile.land_records.length > 0 ? profile.land_records.map(lr => ({ serial_number: lr.serial_number || "", area: lr.area || 0 })) : [{ serial_number: "", area: 0 }]);
+                                    setIsLandEditOpen(true);
+                                }}
                                 variant="outline"
                                 size="sm"
                                 className="border-green-200 text-green-700 hover:bg-green-50"
@@ -704,7 +772,7 @@ export default function FarmerDashboard() {
                                         <div className="flex justify-between items-start mb-3">
                                             <div>
                                                 <h3 className="font-bold text-lg text-gray-800 group-hover:text-green-700 transition-colors">{crop.name}</h3>
-                                                <p className="text-xs text-gray-400">{getSeason(crop.sowing_date)} • {crop.area} Acres</p>
+                                                <p className="text-xs text-gray-400">Sown on: {new Date(crop.sowing_date).toLocaleDateString()} • {crop.area} Acres</p>
                                             </div>
                                             <div className="flex flex-col items-end gap-1">
                                                 <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold">
@@ -832,62 +900,87 @@ export default function FarmerDashboard() {
 
             {/* ═══════════════════════════════════════════════════
                 ADD CROP MODAL
-               ═══════════════════════════════════════════════════ */}
+               ═══════════════════════════════════════════════════            {/* Add Crop Modal */}
             <Modal
                 isOpen={isAddCropOpen}
                 onClose={() => setIsAddCropOpen(false)}
                 title="Add New Crop"
             >
                 <form onSubmit={handleCreateCrop} className="space-y-4">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Crop Name</label>
-                        <input
-                            required
-                            placeholder="e.g. Wheat, Rice, Cotton"
-                            className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"
-                            value={newCrop.name}
-                            onChange={(e) => setNewCrop({ ...newCrop, name: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Area (Acres)</label>
-                        <input
-                            type="number"
-                            step="0.1"
-                            required
-                            placeholder="0.0"
-                            className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"
-                            value={newCrop.area}
-                            onChange={(e) => setNewCrop({ ...newCrop, area: e.target.value })}
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-800">Crop Name</label>
+                            <input
+                                required
+                                placeholder="e.g. Wheat, Rice, Cotton"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
+                                value={newCrop.name}
+                                onChange={(e) => setNewCrop({ ...newCrop, name: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-800">Variety (Optional)</label>
+                            <input
+                                placeholder="e.g. Basmati, HYV, Local"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
+                                value={newCrop.variety}
+                                onChange={(e) => setNewCrop({ ...newCrop, variety: e.target.value })}
+                            />
+                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Sowing Date</label>
+                            <label className="text-sm font-medium text-gray-800">Season</label>
+                            <select
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800 bg-white"
+                                value={newCrop.season}
+                                onChange={(e) => setNewCrop({ ...newCrop, season: e.target.value })}
+                            >
+                                <option value="Kharif">Kharif (Rainy – Jun to Nov)</option>
+                                <option value="Rabi">Rabi (Winter – Nov to Apr)</option>
+                                <option value="Zaid">Zaid (Summer – Mar to Jun)</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-800">Area (Acres)</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                required
+                                placeholder="0.0"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
+                                value={newCrop.area}
+                                onChange={(e) => setNewCrop({ ...newCrop, area: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-800">Date of Sowing</label>
                             <input
                                 type="date"
                                 required
-                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
                                 value={newCrop.sowing_date}
                                 onChange={(e) => setNewCrop({ ...newCrop, sowing_date: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Harvest (Est.)</label>
+                            <label className="text-sm font-medium text-gray-800">Expected Harvest Date</label>
                             <input
                                 type="date"
                                 required
-                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
                                 value={newCrop.expected_harvest_date}
                                 onChange={(e) => setNewCrop({ ...newCrop, expected_harvest_date: e.target.value })}
                             />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Notes (Optional)</label>
+                        <label className="text-sm font-medium text-gray-800">Notes (Optional)</label>
                         <textarea
                             placeholder="Any specific details..."
-                            className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"
+                            className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
                             value={newCrop.notes}
                             onChange={(e) => setNewCrop({ ...newCrop, notes: e.target.value })}
                         />
@@ -898,6 +991,71 @@ export default function FarmerDashboard() {
                         className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
                     >
                         {addingCrop ? "Adding..." : "Add Crop"}
+                    </Button>
+                </form>
+            </Modal>
+
+            {/* Edit Land Details Modal */}
+            <Modal
+                isOpen={isLandEditOpen}
+                onClose={() => setIsLandEditOpen(false)}
+                title="Edit Land Details"
+            >
+                <form onSubmit={handleSubmitLandDetails} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center bg-green-50 p-3 rounded-lg border border-green-100">
+                            <h4 className="font-bold text-green-800">Total Land Area</h4>
+                            <span className="font-bold text-green-700">
+                                {landRecords.reduce((acc, curr) => acc + (curr.area || 0), 0).toFixed(2)} Ac
+                            </span>
+                        </div>
+                        {landRecords.map((record, index) => (
+                            <div key={index} className="flex gap-4 items-end bg-gray-50 p-3 rounded-lg border">
+                                <div className="flex-1 space-y-2">
+                                    <label className="text-sm font-bold text-gray-700">Khasra / Survey No.</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className="w-full border-2 rounded-xl p-2.5 outline-none focus:border-green-500 text-black"
+                                        value={record.serial_number}
+                                        onChange={(e) => handleLandChange(index, "serial_number", e.target.value)}
+                                        placeholder="e.g. 124/A"
+                                    />
+                                </div>
+                                <div className="w-1/3 space-y-2">
+                                    <label className="text-sm font-bold text-gray-700">Area (Ac)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        required
+                                        className="w-full border-2 rounded-xl p-2.5 outline-none focus:border-green-500 text-black"
+                                        value={record.area || ""}
+                                        onChange={(e) => handleLandChange(index, "area", parseFloat(e.target.value) || 0)}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => handleRemoveLand(index)}
+                                    className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-700 h-[46px]"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        ))}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleAddLand}
+                            className="w-full border-dashed border-2 border-gray-300 text-gray-600 hover:border-green-500 hover:text-green-600 shadow-none"
+                        >
+                            <Plus className="w-4 h-4 mr-2" /> Add Another Plot
+                        </Button>
+                    </div>
+
+                    <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 py-6 text-lg font-bold shadow-lg shadow-green-200 mt-6">
+                        Save Land Details
                     </Button>
                 </form>
             </Modal>

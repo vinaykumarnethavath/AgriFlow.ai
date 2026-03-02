@@ -100,8 +100,40 @@ async def add_land_record(
     session.add(db_land)
     await session.commit()
     await session.refresh(db_land)
-    await session.refresh(db_land)
     return db_land
+
+@router.put("/land-records", response_model=List[LandRecord])
+async def update_land_records(
+    land_data_list: List[LandRecordBase],
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    # Get farmer profile
+    statement = select(FarmerProfile).where(FarmerProfile.user_id == current_user.id)
+    result = await session.exec(statement)
+    profile = result.first()
+    
+    if not profile:
+        raise HTTPException(status_code=400, detail="Create a farmer profile first")
+        
+    # Delete existing land records
+    delete_statement = select(LandRecord).where(LandRecord.farmer_profile_id == profile.id)
+    existing_records = await session.exec(delete_statement)
+    for record in existing_records:
+        await session.delete(record)
+        
+    # Add new ones
+    new_records = []
+    for land_data in land_data_list:
+        db_land = LandRecord(**land_data.dict(), farmer_profile_id=profile.id)
+        session.add(db_land)
+        new_records.append(db_land)
+        
+    await session.commit()
+    for record in new_records:
+        await session.refresh(record)
+        
+    return new_records
 
 @router.get("/expenses", response_model=List[CropExpenseWithCrop])
 async def get_all_farmer_expenses(

@@ -69,12 +69,13 @@ export interface CropHarvest {
     crop_id: number;
     date: string;
     stage: string;
-    quantity: number;
+    quantity: number;     // stored in quintals
     unit: string;
+    unit_size?: number;   // bag size in kg (used during recording)
     quality: string;
     selling_price_per_unit: number;
     total_revenue: number;
-    buyer_type: string;
+    buyer_type?: string;
     sold_to?: string;
     notes?: string;
 }

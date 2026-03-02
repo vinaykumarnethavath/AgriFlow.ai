@@ -94,13 +94,12 @@ export default function CropDetailPage() {
     const [newHarvest, setNewHarvest] = useState<Partial<CropHarvest>>({
         date: new Date().toISOString().split("T")[0],
         stage: "First Picking",
-        quantity: 0,
-        unit: "Quintals",
+        quantity: 0,          // No. of bags
+        unit: "bags",
+        unit_size: 50,        // Bag size in kg (default 50kg bag)
         quality: "Grade A",
         selling_price_per_unit: 0,
         total_revenue: 0,
-        buyer_type: "Market",
-        sold_to: "",
         notes: "",
     });
 
@@ -175,13 +174,9 @@ export default function CropDetailPage() {
         if (expense.category === "Labor") {
             const duration = expense.duration || 1;
             return qty * cost * duration;
-        } else if (expense.category === "Input") {
-            // If unit is 'bags', we might want to store total qty in kg?
-            // But for now, let's keep it simple: Cost is per unit.
-            // If user enters 10 bags, price is per bag.
-            // Total cost = 10 * 300 = 3000.
-            // Unit Size is just metadata for "50kg bag".
-            return qty * cost;
+        } else if (expense.category === "Input" && expense.unit === "bags") {
+            const size = expense.unit_size || 1;
+            return qty * size * cost;
         }
         return qty * cost;
     };
@@ -253,11 +248,24 @@ export default function CropDetailPage() {
 
     const handleAddHarvest = async () => {
         try {
+            const bags = newHarvest.quantity || 0;
+            const bagSizeKg = (newHarvest as any).unit_size || 50;
+            const quintals = (bags * bagSizeKg) / 100;
+
+            const harvestData = {
+                ...newHarvest,
+                quantity: quintals,          // store in quintals
+                unit: "Quintals",
+                unit_size: bagSizeKg,        // store bag size for reference
+                selling_price_per_unit: 0,   // no selling price at harvest stage
+                total_revenue: 0,
+            };
+
             if (editingHarvestId) {
-                await updateCropHarvest(editingHarvestId, newHarvest as any);
+                await updateCropHarvest(editingHarvestId, harvestData as any);
                 setEditingHarvestId(null);
             } else {
-                await createCropHarvest(cropId, newHarvest as any);
+                await createCropHarvest(cropId, harvestData as any);
             }
 
             setShowHarvestModal(false);
@@ -266,12 +274,11 @@ export default function CropDetailPage() {
                 date: new Date().toISOString().split("T")[0],
                 stage: "Next Picking",
                 quantity: 0,
-                unit: "Quintals",
+                unit: "bags",
+                unit_size: 50,
                 quality: "Grade A",
                 selling_price_per_unit: 0,
                 total_revenue: 0,
-                buyer_type: "Market",
-                sold_to: "",
                 notes: "",
             });
             alert("Harvest recorded!");
@@ -282,21 +289,26 @@ export default function CropDetailPage() {
     };
 
     const handleEditHarvest = (harvest: CropHarvest) => {
+        // If stored as quintals, convert back to bags for editing
+        const storedQty = harvest.quantity || 0;
+        const bagSize = (harvest as any).unit_size || 50;
+        const bags = bagSize > 0 ? Math.round((storedQty * 100) / bagSize) : storedQty;
+
         setNewHarvest({
             date: new Date(harvest.date).toISOString().split("T")[0],
             stage: harvest.stage,
-            quantity: harvest.quantity,
-            unit: harvest.unit,
+            quantity: bags,
+            unit: "bags",
+            unit_size: bagSize,
             quality: harvest.quality,
-            selling_price_per_unit: harvest.selling_price_per_unit,
-            total_revenue: harvest.total_revenue,
-            buyer_type: harvest.buyer_type,
-            sold_to: harvest.sold_to,
+            selling_price_per_unit: 0,
+            total_revenue: 0,
             notes: harvest.notes,
         });
         setEditingHarvestId(harvest.id);
         setShowHarvestModal(true);
     };
+
 
     const handleDeleteHarvest = async (id: number) => {
         if (!confirm("Are you sure you want to delete this harvest record?")) return;
@@ -609,8 +621,8 @@ export default function CropDetailPage() {
 
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium">
-                                                {newExpense.category === "Labor" ? "Wage per Person (₹)" :
-                                                    (newExpense.category === "Input" && newExpense.unit === "bags") ? "Cost per Bag (₹)" : "Unit Cost (₹)"}
+                                                {newExpense.category === "Labor" ? "Wage per Person/Day (₹)" :
+                                                    (newExpense.category === "Input" && newExpense.unit === "bags") ? "Cost per kg (₹)" : "Unit Cost (₹)"}
                                             </label>
                                             <Input
                                                 type="number"
@@ -715,18 +727,19 @@ export default function CropDetailPage() {
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
-                                                    <div className="font-bold text-teal-900 text-lg mb-1">{expense.type} {expense.unit === 'bags' && '(Bags)'}</div>
+                                                    <div className="font-bold text-teal-900 text-base mb-1">{expense.type}</div>
                                                     {expense.unit === 'bags' ? (
-                                                        <div className="text-sm">
-                                                            <div className="text-teal-700 font-medium text-base">
-                                                                {expense.quantity} Bags * {expense.unit_size || '?'} kg/bag * ₹{expense.unit_cost}/bag
-                                                            </div>
-                                                            <div className="text-emerald-600 mt-1 font-semibold">
-                                                                Total Qty: {expense.quantity * (expense.unit_size || 0)} kg
-                                                            </div>
+                                                        <div className="text-sm text-gray-600">
+                                                            {expense.quantity} bags * {expense.unit_size || 1} kg/bag * ₹{expense.unit_cost}/kg
+                                                        </div>
+                                                    ) : expense.category === 'Labor' ? (
+                                                        <div className="text-sm text-gray-600">
+                                                            {expense.quantity} workers * {expense.duration || 1} days * ₹{expense.unit_cost}/day
                                                         </div>
                                                     ) : (
-                                                        <div className="text-sm text-gray-500">{expense.quantity} {expense.unit} @ ₹{expense.unit_cost}/{expense.unit}</div>
+                                                        <div className="text-sm text-gray-600">
+                                                            {expense.quantity} {expense.unit} @ ₹{expense.unit_cost}/{expense.unit}
+                                                        </div>
                                                     )}
                                                 </td>
                                                 <td className="p-4 text-sm text-gray-600">
@@ -779,17 +792,11 @@ export default function CropDetailPage() {
                             </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Card>
                                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">Total Yield</CardTitle></CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{harvests.reduce((sum, h) => sum + h.quantity, 0)} Quintals</div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">Total Revenue</CardTitle></CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-green-600">₹{harvests.reduce((sum, h) => sum + h.total_revenue, 0).toLocaleString()}</div>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -802,40 +809,45 @@ export default function CropDetailPage() {
 
                         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-50 text-gray-600 font-medium">
+                                <thead className="bg-gray-50 text-gray-700 font-medium">
                                     <tr>
                                         <th className="p-4">Date</th>
                                         <th className="p-4">Stage</th>
-                                        <th className="p-4">Quantity</th>
-                                        <th className="p-4">Price/Unit</th>
-                                        <th className="p-4">Revenue</th>
-                                        <th className="p-4">Buyer</th>
+                                        <th className="p-4">No. of Bags</th>
+                                        <th className="p-4">Bag Size</th>
+                                        <th className="p-4">Quintals</th>
+                                        <th className="p-4">Notes</th>
                                         <th className="p-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {harvests.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="p-8 text-center text-gray-400">No harvest records yet.</td>
+                                            <td colSpan={7} className="p-8 text-center text-gray-500">No harvest records yet.</td>
                                         </tr>
-                                    ) : harvests.map((h) => (
-                                        <tr key={h.id} className="hover:bg-gray-50">
-                                            <td className="p-4">{new Date(h.date).toLocaleDateString()}</td>
-                                            <td className="p-4 font-medium text-gray-800">{h.stage}</td>
-                                            <td className="p-4">{h.quantity} {h.unit}</td>
-                                            <td className="p-4">₹{h.selling_price_per_unit}</td>
-                                            <td className="p-4 font-bold text-green-600">₹{h.total_revenue.toLocaleString()}</td>
-                                            <td className="p-4">{h.buyer_type}</td>
-                                            <td className="p-4 text-right">
-                                                <Button variant="ghost" size="sm" onClick={() => handleEditHarvest(h)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 mr-2">
-                                                    <Pencil className="w-4 h-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteHarvest(h.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    ) : harvests.map((h) => {
+                                        const bagSize = (h as any).unit_size || 50;
+                                        const quintals = h.quantity; // already stored in quintals
+                                        const bags = bagSize > 0 ? Math.round((quintals * 100) / bagSize) : '-';
+                                        return (
+                                            <tr key={h.id} className="hover:bg-gray-50">
+                                                <td className="p-4 text-gray-800">{new Date(h.date).toLocaleDateString()}</td>
+                                                <td className="p-4 font-medium text-gray-800">{h.stage}</td>
+                                                <td className="p-4 font-bold text-green-700">{bags} bags</td>
+                                                <td className="p-4 text-gray-700">{bagSize} kg/bag</td>
+                                                <td className="p-4 font-bold text-gray-800">{quintals.toFixed(2)} Q</td>
+                                                <td className="p-4 text-gray-600">{h.notes || '-'}</td>
+                                                <td className="p-4 text-right">
+                                                    <Button variant="ghost" size="sm" onClick={() => handleEditHarvest(h)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 mr-2">
+                                                        <Pencil className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteHarvest(h.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -843,9 +855,9 @@ export default function CropDetailPage() {
                         <Modal isOpen={showHarvestModal} onClose={() => setShowHarvestModal(false)} title={editingHarvestId ? "Edit Harvest Record" : "Record Harvest"}>
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">Harvest Stage</label>
+                                    <label className="text-sm font-medium text-gray-800">Harvest Stage</label>
                                     <select
-                                        className="w-full p-2 border rounded-md"
+                                        className="w-full p-2 border rounded-md text-gray-800 bg-white"
                                         value={newHarvest.stage}
                                         onChange={(e) => setNewHarvest({ ...newHarvest, stage: e.target.value })}
                                     >
@@ -856,39 +868,63 @@ export default function CropDetailPage() {
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">Date</label>
+                                    <label className="text-sm font-medium text-gray-800">Date of Harvest</label>
                                     <Input type="date" value={newHarvest.date} onChange={(e) => setNewHarvest({ ...newHarvest, date: e.target.value })} />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Quantity Harvested</label>
-                                    <div className="flex gap-2">
-                                        <Input type="number" value={newHarvest.quantity} onChange={(e) => setNewHarvest({ ...newHarvest, quantity: Number(e.target.value) })} />
-                                        <select className="p-2 border rounded-md" value={newHarvest.unit} onChange={(e) => setNewHarvest({ ...newHarvest, unit: e.target.value })}>
-                                            <option value="Quintals">Quintals</option>
-                                            <option value="Kg">Kg</option>
-                                            <option value="Tons">Tons</option>
-                                        </select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-800">No. of Bags</label>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            value={newHarvest.quantity}
+                                            onChange={(e) => setNewHarvest({ ...newHarvest, quantity: Number(e.target.value) })}
+                                            placeholder="e.g. 20"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-800">Bag Size (kg each)</label>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            value={(newHarvest as any).unit_size || 50}
+                                            onChange={(e) => setNewHarvest({ ...newHarvest, unit_size: Number(e.target.value) } as any)}
+                                            placeholder="e.g. 50"
+                                        />
                                     </div>
                                 </div>
+                                {/* Auto-computed yield display */}
+                                <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                                    <p className="text-xs font-bold text-green-700 uppercase mb-2">Calculated Yield</p>
+                                    <div className="grid grid-cols-2 gap-4 text-center">
+                                        <div>
+                                            <p className="text-xs text-gray-600">Total Weight</p>
+                                            <p className="text-xl font-black text-green-800">
+                                                {((newHarvest.quantity || 0) * ((newHarvest as any).unit_size || 50)).toLocaleString()} kg
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-600">In Quintals</p>
+                                            <p className="text-xl font-black text-green-800">
+                                                {(((newHarvest.quantity || 0) * ((newHarvest as any).unit_size || 50)) / 100).toFixed(2)} Q
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-2 text-center">
+                                        Formula: {newHarvest.quantity || 0} bags × {(newHarvest as any).unit_size || 50} kg = {((newHarvest.quantity || 0) * ((newHarvest as any).unit_size || 50)).toLocaleString()} kg = {(((newHarvest.quantity || 0) * ((newHarvest as any).unit_size || 50)) / 100).toFixed(2)} Quintals
+                                    </p>
+                                </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">Selling Price per Unit (₹)</label>
-                                    <Input type="number" value={newHarvest.selling_price_per_unit} onChange={(e) => setNewHarvest({ ...newHarvest, selling_price_per_unit: Number(e.target.value) })} />
+                                    <label className="text-sm font-medium text-gray-800">Notes (Optional)</label>
+                                    <Input
+                                        value={newHarvest.notes || ""}
+                                        onChange={(e) => setNewHarvest({ ...newHarvest, notes: e.target.value })}
+                                        placeholder="Quality grade, moisture level, etc."
+                                    />
                                 </div>
-                                <div className="bg-green-50 p-3 rounded-lg border border-green-100 flex justify-between items-center">
-                                    <span className="text-sm font-bold text-green-700">Total Revenue</span>
-                                    <span className="text-xl font-black text-green-800">
-                                        ₹{((newHarvest.quantity || 0) * (newHarvest.selling_price_per_unit || 0)).toLocaleString()}
-                                    </span>
-                                </div>
-
                                 <div className="flex justify-end gap-2 mt-4">
                                     <Button variant="outline" onClick={() => setShowHarvestModal(false)}>Cancel</Button>
-                                    <Button onClick={() => {
-                                        // Calculate revenue before saving
-                                        const revenue = (newHarvest.quantity || 0) * (newHarvest.selling_price_per_unit || 0);
-                                        newHarvest.total_revenue = revenue;
-                                        handleAddHarvest();
-                                    }} className="bg-green-600 hover:bg-green-700">Save Record</Button>
+                                    <Button onClick={handleAddHarvest} className="bg-green-600 hover:bg-green-700">Save Record</Button>
                                 </div>
                             </div>
                         </Modal>
@@ -929,7 +965,7 @@ export default function CropDetailPage() {
                                         <div className="font-bold text-green-900">{item.type}</div>
                                         <div className="text-sm text-green-800 font-medium mt-1">
                                             {item.totalBags > 0 ? (
-                                                <span>{item.totalBags} Bags * {item.unitSize} kg * ₹{item.unitCost}</span>
+                                                <span>{item.totalBags} bags * {item.unitSize} kg/bag * ₹{item.unitCost}/kg</span>
                                             ) : (
                                                 <span>-</span>
                                             )}
@@ -940,11 +976,8 @@ export default function CropDetailPage() {
                             </div>
                         </div>
 
-
                     </div>
                 )}
-
-
 
                 {/* Sell Crop Tab */}
                 {activeTab === "sell" && (
@@ -1197,10 +1230,10 @@ export default function CropDetailPage() {
                         <Button onClick={handleUpdateCrop} className="bg-green-600 hover:bg-green-700">Save Changes</Button>
                     </div>
                 </div>
-            </Modal>
+            </Modal >
 
             {/* QR Code Modal */}
-            <Modal isOpen={showQR} onClose={() => setShowQR(false)} title="Product Traceability">
+            < Modal isOpen={showQR} onClose={() => setShowQR(false)} title="Product Traceability" >
                 <div className="flex flex-col items-center gap-6 p-6">
                     <div className="bg-white p-4 rounded-xl shadow-lg border border-green-100">
                         <QRCodeCanvas

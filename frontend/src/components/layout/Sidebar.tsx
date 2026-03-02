@@ -37,7 +37,6 @@ const Sidebar = () => {
                     { name: "My Crops", href: "/dashboard/farmer/crops", icon: Sprout },
                     { name: "Buy Fertilizers", href: "/dashboard/farmer/market", icon: ShoppingBag },
                     { name: "Market Prices", href: "/dashboard/farmer/market-prices", icon: TrendingUp },
-                    { name: "Analytics", href: "/dashboard/farmer/analytics", icon: LineChart },
                     { name: "Weather", href: "/dashboard/farmer/weather", icon: Sun },
                     { name: "Farmer News", href: "/dashboard/farmer/news", icon: PackageSearch },
                     { name: "Profile", href: "/dashboard/farmer/profile", icon: User },
