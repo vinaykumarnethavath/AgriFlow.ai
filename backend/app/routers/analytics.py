@@ -297,16 +297,22 @@ async def get_shop_revenue(
     )
     total_revenue = (await session.exec(rev_query)).first() or 0.0
 
-    # 2. Total Business Expenses (from shop_accounting_expenses table)
+    # 2. Total Business Expenses (from shop_accounting_expenses table, EXCLUDING batch overheads to avoid double-counting)
     exp_query = select(func.coalesce(func.sum(ShopAccountingExpense.amount), 0.0)).where(
         ShopAccountingExpense.shop_id == shop_id,
+        ShopAccountingExpense.category.notin_(["batch_transport", "batch_labour", "batch_other"]),
         date_filter
     )
     total_expenses = (await session.exec(exp_query)).first() or 0.0
 
-    # 3. Total cost (cost_price * quantity) for completed orders
+    # 3. Total cost (Landed cost = cost_price + apportioned overheads) for completed orders
     cost_query = select(
-        func.coalesce(func.sum(ShopOrderItem.quantity * Product.cost_price), 0.0)
+        func.coalesce(func.sum(ShopOrderItem.quantity * (
+            func.coalesce(Product.cost_price, 0.0) + 
+            func.coalesce(Product.apportioned_transport, 0.0) +
+            func.coalesce(Product.apportioned_labour, 0.0) +
+            func.coalesce(Product.apportioned_other, 0.0)
+        )), 0.0)
     ).join(ShopOrder, ShopOrder.id == ShopOrderItem.order_id).join(
         Product, Product.id == ShopOrderItem.product_id
     ).where(

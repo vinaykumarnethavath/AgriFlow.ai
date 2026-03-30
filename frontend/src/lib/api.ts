@@ -224,6 +224,10 @@ export interface Product {
     user_id: number;
     traceability_json?: string;
     expiry_date?: string;
+    apportioned_transport?: number;
+    apportioned_labour?: number;
+    apportioned_other?: number;
+    status?: 'draft' | 'active';  // draft = not yet for sale, active = available
 }
 
 export interface ShopOrderItem {
@@ -358,6 +362,56 @@ export const updateProduct = async (id: number, data: Partial<Product>) => {
 
 export const deleteProduct = async (id: number) => {
     const response = await api.delete(`/products/${id}`);
+    return response.data;
+}
+
+export const markProductStatus = async (id: number, status: 'draft' | 'active') => {
+    const response = await api.patch(`/products/${id}/status`, { status });
+    return response.data;
+}
+
+export interface ProductBatchReceiveInfo {
+    name: string;
+    category: string;
+    brand?: string;
+    batch_number: string;
+    cost_price: number;
+    selling_price: number;
+    quantity: number;
+    unit?: string;
+    description?: string;
+    manufacture_date?: string;
+    expiry_date?: string;
+}
+
+export interface BulkProductReceive {
+    items: ProductBatchReceiveInfo[];
+    total_transport_cost: number;
+    total_labour_cost: number;
+    total_other_cost: number;
+    expense_notes?: string;
+}
+
+export const bulkReceiveStock = async (data: BulkProductReceive) => {
+    const response = await api.post("/products/bulk-receive", data);
+    return response.data;
+}
+
+export interface DraftBatch {
+    id: number;
+    name: string;
+    batch_number: string;
+    cost_price: number;
+    quantity: number;
+    unit: string;
+    total_value: number;
+    apportioned_transport: number;
+    apportioned_labour: number;
+    apportioned_other: number;
+}
+
+export const getDraftBatches = async (): Promise<DraftBatch[]> => {
+    const response = await api.get<DraftBatch[]>('/shop-accounting/draft-batches');
     return response.data;
 }
 

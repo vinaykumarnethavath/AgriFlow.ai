@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
 from sqlalchemy import text
+import json
 
 from ..database import get_session
 from ..models import ShopOrder, ShopOrderItem, Product, User
@@ -222,13 +223,45 @@ async def list_expenses(
     ]
 
 
+@router.get("/draft-batches")
+async def get_draft_batches(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Returns all draft product batches owned by this shop (for expense linking)."""
+    if current_user.role != "shop":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    stmt = select(Product).where(
+        Product.user_id == current_user.id,
+        Product.status == "draft"
+    )
+    result = await session.exec(stmt)
+    products = result.all()
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "batch_number": p.batch_number,
+            "cost_price": p.cost_price or 0,
+            "quantity": p.quantity,
+            "unit": p.unit,
+            "total_value": (p.cost_price or 0) * p.quantity,
+            "apportioned_transport": p.apportioned_transport,
+            "apportioned_labour": p.apportioned_labour,
+            "apportioned_other": p.apportioned_other,
+        }
+        for p in products
+    ]
+
+
 @router.post("/expenses")
 async def create_expense(
     data: ShopAccountingExpenseCreate,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    """Add a new business expense entry."""
+    """Add a new business expense. If product_ids provided for batch categories, distribute proportionally."""
     if current_user.role != "shop":
         raise HTTPException(status_code=403, detail="Not authorized")
 
@@ -239,12 +272,48 @@ async def create_expense(
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
 
+    # Batch categories that can be linked to specific product batches
+    BATCH_CATEGORIES = {"batch_transport", "batch_labour", "batch_other"}
+    linked_ids_json = None
+    distributed_to = 0
+
+    if data.product_ids and data.category in BATCH_CATEGORIES:
+        # Fetch the selected draft products
+        product_ids = [int(pid) for pid in data.product_ids]
+        stmt = select(Product).where(
+            Product.id.in_(product_ids),
+            Product.user_id == current_user.id
+        )
+        result = await session.exec(stmt)
+        selected_products = result.all()
+
+        if selected_products:
+            # Calculate total cost×qty weight
+            total_weight = sum((p.cost_price or 0) * p.quantity for p in selected_products)
+            linked_ids_json = json.dumps([p.id for p in selected_products])
+            distributed_to = len(selected_products)
+
+            for p in selected_products:
+                weight = ((p.cost_price or 0) * p.quantity)
+                ratio = (weight / total_weight) if total_weight > 0 else (1.0 / len(selected_products))
+                share = data.amount * ratio
+
+                if data.category == "batch_transport":
+                    p.apportioned_transport = (p.apportioned_transport or 0) + share
+                elif data.category == "batch_labour":
+                    p.apportioned_labour = (p.apportioned_labour or 0) + share
+                elif data.category == "batch_other":
+                    p.apportioned_other = (p.apportioned_other or 0) + share
+
+                session.add(p)
+
     expense = ShopAccountingExpense(
         shop_id=current_user.id,
         category=data.category,
         amount=data.amount,
         description=data.description,
         expense_date=expense_date,
+        linked_product_ids=linked_ids_json,
     )
     session.add(expense)
     await session.commit()
@@ -257,6 +326,8 @@ async def create_expense(
         "description": expense.description,
         "expense_date": expense.expense_date.isoformat(),
         "created_at": expense.created_at.isoformat(),
+        "linked_product_ids": expense.linked_product_ids,
+        "distributed_to": distributed_to,
     }
 
 

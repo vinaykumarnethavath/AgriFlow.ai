@@ -29,6 +29,16 @@ class ProductBase(SQLModel):
     main_composition: Optional[str] = None
     manufacture_date: Optional[datetime] = None
     low_stock_threshold: int = Field(default=10)
+    expiry_date: Optional[datetime] = None
+    
+    # Product lifecycle status
+    status: str = Field(default="draft")  # "draft" | "active"
+    
+    # Apportioned Expenses linked to this specific batch
+    apportioned_transport: float = Field(default=0.0)
+    apportioned_labour: float = Field(default=0.0)
+    apportioned_other: float = Field(default=0.0)
+
 
 class Product(ProductBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -128,3 +138,24 @@ class ShopOrderRead(ShopOrderBase):
     farmer_id: Optional[int]
     farmer_name: Optional[str]
     items: List[ShopOrderItemBase]
+
+# Bulk Receive Schema
+class ProductBatchReceiveInfo(SQLModel):
+    name: str # The product/variety name
+    category: str
+    brand: Optional[str] = None
+    batch_number: str
+    cost_price: float
+    selling_price: float
+    quantity: int
+    unit: str = "kg"
+    description: Optional[str] = None
+    manufacture_date: Optional[datetime] = None
+    expiry_date: Optional[datetime] = None
+
+class BulkProductReceive(SQLModel):
+    items: List[ProductBatchReceiveInfo]
+    total_transport_cost: float = Field(default=0.0)
+    total_labour_cost: float = Field(default=0.0)
+    total_other_cost: float = Field(default=0.0)
+    expense_notes: Optional[str] = None
