@@ -130,17 +130,18 @@ async def get_sales_trend(
     orders = results.all()
     
     # Aggregate by date
-    daily_sales = {}
+    daily_stats = {}
     for i in range(days):
         date_str = (datetime.utcnow() - timedelta(days=days-1-i)).strftime("%Y-%m-%d")
-        daily_sales[date_str] = 0.0
+        daily_stats[date_str] = {"sales": 0.0, "order_count": 0}
         
     for created_at, amount in orders:
         date_key = created_at.strftime("%Y-%m-%d")
-        if date_key in daily_sales:
-            daily_sales[date_key] += amount
+        if date_key in daily_stats:
+            daily_stats[date_key]["sales"] += amount
+            daily_stats[date_key]["order_count"] += 1
             
-    return [{"date": k, "sales": v} for k, v in daily_sales.items()]
+    return [{"date": k, "sales": v["sales"], "order_count": v["order_count"]} for k, v in daily_stats.items()]
 
 @router.get("/shop/category-distribution")
 async def get_category_distribution(

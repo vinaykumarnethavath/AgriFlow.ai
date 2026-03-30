@@ -19,7 +19,8 @@ import {
     Box,
     Store,
     TrendingUp,
-    User
+    User,
+    Settings
 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
@@ -48,7 +49,7 @@ const Sidebar = () => {
                     { name: "Orders", href: "/dashboard/shop/orders", icon: Box },
                     { name: "Accounting", href: "/dashboard/shop/accounting", icon: TrendingUp },
                     { name: "Sales Analytics", href: "/dashboard/shop/analytics", icon: LineChart },
-                    { name: "Profile", href: "/dashboard/shop/profile", icon: User },
+                    { name: "Settings", href: "/dashboard/shop/profile", icon: Settings },
                 ];
             case UserRole.MANUFACTURER:
                 return [
@@ -57,7 +58,7 @@ const Sidebar = () => {
                     { name: "Production", href: "/dashboard/manufacturer/production", icon: Factory },
                     { name: "Inventory", href: "/dashboard/manufacturer/inventory", icon: Box },
                     { name: "Sales", href: "/dashboard/manufacturer/sales", icon: LineChart },
-                    { name: "Profile", href: "/dashboard/manufacturer/profile", icon: User },
+                    { name: "Settings", href: "/dashboard/manufacturer/profile", icon: Settings },
                 ];
             case UserRole.CUSTOMER:
                 return [
@@ -65,7 +66,7 @@ const Sidebar = () => {
                     { name: "Marketplace", href: "/dashboard/customer/marketplace", icon: Store },
                     { name: "Cart", href: "/dashboard/customer/cart", icon: ShoppingCart },
                     { name: "Orders", href: "/dashboard/customer/orders", icon: ShoppingBag },
-                    { name: "Profile", href: "/dashboard/customer/profile", icon: User },
+                    { name: "Settings", href: "/dashboard/customer/profile", icon: Settings },
                 ];
             default:
                 return [];

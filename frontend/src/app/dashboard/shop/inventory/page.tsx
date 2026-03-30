@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import {
     Plus, Pencil, Trash2, Search, Package, AlertTriangle, ShoppingCart,
-    ImagePlus, X, ChevronDown, ChevronRight, CheckCircle, Clock, ArrowRight, Truck
+    ImagePlus, X, ChevronDown, ChevronRight, CheckCircle, Clock, ArrowRight, Receipt, Layers
 } from "lucide-react";
 import {
     getMyProducts, updateProduct, deleteProduct, Product, createManualOrder,
@@ -18,10 +18,38 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
-import ReceiveStockModal from "./ReceiveStockModal";
 
-const CATEGORIES = ["All", "fertilizer", "seeds", "pesticides", "machinery", "crop"];
+const CATEGORIES = ["fertilizer", "seeds", "pesticides", "machinery"];
 const UNIT_OPTIONS = ["bags", "bottles", "packets", "kg", "liters", "pieces"];
+
+type LockedFields = {
+    name?: string;
+    short_name?: string;
+    brand?: string;
+    manufacturer?: string;
+    category?: string;
+    main_composition?: string;
+    unit?: string;
+    description?: string;
+};
+
+type ProductGroup = {
+    id: string;
+    name: string;
+    category: string;
+    brand: string;
+    manufacturer: string;
+    image_url: string | null;
+    totalQuantity: number;
+    unit: string;
+    batches: Product[];
+    weightedCost: number;
+    minPrice: number;
+    maxPrice: number;
+    lowStockThreshold: number;
+    hasDraft: boolean;
+    hasActive: boolean;
+};
 
 interface ProductFormData extends Omit<Product, 'id'> {}
 
@@ -31,11 +59,10 @@ export default function InventoryPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [activeCategory, setActiveCategory] = useState("All");
+    const [activeCategory, setActiveCategory] = useState("");
     const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "active">("all");
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
     const [isSellModalOpen, setIsSellModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     
@@ -54,7 +81,8 @@ export default function InventoryPage() {
 
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
     const [markingStatus, setMarkingStatus] = useState<Record<number, boolean>>({});
-    const [submitAction, setSubmitAction] = useState<'draft' | 'active'>('draft');
+    const [submitAction, setSubmitAction] = useState<'draft' | 'active'>("draft");
+    const [lockedFields, setLockedFields] = useState<LockedFields | null>(null);
 
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<ProductFormData>();
 
@@ -184,6 +212,8 @@ export default function InventoryPage() {
             manufacture_date: "" as any, low_stock_threshold: 10,
         } as any);
         setIsAddModalOpen(true);
+        setLockedFields(null);
+        setSubmitAction("draft");
     };
 
     const openEditModal = (product: Product) => {
@@ -193,16 +223,74 @@ export default function InventoryPage() {
             setValue(key as any, (product as any)[key]);
         });
         setIsAddModalOpen(true);
+        setLockedFields(null);
     };
 
-    const closeAddModal = () => { setIsAddModalOpen(false); setEditingProduct(null); setPreviewUrl(null); };
+    const closeAddModal = () => {
+        setIsAddModalOpen(false);
+        setEditingProduct(null);
+        setPreviewUrl(null);
+        setLockedFields(null);
+    };
+
+    const openAddBatchModal = (group: ProductGroup) => {
+        const template = group.batches[0];
+        const fallbackUnit = template?.unit || group.unit || "bags";
+        const fallbackDescription = template?.description || "";
+
+        reset({
+            name: group.name,
+            short_name: template?.short_name || group.name,
+            brand: group.brand,
+            manufacturer: group.manufacturer,
+            category: group.category,
+            main_composition: template?.main_composition || "" as any,
+            description: fallbackDescription,
+            unit: fallbackUnit,
+            batch_number: "",
+            manufacture_date: "" as any,
+            cost_price: "" as any,
+            price: "" as any,
+            quantity: "" as any,
+            quantity_per_unit: template?.quantity_per_unit as any,
+            measure_unit: template?.measure_unit || "kg",
+            low_stock_threshold: template?.low_stock_threshold ?? group.lowStockThreshold,
+            image_url: template?.image_url || group.image_url || "",
+        } as any);
+
+        setLockedFields({
+            name: group.name,
+            short_name: template?.short_name || group.name,
+            brand: group.brand,
+            manufacturer: group.manufacturer,
+            category: group.category,
+            main_composition: template?.main_composition || "",
+            unit: fallbackUnit,
+            description: fallbackDescription,
+        });
+
+        setPreviewUrl(template?.image_url || group.image_url || null);
+        setEditingProduct(null);
+        setIsAddModalOpen(true);
+        setSubmitAction("draft");
+    };
 
     const calculateProfit = () => {
-        if (!watchPrice) return null;
-        const finalCost = Number(watchCostPrice) || 0;
-        const profit = Number(watchPrice) - finalCost;
+        if (!watchPrice || !watchCostPrice) return null;
+        const baseCost = Number(watchCostPrice) || 0;
+        // Total overhead for this batch
+        const totalOverhead = editingProduct 
+            ? ((editingProduct.apportioned_transport || 0) + (editingProduct.apportioned_labour || 0) + (editingProduct.apportioned_other || 0))
+            : 0;
+        // Quantity of this batch (locked or watched)
+        const qty = Number(watch("quantity")) || editingProduct?.quantity || 1;
+        const overheadPerUnit = totalOverhead / Math.max(qty, 1);
+        
+        const landedCost = baseCost + overheadPerUnit;
+        const profit = Number(watchPrice) - landedCost;
         const margin = Number(watchPrice) > 0 ? (profit / Number(watchPrice)) * 100 : 0;
-        return { profit, margin, finalCost };
+        
+        return { profit, margin, landedCost, baseCost, overheadPerUnit, totalOverhead };
     };
     const profitStats = calculateProfit();
 
@@ -279,20 +367,14 @@ export default function InventoryPage() {
         const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()));
-        const matchesCategory = activeCategory === "All" ||
+        const matchesCategory = activeCategory === "" ||
             p.category.toLowerCase() === activeCategory.toLowerCase();
         const matchesStatus = statusFilter === "all" || p.status === statusFilter;
         return matchesSearch && matchesCategory && matchesStatus;
     });
 
-    const groupedProducts = React.useMemo(() => {
-        const groups: Record<string, {
-            id: string, name: string, category: string, brand: string,
-            manufacturer: string, image_url: string | null, totalQuantity: number,
-            unit: string, batches: Product[], weightedCost: number,
-            minPrice: number, maxPrice: number, lowStockThreshold: number,
-            hasDraft: boolean, hasActive: boolean
-        }> = {};
+    const groupedProducts = useMemo<ProductGroup[]>(() => {
+        const groups: Record<string, ProductGroup> = {};
 
         filteredProducts.forEach(p => {
             const key = `${p.name}-${p.category}-${p.brand || ''}`;
@@ -354,7 +436,7 @@ export default function InventoryPage() {
                         className="bg-amber-600 hover:bg-amber-700 whitespace-nowrap"
                         onClick={() => { setSavedProductName(null); router.push("/dashboard/shop/accounting"); }}
                     >
-                        <Truck className="w-4 h-4 mr-1" /> Add Expenses →
+                        <Receipt className="w-4 h-4 mr-1" /> Add Expenses →
                     </Button>
                     <button className="text-amber-400 hover:text-amber-600" onClick={() => setSavedProductName(null)}>
                         <X className="w-4 h-4" />
@@ -369,17 +451,14 @@ export default function InventoryPage() {
                     <p className="text-gray-500 text-sm mt-0.5">Manage your products, stock, and pricing</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button onClick={() => setIsReceiveModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-                        <Package className="w-4 h-4 mr-2" /> Receive Delivery
-                    </Button>
                     <Button onClick={openAddModal} className="bg-green-600 hover:bg-green-700">
                         <Plus className="w-4 h-4 mr-2" /> Add Product
                     </Button>
                 </div>
             </div>
 
-            {/* ── Status Tabs ── */}
-            <div className="flex items-center gap-2">
+            {/* ── Filters & Search ── */}
+            <div className="flex flex-wrap items-center gap-2">
                 {([
                     { label: `All (${products.length})`, value: "all" },
                     { label: `📝 Draft (${draftCount})`, value: "draft" },
@@ -397,8 +476,19 @@ export default function InventoryPage() {
                         }`}
                     >{tab.label}</button>
                 ))}
-                <div className="flex-1" />
-                {/* Search */}
+                <span className="mx-1 h-5 w-px bg-gray-200" />
+                {CATEGORIES.map((cat) => (
+                    <button
+                        key={cat}
+                        onClick={() => setActiveCategory(activeCategory === cat ? "" : cat)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors capitalize ${
+                            activeCategory === cat
+                                ? "bg-green-600 text-white border-green-600"
+                                : "bg-white text-gray-600 border-gray-200 hover:border-green-400"
+                        }`}
+                    >{cat}</button>
+                ))}
+                <div className="flex-1 min-w-[180px]" />
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
@@ -408,21 +498,6 @@ export default function InventoryPage() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-            </div>
-
-            {/* ── Category Filters ── */}
-            <div className="flex gap-1.5 flex-wrap">
-                {CATEGORIES.map((cat) => (
-                    <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors capitalize ${
-                            activeCategory === cat
-                                ? "bg-green-600 text-white border-green-600"
-                                : "bg-white text-gray-600 border-gray-200 hover:border-green-400"
-                        }`}
-                    >{cat}</button>
-                ))}
             </div>
 
             {/* ── Main Content ── */}
@@ -446,7 +521,7 @@ export default function InventoryPage() {
                                     {groupedProducts.length === 0 ? (
                                         <tr>
                                             <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                                                No products found.{activeCategory !== "All" ? " Try changing the category filter." : " Add one to get started!"}
+                                                No products found.{activeCategory !== "" ? " Try changing the category filter." : " Add one to get started!"}
                                             </td>
                                         </tr>
                                     ) : (
@@ -498,16 +573,35 @@ export default function InventoryPage() {
                                                             <div>₹{group.minPrice === group.maxPrice ? group.minPrice.toLocaleString() : `${group.minPrice.toLocaleString()} - ${group.maxPrice.toLocaleString()}`}</div>
                                                             <div className="text-xs text-gray-400">Avg Cost: ₹{group.weightedCost.toFixed(2)}</div>
                                                         </td>
-                                                        <td className="px-6 py-4 text-xs text-gray-500 italic">
-                                                            {isExpanded ? "↑ Collapse" : "Click to view batches"}
+                                                        <td className="px-6 py-4">
+                                                            {group.batches[0]?.main_composition ? (
+                                                                <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
+                                                                    {group.batches[0].main_composition}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-[10px] text-gray-400">—</span>
+                                                            )}
                                                         </td>
-                                                        <td className="px-6 py-4 text-right"></td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        openAddBatchModal(group);
+                                                                    }}
+                                                                    className="px-3 py-1.5 text-xs font-semibold border border-sky-300 text-sky-700 rounded-full bg-sky-50 hover:bg-sky-100 transition"
+                                                                >
+                                                                    + Add Batch
+                                                                </button>
+                                                            </div>
+                                                        </td>
                                                     </tr>
 
                                                     {/* ── Batch Sub-Rows ── */}
                                                     {isExpanded && group.batches.map((product) => {
                                                         const totalOverhead = (product.apportioned_transport || 0) + (product.apportioned_labour || 0) + (product.apportioned_other || 0);
                                                         const landedCost = (product.cost_price || 0) + totalOverhead;
+                                                        const profitPerUnit = Number(product.price || 0) - landedCost;
                                                         const isDraft = product.status === 'draft';
                                                         return (
                                                             <tr key={product.id} className={`hover:bg-emerald-50 transition-colors border-l-4 ${isDraft ? 'bg-amber-50/40 border-l-amber-400' : 'bg-emerald-50/30 border-l-emerald-400'}`}>
@@ -549,12 +643,27 @@ export default function InventoryPage() {
                                                                 </td>
                                                                 {/* Composition */}
                                                                 <td className="px-6 py-3">
-                                                                    {product.main_composition && (
-                                                                        <div className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">{product.main_composition}</div>
-                                                                    )}
-                                                                    {product.description && (
-                                                                        <div className="text-[10px] text-gray-400 mt-0.5 truncate max-w-[160px]" title={product.description}>{product.description}</div>
-                                                                    )}
+                                                                    <div className="flex flex-col items-end text-right">
+                                                                        {totalOverhead > 0 ? (
+                                                                            <>
+                                                                                <div className="text-[10px] text-gray-500 mb-0.5">Batch Overhead</div>
+                                                                                <div className="font-semibold text-orange-600 text-xs mb-1">₹{totalOverhead.toFixed(2)}</div>
+                                                                                {product.quantity > 0 && (
+                                                                                    <div className="text-[10px] text-orange-400">₹{(totalOverhead / product.quantity).toFixed(2)}/{product.unit || 'unit'}</div>
+                                                                                )}
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <div className="text-[10px] text-gray-400 mb-0.5">Batch Overhead</div>
+                                                                                <div className="font-medium text-gray-400 text-xs mb-1">₹0.00</div>
+                                                                            </>
+                                                                        )}
+                                                                        {Number(product.price) > 0 && (
+                                                                            <div className={`font-bold text-sm ${profitPerUnit >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                                                ₹{profitPerUnit.toFixed(2)}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </td>
                                                                 {/* Actions */}
                                                                 <td className="px-6 py-3 text-right border-l border-gray-100">
@@ -712,7 +821,7 @@ export default function InventoryPage() {
             <Modal
                 isOpen={isAddModalOpen}
                 onClose={closeAddModal}
-                title={editingProduct ? "Edit Product Batch" : "Add New Product"}
+                title={editingProduct ? "Edit Product Batch" : lockedFields ? "Add Another Batch" : "Add New Product"}
             >
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 max-h-[85vh] overflow-y-auto">
 
@@ -744,29 +853,53 @@ export default function InventoryPage() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Product Name *</Label>
-                            <Input {...register("name", { required: true })} placeholder="e.g. Paddy" />
+                            <Input
+                                {...register("name", { required: true })}
+                                placeholder="e.g. Paddy"
+                                readOnly={Boolean(lockedFields?.name)}
+                                className={lockedFields?.name ? "bg-gray-100 border-gray-200" : undefined}
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label>Variety / Short Name</Label>
-                            <Input {...register("short_name")} placeholder="e.g. Pusa Basmati 1" />
+                            <Input
+                                {...register("short_name")}
+                                placeholder="e.g. Pusa Basmati 1"
+                                readOnly={Boolean(lockedFields?.short_name)}
+                                className={lockedFields?.short_name ? "bg-gray-100 border-gray-200" : undefined}
+                            />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Brand</Label>
-                            <Input {...register("brand")} placeholder="e.g. IFFCO" />
+                            <Input
+                                {...register("brand")}
+                                placeholder="e.g. IFFCO"
+                                readOnly={Boolean(lockedFields?.brand)}
+                                className={lockedFields?.brand ? "bg-gray-100 border-gray-200" : undefined}
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label>Manufacturer</Label>
-                            <Input {...register("manufacturer")} placeholder="e.g. IFFCO Ltd." />
+                            <Input
+                                {...register("manufacturer")}
+                                placeholder="e.g. IFFCO Ltd."
+                                readOnly={Boolean(lockedFields?.manufacturer)}
+                                className={lockedFields?.manufacturer ? "bg-gray-100 border-gray-200" : undefined}
+                            />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Category</Label>
-                            <select {...register("category")} className="w-full p-2 border rounded-md">
+                            <select
+                                {...register("category")}
+                                className="w-full p-2 border rounded-md"
+                                disabled={Boolean(lockedFields?.category)}
+                            >
                                 <option value="fertilizer">Fertilizer</option>
                                 <option value="seeds">Seeds</option>
                                 <option value="pesticides">Pesticides</option>
@@ -787,13 +920,45 @@ export default function InventoryPage() {
                         </div>
                         <div className="space-y-2">
                             <Label>Main Composition</Label>
-                            <Input {...register("main_composition")} placeholder="e.g. NPK 19:19:19" />
+                            <Input
+                                {...register("main_composition")}
+                                placeholder="e.g. NPK 19:19:19"
+                                readOnly={Boolean(lockedFields?.main_composition)}
+                                className={lockedFields?.main_composition ? "bg-gray-100 border-gray-200" : undefined}
+                            />
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Cost Price (Per Unit) *</Label>
-                        <Input type="number" step="0.01" {...register("cost_price", { required: true, min: 0 })} placeholder="0.00" />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Cost Price (Per Unit) *</Label>
+                            <Input type="number" step="0.01" {...register("cost_price", { required: true, min: 0 })} placeholder="0.00" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Batch Overhead (From Accounting)</Label>
+                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5 font-medium">
+                                <div className="flex justify-between text-[11px] text-slate-500">
+                                    <span>Transport:</span>
+                                    <span className="text-slate-700 font-bold">₹{(editingProduct?.apportioned_transport || 0).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-[11px] text-slate-500">
+                                    <span>Labour:</span>
+                                    <span className="text-slate-700 font-bold">₹{(editingProduct?.apportioned_labour || 0).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-[11px] text-slate-500">
+                                    <span>Other:</span>
+                                    <span className="text-slate-700 font-bold">₹{(editingProduct?.apportioned_other || 0).toFixed(2)}</span>
+                                </div>
+                                <div className="pt-1.5 border-t border-slate-200 flex justify-between text-xs text-indigo-700 font-bold">
+                                    <span>Total Batch Overhead:</span>
+                                    <span>₹{(profitStats?.totalOverhead || 0).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-cyan-700 text-[10px] font-bold">
+                                    <span>Overhead per Unit:</span>
+                                    <span>₹{(profitStats?.overheadPerUnit || 0).toFixed(2)} / {watch("unit") || "unit"}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
@@ -811,11 +976,17 @@ export default function InventoryPage() {
                     </div>
 
                     {profitStats && Number(watchPrice) > 0 && (
-                        <div className="p-3 bg-blue-50/50 rounded-lg text-sm border border-blue-100 flex justify-between">
-                            <span className="text-blue-800 font-medium">Est. Profit per Unit:</span>
-                            <span className={profitStats.profit >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-                                ₹{profitStats.profit.toFixed(2)} ({profitStats.margin.toFixed(1)}% margin)
-                            </span>
+                        <div className="p-3 bg-blue-50/50 rounded-lg text-sm border border-blue-100 space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-blue-800 font-medium text-xs">Landed Cost (Base + Overhead):</span>
+                                <span className="text-slate-700 font-bold text-xs">₹{profitStats.landedCost.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between pt-1 border-t border-blue-100/50">
+                                <span className="text-blue-800 font-bold">Est. Profit per Unit:</span>
+                                <span className={profitStats.profit >= 0 ? "text-green-600 font-black" : "text-red-600 font-black"}>
+                                    ₹{profitStats.profit.toFixed(2)} ({profitStats.margin.toFixed(1)}% margin)
+                                </span>
+                            </div>
                         </div>
                     )}
 
@@ -839,7 +1010,11 @@ export default function InventoryPage() {
                         </div>
                         <div className="space-y-2">
                             <Label>Unit (Display)</Label>
-                            <select {...register("unit", { required: true })} className="w-full p-2 border rounded-md text-sm bg-white">
+                            <select
+                                {...register("unit", { required: true })}
+                                className="w-full p-2 border rounded-md text-sm bg-white"
+                                disabled={Boolean(lockedFields?.unit)}
+                            >
                                 {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
                             </select>
                         </div>
@@ -883,11 +1058,6 @@ export default function InventoryPage() {
                 </form>
             </Modal>
 
-            <ReceiveStockModal
-                isOpen={isReceiveModalOpen}
-                onClose={() => setIsReceiveModalOpen(false)}
-                onSuccess={fetchProducts}
-            />
         </div>
     );
 }

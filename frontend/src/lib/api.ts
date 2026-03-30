@@ -227,7 +227,8 @@ export interface Product {
     apportioned_transport?: number;
     apportioned_labour?: number;
     apportioned_other?: number;
-    status?: 'draft' | 'active';  // draft = not yet for sale, active = available
+    status?: 'draft' | 'active';
+    created_at?: string;
 }
 
 export interface ShopOrderItem {
@@ -347,6 +348,7 @@ export const getShopOrdersDetailed = async () => {
 export interface SalesTrend {
     date: string;
     sales: number;
+    order_count: number;
 }
 
 // Shop API
@@ -405,6 +407,8 @@ export interface DraftBatch {
     quantity: number;
     unit: string;
     total_value: number;
+    category: string;
+    created_at: string;
     apportioned_transport: number;
     apportioned_labour: number;
     apportioned_other: number;
@@ -448,6 +452,43 @@ export const getSalesTrend = async (period = "7d") => {
     const response = await api.get<SalesTrend[]>("/analytics/shop/sales-trend", { params: { period } });
     return response.data;
 }
+
+export interface TopProduct {
+    product_id: number;
+    product_name: string;
+    category: string;
+    units_sold: number;
+    revenue: number;
+    profit: number;
+}
+
+export interface ChannelBreakdown {
+    channel: string;
+    orders: number;
+    revenue: number;
+    average_order_value: number;
+}
+
+export interface OrderHealthMetric {
+    status: string;
+    count: number;
+    percentage: number;
+}
+
+export const getTopProducts = async (period = "30d") => {
+    const response = await api.get<TopProduct[]>("/analytics/shop/top-products", { params: { period } });
+    return response.data;
+};
+
+export const getChannelBreakdown = async (period = "30d") => {
+    const response = await api.get<ChannelBreakdown[]>("/analytics/shop/channel-breakdown", { params: { period } });
+    return response.data;
+};
+
+export const getOrderHealth = async (period = "30d") => {
+    const response = await api.get<OrderHealthMetric[]>("/analytics/shop/order-health", { params: { period } });
+    return response.data;
+};
 
 export interface ShopCustomer {
     id: number;

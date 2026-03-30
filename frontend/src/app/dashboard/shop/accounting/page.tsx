@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-    Wallet, Package, Plus, Trash2, Receipt, ArrowUpRight, CheckCircle2, X, Info
+    Wallet, Package, Plus, Trash2, Receipt, ArrowUpRight, CheckCircle2, X, Info, Banknote, TrendingUp, Building, Activity, Truck
 } from "lucide-react";
 import api from "@/lib/api";
-import { getDraftBatches, DraftBatch } from "@/lib/api";
+import { getDraftBatches, DraftBatch, getMyProducts, Product } from "@/lib/api";
 
 const PERIOD_OPTIONS = [
     { label: "Today", value: "today" },
@@ -76,6 +76,7 @@ export default function ShopAccountingPage() {
 
     // Batch selector state (for batch expense categories)
     const [draftBatches, setDraftBatches] = useState<DraftBatch[]>([]);
+    const [activeBatches, setActiveBatches] = useState<DraftBatch[]>([]);
     const [selectedBatchIds, setSelectedBatchIds] = useState<number[]>([]);
     const [loadingBatches, setLoadingBatches] = useState(false);
 
@@ -84,12 +85,25 @@ export default function ShopAccountingPage() {
     const fetchAll = useCallback(async () => {
         setLoading(true);
         try {
-            const [sumRes, expRes] = await Promise.all([
+            const [sumRes, expRes, prodRes] = await Promise.all([
                 api.get(`/shop-accounting/summary?period=${period}`).catch(() => ({ data: null })),
                 api.get(`/shop-accounting/expenses?period=${period}`).catch(() => ({ data: [] })),
+                getMyProducts().catch(() => [])
             ]);
             setSummary(sumRes.data);
             setExpenses(expRes.data || []);
+            
+            const products = prodRes as Product[];
+            if (Array.isArray(products)) {
+                const mapToBatch = (p: Product): DraftBatch => ({
+                    ...p,
+                    category: p.category || 'General',
+                    created_at: p.created_at || new Date().toISOString(),
+                    total_value: (p.cost_price || 0) * (p.quantity || 0)
+                } as DraftBatch);
+                setDraftBatches(products.filter(p => p.status === 'draft').map(mapToBatch));
+                setActiveBatches(products.filter(p => p.status === 'active').map(mapToBatch));
+            }
         } catch (e) {
             console.error(e);
         } finally {
@@ -101,16 +115,7 @@ export default function ShopAccountingPage() {
         fetchAll();
     }, [fetchAll]);
 
-    // Whenever the category changes to a batch type, fetch draft batches
-    useEffect(() => {
-        if (isBatchCategory && showAddExpense) {
-            setLoadingBatches(true);
-            getDraftBatches()
-                .then(setDraftBatches)
-                .catch(() => setDraftBatches([]))
-                .finally(() => setLoadingBatches(false));
-        }
-    }, [isBatchCategory, showAddExpense]);
+    // Fetches draft and active batches on load via fetchAll.
 
     const handleAddExpense = async () => {
         if (newExpense.amount <= 0) return;
@@ -161,6 +166,7 @@ export default function ShopAccountingPage() {
 
     const getCategoryInfo = (cat: string) => {
         if (cat === "batch_purchase") return PURCHASE_CATEGORY;
+        if (cat === "batch_activation") return { value: "batch_activation", label: "✅ Batch Activated", color: "bg-emerald-100 text-emerald-800", isBatch: false };
         return EXPENSE_CATEGORIES.find(c => c.value === cat) || { value: cat, label: cat, color: "bg-gray-100 text-gray-700" };
     };
 
@@ -169,6 +175,13 @@ export default function ShopAccountingPage() {
         .reduce((sum, cat) => sum + (summary?.expense_by_category[cat] || 0), 0);
     const purchaseTotal = summary?.expense_by_category['batch_purchase'] || 0;
     const generalExpenseTotal = (summary?.total_business_expenses || 0) - batchExpenseTotal - purchaseTotal;
+    const rentTotal = summary?.expense_by_category['rent'] || 0;
+    const wagesTotal = summary?.expense_by_category['wages'] || 0;
+    const transportTotal = summary?.expense_by_category['batch_transport'] || 0;
+    const labourTotal = summary?.expense_by_category['batch_labour'] || 0;
+    const otherBatchTotal = summary?.expense_by_category['batch_other'] || 0;
+    const utilitiesTotal = summary?.expense_by_category['utilities'] || 0;
+    const otherTotal = summary?.expense_by_category['other'] || 0;
 
     // Estimate overhead per unit for selected batches (preview)
     const selectedBatches = draftBatches.filter(b => selectedBatchIds.includes(b.id));
@@ -183,36 +196,40 @@ export default function ShopAccountingPage() {
     }
 
     return (
-        <div className="p-6 max-w-5xl mx-auto space-y-6">
+        <div className="p-6 max-w-6xl mx-auto space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center flex-wrap gap-3">
-                <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
-                        Shop Accounting & Expenses
-                    </h1>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        Track expenses, batch costs, and overall profitability
-                    </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="flex border rounded-lg overflow-hidden">
-                        {PERIOD_OPTIONS.map((opt) => (
-                            <button
-                                key={opt.value}
-                                onClick={() => setPeriod(opt.value)}
-                                className={`px-3 py-1.5 text-xs font-medium transition-colors ${period === opt.value ? "bg-green-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
-                            >
-                                {opt.label}
-                            </button>
-                        ))}
+            <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-start flex-wrap gap-3">
+                    <div>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
+                            Shop Accounting & Expenses
+                        </h1>
+                        <p className="text-muted-foreground text-sm mt-1">
+                            Allocate costs, track overhead, and understand profitability across batches.
+                        </p>
                     </div>
-                    <button
-                        onClick={fetchAll}
-                        className="flex items-center gap-1 text-sm bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg border border-green-200 font-medium"
-                    >
-                        <ArrowUpRight className="h-3.5 w-3.5" /> Refresh
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <div className="flex border rounded-lg overflow-hidden">
+                            {PERIOD_OPTIONS.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setPeriod(opt.value)}
+                                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${period === opt.value ? "bg-green-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            onClick={fetchAll}
+                            className="flex items-center gap-1 text-sm bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg border border-green-200 font-medium"
+                        >
+                            <ArrowUpRight className="h-3.5 w-3.5" /> Refresh
+                        </button>
+                    </div>
                 </div>
+
+
             </div>
 
             {/* Post-save confirmation banner */}
@@ -236,29 +253,83 @@ export default function ShopAccountingPage() {
                 </div>
             )}
 
-            {/* Summary Cards */}
+            {/* 1. Full Options: Business Expense Breakdown */}
             {summary && (
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                    {[
-                        { label: "Purchase Costs", value: purchaseTotal, icon: Package, color: "text-blue-600", bg: "bg-blue-100", border: "border-blue-200" },
-                        { label: "Batch Overheads", value: batchExpenseTotal, icon: Wallet, color: "text-cyan-600", bg: "bg-cyan-100", border: "border-cyan-200" },
-                        { label: "General Expenses", value: Math.max(0, generalExpenseTotal), icon: Receipt, color: "text-purple-600", bg: "bg-purple-100", border: "border-purple-200" },
-                        { label: "Total Business Expenses", value: summary.total_business_expenses, icon: Wallet, color: "text-amber-600", bg: "bg-amber-100", border: "border-amber-200" },
-                    ].map((card: any) => (
-                        <Card key={card.label} className={`hover:shadow-md transition-shadow ${card.border}`}>
-                            <CardContent className="p-4">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
-                                    <div className={`${card.bg} p-1.5 rounded-lg`}>
-                                        <card.icon className={`h-4 w-4 ${card.color}`} />
+                <div className="space-y-6">
+                    <Card className="border-slate-200 shadow-sm">
+                        <CardHeader className="pb-3 border-b bg-slate-50/50 rounded-t-lg">
+                            <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-700">
+                                <Banknote className="w-5 h-5 text-emerald-600" /> Business Expense Breakdown
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-5 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-4 border-b border-gray-100">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100"><Wallet className="w-6 h-6" /></div>
+                                    <div>
+                                        <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Total Expenses</p>
+                                        <p className="text-3xl font-black text-emerald-700 leading-tight">₹{(summary.total_business_expenses || 0).toLocaleString()}</p>
                                     </div>
                                 </div>
-                                <h3 className={`text-xl font-bold ${card.color}`}>
-                                    ₹{card.value.toLocaleString()}
-                                </h3>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                <div className="flex items-center gap-4 md:border-l border-gray-100 md:pl-6">
+                                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100"><Package className="w-6 h-6" /></div>
+                                    <div>
+                                        <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Purchase Cost</p>
+                                        <p className="text-3xl font-black text-blue-700 leading-tight">₹{(purchaseTotal || 0).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4 md:border-l border-gray-100 md:pl-6">
+                                    <div className="p-3 bg-cyan-50 text-cyan-600 rounded-xl border border-cyan-100"><Truck className="w-6 h-6" /></div>
+                                    <div>
+                                        <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Batch Overheads</p>
+                                        <p className="text-3xl font-black text-cyan-700 leading-tight">₹{(batchExpenseTotal || 0).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
+                                {[{
+                                    label: "Rent",
+                                    value: rentTotal,
+                                    accent: "bg-purple-100 text-purple-800 border-purple-200"
+                                }, {
+                                    label: "Staff Wages",
+                                    value: wagesTotal,
+                                    accent: "bg-indigo-100 text-indigo-800 border-indigo-200"
+                                }, {
+                                    label: "Transport (Batch)",
+                                    value: transportTotal,
+                                    accent: "bg-cyan-100 text-cyan-800 border-cyan-200"
+                                }, {
+                                    label: "Batch Labour",
+                                    value: labourTotal,
+                                    accent: "bg-orange-100 text-orange-800 border-orange-200"
+                                }, {
+                                    label: "Other Batch Costs",
+                                    value: otherBatchTotal,
+                                    accent: "bg-pink-100 text-pink-800 border-pink-200"
+                                }, {
+                                    label: "Utilities",
+                                    value: utilitiesTotal,
+                                    accent: "bg-yellow-100 text-yellow-800 border-yellow-200"
+                                }, {
+                                    label: "Gen. Overheads",
+                                    value: Math.max(0, generalExpenseTotal),
+                                    accent: "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                }, {
+                                    label: "Misc. Other",
+                                    value: otherTotal,
+                                    accent: "bg-gray-100 text-gray-800 border-gray-200"
+                                }].map((item) => (
+                                    <div key={item.label} className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
+                                        <span className="font-semibold text-slate-600 mb-2 truncate" title={item.label}>{item.label}</span>
+                                        <div className="mt-auto flex items-center justify-between">
+                                            <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${item.accent}`}>₹{(item.value || 0).toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             )}
 
@@ -401,58 +472,191 @@ export default function ShopAccountingPage() {
                         </div>
                     )}
 
-                    {/* Expense Breakdown by Category */}
-                    {summary && Object.keys(summary.expense_by_category).length > 0 && (
-                        <div className="grid grid-cols-4 gap-2">
-                            {Object.entries(summary.expense_by_category).map(([cat, amount]) => {
-                                const info = getCategoryInfo(cat);
-                                return (
-                                    <div key={cat} className={`text-center p-2.5 rounded-lg border ${info.color}`}>
-                                        <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">{info.label?.split(" ").slice(1).join(" ") || cat}</div>
-                                        <div className="text-sm font-bold mt-0.5">₹{(amount as number).toLocaleString()}</div>
-                                    </div>
-                                );
-                            })}
+                    {/* Draft Batches Summary Table (Picture 2 replacement) */}
+                    <div className="overflow-x-auto border rounded-xl shadow-sm bg-white">
+                        <table className="w-full text-sm text-left">
+                                <thead className="bg-amber-50/40 text-gray-600 font-medium text-[11px] uppercase tracking-wider">
+                                    <tr>
+                                        <th className="px-6 py-3 border-b border-amber-50">Draft Category</th>
+                                        <th className="px-6 py-3 border-b border-amber-50">Date</th>
+                                        <th className="px-6 py-3 border-b border-amber-50">Batches</th>
+                                        <th className="px-6 py-3 border-b border-amber-50 text-right">Total Money</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {draftBatches.length === 0 ? (
+                                        <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400 text-sm italic">No pending draft batches for allocation.</td></tr>
+                                    ) : (
+                                        draftBatches.map(batch => (
+                                            <tr key={batch.id} className="hover:bg-amber-50/10 transition-colors">
+                                                <td className="px-6 py-3">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-gray-900">{batch.name}</span>
+                                                        <span className="text-[10px] text-amber-600 font-bold uppercase">{batch.category}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-3 text-slate-500">
+                                                    {new Date(batch.created_at).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+                                                </td>
+                                                <td className="px-6 py-3">
+                                                    <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+                                                        {batch.batch_number}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-3 font-bold text-amber-700 text-right">
+                                                    ₹{batch.total_value?.toLocaleString() || 0}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
+                    {/* Draft Section End */}
+                </CardContent>
+            </Card>
 
-                    {/* Expense List */}
-                    <div className="max-h-[400px] overflow-y-auto space-y-1.5 mt-2">
-                        {expenses.length === 0 ? (
-                            <div className="text-center py-6 text-gray-400 text-sm">No expenses recorded for this period</div>
-                        ) : (
-                            expenses.map((exp) => {
-                                const info = getCategoryInfo(exp.category);
-                                const isPurchase = exp.category === "batch_purchase";
-                                const linkedCount = exp.linked_product_ids
-                                    ? JSON.parse(exp.linked_product_ids).length
-                                    : 0;
-                                return (
-                                    <div key={exp.id} className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${isPurchase ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 hover:border-gray-300'}`}>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${info.color}`}>
-                                            {info.label?.split(" ").slice(1).join(" ") || exp.category}
-                                        </span>
-                                        <div className="flex-1 min-w-0">
-                                            {exp.description && <div className="text-xs text-gray-700 truncate">{exp.description}</div>}
-                                            <div className="text-[10px] text-gray-400 flex items-center gap-2">
-                                                {new Date(exp.expense_date).toLocaleDateString("en-IN")}
-                                                {linkedCount > 0 && (
-                                                    <span className="text-cyan-600 font-medium">🔗 {linkedCount} batch{linkedCount > 1 ? 'es' : ''}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <span className="font-bold text-sm text-gray-800 flex-shrink-0">₹{exp.amount.toLocaleString()}</span>
-                                        <button
-                                            onClick={() => handleDeleteExpense(exp.id, exp.category)}
-                                            className={`p-1 rounded ${isPurchase ? 'text-gray-300 cursor-not-allowed' : 'text-red-400 hover:text-red-600 hover:bg-red-50'}`}
-                                            title={isPurchase ? "Auto-generated from Inventory" : "Delete expense"}
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                );
-                            })
-                        )}
+            {/* Separate Card for Recorded Business Expenses */}
+            <Card className="border-slate-200 shadow-sm bg-white mt-6">
+                <CardHeader className="pb-3 border-b border-gray-100">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-800">
+                        <Receipt className="w-5 h-5 text-slate-600" /> Recorded Business Expenses
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 px-0">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 text-gray-600 font-medium text-[11px] uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-3 border-b border-gray-200">Date</th>
+                                    <th className="px-6 py-3 border-b border-gray-200">Type</th>
+                                    <th className="px-6 py-3 border-b border-gray-200">Amount</th>
+                                    <th className="px-6 py-3 border-b border-gray-200">Batch Details</th>
+                                    <th className="px-6 py-3 border-b border-gray-200 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 bg-white">
+                                {/* Filter: never show batch_purchase for a product still in draft */}
+                                {expenses.filter(exp => {
+                                    if (exp.category !== "batch_purchase") return true;
+                                    const ids = exp.linked_product_ids ? JSON.parse(exp.linked_product_ids) : [];
+                                    // Only show batch_purchase if the linked product is active (in activeBatches list)
+                                    return ids.some((id: number) => activeBatches.some(b => b.id === id));
+                                }).length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-400 text-sm">No expenses recorded yet.</td>
+                                    </tr>
+                                ) : (
+                                    expenses.filter(exp => {
+                                        if (exp.category !== "batch_purchase") return true;
+                                        const ids = exp.linked_product_ids ? JSON.parse(exp.linked_product_ids) : [];
+                                        return ids.some((id: number) => activeBatches.some(b => b.id === id));
+                                    }).map((exp) => {
+                                        const info = getCategoryInfo(exp.category);
+                                        const isAutoEntry = exp.category === "batch_purchase" || exp.category === "batch_activation";
+                                        const linkedIds: number[] = exp.linked_product_ids ? JSON.parse(exp.linked_product_ids).map(Number) : [];
+                                        const allProducts = [...activeBatches, ...draftBatches];
+
+                                        // For batch_activation: find the single linked active product
+                                        const activationProduct = exp.category === "batch_activation"
+                                            ? activeBatches.find(b => linkedIds.includes(Number(b.id)))
+                                            : null;
+
+                                        // For batch_purchase: find the linked active product
+                                        const purchaseProduct = exp.category === "batch_purchase"
+                                            ? activeBatches.find(b => linkedIds.includes(Number(b.id)))
+                                            : null;
+
+                                        // For batch overhead (transport/labour/other): find ALL linked products
+                                        const linkedBatchProducts = ["batch_transport", "batch_labour", "batch_other"].includes(exp.category)
+                                            ? allProducts.filter(b => linkedIds.includes(Number(b.id)))
+                                            : [];
+
+                                        return (
+                                            <tr key={exp.id} className={`hover:bg-gray-50/50 transition-colors ${isAutoEntry ? 'bg-blue-50/20' : ''}`}>
+                                                <td className="px-6 py-3 text-slate-600 whitespace-nowrap text-[11px] font-medium">{new Date(exp.expense_date).toLocaleDateString("en-IN")}</td>
+
+                                                {/* TYPE column — badge only */}
+                                                <td className="px-6 py-3">
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase whitespace-nowrap ${info.color}`}>
+                                                        {info.label?.split(" ").slice(1).join(" ") || exp.category}
+                                                    </span>
+                                                    {/* Only show general description for non-auto non-batch entries */}
+                                                    {!isAutoEntry && !["batch_transport","batch_labour","batch_other"].includes(exp.category) && exp.description && (
+                                                        <div className="text-[11px] text-slate-400 mt-1 max-w-[200px] truncate italic">{exp.description}</div>
+                                                    )}
+                                                </td>
+
+                                                <td className="px-6 py-3 font-semibold text-slate-800 whitespace-nowrap">₹{exp.amount.toLocaleString()}</td>
+
+                                                {/* BATCH DETAILS column */}
+                                                <td className="px-6 py-3">
+                                                    {/* batch_activation: show Batch Name, Qty, Cost/unit */}
+                                                    {activationProduct && (
+                                                        <div className="flex flex-col gap-0.5 py-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-bold text-slate-800">{activationProduct.name}</span>
+                                                                <span className="text-[9px] font-mono font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-100">
+                                                                    {activationProduct.batch_number}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex gap-2 text-[10px] text-slate-500 font-medium">
+                                                                <span>Qty: <span className="text-slate-700 font-bold">{activationProduct.quantity} {activationProduct.unit}</span></span>
+                                                                <span className="text-slate-300">|</span>
+                                                                <span>Cost/unit: <span className="text-slate-700 font-bold">₹{activationProduct.cost_price}</span></span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* batch_purchase: show product name + batch */}
+                                                    {purchaseProduct && !activationProduct && (
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <span className="text-xs font-semibold text-slate-700">{purchaseProduct.name}</span>
+                                                            <span className="text-[9px] font-mono font-semibold text-slate-500 bg-slate-50 px-1 rounded border border-slate-200 w-fit">
+                                                                {purchaseProduct.batch_number}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* batch_transport/labour/other: show ALL linked batches */}
+                                                    {linkedBatchProducts.length > 0 && !activationProduct && (
+                                                        <div className="flex flex-col gap-1.5 py-1">
+                                                            {linkedBatchProducts.map(bp => (
+                                                                <div key={bp.id} className="flex items-center gap-2">
+                                                                    <span className="text-xs font-medium text-slate-700">{bp.name}</span>
+                                                                    <span className="text-[9px] font-mono text-slate-500 bg-slate-50 px-1 rounded border border-slate-200">
+                                                                        {bp.batch_number}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* General expenses or unmatched ids */}
+                                                    {!activationProduct && !purchaseProduct && linkedBatchProducts.length === 0 && (
+                                                        <span className="text-slate-300 text-xs">—</span>
+                                                    )}
+                                                </td>
+
+                                                <td className="px-6 py-3 text-right">
+                                                    {isAutoEntry ? (
+                                                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tight italic">Auto</span>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleDeleteExpense(exp.id, exp.category)}
+                                                            className="p-1.5 rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors inline-block"
+                                                            title="Delete expense"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </CardContent>
             </Card>

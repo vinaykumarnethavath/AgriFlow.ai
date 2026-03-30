@@ -247,6 +247,8 @@ async def get_draft_batches(
             "quantity": p.quantity,
             "unit": p.unit,
             "total_value": (p.cost_price or 0) * p.quantity,
+            "category": p.category,
+            "created_at": p.created_at.isoformat(),
             "apportioned_transport": p.apportioned_transport,
             "apportioned_labour": p.apportioned_labour,
             "apportioned_other": p.apportioned_other,
