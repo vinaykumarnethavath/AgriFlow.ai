@@ -4,12 +4,14 @@ from .trade import Product, ProductCreate, ProductRead, ShopOrder, ShopOrderCrea
 from .expense import ShopExpense, ShopExpenseCreate, ShopExpenseRead
 from .user_otp import UserOTP
 from .phone_otp import PhoneOTP
+from .email_verification_otp import EmailVerificationOTP
 from .farmer import FarmerProfile, FarmerProfileCreate, FarmerProfileRead, LandRecord, LandRecordBase
 from .manufacturer import (
     ManufacturerPurchase, ProductionBatch, ManufacturerSale, 
     ManufacturerPurchaseCreate, ProductionBatchCreate, ManufacturerSaleCreate,
     MillProfile, MillProfileCreate, MillProfileRead
 )
+from .manufacturer_expense import ManufacturerExpense, ManufacturerExpenseCreate, ManufacturerExpenseRead
 from .customer import (
     Cart, CustomerOrder, CustomerOrderItem, 
     CartItemCreate, CartItemRead, CustomerOrderCreate, CustomerOrderRead, CustomerOrderItemRead,

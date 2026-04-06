@@ -511,6 +511,33 @@ export interface ManufacturerStats {
     finished_stock: number;
     today_purchases: number;
     today_sales: number;
+    month_revenue: number;
+    month_purchases: number;
+    net_profit: number;
+    total_batches: number;
+    avg_efficiency: number;
+}
+
+export interface MillAccountingSummary {
+    period: string;
+    total_revenue: number;
+    total_purchase_cost: number;
+    total_processing_cost: number;
+    total_expenses: number;
+    net_profit: number;
+    total_sales_count: number;
+    avg_sale_value: number;
+    expense_by_category: Record<string, number>;
+}
+
+export interface MillExpense {
+    id: number;
+    manufacturer_id: number;
+    category: string;
+    amount: number;
+    description: string | null;
+    expense_date: string;
+    created_at: string;
 }
 
 export interface ManufacturerPurchase {
@@ -542,6 +569,7 @@ export interface ManufacturerSale {
     total_amount: number;
     payment_mode: string;
     invoice_id: string;
+    delivery_status: string;
     date: string;
 }
 
@@ -593,6 +621,71 @@ export const createManufacturerSale = async (data: any) => {
 
 export const getManufacturerSales = async () => {
     const response = await api.get<ManufacturerSale[]>("/manufacturer/sales");
+    return response.data;
+}
+
+export const getMillSalesTrend = async (period = "7d") => {
+    const response = await api.get<{ date: string; sales: number }[]>("/manufacturer/sales-trend", { params: { period } });
+    return response.data;
+}
+
+export const updateSaleDeliveryStatus = async (saleId: number, delivery_status: string) => {
+    const response = await api.patch<ManufacturerSale>(`/manufacturer/sales/${saleId}/status`, { delivery_status });
+    return response.data;
+}
+
+export const getMillAccountingSummary = async (period = "30d") => {
+    const response = await api.get<MillAccountingSummary>(`/manufacturer/accounting/summary`, { params: { period } });
+    return response.data;
+}
+
+export const getMillExpenses = async (period = "30d") => {
+    const response = await api.get<MillExpense[]>(`/manufacturer/accounting/expenses`, { params: { period } });
+    return response.data;
+}
+
+export const addMillExpense = async (data: { category: string; amount: number; description?: string; expense_date?: string }) => {
+    const response = await api.post<MillExpense>("/manufacturer/accounting/expenses", data);
+    return response.data;
+}
+
+export const deleteMillExpense = async (id: number) => {
+    const response = await api.delete(`/manufacturer/accounting/expenses/${id}`);
+    return response.data;
+}
+
+export interface MillTopCrop {
+    crop_name: string;
+    total_cost: number;
+    total_qty: number;
+    count: number;
+}
+
+export interface MillTopProduct {
+    product_id: number;
+    product_name: string;
+    revenue: number;
+    units_sold: number;
+    count: number;
+}
+
+export interface MillAnalytics {
+    period: string;
+    total_revenue: number;
+    total_purchase_cost: number;
+    total_processing_cost: number;
+    total_expenses: number;
+    net_profit: number;
+    profit_margin: number;
+    total_sales_count: number;
+    avg_sale_value: number;
+    avg_efficiency: number;
+    top_crops: MillTopCrop[];
+    top_products: MillTopProduct[];
+}
+
+export const getMillAnalytics = async (period = "30d") => {
+    const response = await api.get<MillAnalytics>("/manufacturer/analytics", { params: { period } });
     return response.data;
 }
 

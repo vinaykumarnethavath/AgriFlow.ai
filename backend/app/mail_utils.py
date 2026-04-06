@@ -30,6 +30,53 @@ if mail_settings.smtp_password == "your-app-password":
 else:
     print("OK: Mail system loaded custom password.")
 
+def send_registration_otp_email(to_email: str, otp: str, role: str):
+    """Sends an account verification OTP email during registration."""
+    role_label = role.replace("_", " ").title()
+    try:
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "AgriChain - Verify Your Email"
+        message["From"] = mail_settings.smtp_user
+        message["To"] = to_email
+
+        text = f"Your AgriChain email verification code is: {otp}. This code expires in 10 minutes."
+        html = f"""
+        <html>
+          <body style="font-family: Arial, sans-serif; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+              <h2 style="color: #166534; text-align: center;">Verify Your AgriChain Account</h2>
+              <p>Hello,</p>
+              <p>You are creating an <strong>{role_label}</strong> account on AgriChain. Use the code below to verify your email:</p>
+              <div style="background-color: #f0fdf4; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                <span style="font-size: 36px; font-weight: bold; color: #16a34a; letter-spacing: 8px;">{otp}</span>
+              </div>
+              <p>This code will expire in <strong>10 minutes</strong>. If you did not try to register, please ignore this email.</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+              <p style="font-size: 12px; color: #666; text-align: center;">AgriChain - Connecting Farmers &amp; Markets</p>
+            </div>
+          </body>
+        </html>
+        """
+
+        part1 = MIMEText(text, "plain")
+        part2 = MIMEText(html, "html")
+        message.attach(part1)
+        message.attach(part2)
+
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(mail_settings.smtp_host, mail_settings.smtp_port, context=context) as server:
+            server.login(mail_settings.smtp_user, mail_settings.smtp_password)
+            server.sendmail(mail_settings.smtp_user, to_email, message.as_string())
+
+        print(f"OK: Registration OTP email sent to {to_email}")
+        return True
+    except Exception as e:
+        print(f"ERROR: Failed to send registration OTP email: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 def send_otp_email(to_email: str, otp: str):
     """Sends an OTP email using Gmail SMTP."""
     

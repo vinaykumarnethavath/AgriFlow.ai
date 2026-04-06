@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, SQLModel
+from pydantic import BaseModel
+from typing import Optional
 import random
 import string
 from datetime import datetime, timedelta
+import sqlalchemy.exc
 
 from ..database import get_session
-from ..models import User, UserCreate, UserRead, UserLogin, UserOTP, PhoneOTP, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest, SendPhoneOTPRequest, VerifyPhoneOTPRequest
+from ..models import User, UserCreate, UserRead, UserLogin, UserOTP, PhoneOTP, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest, SendPhoneOTPRequest, VerifyPhoneOTPRequest, EmailVerificationOTP
 from ..utils import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from ..mail_utils import send_otp_email
+from ..mail_utils import send_otp_email, send_registration_otp_email
 from ..sms_utils import send_otp_sms
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -148,51 +150,109 @@ async def verify_phone_otp(request: VerifyPhoneOTPRequest, session: AsyncSession
     return {"message": "Phone OTP verified successfully", "verified": True}
 
 
+class SendRegisterOTPRequest(BaseModel):
+    email: str
+    role: str
+
+
+@router.post("/send-register-otp")
+async def send_register_otp(request: SendRegisterOTPRequest, session: AsyncSession = Depends(get_session)):
+    """Send a verification OTP to email before account creation."""
+    email = request.email.lower().strip()
+    role = request.role
+
+    # Check duplicate: same email + same role already registered
+    dup_stmt = select(User).where(User.email == email, User.role == role)
+    dup_result = await session.exec(dup_stmt)
+    if dup_result.first():
+        raise HTTPException(status_code=400, detail=f"Email already registered as {role}")
+
+    # Clear old OTPs for this email+role
+    old_stmt = select(EmailVerificationOTP).where(
+        EmailVerificationOTP.email == email,
+        EmailVerificationOTP.role == role
+    )
+    old_result = await session.exec(old_stmt)
+    for old in old_result.all():
+        await session.delete(old)
+
+    otp_code = generate_otp()
+    expires_at = datetime.utcnow() + timedelta(minutes=10)
+    otp_entry = EmailVerificationOTP(email=email, role=role, otp_code=otp_code, expires_at=expires_at)
+    session.add(otp_entry)
+    await session.commit()
+
+    print(f"\n[DEMO] Registration OTP for {email} ({role}): {otp_code}\n")
+
+    email_sent = send_registration_otp_email(email, otp_code, role)
+    if not email_sent:
+        raise HTTPException(status_code=500, detail="Failed to send verification email. Please check backend logs.")
+
+    return {"message": "Verification code sent to your email"}
+
+
 @router.post("/register", response_model=UserRead)
 async def register(user: UserCreate, session: AsyncSession = Depends(get_session)):
     if not user.email and not user.phone_number:
         raise HTTPException(status_code=400, detail="Either email or phone number is required")
 
+    # Normalise role to plain lowercase string value so SQLAlchemy never sends the enum NAME
+    role_val: str = user.role.value if hasattr(user.role, "value") else str(user.role)
+
     if user.phone_number:
-        # Check if phone number already registered with this role
-        phone_stmt = select(User).where(User.phone_number == user.phone_number, User.role == user.role)
+        # Phone registration — no email OTP needed
+        phone_stmt = select(User).where(User.phone_number == user.phone_number, User.role == role_val)
         phone_result = await session.exec(phone_stmt)
         if phone_result.first():
-            raise HTTPException(status_code=400, detail=f"Phone number already registered as {user.role.value}")
+            raise HTTPException(status_code=400, detail=f"Phone number already registered as {role_val}")
     else:
-        # Check if email exists with this role
-        statement = select(User).where(User.email == user.email, User.role == user.role)
-        result = await session.exec(statement)
-        if result.first():
-            raise HTTPException(status_code=400, detail=f"Email already registered as {user.role.value}")
+        # Email registration — require verified OTP
+        if not user.email_otp_code:
+            raise HTTPException(status_code=400, detail="Email verification code is required")
+
+        email = (user.email or "").lower().strip()
+        now = datetime.utcnow()
+        otp_stmt = select(EmailVerificationOTP).where(
+            EmailVerificationOTP.email == email,
+            EmailVerificationOTP.role == role_val,
+            EmailVerificationOTP.otp_code == user.email_otp_code,
+            EmailVerificationOTP.expires_at > now,
+            EmailVerificationOTP.is_verified == False
+        )
+        otp_result = await session.exec(otp_stmt)
+        otp_entry = otp_result.first()
+
+        if not otp_entry:
+            raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+
+        # Check if email+role already exists (race-condition guard)
+        dup_stmt = select(User).where(User.email == email, User.role == role_val)
+        dup_result = await session.exec(dup_stmt)
+        if dup_result.first():
+            raise HTTPException(status_code=400, detail=f"Email already registered as {role_val}")
+
+        # Mark OTP used
+        otp_entry.is_verified = True
+        session.add(otp_entry)
 
     hashed_pwd = get_password_hash(user.password)
-    user_data = user.model_dump(exclude={"password", "phone_otp_verified"}) if hasattr(user, "model_dump") else user.dict(exclude={"password", "phone_otp_verified"})
-    db_user = User(**user_data, hashed_password=hashed_pwd)
+    # Build user dict with role as its plain string VALUE (not enum name)
+    db_user = User(
+        email=user.email,
+        phone_number=user.phone_number,
+        full_name=user.full_name,
+        role=role_val,
+        is_active=user.is_active,
+        hashed_password=hashed_pwd,
+    )
     session.add(db_user)
-    await session.commit()
+    try:
+        await session.commit()
+    except sqlalchemy.exc.IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=400, detail=f"Account with this {'email' if user.email else 'phone number'} and role already exists")
     await session.refresh(db_user)
     return db_user
-
-@router.post("/token")
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_session)):
-    # Note: OAuth2PasswordRequestForm expects username/password. We interpret username as email.
-    statement = select(User).where(User.email == form_data.username)
-    result = await session.exec(statement)
-    user = result.first()
-    
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email, "role": user.role.value if hasattr(user.role, "value") else user.role, "id": user.id}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer", "role": user.role}
 
 @router.post("/login")
 async def login(user_data: UserLogin, session: AsyncSession = Depends(get_session)):
@@ -203,7 +263,8 @@ async def login(user_data: UserLogin, session: AsyncSession = Depends(get_sessio
 
         query = select(User).where(User.phone_number == user_data.phone_number)
         if user_data.role:
-            query = query.where(User.role == user_data.role)
+            role_filter = user_data.role.value if hasattr(user_data.role, "value") else str(user_data.role)
+            query = query.where(User.role == role_filter)
         result = await session.exec(query)
         users = result.all()
 
@@ -231,7 +292,8 @@ async def login(user_data: UserLogin, session: AsyncSession = Depends(get_sessio
 
     query = select(User).where(User.email == user_data.email)
     if user_data.role:
-        query = query.where(User.role == user_data.role)
+        role_filter = user_data.role.value if hasattr(user_data.role, "value") else str(user_data.role)
+        query = query.where(User.role == role_filter)
 
     result = await session.exec(query)
     users = result.all()

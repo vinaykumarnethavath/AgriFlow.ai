@@ -167,7 +167,11 @@ export default function MillProfilePage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center h-64">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+        </div>
+    );
 
     return (
         <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6 pb-24">

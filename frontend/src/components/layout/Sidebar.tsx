@@ -20,7 +20,10 @@ import {
     Store,
     TrendingUp,
     User,
-    Settings
+    Settings,
+    Wallet,
+    ClipboardList,
+    BarChart2
 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
@@ -57,6 +60,9 @@ const Sidebar = () => {
                     { name: "Purchases", href: "/dashboard/manufacturer/purchases", icon: ShoppingBag },
                     { name: "Production", href: "/dashboard/manufacturer/production", icon: Factory },
                     { name: "Inventory", href: "/dashboard/manufacturer/inventory", icon: Box },
+                    { name: "Orders", href: "/dashboard/manufacturer/orders", icon: ClipboardList },
+                    { name: "Accounting", href: "/dashboard/manufacturer/accounting", icon: Wallet },
+                    { name: "Analytics", href: "/dashboard/manufacturer/analytics", icon: BarChart2 },
                     { name: "Sales", href: "/dashboard/manufacturer/sales", icon: LineChart },
                     { name: "Settings", href: "/dashboard/manufacturer/profile", icon: Settings },
                 ];

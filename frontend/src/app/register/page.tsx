@@ -1,26 +1,29 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { Sprout, Mail, Phone } from "lucide-react";
+import { Sprout, Mail, Phone, ShieldCheck, RefreshCw } from "lucide-react";
 import { UserRole } from "@/types";
 
 type AuthMethod = "email" | "phone";
+type EmailStep = "form" | "otp";
 
 export default function RegisterPage() {
     const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
 
-    // Email form refs
-    const fullNameRef = useRef<HTMLInputElement>(null);
-    const emailRef = useRef<HTMLInputElement>(null);
-    const passwordRef = useRef<HTMLInputElement>(null);
-    const confirmPasswordRef = useRef<HTMLInputElement>(null);
-    const roleRef = useRef<HTMLSelectElement>(null);
+    // ── Email form state ──────────────────────────────────────────────────────
+    const [emailStep, setEmailStep] = useState<EmailStep>("form");
+    const [emailFormData, setEmailFormData] = useState({
+        full_name: "", email: "", password: "", confirm_password: "",
+        role: UserRole.FARMER as UserRole,
+    });
+    const [otpCode, setOtpCode] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
 
-    // Phone form state
+    // ── Phone form state ──────────────────────────────────────────────────────
     const [phone, setPhone] = useState("");
     const [phoneFullName, setPhoneFullName] = useState("");
     const [phonePassword, setPhonePassword] = useState("");
@@ -34,42 +37,78 @@ export default function RegisterPage() {
     const { login } = useAuth();
     const router = useRouter();
 
-    const handlePasswordChange = () => {
-        const pass = passwordRef.current?.value || "";
-        const confirm = confirmPasswordRef.current?.value || "";
-        setPasswordsMatch(!confirm || pass === confirm);
-    };
+    const inputCls = "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground";
+    const inputDisabledCls = "w-full rounded-lg border border-input bg-muted/50 px-4 py-2 text-sm text-muted-foreground cursor-not-allowed";
+    const selectCls = "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-foreground";
 
-    const handlePhonePasswordChange = (pass: string, confirm: string) => {
-        setPasswordsMatch(!confirm || pass === confirm);
-    };
-
-    // ── Email Registration ────────────────────────────────────────────────────
-    const handleEmailSubmit = async (e: React.FormEvent) => {
+    // ── Step 1: Send OTP ──────────────────────────────────────────────────────
+    const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
-        const email = emailRef.current?.value || "";
-        const password = passwordRef.current?.value || "";
-        const confirm_password = confirmPasswordRef.current?.value || "";
-        const full_name = fullNameRef.current?.value || "";
-        const role = (roleRef.current?.value as UserRole) || UserRole.FARMER;
+        const { full_name, email, password, confirm_password, role } = emailFormData;
 
-        if (password !== confirm_password) {
-            setError("Passwords do not match");
-            return;
-        }
+        if (!full_name.trim()) { setError("Full name is required"); return; }
+        if (!email.trim()) { setError("Email is required"); return; }
+        if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
+        if (password !== confirm_password) { setError("Passwords do not match"); return; }
 
         setLoading(true);
         try {
-            await api.post("/auth/register", { email, password, full_name, role });
-            const { data } = await api.post("/auth/login", { email, password });
+            await api.post("/auth/send-register-otp", { email: email.toLowerCase().trim(), role });
+            setOtpSent(true);
+            setEmailStep("otp");
+            setOtpCode("");
+        } catch (err: any) {
+            setError(err.response?.data?.detail || "Failed to send verification code");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ── Step 2: Verify OTP + Create Account ───────────────────────────────────
+    const handleVerifyAndCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+
+        if (otpCode.length !== 6) { setError("Enter the 6-digit code from your email"); return; }
+
+        const { full_name, email, password, role } = emailFormData;
+        setLoading(true);
+        try {
+            await api.post("/auth/register", {
+                email: email.toLowerCase().trim(),
+                password,
+                full_name,
+                role,
+                email_otp_code: otpCode,
+            });
+            const { data } = await api.post("/auth/login", { email: email.toLowerCase().trim(), password, role });
             const user = { id: data.id, email, role: data.role, full_name };
             localStorage.setItem("user", JSON.stringify(user));
             login(data.access_token, data.role);
             router.push(`/dashboard/${data.role}`);
         } catch (err: any) {
-            setError(err.response?.data?.detail || "Registration failed");
+            const detail = err.response?.data?.detail;
+            setError(typeof detail === "string" ? detail : (err.message || "Verification failed"));
+            setLoading(false);
+        }
+    };
+
+    // ── Resend OTP ────────────────────────────────────────────────────────────
+    const handleResend = async () => {
+        setError("");
+        setOtpCode("");
+        setLoading(true);
+        try {
+            await api.post("/auth/send-register-otp", {
+                email: emailFormData.email.toLowerCase().trim(),
+                role: emailFormData.role,
+            });
+            setOtpSent(true);
+        } catch (err: any) {
+            setError(err.response?.data?.detail || "Failed to resend code");
+        } finally {
             setLoading(false);
         }
     };
@@ -79,18 +118,9 @@ export default function RegisterPage() {
         e.preventDefault();
         setError("");
 
-        if (!phone || phone.length !== 10) {
-            setError("Enter a valid 10-digit phone number");
-            return;
-        }
-        if (phonePassword !== phoneConfirmPassword) {
-            setError("Passwords do not match");
-            return;
-        }
-        if (!phoneFullName.trim()) {
-            setError("Full name is required");
-            return;
-        }
+        if (!phone || phone.length !== 10) { setError("Enter a valid 10-digit phone number"); return; }
+        if (phonePassword !== phoneConfirmPassword) { setError("Passwords do not match"); return; }
+        if (!phoneFullName.trim()) { setError("Full name is required"); return; }
 
         setLoading(true);
         try {
@@ -115,9 +145,6 @@ export default function RegisterPage() {
         }
     };
 
-    const inputCls = "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground";
-    const selectCls = "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-foreground";
-
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300">
             <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
@@ -133,49 +160,69 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="p-8 pb-10 space-y-5">
-                    {/* Method Toggle */}
-                    <div className="flex rounded-lg border border-border overflow-hidden">
-                        <button
-                            type="button"
-                            onClick={() => { setAuthMethod("email"); setError(""); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "email" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}
-                        >
-                            <Mail className="h-4 w-4" /> Email
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => { setAuthMethod("phone"); setError(""); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "phone" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}
-                        >
-                            <Phone className="h-4 w-4" /> Phone Number
-                        </button>
-                    </div>
+                    {/* Method Toggle — only show on form step */}
+                    {emailStep === "form" && (
+                        <div className="flex rounded-lg border border-border overflow-hidden">
+                            <button type="button"
+                                onClick={() => { setAuthMethod("email"); setError(""); }}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "email" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}>
+                                <Mail className="h-4 w-4" /> Email
+                            </button>
+                            <button type="button"
+                                onClick={() => { setAuthMethod("phone"); setError(""); }}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "phone" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}>
+                                <Phone className="h-4 w-4" /> Phone Number
+                            </button>
+                        </div>
+                    )}
 
-                    {/* ── EMAIL FORM ── */}
-                    {authMethod === "email" && (
-                        <form onSubmit={handleEmailSubmit} className="space-y-5">
+                    {/* ── EMAIL: STEP 1 — FORM ── */}
+                    {authMethod === "email" && emailStep === "form" && (
+                        <form onSubmit={handleSendOtp} className="space-y-5">
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-muted-foreground block">Full Name</label>
-                                <input type="text" placeholder="John Doe" ref={fullNameRef} required autoComplete="name" className={inputCls} />
+                                <input type="text" placeholder="John Doe" required autoComplete="name"
+                                    value={emailFormData.full_name}
+                                    onChange={e => setEmailFormData(p => ({ ...p, full_name: e.target.value }))}
+                                    className={inputCls} />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-muted-foreground block">Email Address</label>
-                                <input type="email" placeholder="user@example.com" ref={emailRef} required autoComplete="email" className={inputCls} />
+                                <input type="email" placeholder="user@example.com" required autoComplete="email"
+                                    value={emailFormData.email}
+                                    onChange={e => setEmailFormData(p => ({ ...p, email: e.target.value }))}
+                                    className={inputCls} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-semibold text-muted-foreground block">Password</label>
-                                    <input type="password" ref={passwordRef} onChange={handlePasswordChange} required autoComplete="new-password" placeholder="••••••••" className={inputCls} />
+                                    <input type="password" required autoComplete="new-password" placeholder="••••••••"
+                                        value={emailFormData.password}
+                                        onChange={e => {
+                                            const v = e.target.value;
+                                            setEmailFormData(p => ({ ...p, password: v }));
+                                            setPasswordsMatch(!emailFormData.confirm_password || v === emailFormData.confirm_password);
+                                        }}
+                                        className={inputCls} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-semibold text-muted-foreground block">Confirm</label>
-                                    <input type="password" ref={confirmPasswordRef} onChange={handlePasswordChange} required autoComplete="new-password" placeholder="••••••••"
+                                    <input type="password" required autoComplete="new-password" placeholder="••••••••"
+                                        value={emailFormData.confirm_password}
+                                        onChange={e => {
+                                            const v = e.target.value;
+                                            setEmailFormData(p => ({ ...p, confirm_password: v }));
+                                            setPasswordsMatch(!v || emailFormData.password === v);
+                                        }}
                                         className={`w-full rounded-lg border px-4 py-2 text-sm outline-none transition-all focus:ring-2 placeholder:text-muted-foreground text-foreground ${!passwordsMatch ? "border-red-500 bg-red-50 focus:ring-red-500/10" : "border-input bg-background focus:border-green-500 focus:ring-green-500/10"}`} />
                                 </div>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-muted-foreground block">Your Role</label>
-                                <select ref={roleRef} required className={selectCls}>
+                                <select required
+                                    value={emailFormData.role}
+                                    onChange={e => setEmailFormData(p => ({ ...p, role: e.target.value as UserRole }))}
+                                    className={selectCls}>
                                     <option value={UserRole.FARMER}>Farmer</option>
                                     <option value={UserRole.SHOP}>Shop Owner</option>
                                     <option value={UserRole.MANUFACTURER}>Mill Owner</option>
@@ -183,12 +230,81 @@ export default function RegisterPage() {
                                 </select>
                             </div>
                             {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">{error}</div>}
-                            <button type="submit" disabled={loading} className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
-                                {loading ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating...</span> : "Create Account"}
+                            <button type="submit" disabled={loading || !passwordsMatch}
+                                className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
+                                {loading
+                                    ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sending Code...</span>
+                                    : <span className="flex items-center justify-center gap-2"><Mail className="h-4 w-4" /> Send Verification Code</span>}
                             </button>
                             <div className="text-center text-sm pt-2">
                                 <span className="text-muted-foreground">Already have an account? </span>
                                 <Link href="/login" className="text-green-600 font-bold hover:underline">Login Here</Link>
+                            </div>
+                        </form>
+                    )}
+
+                    {/* ── EMAIL: STEP 2 — OTP ── */}
+                    {authMethod === "email" && emailStep === "otp" && (
+                        <form onSubmit={handleVerifyAndCreate} className="space-y-5">
+                            {/* Locked summary */}
+                            <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-1">
+                                <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
+                                    <ShieldCheck className="h-4 w-4" /> Verification code sent!
+                                </div>
+                                <p className="text-xs text-green-600">
+                                    We sent a 6-digit code to <strong>{emailFormData.email}</strong>
+                                    {" "}for your <strong>{emailFormData.role.replace("_", " ")}</strong> account.
+                                    Check your inbox (and spam folder).
+                                </p>
+                            </div>
+
+                            {/* Locked fields preview */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold text-muted-foreground block">Name</label>
+                                    <div className={inputDisabledCls}>{emailFormData.full_name}</div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold text-muted-foreground block">Role</label>
+                                    <div className={inputDisabledCls}>{emailFormData.role.replace("_", " ").replace(/\b\w/g, c => c.toUpperCase())}</div>
+                                </div>
+                            </div>
+
+                            {/* OTP input */}
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-muted-foreground block">Enter 6-digit Code</label>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    maxLength={6}
+                                    placeholder="_ _ _ _ _ _"
+                                    autoFocus
+                                    value={otpCode}
+                                    onChange={e => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                    className="w-full rounded-lg border border-input bg-background px-4 py-3 text-2xl font-bold tracking-[0.5em] text-center outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-foreground placeholder:text-muted-foreground/40 placeholder:tracking-normal placeholder:text-base"
+                                />
+                            </div>
+
+                            {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">{error}</div>}
+
+                            <button type="submit" disabled={loading || otpCode.length !== 6}
+                                className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
+                                {loading
+                                    ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating Account...</span>
+                                    : <span className="flex items-center justify-center gap-2"><ShieldCheck className="h-4 w-4" /> Verify & Create Account</span>}
+                            </button>
+
+                            {/* Resend + Edit */}
+                            <div className="flex items-center justify-between text-sm pt-1">
+                                <button type="button" onClick={handleResend} disabled={loading}
+                                    className="flex items-center gap-1 text-green-600 font-semibold hover:underline disabled:opacity-50">
+                                    <RefreshCw className="h-3.5 w-3.5" /> Resend Code
+                                </button>
+                                <button type="button" onClick={() => { setEmailStep("form"); setOtpCode(""); setError(""); }}
+                                    className="text-muted-foreground hover:text-foreground underline text-xs">
+                                    Edit details
+                                </button>
                             </div>
                         </form>
                     )}
@@ -200,32 +316,27 @@ export default function RegisterPage() {
                                 <label className="text-sm font-semibold text-muted-foreground block">Phone Number</label>
                                 <div className="flex gap-2">
                                     <span className="flex items-center px-3 rounded-lg border border-input bg-muted text-sm text-muted-foreground font-semibold">+91</span>
-                                    <input
-                                        type="tel"
-                                        placeholder="9876543210"
-                                        value={phone}
+                                    <input type="tel" placeholder="9876543210" value={phone}
                                         onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                                        maxLength={10}
-                                        required
-                                        className={`${inputCls} flex-1`}
-                                    />
+                                        maxLength={10} required className={`${inputCls} flex-1`} />
                                 </div>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-muted-foreground block">Full Name</label>
-                                <input type="text" placeholder="John Doe" value={phoneFullName} onChange={e => setPhoneFullName(e.target.value)} required autoComplete="name" className={inputCls} />
+                                <input type="text" placeholder="John Doe" value={phoneFullName}
+                                    onChange={e => setPhoneFullName(e.target.value)} required autoComplete="name" className={inputCls} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-semibold text-muted-foreground block">Password</label>
                                     <input type="password" placeholder="••••••••" value={phonePassword}
-                                        onChange={e => { setPhonePassword(e.target.value); handlePhonePasswordChange(e.target.value, phoneConfirmPassword); }}
+                                        onChange={e => { setPhonePassword(e.target.value); setPasswordsMatch(!phoneConfirmPassword || e.target.value === phoneConfirmPassword); }}
                                         required autoComplete="new-password" className={inputCls} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-semibold text-muted-foreground block">Confirm</label>
                                     <input type="password" placeholder="••••••••" value={phoneConfirmPassword}
-                                        onChange={e => { setPhoneConfirmPassword(e.target.value); handlePhonePasswordChange(phonePassword, e.target.value); }}
+                                        onChange={e => { setPhoneConfirmPassword(e.target.value); setPasswordsMatch(!e.target.value || phonePassword === e.target.value); }}
                                         required autoComplete="new-password"
                                         className={`w-full rounded-lg border px-4 py-2 text-sm outline-none transition-all focus:ring-2 placeholder:text-muted-foreground text-foreground ${!passwordsMatch ? "border-red-500 bg-red-50 focus:ring-red-500/10" : "border-input bg-background focus:border-green-500 focus:ring-green-500/10"}`} />
                                 </div>
@@ -240,7 +351,8 @@ export default function RegisterPage() {
                                 </select>
                             </div>
                             {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">{error}</div>}
-                            <button type="submit" disabled={loading} className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
+                            <button type="submit" disabled={loading}
+                                className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
                                 {loading ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating...</span> : "Create Account"}
                             </button>
                             <div className="text-center text-sm pt-2">

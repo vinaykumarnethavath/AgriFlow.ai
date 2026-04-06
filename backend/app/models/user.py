@@ -31,6 +31,7 @@ class User(UserBase, table=True):
 class UserCreate(UserBase):
     password: str
     phone_otp_verified: Optional[bool] = False
+    email_otp_code: Optional[str] = None
 
 class UserRead(UserBase):
     id: int

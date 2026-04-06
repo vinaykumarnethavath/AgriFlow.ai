@@ -1,15 +1,29 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import { createManufacturerSale, getManufacturerSales, getMyProducts, Product, ManufacturerSale } from "@/lib/api";
+import { createManufacturerSale, getManufacturerSales, getMyProducts, ManufacturerSale, Product } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShoppingCart, IndianRupee, TrendingUp } from "lucide-react";
+import { TrendingUp, ArrowUpRight, ShoppingCart } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
+
+const PERIOD_OPTIONS = [
+    { label: "Today", value: "today" },
+    { label: "Week", value: "7d" },
+    { label: "Month", value: "30d" },
+    { label: "3 Months", value: "90d" },
+    { label: "All", value: "all" },
+];
+
+const DELIVERY_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+    pending: { label: "Pending", color: "bg-yellow-100 text-yellow-700" },
+    dispatched: { label: "Dispatched", color: "bg-blue-100 text-blue-700" },
+    delivered: { label: "Delivered", color: "bg-green-100 text-green-700" },
+};
 
 export default function SalesPage() {
     const [sales, setSales] = useState<ManufacturerSale[]>([]);
@@ -17,6 +31,30 @@ export default function SalesPage() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [mockOptions, setMockOptions] = useState<any>(null);
+    const [period, setPeriod] = useState("all");
+
+    const filteredSales = useMemo(() => {
+        const now = new Date();
+        return sales.filter(s => {
+            const d = new Date(s.date);
+            if (period === "today") return d.toDateString() === now.toDateString();
+            if (period === "7d") return d >= new Date(now.getTime() - 7 * 86400000);
+            if (period === "30d") return d >= new Date(now.getTime() - 30 * 86400000);
+            if (period === "90d") return d >= new Date(now.getTime() - 90 * 86400000);
+            return true;
+        });
+    }, [sales, period]);
+
+    const totalRevenue = useMemo(() => filteredSales.reduce((s, x) => s + x.total_amount, 0), [filteredSales]);
+    const totalQtySold = useMemo(() => filteredSales.reduce((s, x) => s + x.quantity, 0), [filteredSales]);
+    const totalDiscounts = useMemo(() => filteredSales.reduce((s, x) => s + (x.discount || 0), 0), [filteredSales]);
+    const avgSaleValue = filteredSales.length > 0 ? totalRevenue / filteredSales.length : 0;
+
+    const productNameMap = useMemo(() => {
+        const m: Record<number, string> = {};
+        finishedGoods.forEach(p => { m[p.id] = p.name; });
+        return m;
+    }, [finishedGoods]);
 
     const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
 
@@ -132,6 +170,12 @@ export default function SalesPage() {
 
     const selectedProduct = finishedGoods.find(p => p.id.toString() === selectedProdId);
 
+    if (loading) return (
+        <div className="flex items-center justify-center h-64">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+        </div>
+    );
+
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
@@ -144,10 +188,55 @@ export default function SalesPage() {
                 </Button>
             </div>
 
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="border-l-4 border-l-purple-500">
+                    <CardContent className="p-4">
+                        <p className="text-xs text-gray-500 font-medium">Total Revenue</p>
+                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{totalRevenue.toLocaleString()}</p>
+                        <div className="flex items-center text-xs text-purple-500 mt-1"><ArrowUpRight className="w-3 h-3 mr-0.5" /> From sales</div>
+                    </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-blue-500">
+                    <CardContent className="p-4">
+                        <p className="text-xs text-gray-500 font-medium">Total Units Sold</p>
+                        <p className="text-2xl font-bold text-gray-800 mt-1">{totalQtySold.toLocaleString()}</p>
+                        <p className="text-xs text-blue-500 mt-1">Across {filteredSales.length} invoices</p>
+                    </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-green-500">
+                    <CardContent className="p-4">
+                        <p className="text-xs text-gray-500 font-medium">Avg Sale Value</p>
+                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{avgSaleValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                        <p className="text-xs text-green-500 mt-1">Per invoice</p>
+                    </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-orange-400">
+                    <CardContent className="p-4">
+                        <p className="text-xs text-gray-500 font-medium">Total Discounts</p>
+                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{totalDiscounts.toLocaleString()}</p>
+                        <p className="text-xs text-orange-400 mt-1">Given to buyers</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Period Filter */}
+            <div className="flex border rounded-lg overflow-hidden w-fit">
+                {PERIOD_OPTIONS.map(opt => (
+                    <button key={opt.value} onClick={() => setPeriod(opt.value)}
+                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                            period === opt.value ? "bg-purple-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
+                        }`}>
+                        {opt.label}
+                    </button>
+                ))}
+            </div>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <TrendingUp className="w-5 h-5" /> Sales History
+                        <span className="ml-auto text-xs font-normal text-gray-400">{filteredSales.length} records</span>
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -159,33 +248,43 @@ export default function SalesPage() {
                                     <th className="px-6 py-4">Buyer</th>
                                     <th className="px-6 py-4">Product</th>
                                     <th className="px-6 py-4 text-right">Qty</th>
-                                    <th className="px-6 py-4 text-right">Price</th>
-                                    <th className="px-6 py-4 text-right">Total Amount</th>
+                                    <th className="px-6 py-4 text-right">Price/Unit</th>
+                                    <th className="px-6 py-4 text-right">Discount</th>
+                                    <th className="px-6 py-4 text-right">Total</th>
+                                    <th className="px-6 py-4">Status</th>
                                     <th className="px-6 py-4">Date</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {sales.length === 0 ? (
+                                {filteredSales.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
                                             No sales recorded yet.
                                         </td>
                                     </tr>
                                 ) : (
-                                    sales.map((s) => (
-                                        <tr key={s.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 font-mono text-xs">{s.invoice_id}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="font-medium text-gray-900">{s.buyer_name}</div>
-                                                <div className="text-xs text-gray-500 capitalize">{s.buyer_type}</div>
-                                            </td>
-                                            <td className="px-6 py-4">{s.product_id}</td> {/* Ideally join name, but ID for MVP ok */}
-                                            <td className="px-6 py-4 text-right">{s.quantity}</td>
-                                            <td className="px-6 py-4 text-right">₹{s.selling_price}</td>
-                                            <td className="px-6 py-4 text-right font-bold text-green-700">₹{s.total_amount.toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-gray-500">{new Date(s.date).toLocaleDateString()}</td>
-                                        </tr>
-                                    ))
+                                    filteredSales.map((s) => {
+                                        const ds = s.delivery_status || "pending";
+                                        const dsCfg = DELIVERY_STATUS_CONFIG[ds] || DELIVERY_STATUS_CONFIG["pending"];
+                                        return (
+                                            <tr key={s.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 font-mono text-xs text-gray-500">{s.invoice_id}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="font-medium text-gray-900">{s.buyer_name}</div>
+                                                    <div className="text-xs text-gray-500 capitalize">{s.buyer_type}</div>
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-700">{productNameMap[s.product_id] || `#${s.product_id}`}</td>
+                                                <td className="px-6 py-4 text-right">{s.quantity}</td>
+                                                <td className="px-6 py-4 text-right">₹{s.selling_price.toLocaleString()}</td>
+                                                <td className="px-6 py-4 text-right text-orange-500">{s.discount ? `₹${s.discount}` : "—"}</td>
+                                                <td className="px-6 py-4 text-right font-bold text-green-700">₹{s.total_amount.toLocaleString()}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${dsCfg.color}`}>{dsCfg.label}</span>
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-500">{new Date(s.date).toLocaleDateString("en-IN")}</td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>

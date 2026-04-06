@@ -62,6 +62,7 @@ class ManufacturerSale(SQLModel, table=True):
     
     payment_mode: str = "cash"
     invoice_id: str # M-INV-{id}
+    delivery_status: str = Field(default="pending")  # pending / dispatched / delivered
     date: datetime = Field(default_factory=datetime.utcnow)
 
 # Pydantic Models for API

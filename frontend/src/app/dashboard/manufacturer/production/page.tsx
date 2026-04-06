@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { createProductionBatch, getProductionHistory, getMyProducts, Product, ProductionBatch } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,12 @@ export default function ProductionPage() {
     const [rawMaterials, setRawMaterials] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const totalBatches = batches.length;
+    const totalOutputQty = useMemo(() => batches.reduce((s, b) => s + b.output_qty, 0), [batches]);
+    const totalProcessingCost = useMemo(() => batches.reduce((s, b) => s + b.processing_cost, 0), [batches]);
+    const avgEfficiency = useMemo(() => batches.length > 0
+        ? batches.reduce((s, b) => s + b.efficiency, 0) / batches.length : 0, [batches]);
 
     const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm();
 
@@ -69,6 +75,12 @@ export default function ProductionPage() {
 
     const selectedProduct = rawMaterials.find(p => p.id.toString() === selectedInputId);
 
+    if (loading) return (
+        <div className="flex items-center justify-center h-64">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+        </div>
+    );
+
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
@@ -81,10 +93,45 @@ export default function ProductionPage() {
                 </Button>
             </div>
 
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="border-l-4 border-l-green-500">
+                    <CardContent className="p-4">
+                        <p className="text-xs text-gray-500 font-medium">Total Batches</p>
+                        <p className="text-2xl font-bold text-gray-800 mt-1">{totalBatches}</p>
+                        <p className="text-xs text-green-500 mt-1">Production runs</p>
+                    </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-cyan-500">
+                    <CardContent className="p-4">
+                        <p className="text-xs text-gray-500 font-medium">Avg Efficiency</p>
+                        <p className={`text-2xl font-bold mt-1 ${avgEfficiency >= 90 ? "text-green-600" : avgEfficiency >= 70 ? "text-yellow-600" : "text-red-600"}`}>
+                            {avgEfficiency.toFixed(1)}%
+                        </p>
+                        <p className="text-xs text-cyan-500 mt-1">Output / Input</p>
+                    </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-purple-500">
+                    <CardContent className="p-4">
+                        <p className="text-xs text-gray-500 font-medium">Total Processing Cost</p>
+                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{totalProcessingCost.toLocaleString()}</p>
+                        <p className="text-xs text-purple-500 mt-1">Labour + Power</p>
+                    </CardContent>
+                </Card>
+                <Card className="border-l-4 border-l-blue-500">
+                    <CardContent className="p-4">
+                        <p className="text-xs text-gray-500 font-medium">Total Output</p>
+                        <p className="text-2xl font-bold text-gray-800 mt-1">{totalOutputQty.toLocaleString()} kg</p>
+                        <p className="text-xs text-blue-500 mt-1">Finished goods produced</p>
+                    </CardContent>
+                </Card>
+            </div>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Activity className="w-5 h-5" /> Production Log
+                        <span className="ml-auto text-xs font-normal text-gray-400">{batches.length} batches</span>
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -94,8 +141,10 @@ export default function ProductionPage() {
                                 <tr>
                                     <th className="px-6 py-4">Batch No</th>
                                     <th className="px-6 py-4">Output Product</th>
-                                    <th className="px-6 py-4 text-center">Efficiency</th>
+                                    <th className="px-6 py-4 text-right">Input Qty</th>
                                     <th className="px-6 py-4 text-right">Output Qty</th>
+                                    <th className="px-6 py-4 text-right">Waste</th>
+                                    <th className="px-6 py-4 text-center">Efficiency</th>
                                     <th className="px-6 py-4 text-right">Cost</th>
                                     <th className="px-6 py-4">Date</th>
                                 </tr>
@@ -103,7 +152,7 @@ export default function ProductionPage() {
                             <tbody className="divide-y divide-gray-100">
                                 {batches.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                                             No production batches run yet.
                                         </td>
                                     </tr>
@@ -112,14 +161,16 @@ export default function ProductionPage() {
                                         <tr key={b.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 font-mono text-xs text-gray-500">{b.batch_number}</td>
                                             <td className="px-6 py-4 font-medium text-gray-900">{b.output_product_name}</td>
+                                            <td className="px-6 py-4 text-right text-gray-600">{b.input_qty} kg</td>
+                                            <td className="px-6 py-4 text-right font-semibold">{b.output_qty} {b.output_unit}</td>
+                                            <td className="px-6 py-4 text-right text-red-500">{(b.waste_qty || 0).toFixed(1)} kg</td>
                                             <td className="px-6 py-4 text-center">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${b.efficiency > 90 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${b.efficiency >= 90 ? "bg-green-100 text-green-700" : b.efficiency >= 70 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
                                                     {b.efficiency.toFixed(1)}%
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-right">{b.output_qty} {b.output_unit}</td>
-                                            <td className="px-6 py-4 text-right text-gray-600">₹{b.processing_cost}</td>
-                                            <td className="px-6 py-4 text-gray-500">{new Date(b.date).toLocaleDateString()}</td>
+                                            <td className="px-6 py-4 text-right text-purple-700 font-medium">₹{b.processing_cost.toLocaleString()}</td>
+                                            <td className="px-6 py-4 text-gray-500">{new Date(b.date).toLocaleDateString("en-IN")}</td>
                                         </tr>
                                     ))
                                 )}
