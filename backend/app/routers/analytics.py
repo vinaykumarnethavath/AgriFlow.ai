@@ -392,6 +392,7 @@ async def get_category_revenue(
         ShopOrder, ShopOrder.id == ShopOrderItem.order_id
     ).where(
         ShopOrder.shop_id == current_user.id,
+        ShopOrder.status.in_(["completed", "dispatched"]),
         date_filter
     ).group_by(Product.category).order_by(col("revenue").desc())
 
@@ -436,7 +437,7 @@ async def get_top_products(
         func.coalesce(func.sum(ShopOrderItem.subtotal), 0.0).label("revenue"),
     ).join(ShopOrder, ShopOrder.id == ShopOrderItem.order_id).where(
         ShopOrder.shop_id == current_user.id,
-        ShopOrder.status != "cancelled",
+        ShopOrder.status.in_(["completed", "dispatched"]),
         date_filter,
     ).group_by(ShopOrderItem.product_id, ShopOrderItem.product_name).order_by(col("revenue").desc())
 

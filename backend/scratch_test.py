@@ -1,12 +1,20 @@
-import sqlite3
-import os
+import asyncio
+from sqlmodel import select
+from app.database import engine, AsyncSessionLocal
+from app.models import CropHarvest, CropSale
 
-db_path = 'c:/Users/vinay/OneDrive/Desktop/agri/backend/agrichain.db'
-if not os.path.exists(db_path):
-    print(f"DB not found at {db_path}")
-else:
-    conn = sqlite3.connect(db_path)
-    cur = conn.cursor()
-    cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
-    tables = cur.fetchall()
-    print("Tables:", [t[0] for t in tables])
+async def check_harvests():
+    async with AsyncSessionLocal() as session:
+        # Check harvests
+        result = await session.exec(select(CropHarvest))
+        harvests = result.all()
+        for h in harvests:
+            print(f"Harvest {h.id}: stauts={h.status}, qty={h.quantity}")
+        
+        # Check sales
+        result = await session.exec(select(CropSale))
+        sales = result.all()
+        for s in sales:
+            print(f"Sale {s.id}: status={s.status}, qty={s.quantity_quintals}")
+
+asyncio.run(check_harvests())

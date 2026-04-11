@@ -187,6 +187,20 @@ export default function MarketPage() {
         });
     }, [products, searchQuery, selectedCategory, selectedShop]);
 
+    const groupedFilteredProducts = useMemo(() => {
+        const groups: Record<string, Product & { related_batches: Product[] }> = {};
+        for (const p of filteredProducts) {
+            const key = `${p.name}_${p.category}_${p.user_id}`;
+            if (!groups[key]) {
+                groups[key] = { ...p, related_batches: [p] };
+            } else {
+                groups[key].quantity += p.quantity;
+                groups[key].related_batches.push(p);
+            }
+        }
+        return Object.values(groups);
+    }, [filteredProducts]);
+
     const addToCart = (product: Product) => {
         setCart(prev => {
             const existing = prev.find(item => item.product.id === product.id);
@@ -233,10 +247,22 @@ export default function MarketPage() {
             }
 
             for (const shopId in shopGroups) {
-                const items = shopGroups[shopId].map(item => ({
-                    product_id: item.product.id,
-                    quantity: item.quantity,
-                }));
+                const items: {product_id: number, quantity: number}[] = [];
+                for (const item of shopGroups[shopId]) {
+                    const relatedBatches = (item.product as any).related_batches || [item.product];
+                    let remainingQty = item.quantity;
+                    for (const batch of relatedBatches) {
+                        if (remainingQty <= 0) break;
+                        const qtyToTake = Math.min(batch.quantity, remainingQty);
+                        if (qtyToTake > 0) {
+                            items.push({
+                                product_id: batch.id,
+                                quantity: qtyToTake
+                            });
+                            remainingQty -= qtyToTake;
+                        }
+                    }
+                }
 
                 await api.post("/orders/", {
                     items,
@@ -818,7 +844,7 @@ export default function MarketPage() {
             </div>
 
             {/* Products Grid */}
-            {filteredProducts.length === 0 ? (
+            {groupedFilteredProducts.length === 0 ? (
                 <Card className="border-dashed border-2">
                     <CardContent className="p-12 text-center">
                         <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
@@ -828,7 +854,7 @@ export default function MarketPage() {
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredProducts.map(product => {
+                    {groupedFilteredProducts.map(product => {
                         const inCart = cart.find(item => item.product.id === product.id);
                         return (
                             <Card

@@ -864,4 +864,20 @@ export const getYieldTrend = async () => {
     return response.data;
 };
 
+// --- RAG Chatbot API ---
+export interface ChatMessage {
+    question: string;
+}
+
+export interface ChatResponse {
+    answer: string;
+    source: "db_only" | "external" | "mixed";
+    data_points?: any;
+}
+
+export const sendChatMessage = async (question: string): Promise<ChatResponse> => {
+    const response = await api.post<ChatResponse>('/rag/chat', { question });
+    return response.data;
+};
+
 export default api;

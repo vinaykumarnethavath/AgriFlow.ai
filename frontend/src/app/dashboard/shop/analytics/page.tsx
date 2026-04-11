@@ -325,11 +325,11 @@ export default function ShopAnalyticsPage() {
                 )}
             </div>
 
-            {/* ── Sold Products Detail Table ── (replaces Top Products + Sales Insights) */}
+            {/* ── Sold Products Detail Table ── */}
             <Card>
                 <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                        <Receipt className="h-5 w-5 text-slate-500" /> Sold Products — Detailed Ledger
+                        <Receipt className="h-5 w-5 text-slate-500" /> Sold Products — Batch-wise Ledger
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="px-0 pt-0">
@@ -337,13 +337,13 @@ export default function ShopAnalyticsPage() {
                         <table className="w-full text-sm text-left">
                             <thead className="bg-gray-50 text-gray-500 font-medium text-[11px] uppercase tracking-wider">
                                 <tr>
-                                    <th className="px-6 py-3 border-b border-gray-200">Product</th>
-                                    <th className="px-6 py-3 border-b border-gray-200">Batch</th>
-                                    <th className="px-6 py-3 border-b border-gray-200">Sell / Cost</th>
-                                    <th className="px-6 py-3 border-b border-gray-200">Overhead</th>
+                                    <th className="px-6 py-3 border-b border-gray-200">Product & Batch</th>
+                                    <th className="px-6 py-3 border-b border-gray-200">Category</th>
+                                    <th className="px-6 py-3 border-b border-gray-200">Sold</th>
+                                    <th className="px-6 py-3 border-b border-gray-200">Cost / Unit</th>
+                                    <th className="px-6 py-3 border-b border-gray-200">Revenue</th>
                                     <th className="px-6 py-3 border-b border-gray-200">Profit</th>
-                                    <th className="px-6 py-3 border-b border-gray-200 text-right">Revenue</th>
-                                    <th className="px-6 py-3 border-b border-gray-200 text-right">Sold / Remaining</th>
+                                    <th className="px-6 py-3 border-b border-gray-200 text-right">Remaining</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
@@ -353,59 +353,80 @@ export default function ShopAnalyticsPage() {
                                     </tr>
                                 ) : (
                                     topProducts.map((product, idx) => {
-                                        const sellPrice = product.units_sold > 0 ? (product.revenue / product.units_sold) : 0;
                                         const costPrice = product.cost_price || 0;
+                                        const totalCost = product.total_cost || 0;
                                         const overhead = product.overhead || 0;
                                         return (
                                             <tr key={product.product_id} className="hover:bg-gray-50/50 transition-colors">
+                                                {/* Product & Batch combined */}
                                                 <td className="px-6 py-3">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-semibold flex items-center justify-center text-xs flex-shrink-0">{idx + 1}</div>
                                                         <div>
                                                             <p className="font-semibold text-slate-800">{product.product_name}</p>
-                                                            <p className="text-[10px] text-slate-400 uppercase">{product.category}</p>
+                                                            {product.batch_number ? (
+                                                                <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 inline-block mt-0.5">
+                                                                    Batch: {product.batch_number}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-[10px] text-slate-400">No batch</span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </td>
+                                                {/* Category */}
                                                 <td className="px-6 py-3">
-                                                    {product.batch_number ? (
-                                                        <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                                                            {product.batch_number}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-gray-300 text-xs">—</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-3">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium text-slate-700">Sell: ₹{sellPrice.toFixed(2)}</span>
-                                                        {costPrice > 0 && <span className="text-xs text-slate-400">Cost: ₹{costPrice.toFixed(2)}</span>}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-3">
-                                                    {overhead > 0 ? (
-                                                        <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
-                                                            ₹{overhead.toFixed(2)}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-gray-300 text-xs">—</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-3">
-                                                    <span className={`font-semibold ${product.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                                                        ₹{product.profit.toLocaleString()}
+                                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                                                        {product.category}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-3 font-semibold text-slate-800 text-right">
+                                                {/* Sold qty */}
+                                                <td className="px-6 py-3">
+                                                    <span className="font-bold text-slate-800 text-lg">{product.units_sold}</span>
+                                                    <span className="text-xs text-slate-400 ml-1">units</span>
+                                                </td>
+                                                {/* Cost per unit */}
+                                                <td className="px-6 py-3">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-slate-700">₹{costPrice.toFixed(2)}</span>
+                                                        {overhead > 0 && (
+                                                            <span className="text-[10px] text-orange-600 font-medium">+₹{(overhead / Math.max(product.units_sold, 1)).toFixed(2)} overhead</span>
+                                                        )}
+                                                        <span className="text-[10px] text-slate-400 mt-0.5">Total: ₹{(totalCost + overhead).toLocaleString()}</span>
+                                                    </div>
+                                                </td>
+                                                {/* Revenue */}
+                                                <td className="px-6 py-3 font-semibold text-slate-800">
                                                     ₹{product.revenue.toLocaleString()}
                                                 </td>
-                                                <td className="px-6 py-3 text-right">
-                                                    <span className="font-bold text-slate-600">{product.units_sold}</span>
-                                                    <span className="text-xs text-slate-400 ml-1">sold</span>
-                                                    {product.remaining_qty !== undefined && (
-                                                        <div className="text-[10px] text-slate-400 mt-0.5">
-                                                            {product.remaining_qty} remaining
+                                                {/* Profit */}
+                                                <td className="px-6 py-3">
+                                                    <span className={`font-bold ${product.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                                                        ₹{product.profit.toLocaleString()}
+                                                    </span>
+                                                    {product.revenue > 0 && (
+                                                        <div className={`text-[10px] font-medium ${product.profit >= 0 ? "text-emerald-500" : "text-red-400"}`}>
+                                                            {((product.profit / product.revenue) * 100).toFixed(1)}% margin
                                                         </div>
+                                                    )}
+                                                </td>
+                                                {/* Remaining */}
+                                                <td className="px-6 py-3 text-right">
+                                                    {product.remaining_qty !== undefined ? (
+                                                        <div>
+                                                            <span className={`font-bold ${product.remaining_qty <= 5 ? 'text-red-500' : 'text-slate-600'}`}>
+                                                                {product.remaining_qty}
+                                                            </span>
+                                                            <span className="text-xs text-slate-400 ml-1">left</span>
+                                                            {product.remaining_qty <= 5 && product.remaining_qty > 0 && (
+                                                                <div className="text-[10px] text-red-400 font-medium">Low stock</div>
+                                                            )}
+                                                            {product.remaining_qty === 0 && (
+                                                                <div className="text-[10px] text-red-500 font-bold">Out of stock</div>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-300">—</span>
                                                     )}
                                                 </td>
                                             </tr>

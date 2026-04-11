@@ -1,0 +1,13 @@
+.env
+backend/.env
+frontend/.env
+node_modules
+__pycache__
+*.pyc
+.next
+.venv
+venv
+*.db
+agri.db
+agrichain.db
+uploads/

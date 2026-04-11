@@ -412,7 +412,11 @@ async def create_crop_sale(
     if crop.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    db_sale = CropSale(**sale_data.dict(exclude={"harvest_ids"}), crop_id=crop_id)
+    sale_dict = sale_data.dict(exclude={"harvest_ids"})
+    if sale_dict.get("date") and getattr(sale_dict["date"], "tzinfo", None):
+        sale_dict["date"] = sale_dict["date"].replace(tzinfo=None)
+        
+    db_sale = CropSale(**sale_dict, crop_id=crop_id)
     session.add(db_sale)
     
     # Update linked harvests
@@ -420,6 +424,8 @@ async def create_crop_sale(
         for h_id in sale_data.harvest_ids:
             harvest = await session.get(CropHarvest, h_id)
             if harvest and harvest.crop_id == crop_id:
+                if harvest.status == "Sold":
+                    raise HTTPException(status_code=400, detail="One or more selected harvests have already been sold")
                 harvest.status = "Sold"
                 session.add(harvest)
                 
@@ -464,6 +470,9 @@ async def update_crop_sale(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     sale_dict = sale_data.dict(exclude_unset=True)
+    if sale_dict.get("date") and getattr(sale_dict["date"], "tzinfo", None):
+        sale_dict["date"] = sale_dict["date"].replace(tzinfo=None)
+        
     for key, value in sale_dict.items():
         setattr(sale, key, value)
         

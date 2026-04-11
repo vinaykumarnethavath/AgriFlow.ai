@@ -224,6 +224,7 @@ async def list_expenses(
             "description": e.description,
             "expense_date": e.expense_date.isoformat(),
             "created_at": e.created_at.isoformat(),
+            "linked_product_ids": e.linked_product_ids,
         }
         for e in expenses
     ]

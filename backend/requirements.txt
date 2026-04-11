@@ -11,3 +11,4 @@ asyncpg
 httpx
 bcrypt
 python-dotenv
+groq

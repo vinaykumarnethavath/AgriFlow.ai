@@ -366,6 +366,9 @@ export default function InventoryPage() {
     };
 
     const filteredProducts = products.filter(p => {
+        // Hide completely sold out active batches from Inventory view
+        if (p.quantity <= 0 && p.status === 'active') return false;
+
         const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()));

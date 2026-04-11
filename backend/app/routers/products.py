@@ -44,6 +44,16 @@ async def create_product(
     # Default status to draft if not specified
     product_data.setdefault("status", "draft")
     
+    # Store initial quantity in traceability_json
+    t_json = product_data.get("traceability_json")
+    try:
+        t_data = json.loads(t_json) if t_json else {}
+    except:
+        t_data = {}
+    t_data["initial_quantity"] = product_data.get("quantity", 0)
+    product_data["traceability_json"] = json.dumps(t_data)
+
+    
     db_product = Product(**product_data, user_id=current_user.id)
     session.add(db_product)
     await session.commit()
@@ -121,6 +131,16 @@ async def bulk_receive_products(
                 product_data[field] = _strip_tz(product_data[field])
         
         # Bulk receive products are saved as drafts until owner marks them active
+        
+        # Store initial quantity in traceability_json
+        t_json = product_data.get("traceability_json")
+        try:
+            t_data = json.loads(t_json) if t_json else {}
+        except:
+            t_data = {}
+        t_data["initial_quantity"] = product_data.get("quantity", 0)
+        product_data["traceability_json"] = json.dumps(t_data)
+        
         db_product = Product(
             **product_data,
             user_id=current_user.id,
@@ -274,10 +294,12 @@ async def update_product(
             f"Batch Activated — {db_product.name} (Batch: {db_product.batch_number}) | "
             f"Qty: {db_product.quantity} {db_product.unit} | "
             f"Cost/unit: ₹{db_product.cost_price or 0} | "
-            f"Purchase: ₹{purchase_cost:.2f} | "
-            f"{overhead_str} | "
+            f"Product Cost: ₹{purchase_cost:.2f} | "
+            f"Overheads (tracked separately): {overhead_str} | "
             f"Total Landed: ₹{total_landed:.2f}"
         )
+        # Amount = product cost ONLY. Overheads are already tracked
+        # via separate batch_transport/batch_labour/batch_other entries.
         activation_entry = ShopAccountingExpense(
             shop_id=current_user.id,
             category="batch_activation",

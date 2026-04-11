@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-    Wallet, Package, Plus, Trash2, Receipt, ArrowUpRight, CheckCircle2, X, Info, Banknote, TrendingUp, Building, Activity, Truck
+    Wallet, Package, Plus, Trash2, Receipt, ArrowUpRight, CheckCircle2, X, Info, Banknote, TrendingUp, Building, Activity, Truck, ChevronDown, ChevronUp, Zap
 } from "lucide-react";
 import api from "@/lib/api";
-import { getDraftBatches, DraftBatch, getMyProducts, Product } from "@/lib/api";
+import { getDraftBatches, DraftBatch, getMyProducts, Product, getTopProducts } from "@/lib/api";
+import Link from "next/link";
 
 const PERIOD_OPTIONS = [
     { label: "Today", value: "today" },
@@ -79,30 +80,72 @@ export default function ShopAccountingPage() {
     const [activeBatches, setActiveBatches] = useState<DraftBatch[]>([]);
     const [selectedBatchIds, setSelectedBatchIds] = useState<number[]>([]);
     const [loadingBatches, setLoadingBatches] = useState(false);
+    const [showActivatedBatches, setShowActivatedBatches] = useState(false);
+    const [expandedExpenses, setExpandedExpenses] = useState<Record<number, boolean>>({});
 
     const isBatchCategory = EXPENSE_CATEGORIES.find(c => c.value === newExpense.category)?.isBatch ?? false;
 
     const fetchAll = useCallback(async () => {
         setLoading(true);
         try {
-            const [sumRes, expRes, prodRes] = await Promise.all([
+            const [sumRes, expRes, prodRes, topRes] = await Promise.all([
                 api.get(`/shop-accounting/summary?period=${period}`).catch(() => ({ data: null })),
                 api.get(`/shop-accounting/expenses?period=${period}`).catch(() => ({ data: [] })),
-                getMyProducts().catch(() => [])
+                getMyProducts().catch(() => []),
+                getTopProducts("all").catch(() => [])
             ]);
             setSummary(sumRes.data);
             setExpenses(expRes.data || []);
             
             const products = prodRes as Product[];
+            const expensesList = expRes.data || [];
+            const topProducts = (topRes as any[]) || [];
+            const unitsSoldMap: Record<number, number> = {};
+            topProducts.forEach(tp => { unitsSoldMap[tp.product_id] = tp.units_sold; });
+
             if (Array.isArray(products)) {
-                const mapToBatch = (p: Product): DraftBatch => ({
-                    ...p,
-                    category: p.category || 'General',
-                    created_at: p.created_at || new Date().toISOString(),
-                    total_value: (p.cost_price || 0) * (p.quantity || 0)
-                } as DraftBatch);
+                const mapToBatch = (p: Product): DraftBatch => {
+                    let initialQuantity = p.quantity;
+                    const soldAmt = unitsSoldMap[p.id] || 0;
+                    
+                    // 1. Try extracting from traceability_json (Primary source)
+                    if (p.traceability_json) {
+                        try {
+                            const parsed = JSON.parse(p.traceability_json);
+                            if (parsed && typeof parsed.initial_quantity === "number") {
+                                initialQuantity = parsed.initial_quantity;
+                            }
+                        } catch(e) {}
+                    }
+                    
+                    // 2. Fallback: If it's old and doesn't have an initial_quantity stored securely,
+                    // but it has been sold, add the sold amount.
+                    if (initialQuantity === p.quantity && soldAmt > 0) {
+                        initialQuantity = p.quantity + soldAmt;
+                    }
+                    
+                    // 3. Fallback to extracting from expense log (Old batches without traceability_json and no sales)
+                    if (initialQuantity === p.quantity) {
+                        const log = expensesList.find((e: any) => 
+                            (e.category === 'batch_purchase' || e.category === 'batch_activation') && 
+                            e.linked_product_ids && e.linked_product_ids.includes(`[${p.id}]`)
+                        );
+                        if (log && log.description) {
+                            const match = log.description.match(/Qty:\s*(\d+(\.\d+)?)/i);
+                            if (match) initialQuantity = parseFloat(match[1]);
+                        }
+                    }
+
+                    return ({
+                        ...p,
+                        quantity: initialQuantity,
+                        category: p.category || 'General',
+                        created_at: p.created_at || new Date().toISOString(),
+                        total_value: (p.cost_price || 0) * initialQuantity
+                    } as DraftBatch);
+                };
                 setDraftBatches(products.filter(p => p.status === 'draft').map(mapToBatch));
-                setActiveBatches(products.filter(p => p.status === 'active').map(mapToBatch));
+                setActiveBatches(products.filter(p => p.status !== 'draft').map(mapToBatch));
             }
         } catch (e) {
             console.error(e);
@@ -170,11 +213,50 @@ export default function ShopAccountingPage() {
         return EXPENSE_CATEGORIES.find(c => c.value === cat) || { value: cat, label: cat, color: "bg-gray-100 text-gray-700" };
     };
 
+    // Helper: find batch names linked to a given expense
+    const getLinkedBatchNames = (exp: BusinessExpense): { name: string; batch_number: string }[] => {
+        if (!exp.linked_product_ids) return [];
+        try {
+            const ids: number[] = JSON.parse(exp.linked_product_ids).map(Number);
+            const allProducts = [...activeBatches, ...draftBatches];
+            return ids
+                .map(id => allProducts.find(b => b.id === id))
+                .filter(Boolean)
+                .map(b => ({ name: b!.name, batch_number: b!.batch_number }));
+        } catch { return []; }
+    };
+
+    // Helper: get all batch names linked to a specific overhead category
+    const getBatchNamesForCategory = (category: string): { name: string; batch_number: string; amount: number }[] => {
+        const relevantExpenses = expenses.filter(e => e.category === category && e.linked_product_ids);
+        const allProducts = [...activeBatches, ...draftBatches];
+        const batchMap: Record<number, { name: string; batch_number: string; amount: number }> = {};
+
+        for (const exp of relevantExpenses) {
+            try {
+                const ids: number[] = JSON.parse(exp.linked_product_ids!).map(Number);
+                for (const id of ids) {
+                    const batch = allProducts.find(b => b.id === id);
+                    if (batch) {
+                        if (!batchMap[id]) {
+                            batchMap[id] = { name: batch.name, batch_number: batch.batch_number, amount: 0 };
+                        }
+                        // Distribute the expense proportionally across linked batches
+                        batchMap[id].amount += exp.amount / ids.length;
+                    }
+                }
+            } catch { /* ignore parse errors */ }
+        }
+        return Object.values(batchMap);
+    };
+
     // Compute expense split
     const batchExpenseTotal = ['batch_transport', 'batch_labour', 'batch_other']
         .reduce((sum, cat) => sum + (summary?.expense_by_category[cat] || 0), 0);
     const purchaseTotal = summary?.expense_by_category['batch_purchase'] || 0;
-    const generalExpenseTotal = (summary?.total_business_expenses || 0) - batchExpenseTotal - purchaseTotal;
+    const activationTotal = summary?.expense_by_category['batch_activation'] || 0;
+    // Gen. Overheads = total - batch overheads - purchase - activation (these are all tracked separately)
+    const generalExpenseTotal = (summary?.total_business_expenses || 0) - batchExpenseTotal - purchaseTotal - activationTotal;
     const rentTotal = summary?.expense_by_category['rent'] || 0;
     const wagesTotal = summary?.expense_by_category['wages'] || 0;
     const transportTotal = summary?.expense_by_category['batch_transport'] || 0;
@@ -182,6 +264,11 @@ export default function ShopAccountingPage() {
     const otherBatchTotal = summary?.expense_by_category['batch_other'] || 0;
     const utilitiesTotal = summary?.expense_by_category['utilities'] || 0;
     const otherTotal = summary?.expense_by_category['other'] || 0;
+
+    // Batch names for each overhead category
+    const transportBatches = getBatchNamesForCategory('batch_transport');
+    const labourBatches = getBatchNamesForCategory('batch_labour');
+    const otherBatchBatches = getBatchNamesForCategory('batch_other');
 
     // Estimate overhead per unit for selected batches (preview)
     const selectedBatches = draftBatches.filter(b => selectedBatchIds.includes(b.id));
@@ -226,6 +313,12 @@ export default function ShopAccountingPage() {
                         >
                             <ArrowUpRight className="h-3.5 w-3.5" /> Refresh
                         </button>
+                        <button
+                            onClick={() => setShowActivatedBatches(true)}
+                            className="flex items-center gap-1 text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-200 font-medium ml-1"
+                        >
+                            <Zap className="h-3.5 w-3.5" /> Batches Overview
+                        </button>
                     </div>
                 </div>
 
@@ -253,7 +346,7 @@ export default function ShopAccountingPage() {
                 </div>
             )}
 
-            {/* 1. Full Options: Business Expense Breakdown */}
+            {/* 1. Business Expense Breakdown */}
             {summary && (
                 <div className="space-y-6">
                     <Card className="border-slate-200 shadow-sm">
@@ -263,7 +356,7 @@ export default function ShopAccountingPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-5 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-4 border-b border-gray-100">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-gray-100">
                                 <div className="flex items-center gap-4">
                                     <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100"><Wallet className="w-6 h-6" /></div>
                                     <div>
@@ -278,59 +371,142 @@ export default function ShopAccountingPage() {
                                         <p className="text-3xl font-black text-blue-700 leading-tight">₹{(purchaseTotal || 0).toLocaleString()}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4 md:border-l border-gray-100 md:pl-6">
-                                    <div className="p-3 bg-cyan-50 text-cyan-600 rounded-xl border border-cyan-100"><Truck className="w-6 h-6" /></div>
-                                    <div>
-                                        <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Batch Overheads</p>
-                                        <p className="text-3xl font-black text-cyan-700 leading-tight">₹{(batchExpenseTotal || 0).toLocaleString()}</p>
-                                    </div>
-                                </div>
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
-                                {[{
-                                    label: "Rent",
-                                    value: rentTotal,
-                                    accent: "bg-purple-100 text-purple-800 border-purple-200"
-                                }, {
-                                    label: "Staff Wages",
-                                    value: wagesTotal,
-                                    accent: "bg-indigo-100 text-indigo-800 border-indigo-200"
-                                }, {
-                                    label: "Transport (Batch)",
-                                    value: transportTotal,
-                                    accent: "bg-cyan-100 text-cyan-800 border-cyan-200"
-                                }, {
-                                    label: "Batch Labour",
-                                    value: labourTotal,
-                                    accent: "bg-orange-100 text-orange-800 border-orange-200"
-                                }, {
-                                    label: "Other Batch Costs",
-                                    value: otherBatchTotal,
-                                    accent: "bg-pink-100 text-pink-800 border-pink-200"
-                                }, {
-                                    label: "Utilities",
-                                    value: utilitiesTotal,
-                                    accent: "bg-yellow-100 text-yellow-800 border-yellow-200"
-                                }, {
-                                    label: "Gen. Overheads",
-                                    value: Math.max(0, generalExpenseTotal),
-                                    accent: "bg-emerald-100 text-emerald-800 border-emerald-200"
-                                }, {
-                                    label: "Misc. Other",
-                                    value: otherTotal,
-                                    accent: "bg-gray-100 text-gray-800 border-gray-200"
-                                }].map((item) => (
-                                    <div key={item.label} className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
-                                        <span className="font-semibold text-slate-600 mb-2 truncate" title={item.label}>{item.label}</span>
-                                        <div className="mt-auto flex items-center justify-between">
-                                            <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${item.accent}`}>₹{(item.value || 0).toLocaleString()}</span>
-                                        </div>
+                                {/* Rent */}
+                                <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
+                                    <span className="font-semibold text-slate-600 mb-2 truncate">Rent</span>
+                                    <div className="mt-auto">
+                                        <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-purple-100 text-purple-800 border-purple-200">₹{(rentTotal || 0).toLocaleString()}</span>
                                     </div>
-                                ))}
+                                </div>
+                                {/* Staff Wages */}
+                                <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
+                                    <span className="font-semibold text-slate-600 mb-2 truncate">Staff Wages</span>
+                                    <div className="mt-auto">
+                                        <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-indigo-100 text-indigo-800 border-indigo-200">₹{(wagesTotal || 0).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                {/* Transport (Batch) */}
+                                <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-cyan-300 transition-colors">
+                                    <span className="font-semibold text-slate-600 mb-2 truncate">Transport (Batch)</span>
+                                    <div className="mt-auto">
+                                        <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-cyan-100 text-cyan-800 border-cyan-200">₹{(transportTotal || 0).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                {/* Batch Labour */}
+                                <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-orange-300 transition-colors">
+                                    <span className="font-semibold text-slate-600 mb-2 truncate">Batch Labour</span>
+                                    <div className="mt-auto">
+                                        <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-orange-100 text-orange-800 border-orange-200">₹{(labourTotal || 0).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                {/* Other Batch Costs */}
+                                <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-pink-300 transition-colors">
+                                    <span className="font-semibold text-slate-600 mb-2 truncate">Other Batch Costs</span>
+                                    <div className="mt-auto">
+                                        <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-pink-100 text-pink-800 border-pink-200">₹{(otherBatchTotal || 0).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                {/* Utilities */}
+                                <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
+                                    <span className="font-semibold text-slate-600 mb-2 truncate">Utilities</span>
+                                    <div className="mt-auto">
+                                        <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-yellow-100 text-yellow-800 border-yellow-200">₹{(utilitiesTotal || 0).toLocaleString()}</span>
+                                    </div>
+                                </div>
+
+                                {/* Misc. Other */}
+                                <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
+                                    <span className="font-semibold text-slate-600 mb-2 truncate">Misc. Other</span>
+                                    <div className="mt-auto">
+                                        <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-gray-100 text-gray-800 border-gray-200">₹{(otherTotal || 0).toLocaleString()}</span>
+                                    </div>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
+            )}
+
+            {/* 2. Activated Batches Section (SlideOver Panel) */}
+            {showActivatedBatches && (
+                <>
+                    <div 
+                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity"
+                        onClick={() => setShowActivatedBatches(false)}
+                    />
+                    <div className="fixed inset-y-0 right-0 w-full md:w-[600px] lg:w-[700px] bg-white shadow-2xl border-l z-50 flex flex-col animate-in slide-in-from-right-8 duration-300">
+                        <div className="flex items-center justify-between p-4 border-b bg-emerald-50">
+                            <h2 className="text-lg font-bold text-emerald-800 flex items-center gap-2">
+                                <Zap className="w-5 h-5 text-emerald-600" /> 
+                                Batches Overview
+                                <span className="text-[10px] bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full">{activeBatches.length}</span>
+                            </h2>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setShowActivatedBatches(false)} 
+                                className="h-8 w-8 rounded-full hover:bg-emerald-100 p-0 text-emerald-700"
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-4 bg-gray-50/30">
+                            {activeBatches.length > 0 ? (
+                            <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-emerald-50/40 text-gray-600 font-medium text-[11px] uppercase tracking-wider">
+                                        <tr>
+                                            <th className="px-4 py-3 border-b border-emerald-100">Product & Batch</th>
+                                            <th className="px-4 py-3 border-b border-emerald-100">Qty</th>
+                                            <th className="px-4 py-3 border-b border-emerald-100">Transport</th>
+                                            <th className="px-4 py-3 border-b border-emerald-100">Labour</th>
+                                            <th className="px-4 py-3 border-b border-emerald-100">Other</th>
+                                            <th className="px-4 py-3 border-b border-emerald-100 text-right">Added Overheads</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {activeBatches.map(batch => {
+                                            const transport = batch.apportioned_transport || 0;
+                                            const labour = batch.apportioned_labour || 0;
+                                            const other = batch.apportioned_other || 0;
+                                            const totalOverheads = transport + labour + other;
+                                            return (
+                                                <tr key={batch.id} className="hover:bg-emerald-50/20 transition-colors">
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-gray-900">{batch.name}</span>
+                                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                                <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1 rounded border border-emerald-100">{batch.batch_number}</span>
+                                                                <span className="text-[10px] text-emerald-600 font-bold uppercase">{batch.category}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-slate-600 font-medium whitespace-nowrap">{batch.quantity} <span className="text-[10px]">{batch.unit}</span></td>
+                                                    <td className="px-4 py-3">
+                                                        {transport > 0 ? <span className="text-xs font-semibold text-cyan-700 bg-cyan-50 px-1.5 py-0.5 rounded">₹{transport.toFixed(0)}</span> : <span className="text-slate-300">—</span>}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {labour > 0 ? <span className="text-xs font-semibold text-orange-700 bg-orange-50 px-1.5 py-0.5 rounded">₹{labour.toFixed(0)}</span> : <span className="text-slate-300">—</span>}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {other > 0 ? <span className="text-xs font-semibold text-pink-700 bg-pink-50 px-1.5 py-0.5 rounded">₹{other.toFixed(0)}</span> : <span className="text-slate-300">—</span>}
+                                                    </td>
+                                                    <td className="px-4 py-3 font-bold text-blue-700 text-right">₹{totalOverheads.toLocaleString()}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ) : (
+                                <div className="text-center py-10 text-slate-400 text-sm">No batches to show.</div>
+                            )}
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* Business Expenses Section */}
@@ -472,7 +648,7 @@ export default function ShopAccountingPage() {
                         </div>
                     )}
 
-                    {/* Draft Batches Summary Table (Picture 2 replacement) */}
+                    {/* Draft Batches Summary Table */}
                     <div className="overflow-x-auto border rounded-xl shadow-sm bg-white">
                         <table className="w-full text-sm text-left">
                                 <thead className="bg-amber-50/40 text-gray-600 font-medium text-[11px] uppercase tracking-wider">
@@ -536,22 +712,12 @@ export default function ShopAccountingPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
-                                {/* Filter: never show batch_purchase for a product still in draft */}
-                                {expenses.filter(exp => {
-                                    if (exp.category !== "batch_purchase") return true;
-                                    const ids = exp.linked_product_ids ? JSON.parse(exp.linked_product_ids) : [];
-                                    // Only show batch_purchase if the linked product is active (in activeBatches list)
-                                    return ids.some((id: number) => activeBatches.some(b => b.id === id));
-                                }).length === 0 ? (
+                                {expenses.filter(e => e.category !== "batch_activation").length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-8 text-center text-gray-400 text-sm">No expenses recorded yet.</td>
                                     </tr>
                                 ) : (
-                                    expenses.filter(exp => {
-                                        if (exp.category !== "batch_purchase") return true;
-                                        const ids = exp.linked_product_ids ? JSON.parse(exp.linked_product_ids) : [];
-                                        return ids.some((id: number) => activeBatches.some(b => b.id === id));
-                                    }).map((exp) => {
+                                    expenses.filter(e => e.category !== "batch_activation").map((exp) => {
                                         const info = getCategoryInfo(exp.category);
                                         const isAutoEntry = exp.category === "batch_purchase" || exp.category === "batch_activation";
                                         const linkedIds: number[] = exp.linked_product_ids ? JSON.parse(exp.linked_product_ids).map(Number) : [];
@@ -591,28 +757,38 @@ export default function ShopAccountingPage() {
 
                                                 {/* BATCH DETAILS column */}
                                                 <td className="px-6 py-3">
-                                                    {/* batch_activation: show all details including Product Cost */}
+                                                    {/* batch_activation: show details including Product Cost */}
                                                     {activationProduct && (
-                                                        <div className="flex flex-col gap-0.5 py-1">
+                                                        <Link href="/dashboard/shop/inventory" className="flex flex-col gap-0.5 py-1 px-2 border border-emerald-100 bg-emerald-50/20 hover:bg-emerald-50/50 rounded-lg transition-colors block w-max mt-1">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="text-xs font-bold text-slate-800">{activationProduct.name}</span>
-                                                                <span className="text-[9px] font-mono font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-100">
+                                                                <span className="text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1 rounded border border-emerald-100">
                                                                     {activationProduct.batch_number}
                                                                 </span>
+                                                                <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">ACTIVATED</span>
                                                             </div>
                                                             <div className="flex gap-2 text-[10px] text-slate-500 font-medium mt-0.5">
                                                                 <span>Qty: <span className="text-slate-700 font-bold">{activationProduct.quantity} {activationProduct.unit}</span></span>
                                                                 <span className="text-slate-300">|</span>
                                                                 <span>Cost/unit: <span className="text-slate-700 font-bold">₹{activationProduct.cost_price}</span></span>
                                                                 <span className="text-slate-300">|</span>
-                                                                <span>Product Cost: <span className="text-slate-700 font-bold">₹{((activationProduct.cost_price || 0) * (activationProduct.quantity || 0)).toFixed(2)}</span></span>
+                                                                <span>Product Cost: <span className="text-blue-700 font-bold">₹{((activationProduct.cost_price || 0) * (activationProduct.quantity || 0)).toFixed(2)}</span></span>
                                                             </div>
-                                                        </div>
+                                                            {/* Show overhead breakdown */}
+                                                            {((activationProduct.apportioned_transport || 0) + (activationProduct.apportioned_labour || 0) + (activationProduct.apportioned_other || 0)) > 0 && (
+                                                                <div className="flex gap-2 text-[10px] text-slate-400 font-medium mt-0.5">
+                                                                    <span className="italic">Overheads (separate):</span>
+                                                                    {(activationProduct.apportioned_transport || 0) > 0 && <span className="text-cyan-600">T: ₹{activationProduct.apportioned_transport?.toFixed(2)}</span>}
+                                                                    {(activationProduct.apportioned_labour || 0) > 0 && <span className="text-orange-600">L: ₹{activationProduct.apportioned_labour?.toFixed(2)}</span>}
+                                                                    {(activationProduct.apportioned_other || 0) > 0 && <span className="text-pink-600">O: ₹{activationProduct.apportioned_other?.toFixed(2)}</span>}
+                                                                </div>
+                                                            )}
+                                                        </Link>
                                                     )}
                                                     
-                                                    {/* batch_purchase: show all details including Product Cost */}
+                                                    {/* batch_purchase: show details including Product Cost */}
                                                     {purchaseProduct && !activationProduct && (
-                                                        <div className="flex flex-col gap-0.5 py-1">
+                                                        <Link href="/dashboard/shop/inventory" className="flex flex-col gap-0.5 py-1 px-2 border border-slate-200 bg-slate-50/30 hover:bg-slate-50/80 rounded-lg transition-colors block w-max mt-1">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="text-xs font-bold text-slate-800">{purchaseProduct.name}</span>
                                                                 <span className="text-[9px] font-mono font-bold text-slate-600 bg-slate-50 px-1 rounded border border-slate-200">
@@ -626,29 +802,35 @@ export default function ShopAccountingPage() {
                                                                 <span className="text-slate-300">|</span>
                                                                 <span>Product Cost: <span className="text-slate-700 font-bold">₹{((purchaseProduct.cost_price || 0) * (purchaseProduct.quantity || 0)).toFixed(2)}</span></span>
                                                             </div>
-                                                        </div>
+                                                        </Link>
                                                     )}
 
-                                                    {/* batch_transport/labour/other: show ALL linked batches + Product Cost */}
-                                                    {linkedBatchProducts.length > 0 && !activationProduct && (
-                                                        <div className="flex flex-col gap-2 py-1">
-                                                            {linkedBatchProducts.map(bp => (
-                                                                <div key={bp.id} className="flex flex-col gap-0.5">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-xs font-semibold text-slate-800">{bp.name}</span>
-                                                                        <span className="text-[9px] font-mono font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-100">
-                                                                            {bp.batch_number}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="flex gap-2 text-[10px] text-slate-500 font-medium mt-0.5">
-                                                                        <span>Qty: <span className="text-slate-700 font-bold">{bp.quantity} {bp.unit}</span></span>
-                                                                        <span className="text-slate-300">|</span>
-                                                                        <span>Cost/unit: <span className="text-slate-700 font-bold">₹{bp.cost_price}</span></span>
-                                                                        <span className="text-slate-300">|</span>
-                                                                        <span>Cost: <span className="text-slate-700 font-bold">₹{((bp.cost_price || 0) * (bp.quantity || 0)).toFixed(2)}</span></span>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
+                                                    {/* batch_transport/labour/other: natively display ALL linked batches safely without hiding */}
+                                                    {linkedBatchProducts.length > 0 && !activationProduct && !purchaseProduct && (
+                                                        <div className="flex flex-col gap-1 py-1 mt-1">
+                                                            {(() => {
+                                                                const totalWeight = linkedBatchProducts.reduce((s, b) => s + ((b.cost_price || 0) * (b.quantity || 0)), 0);
+                                                                return linkedBatchProducts.map(bp => {
+                                                                    const bpValue = (bp.cost_price || 0) * (bp.quantity || 0);
+                                                                    const allocatedCost = totalWeight > 0 ? (bpValue / totalWeight) * exp.amount : 0;
+                                                                    const allocatedCostPerUnit = bp.quantity > 0 ? allocatedCost / bp.quantity : 0;
+                                                                    return (
+                                                                        <Link href="/dashboard/shop/inventory" key={bp.id} className="flex flex-col gap-0.5 py-1 px-2 border border-blue-100 bg-blue-50/20 hover:bg-blue-50/60 rounded-lg transition-colors block w-max min-w-[200px]">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-xs font-semibold text-slate-800">{bp.name}</span>
+                                                                                <span className="text-[9px] font-mono font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-100">
+                                                                                    {bp.batch_number}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="flex gap-2 text-[10px] text-slate-500 font-medium mt-0.5">
+                                                                                <span>Qty: <span className="text-slate-700 font-bold">{bp.quantity} {bp.unit}</span></span>
+                                                                                <span className="text-slate-300">|</span>
+                                                                                <span>Allocated Cost: <span className="text-blue-700 font-bold">₹{allocatedCostPerUnit.toFixed(2)}/unit</span></span>
+                                                                            </div>
+                                                                        </Link>
+                                                                    );
+                                                                });
+                                                            })()}
                                                         </div>
                                                     )}
 

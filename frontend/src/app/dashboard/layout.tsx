@@ -1,5 +1,6 @@
 import Sidebar from "@/components/layout/Sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ChatBot } from "@/components/ChatBot";
 
 export default function DashboardLayout({
     children,
@@ -15,6 +16,7 @@ export default function DashboardLayout({
                 </div>
                 {children}
             </div>
+            <ChatBot />
         </div>
     );
 }

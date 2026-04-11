@@ -1164,10 +1164,13 @@ export default function CropDetailPage() {
                                             <input
                                                 type="checkbox"
                                                 className="rounded"
-                                                checked={selectedHarvestIds.length === harvests.length && harvests.length > 0}
+                                                checked={
+                                                    harvests.filter(h => h.status !== 'Sold').length > 0 &&
+                                                    selectedHarvestIds.length === harvests.filter(h => h.status !== 'Sold').length
+                                                }
                                                 onChange={(e) => {
                                                     if (e.target.checked) {
-                                                        setSelectedHarvestIds(harvests.map(h => h.id));
+                                                        setSelectedHarvestIds(harvests.filter(h => h.status !== 'Sold').map(h => h.id));
                                                     } else {
                                                         setSelectedHarvestIds([]);
                                                     }
@@ -1298,7 +1301,6 @@ export default function CropDetailPage() {
                                         });
                                         setShowSellForm(true);
                                         setActiveTab("sell");
-                                        setSelectedHarvestIds([]);
                                     }}
                                     className="bg-green-600 hover:bg-green-700 text-white"
                                 >
@@ -1598,7 +1600,10 @@ export default function CropDetailPage() {
                                         </div>
                                     )}
                                     <div className="flex gap-2 mt-4 justify-end">
-                                        <Button variant="outline" onClick={() => setShowSellForm(false)} className="text-gray-700">Cancel</Button>
+                                        <Button variant="outline" onClick={() => {
+                                            setShowSellForm(false);
+                                            setSelectedHarvestIds([]);
+                                        }} className="text-gray-700">Cancel</Button>
                                         <Button
                                             onClick={async () => {
                                                 if (!sellForm.buyer_name || sellForm.quantity_quintals <= 0 || sellForm.price_per_quintal <= 0) {
