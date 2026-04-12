@@ -12,3 +12,6 @@ httpx
 bcrypt
 python-dotenv
 groq
+python-jose[cryptography]
+email-validator
+razorpay
