@@ -8,7 +8,7 @@ from .database import init_db
 from fastapi.staticfiles import StaticFiles
 from .routers import auth, crops, products, orders, traceability, farmer, upload, analytics, manufacturer, customer, profile_routers, payments, shop_accounting, rag
 
-app = FastAPI(title="AgriChain API")
+app = FastAPI(title="AgriFlow API")
 
 # Ensure uploads directory exists (required for Railway/production)
 os.makedirs("uploads", exist_ok=True)
