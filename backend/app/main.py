@@ -20,7 +20,7 @@ app.mount("/static", StaticFiles(directory="uploads"), name="static")
 # CORS configuration
 frontend_url = os.getenv("FRONTEND_URL", "")
 cors_allow_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
-cors_allow_origins_regex = os.getenv("CORS_ALLOW_ORIGINS_REGEX", "")
+cors_allow_origins_regex = os.getenv("CORS_ALLOW_ORIGINS_REGEX", "").strip()
 cors_allow_credentials_env = os.getenv("CORS_ALLOW_CREDENTIALS", "true")
 
 allow_origins = [
@@ -60,6 +60,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+print(f"[cors] allow_origins={allow_origins}")
+print(f"[cors] allow_origin_regex={cors_allow_origins_regex or None}")
+print(f"[cors] allow_credentials={allow_credentials}")
 
 from fastapi.exceptions import RequestValidationError
 
