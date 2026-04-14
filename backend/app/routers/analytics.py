@@ -54,6 +54,58 @@ async def get_recommendations():
     ]
     return recommendations
 
+@router.get("/crop/{crop_id}/insights")
+async def get_crop_insights(
+    crop_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    crop = await session.get(Crop, crop_id)
+    if not crop:
+        raise HTTPException(status_code=404, detail="Crop not found")
+    if getattr(crop, "user_id", None) != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    exp_q = select(func.coalesce(func.sum(CropExpense.total_cost), 0.0)).where(CropExpense.crop_id == crop_id)
+    total_expenses = (await session.exec(exp_q)).first() or 0.0
+
+    total_revenue = float(getattr(crop, "total_revenue", 0.0) or 0.0)
+    net_profit = float(getattr(crop, "net_profit", 0.0) or 0.0)
+
+    insights: List[Dict[str, Any]] = []
+    if total_expenses > 0:
+        insights.append({
+            "type": "info",
+            "category": "cost",
+            "message": f"Total recorded expenses: ₹{total_expenses:,.0f}.",
+            "action": "Review expense entries for accuracy.",
+        })
+
+    if total_revenue > 0 and net_profit < 0:
+        insights.append({
+            "type": "warning",
+            "category": "profit",
+            "message": "This crop is currently in loss based on recorded revenue and costs.",
+            "action": "Check selling price and reduce high-cost inputs if possible.",
+        })
+    elif total_revenue > 0 and net_profit >= 0:
+        insights.append({
+            "type": "success",
+            "category": "profit",
+            "message": "This crop is currently profitable based on recorded revenue and costs.",
+            "action": "Maintain current practices and monitor costs.",
+        })
+
+    prediction = {
+        "predicted_profit": net_profit,
+        "estimated_revenue": total_revenue,
+        "estimated_cost": float(total_expenses),
+        "confidence": "low",
+        "message": "Prediction is based on currently recorded values.",
+    }
+
+    return {"insights": insights, "prediction": prediction}
+
 @router.get("/shop/overview")
 async def get_shop_overview(
     current_user: User = Depends(get_current_user),

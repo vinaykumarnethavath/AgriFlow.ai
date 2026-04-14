@@ -50,10 +50,11 @@ const INPUT_TYPES = [
 
 // File Upload Helper
 const uploadFile = async (file: File): Promise<string> => {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const formData = new FormData();
     formData.append("file", file);
     try {
-        const response = await fetch("http://127.0.0.1:8000/upload", {
+        const response = await fetch(`${API_URL.replace(/\/$/, "")}/upload`, {
             method: "POST",
             body: formData,
         });
