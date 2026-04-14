@@ -11,6 +11,12 @@ load_dotenv()
 # Default to SQLite if no DATABASE_URL is set
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./agrichain.db")
 
+# Railway provides DATABASE_URL starting with postgres:// but SQLAlchemy asyncpg needs postgresql+asyncpg://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 
 async def init_db():
