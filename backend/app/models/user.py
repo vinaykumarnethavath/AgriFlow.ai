@@ -58,11 +58,11 @@ class VerifyOTPRequest(SQLModel):
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     role: UserRole
-    otp_code: str
+    otp_code: Optional[str] = None
 
 class ResetPasswordRequest(SQLModel):
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     role: UserRole
-    otp_code: str
+    otp_code: Optional[str] = None
     new_password: str

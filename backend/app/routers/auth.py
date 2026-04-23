@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 import random
 import string
+import os
 from datetime import datetime, timedelta
 import sqlalchemy.exc
 
@@ -15,6 +16,9 @@ from ..mail_utils import send_otp_email, send_registration_otp_email
 from ..sms_utils import send_otp_sms
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+def _otp_disabled() -> bool:
+    return os.getenv("DISABLE_OTP_VERIFICATION", "false").strip().lower() in {"1", "true", "yes"}
 
 def generate_otp(length=6):
     return ''.join(random.choices(string.digits, k=length))
@@ -28,6 +32,25 @@ def safe_display_name(user: User) -> str:
 @router.post("/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest, session: AsyncSession = Depends(get_session)):
     role_val = request.role.value if hasattr(request.role, "value") else str(request.role)
+
+    if _otp_disabled():
+        if request.email:
+            email = request.email.lower().strip()
+            statement = select(User).where(User.email == email, User.role == role_val)
+            result = await session.exec(statement)
+            user = result.first()
+            if not user:
+                raise HTTPException(status_code=404, detail="No account found for this email and role")
+            return {"message": "OTP disabled. You can reset password directly."}
+
+        if request.phone_number:
+            phone_number = request.phone_number.strip()
+            statement = select(User).where(User.phone_number == phone_number, User.role == role_val)
+            result = await session.exec(statement)
+            user = result.first()
+            if not user:
+                raise HTTPException(status_code=404, detail="No account found for this phone number and role")
+            return {"message": "OTP disabled. You can reset password directly."}
 
     if request.email:
         email = request.email.lower().strip()
@@ -92,6 +115,9 @@ async def verify_otp(request: VerifyOTPRequest, session: AsyncSession = Depends(
     role_val = request.role.value if hasattr(request.role, "value") else str(request.role)
     now = datetime.utcnow()
 
+    if _otp_disabled():
+        return {"message": "OTP verification disabled", "verified": True}
+
     if request.email:
         email = request.email.lower().strip()
         user_stmt = select(User).where(User.email == email, User.role == role_val)
@@ -111,8 +137,9 @@ async def verify_otp(request: VerifyOTPRequest, session: AsyncSession = Depends(
         if not otp_entry:
             raise HTTPException(status_code=400, detail="Invalid or expired OTP")
 
-        otp_entry.is_verified = True
-        session.add(otp_entry)
+        if not _otp_disabled():
+            otp_entry.is_verified = True
+            session.add(otp_entry)
         await session.commit()
         return {"message": "OTP verified successfully"}
 
@@ -145,6 +172,31 @@ async def verify_otp(request: VerifyOTPRequest, session: AsyncSession = Depends(
 @router.post("/reset-password")
 async def reset_password(request: ResetPasswordRequest, session: AsyncSession = Depends(get_session)):
     role_val = request.role.value if hasattr(request.role, "value") else str(request.role)
+
+    if _otp_disabled():
+        if request.email:
+            email = request.email.lower().strip()
+            user_statement = select(User).where(User.email == email, User.role == role_val)
+            user_result = await session.exec(user_statement)
+            user = user_result.first()
+            if not user:
+                raise HTTPException(status_code=404, detail="No account found for this email and role")
+            user.hashed_password = get_password_hash(request.new_password)
+            session.add(user)
+            await session.commit()
+            return {"message": "Password reset successful"}
+
+        if request.phone_number:
+            phone_number = request.phone_number.strip()
+            user_statement = select(User).where(User.phone_number == phone_number, User.role == role_val)
+            user_result = await session.exec(user_statement)
+            user = user_result.first()
+            if not user:
+                raise HTTPException(status_code=404, detail="No account found for this phone number and role")
+            user.hashed_password = get_password_hash(request.new_password)
+            session.add(user)
+            await session.commit()
+            return {"message": "Password reset successful"}
 
     if request.email:
         email = request.email.lower().strip()
@@ -202,6 +254,9 @@ async def reset_password(request: ResetPasswordRequest, session: AsyncSession = 
 
 @router.post("/send-phone-otp")
 async def send_phone_otp(request: SendPhoneOTPRequest, session: AsyncSession = Depends(get_session)):
+    if _otp_disabled():
+        return {"message": "OTP disabled"}
+
     # Delete old OTPs for this phone
     old_stmt = select(PhoneOTP).where(PhoneOTP.phone_number == request.phone_number)
     old_result = await session.exec(old_stmt)
@@ -225,6 +280,9 @@ async def send_phone_otp(request: SendPhoneOTPRequest, session: AsyncSession = D
 
 @router.post("/verify-phone-otp")
 async def verify_phone_otp(request: VerifyPhoneOTPRequest, session: AsyncSession = Depends(get_session)):
+    if _otp_disabled():
+        return {"message": "Phone OTP verification disabled", "verified": True}
+
     now = datetime.utcnow()
     statement = select(PhoneOTP).where(
         PhoneOTP.phone_number == request.phone_number,
@@ -255,6 +313,9 @@ async def send_register_otp(request: SendRegisterOTPRequest, session: AsyncSessi
     """Send a verification OTP to email before account creation."""
     email = request.email.lower().strip()
     role = request.role
+
+    if _otp_disabled():
+        return {"message": "OTP disabled"}
 
     # Check duplicate: same email + same role already registered
     dup_stmt = select(User).where(User.email == email, User.role == role)
@@ -302,23 +363,24 @@ async def register(user: UserCreate, session: AsyncSession = Depends(get_session
             raise HTTPException(status_code=400, detail=f"Phone number already registered as {role_val}")
     else:
         # Email registration — require verified OTP
-        if not user.email_otp_code:
+        if not _otp_disabled() and not user.email_otp_code:
             raise HTTPException(status_code=400, detail="Email verification code is required")
 
         email = (user.email or "").lower().strip()
         now = datetime.utcnow()
-        otp_stmt = select(EmailVerificationOTP).where(
-            EmailVerificationOTP.email == email,
-            EmailVerificationOTP.role == role_val,
-            EmailVerificationOTP.otp_code == user.email_otp_code,
-            EmailVerificationOTP.expires_at > now,
-            EmailVerificationOTP.is_verified == False
-        )
-        otp_result = await session.exec(otp_stmt)
-        otp_entry = otp_result.first()
+        if not _otp_disabled():
+            otp_stmt = select(EmailVerificationOTP).where(
+                EmailVerificationOTP.email == email,
+                EmailVerificationOTP.role == role_val,
+                EmailVerificationOTP.otp_code == user.email_otp_code,
+                EmailVerificationOTP.expires_at > now,
+                EmailVerificationOTP.is_verified == False
+            )
+            otp_result = await session.exec(otp_stmt)
+            otp_entry = otp_result.first()
 
-        if not otp_entry:
-            raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+            if not otp_entry:
+                raise HTTPException(status_code=400, detail="Invalid or expired verification code")
 
         # Check if email+role already exists (race-condition guard)
         dup_stmt = select(User).where(User.email == email, User.role == role_val)
@@ -327,8 +389,9 @@ async def register(user: UserCreate, session: AsyncSession = Depends(get_session
             raise HTTPException(status_code=400, detail=f"Email already registered as {role_val}")
 
         # Mark OTP used
-        otp_entry.is_verified = True
-        session.add(otp_entry)
+        if not _otp_disabled():
+            otp_entry.is_verified = True
+            session.add(otp_entry)
 
     hashed_pwd = get_password_hash(user.password)
     # Build user dict with role as its plain string VALUE (not enum name)
