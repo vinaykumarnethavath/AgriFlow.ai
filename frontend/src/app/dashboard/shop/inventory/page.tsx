@@ -104,6 +104,9 @@ export default function InventoryPage() {
         }
     };
 
+    const submitWithStatus = (status: 'draft' | 'active') =>
+        handleSubmit((formData) => onSubmit(formData, status))();
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -124,12 +127,14 @@ export default function InventoryPage() {
         }
     };
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: any, forcedStatus?: 'draft' | 'active') => {
         try {
             const priceVal = parseFloat(data.price || 0);
             const qtyVal = parseInt(data.quantity || 0);
 
-            if (submitAction === "active") {
+            const nextStatus: 'draft' | 'active' = forcedStatus || submitAction;
+
+            if (nextStatus === "active") {
                 if (priceVal <= 0) {
                     alert("Please set a valid Selling Price before marking as active.");
                     return;
@@ -149,7 +154,7 @@ export default function InventoryPage() {
                 measure_unit: data.measure_unit || "kg",
                 low_stock_threshold: data.low_stock_threshold ? parseInt(data.low_stock_threshold as any) : 10,
                 main_composition: data.main_composition || null,
-                status: submitAction,
+                status: nextStatus,
                 manufacture_date: (() => {
                     const d = data.manufacture_date ? new Date(data.manufacture_date) : null;
                     return d && !isNaN(d.getTime()) ? d.toISOString() : null;
@@ -164,7 +169,7 @@ export default function InventoryPage() {
                 const res = await api.post("/products/", payload);
                 fetchProducts();
                 closeAddModal();
-                if (submitAction === "draft") {
+                if (nextStatus === "draft") {
                     setSavedProductName(data.name); // show workflow banner only for draft saves
                 }
             }
@@ -820,7 +825,7 @@ export default function InventoryPage() {
                 onClose={closeAddModal}
                 title={editingProduct ? "Edit Product Batch" : lockedFields ? "Add Another Batch" : "Add New Product"}
             >
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 max-h-[85vh] overflow-y-auto">
+                <form onSubmit={handleSubmit((formData) => onSubmit(formData))} className="space-y-4 p-4 max-h-[85vh] overflow-y-auto">
 
                     {/* Photo upload */}
                     <div className="space-y-2">
@@ -1036,16 +1041,16 @@ export default function InventoryPage() {
 
                     <div className="flex gap-3 pt-2">
                         <Button 
-                            type="submit" 
-                            onClick={() => setSubmitAction("draft")} 
+                            type="button" 
+                            onClick={() => submitWithStatus("draft")}
                             variant="outline" 
                             className="flex-1 text-amber-700 border-amber-200 hover:bg-amber-50 hover:text-amber-800"
                         >
                             {editingProduct?.status === 'active' ? "Change to Draft" : (editingProduct ? "Update Draft" : "Save as Draft")}
                         </Button>
                         <Button 
-                            type="submit" 
-                            onClick={() => setSubmitAction("active")} 
+                            type="button" 
+                            onClick={() => submitWithStatus("active")}
                             className="flex-1 bg-green-600 hover:bg-green-700"
                         >
                             {editingProduct?.status === 'active' ? "Update Product" : "Save & Mark Active"}
