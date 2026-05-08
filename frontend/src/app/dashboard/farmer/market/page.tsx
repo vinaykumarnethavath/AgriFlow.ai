@@ -224,7 +224,8 @@ export default function MarketPage() {
 
             const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
             const matchesShop = selectedShop === null || product.user_id === selectedShop;
-            const matchesNearby = nearbyShopIds ? nearbyShopIds.has(product.user_id) : true;
+            // Gracefully handle empty nearbyShopIds (show all if empty/not yet loaded)
+            const matchesNearby = !nearbyShopIds || nearbyShopIds.size === 0 || nearbyShopIds.has(product.user_id);
 
             return matchesSearch && matchesCategory && matchesShop && matchesNearby;
         });
