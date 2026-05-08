@@ -749,11 +749,15 @@ async def nearby_internal_providers(
         pincode=user_loc.get("pincode"),
     )
     user_geo = await geocode_cached(session=session, query_text=user_query, address_key=user_key)
-    if not user_geo:
-        return []
-
-    u_lat = float(user_geo["lat"])
-    u_lng = float(user_geo["lng"])
+    u_lat: float | None = None
+    u_lng: float | None = None
+    if user_geo:
+        try:
+            u_lat = float(user_geo["lat"])
+            u_lng = float(user_geo["lng"])
+        except Exception:
+            u_lat = None
+            u_lng = None
 
     providers: list[dict[str, Any]] = []
 
@@ -789,12 +793,14 @@ async def nearby_internal_providers(
                 state=getattr(s, "state", None),
                 pincode=getattr(s, "pincode", None),
             )
-            geo = await geocode_cached(session=session, query_text=q, address_key=k)
-            if not geo:
-                continue
-            dist = _haversine(u_lat, u_lng, float(geo["lat"]), float(geo["lng"]))
-            if dist > radius_km:
-                continue
+            dist: float | None = None
+            if u_lat is not None and u_lng is not None:
+                geo = await geocode_cached(session=session, query_text=q, address_key=k)
+                if not geo:
+                    continue
+                dist = _haversine(u_lat, u_lng, float(geo["lat"]), float(geo["lng"]))
+                if dist > radius_km:
+                    continue
 
             providers.append({
                 "provider_type": "shop",
@@ -844,12 +850,14 @@ async def nearby_internal_providers(
                 state=getattr(m, "state", None),
                 pincode=getattr(m, "pincode", None),
             )
-            geo = await geocode_cached(session=session, query_text=q, address_key=k)
-            if not geo:
-                continue
-            dist = _haversine(u_lat, u_lng, float(geo["lat"]), float(geo["lng"]))
-            if dist > radius_km:
-                continue
+            dist: float | None = None
+            if u_lat is not None and u_lng is not None:
+                geo = await geocode_cached(session=session, query_text=q, address_key=k)
+                if not geo:
+                    continue
+                dist = _haversine(u_lat, u_lng, float(geo["lat"]), float(geo["lng"]))
+                if dist > radius_km:
+                    continue
 
             providers.append({
                 "provider_type": "mill",
@@ -881,7 +889,7 @@ async def nearby_internal_providers(
             prod_rows = (await session.exec(
                 select(Product).where(
                     Product.user_id.in_(shop_ids),
-                    Product.category.in_(["fertilizer", "pesticide", "seeds"]),
+                    Product.category.in_(["fertilizer", "pesticide", "pesticides", "seeds", "equipment", "machinery"]),
                     Product.status == "active",
                 )
             )).all()

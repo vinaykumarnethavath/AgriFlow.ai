@@ -12,7 +12,7 @@ interface ReceiveStockModalProps {
     onSuccess: () => void;
 }
 
-const CATEGORIES = ["fertilizer", "seeds", "pesticides", "machinery", "crop"];
+const CATEGORIES = ["fertilizer", "seeds", "pesticide", "equipment", "crop"];
 
 export default function ReceiveStockModal({ isOpen, onClose, onSuccess }: ReceiveStockModalProps) {
     const [items, setItems] = useState<ProductBatchReceiveInfo[]>([{

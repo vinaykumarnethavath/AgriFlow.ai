@@ -25,6 +25,17 @@ def _strip_tz(dt):
         return dt.replace(tzinfo=None)
     return dt
 
+
+def _normalize_category(category: Optional[str]) -> Optional[str]:
+    if category is None:
+        return None
+    c = str(category).strip().lower()
+    if c == "pesticides":
+        return "pesticide"
+    if c == "machinery":
+        return "equipment"
+    return c
+
 @router.post("/", response_model=ProductRead)
 async def create_product(
     product: ProductCreate, 
@@ -35,6 +46,9 @@ async def create_product(
         raise HTTPException(status_code=403, detail="Not authorized to sell products")
         
     product_data = product.model_dump() if hasattr(product, "model_dump") else product.dict()
+
+    if "category" in product_data:
+        product_data["category"] = _normalize_category(product_data.get("category"))
     
     # Strip timezone from all datetime fields
     for field in ["expiry_date", "manufacture_date"]:
@@ -125,6 +139,9 @@ async def bulk_receive_products(
         apportioned_oth = receipt.total_other_cost * weight_ratio
         
         product_data = item.model_dump() if hasattr(item, "model_dump") else item.dict()
+
+        if "category" in product_data:
+            product_data["category"] = _normalize_category(product_data.get("category"))
         
         for field in ["expiry_date", "manufacture_date"]:
             if field in product_data and product_data[field]:
@@ -266,6 +283,9 @@ async def update_product(
         raise HTTPException(status_code=403, detail="Not authorized to update this product")
     
     product_data = product_update.dict(exclude_unset=True)
+
+    if "category" in product_data:
+        product_data["category"] = _normalize_category(product_data.get("category"))
     
     for field in ["expiry_date", "manufacture_date"]:
         if field in product_data and product_data[field]:

@@ -19,7 +19,7 @@ import { Modal } from "@/components/ui/modal";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 
-const CATEGORIES = ["fertilizer", "seeds", "pesticides", "machinery"];
+const CATEGORIES = ["fertilizer", "seeds", "pesticide", "equipment"];
 const UNIT_OPTIONS = ["bags", "bottles", "packets", "kg", "liters", "pieces"];
 
 type LockedFields = {
@@ -893,14 +893,13 @@ export default function InventoryPage() {
                         <div className="space-y-2">
                             <Label>Category</Label>
                             <select
-                                {...register("category")}
-                                className="w-full p-2 border rounded-md"
-                                disabled={Boolean(lockedFields?.category)}
+                                className="w-full border rounded p-2"
+                                {...register("category", { required: "Category is required" })}
                             >
                                 <option value="fertilizer">Fertilizer</option>
                                 <option value="seeds">Seeds</option>
-                                <option value="pesticides">Pesticides</option>
-                                <option value="machinery">Machinery</option>
+                                <option value="pesticide">Pesticides</option>
+                                <option value="equipment">Equipment</option>
                                 <option value="crop">Crop</option>
                             </select>
                         </div>
