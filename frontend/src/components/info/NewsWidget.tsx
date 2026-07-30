@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Newspaper, ShieldCheck, AlertCircle, Sprout, TrendingUp, ExternalLink, Clock } from 'lucide-react';
 import api, { NewsItem } from '@/lib/api';
+import { useLanguage } from '@/context/LanguageContext';
+import { T } from '@/components/TranslateText';
 
 interface NewsWidgetProps {
     filterCategory?: string;
@@ -26,6 +28,7 @@ function getRelativeTime(dateStr: string): string {
 export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
     const [news, setNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const { t } = useLanguage();
 
     useEffect(() => {
         const fetchNews = async () => {
@@ -108,7 +111,7 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
             <Card className="bg-card border text-card-foreground shadow-sm h-full flex items-center justify-center p-6 text-center">
                 <div>
                     <Newspaper className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-40" />
-                    <p className="text-muted-foreground text-sm">No recent agricultural news.</p>
+                    <p className="text-muted-foreground text-sm">{t('news.noNews')}</p>
                 </div>
             </Card>
         )
@@ -122,10 +125,10 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
                         <div className="bg-gradient-to-br from-orange-500 to-red-500 p-1.5 rounded-lg">
                             <Newspaper className="h-4 w-4 text-white" />
                         </div>
-                        {filterCategory === 'scheme' ? 'Govt. Schemes' : 'Agricultural News'}
+                        {filterCategory === 'scheme' ? t('news.governmentSchemes') : t('news.title')}
                     </span>
                     <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5" /> Last 15 days
+                        <Clock className="h-2.5 w-2.5" /> {t('news.recent')}
                     </span>
                 </CardTitle>
             </CardHeader>
@@ -143,7 +146,11 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
                                     <div className="flex items-center justify-between mb-1.5">
                                         <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${getCategoryStyle(item.category)}`}>
                                             {getCategoryIcon(item.category)}
-                                            {item.category}
+                                            {item.category === 'scheme' ? t('news.governmentSchemes') :
+                                             item.category === 'alert' ? t('news.weatherAlerts') :
+                                             item.category === 'market' ? t('news.marketNews') :
+                                             item.category === 'tip' ? t('news.cropAdvisory') :
+                                             item.category}
                                         </span>
                                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                                             <Clock className="h-2.5 w-2.5" />
@@ -153,12 +160,12 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
 
                                     {/* Title */}
                                     <h4 className="font-bold text-sm text-foreground group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors mb-1 line-clamp-2">
-                                        {item.title}
+                                        <T>{item.title}</T>
                                     </h4>
 
                                     {/* Summary */}
                                     <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                                        {item.summary}
+                                        <T>{item.summary}</T>
                                     </p>
 
                                     {/* Footer: Source + Link */}
@@ -168,7 +175,7 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
                                         </span>
                                         {item.verified && (
                                             <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-400 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800">
-                                                <ShieldCheck className="h-2.5 w-2.5" /> Verified
+                                                <ShieldCheck className="h-2.5 w-2.5" /> {t('common.confirm')}
                                             </span>
                                         )}
                                         {item.url && (
@@ -179,7 +186,7 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
                                                 className="flex items-center gap-1 text-[10px] font-bold text-green-600 hover:text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 px-1.5 py-0.5 rounded border border-green-100 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
-                                                <ExternalLink className="h-2.5 w-2.5" /> Read More
+                                                <ExternalLink className="h-2.5 w-2.5" /> {t('news.readMore')}
                                             </a>
                                         )}
                                     </div>

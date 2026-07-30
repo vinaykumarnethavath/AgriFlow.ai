@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { sendChatMessage, ChatResponse } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -137,7 +138,8 @@ function loadSessions(role: string): { sessions: ChatSession[]; activeId: string
 export const ChatBot = () => {
     // ----- Get current user role for isolation -----
     const { user } = useAuth();
-    const userRole = (user?.role || "farmer") as string;
+    const { t } = useLanguage();
+    const userRole = (user as any)?.role || "farmer";
 
     // ----- Core state -----
     const [isOpen, setIsOpen] = useState(false);
@@ -395,7 +397,7 @@ export const ChatBot = () => {
                 >
                     <MessageSquare className="w-6 h-6" />
                     <span className="absolute right-16 bg-white dark:bg-slate-800 text-green-900 dark:text-green-100 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        Ask Agri Assistant
+                        {t('chatbot.title')}
                     </span>
                 </button>
             )}
@@ -420,7 +422,7 @@ export const ChatBot = () => {
                             <h3 className="font-bold text-sm tracking-wide leading-tight">
                                 {activeSession?.title && activeSession.title !== "New Chat"
                                     ? activeSession.title
-                                    : "Agri Assistant"}
+                                    : t('chatbot.title')}
                             </h3>
                             <p className="text-[10px] text-green-100 font-medium">Smart Farm & Business AI</p>
                         </div>
@@ -464,7 +466,7 @@ export const ChatBot = () => {
                             <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                 <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
                                     <History className="w-4 h-4 text-green-600" />
-                                    Chat History
+                                    {t('chatbot.chatHistory')}
                                 </h4>
                             </div>
 
@@ -527,7 +529,7 @@ export const ChatBot = () => {
                                     id="sidebar-new-chat-btn"
                                 >
                                     <Plus className="w-3.5 h-3.5" />
-                                    New Chat
+                                    {t('chatbot.newChat')}
                                 </button>
                             </div>
                         </div>
@@ -660,7 +662,7 @@ export const ChatBot = () => {
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    placeholder="Ask me anything..."
+                                    placeholder={t('chatbot.placeholder')}
                                     className="flex-1 bg-transparent px-4 py-2 text-sm outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400"
                                     disabled={isLoading}
                                     id="chat-input"

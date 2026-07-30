@@ -8,6 +8,8 @@ import api from "@/lib/api";
 import { Sprout, Mail, Phone } from "lucide-react";
 import { UserRole } from "@/types";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useLanguage } from "@/context/LanguageContext";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 type AuthMethod = "email" | "phone";
 
@@ -29,6 +31,7 @@ export default function LoginPage() {
 
     const { login } = useAuth();
     const router = useRouter();
+    const { t } = useLanguage();
 
     // ── Email Login ───────────────────────────────────────────────────────────
     const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -97,7 +100,8 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300 relative">
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-4 right-4 flex items-center gap-3">
+                <LanguageSelector />
                 <ThemeToggle />
             </div>
             <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
@@ -108,8 +112,8 @@ export default function LoginPage() {
                             <Sprout className="h-6 w-6 text-green-600" />
                         </div>
                     </div>
-                    <h1 className="text-2xl font-bold text-foreground">AgriFlow Login</h1>
-                    <p className="text-sm text-muted-foreground">Enter your credentials to access the platform</p>
+                    <h1 className="text-2xl font-bold text-foreground">{t('auth.login')}</h1>
+                    <p className="text-sm text-muted-foreground">{t('auth.loginSubtitle')}</p>
                 </div>
 
                 <div className="p-8 space-y-6">
@@ -127,7 +131,7 @@ export default function LoginPage() {
                             onClick={() => { setAuthMethod("phone"); setError(""); }}
                             className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "phone" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}
                         >
-                            <Phone className="h-4 w-4" /> Phone Number
+                            <Phone className="h-4 w-4" /> {t('auth.phone')}
                         </button>
                     </div>
 
@@ -135,33 +139,33 @@ export default function LoginPage() {
                     {authMethod === "email" && (
                         <form onSubmit={handleEmailSubmit} className="space-y-5">
                             <div className="space-y-1.5">
-                                <label className="text-sm font-semibold text-muted-foreground block">Email Address</label>
+                                <label className="text-sm font-semibold text-muted-foreground block">{t('auth.email')}</label>
                                 <input type="email" placeholder="farmer@example.com" ref={emailRef} required autoComplete="email" className={inputCls} />
                             </div>
                             <div className="space-y-1.5">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-sm font-semibold text-muted-foreground">Password</label>
-                                    <Link href="/forgot-password?method=email" className="text-xs text-green-600 hover:underline font-bold">Forgot password?</Link>
+                                    <label className="text-sm font-semibold text-muted-foreground">{t('auth.password')}</label>
+                                    <Link href="/forgot-password?method=email" className="text-xs text-green-600 hover:underline font-bold">{t('auth.forgotPassword')}</Link>
                                 </div>
                                 <input type="password" ref={passwordRef} required autoComplete="current-password" placeholder="••••••••" className={inputCls} />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-sm font-semibold text-muted-foreground block">Role (Optional)</label>
+                                <label className="text-sm font-semibold text-muted-foreground block">{t('auth.role')}</label>
                                 <select ref={roleRef} className={selectCls}>
-                                    <option value="">Select a role (if you have multiple)</option>
-                                    <option value={UserRole.FARMER}>Farmer</option>
-                                    <option value={UserRole.SHOP}>Shop Owner / Fertilizer Shop</option>
-                                    <option value={UserRole.MANUFACTURER}>Mill Owner</option>
-                                    <option value={UserRole.CUSTOMER}>Customer</option>
+                                    <option value="">{t('auth.selectRole')}</option>
+                                    <option value={UserRole.FARMER}>{t('auth.farmer')}</option>
+                                    <option value={UserRole.SHOP}>{t('auth.shopOwner')}</option>
+                                    <option value={UserRole.MANUFACTURER}>{t('auth.manufacturer')}</option>
+                                    <option value={UserRole.CUSTOMER}>{t('auth.customer')}</option>
                                 </select>
                             </div>
                             {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">{error}</div>}
                             <button type="submit" disabled={loading} className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
-                                {loading ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Logging in...</span> : "Login"}
+                                {loading ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('common.loading')}</span> : t('auth.login')}
                             </button>
                             <div className="text-center text-sm pt-2">
-                                <span className="text-muted-foreground">Don't have an account? </span>
-                                <Link href="/register" className="text-green-600 font-bold hover:underline">Create Account</Link>
+                                <span className="text-muted-foreground">{t('auth.dontHaveAccount')} </span>
+                                <Link href="/register" className="text-green-600 font-bold hover:underline">{t('auth.register')}</Link>
                             </div>
                         </form>
                     )}

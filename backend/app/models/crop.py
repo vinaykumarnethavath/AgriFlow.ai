@@ -123,3 +123,24 @@ class CropSaleCreate(CropSaleBase):
 class CropSaleRead(CropSaleBase):
     id: int
     crop_id: int
+
+class CropDiagnosisBase(SQLModel):
+    image_url: str
+    is_healthy: bool
+    disease_name: Optional[str] = None
+    severity: Optional[str] = None
+    confidence: Optional[str] = None
+    full_diagnosis_json: str # Store the complete JSON string
+
+class CropDiagnosis(CropDiagnosisBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    crop_id: int = Field(foreign_key="crop.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CropDiagnosisCreate(CropDiagnosisBase):
+    pass
+
+class CropDiagnosisRead(CropDiagnosisBase):
+    id: int
+    crop_id: int
+    created_at: datetime

@@ -7,7 +7,7 @@ import os
 import asyncio
 from .database import init_db
 from fastapi.staticfiles import StaticFiles
-from .routers import auth, crops, products, orders, traceability, farmer, upload, analytics, manufacturer, customer, profile_routers, payments, shop_accounting, rag
+from .routers import auth, crops, products, orders, traceability, farmer, upload, analytics, manufacturer, customer, profile_routers, payments, shop_accounting, rag, translate, chat
 
 app = FastAPI(title="AgriFlow API")
 
@@ -126,9 +126,14 @@ app.include_router(profile_routers.router)
 app.include_router(payments.router)
 app.include_router(shop_accounting.router)
 app.include_router(rag.router)
-from .routers import weather, market_prices, news, location
+app.include_router(translate.router)
+app.include_router(chat.router)
+from .routers import weather, market_prices, news, location, crop_health, nutrition, learning
 app.include_router(weather.router)
 app.include_router(market_prices.router)
 app.include_router(news.router)
 app.include_router(location.router)
+app.include_router(crop_health.router)
+app.include_router(nutrition.router)
+app.include_router(learning.router)
 

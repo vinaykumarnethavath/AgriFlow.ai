@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import api, { Crop, WeatherData } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,8 @@ import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
 import MarketPriceWidget from "@/components/info/MarketPriceWidget";
 import NewsWidget from "@/components/info/NewsWidget";
+import { AICropDiagnosis } from "@/components/AICropDiagnosis";
+import { Stethoscope } from "lucide-react";
 
 interface LandRecord {
     serial_number: string;
@@ -137,6 +140,7 @@ const handleAreaChangeEvent = (value: string, setter: (val: string) => void) => 
 
 export default function FarmerDashboard() {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [profile, setProfile] = useState<FarmerProfile | null>(null);
     const [crops, setCrops] = useState<Crop[]>([]);
     const [loading, setLoading] = useState(true);
@@ -185,6 +189,7 @@ export default function FarmerDashboard() {
     const [customActivities, setCustomActivities] = useState<{ text: string; daysLeft: number; type: string }[]>([]);
     const [showAddActivity, setShowAddActivity] = useState(false);
     const [newActivity, setNewActivity] = useState({ text: '', daysLeft: 7, type: 'custom' });
+    const [isDiagnosisOpen, setIsDiagnosisOpen] = useState(false);
 
     const customActivitiesStorageKey = useMemo(() => {
         const userId = (user as any)?.id;
@@ -513,7 +518,7 @@ export default function FarmerDashboard() {
     const utilizationPercent = totalLandArea > 0 ? Math.min((activeCropArea / totalLandArea) * 100, 100) : 0;
     const upcomingActivities = [...getUpcomingActivities(), ...customActivities].sort((a, b) => a.daysLeft - b.daysLeft);
 
-    if (loading) return <div className="p-8 text-green-600 font-bold animate-pulse">Loading dashboard...</div>;
+    if (loading) return <div className="p-8 text-green-600 font-bold animate-pulse">{t('common.loading')}</div>;
 
     // ─── PROFILE CREATION FORM ─────────────────────────────
     if (showForm && !profile) {
@@ -758,7 +763,7 @@ export default function FarmerDashboard() {
                             className="border-white/30 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm shadow-sm"
                         >
                             <PenSquare className="h-4 w-4 mr-2" />
-                            Edit Profile
+                            {t('farmer.editProfile')}
                         </Button>
                         <button
                             onClick={() => setShowProfileDetails(!showProfileDetails)}
@@ -766,7 +771,7 @@ export default function FarmerDashboard() {
                             title={showProfileDetails ? 'Hide profile details' : 'Show profile details'}
                         >
                             {showProfileDetails ? <EyeOff className="h-4 w-4 mr-1.5" /> : <Eye className="h-4 w-4 mr-1.5" />}
-                            {showProfileDetails ? 'Hide Details' : 'Show Details'}
+                            {showProfileDetails ? t('farmer.hideDetails') : t('farmer.showDetails')}
                         </button>
                     </div>
                 </div>
@@ -776,7 +781,7 @@ export default function FarmerDashboard() {
                         {/* Column 1: Land Details */}
                         <div className="bg-white/10 rounded-xl p-4">
                             <div className="flex justify-between items-center mb-3">
-                                <p className="text-green-50 text-xs font-bold uppercase tracking-wider">🌾 Land Plots</p>
+                                <p className="text-green-50 text-xs font-bold uppercase tracking-wider">🌾 {t('farmer.landPlots')}</p>
                                 <button
                                     onClick={() => {
                                         setLandRecords(profile?.land_records && profile.land_records.length > 0 ? profile.land_records.map(lr => ({ serial_number: lr.serial_number || "", area: lr.area || 0 })) : [{ serial_number: "", area: 0 }]);
@@ -784,44 +789,44 @@ export default function FarmerDashboard() {
                                     }}
                                     className="text-white/70 hover:text-white underline text-[10px] transition-colors"
                                 >
-                                    Edit
+                                    {t('common.edit')}
                                 </button>
                             </div>
                             {profile?.land_records && profile.land_records.length > 0 ? (
                                 <div className="space-y-1.5">
                                     {profile.land_records.map((lr, idx) => (
                                         <div key={idx} className="flex justify-between text-xs text-white bg-white/10 rounded-lg px-2 py-1.5">
-                                            <span className="text-white/80">Khasra: {lr.serial_number}</span>
+                                            <span className="text-white/80">{t('farmer.khasra')}: {lr.serial_number}</span>
                                             <span className="font-bold">{formatLandArea(lr.area)} Ac</span>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-white/60 text-xs">No land records added.</p>
+                                <p className="text-white/60 text-xs">{t('farmer.noLandRecords')}</p>
                             )}
                         </div>
 
                         {/* Column 2: Address */}
                         <div className="bg-white/10 rounded-xl p-4">
-                            <p className="text-green-50 text-xs font-bold uppercase tracking-wider mb-3">📍 Address</p>
+                            <p className="text-green-50 text-xs font-bold uppercase tracking-wider mb-3">📍 {t('farmer.address')}</p>
                             <div className="space-y-1 text-xs text-white">
-                                {profile?.house_no && <p><span className="text-white/60">House:</span> {profile.house_no}</p>}
-                                {profile?.street && <p><span className="text-white/60">Street:</span> {profile.street}</p>}
-                                {profile?.village && <p><span className="text-white/60">Village:</span> {profile.village}</p>}
-                                {profile?.mandal && <p><span className="text-white/60">Mandal:</span> {profile.mandal}</p>}
-                                {profile?.district && <p><span className="text-white/60">District:</span> {profile.district}</p>}
-                                {profile?.state && <p><span className="text-white/60">State:</span> {profile.state}</p>}
-                                {profile?.pincode && <p><span className="text-white/60">PIN:</span> {profile.pincode}</p>}
+                                {profile?.house_no && <p><span className="text-white/60">{t('farmer.house')}:</span> {profile.house_no}</p>}
+                                {profile?.street && <p><span className="text-white/60">{t('farmer.street')}:</span> {profile.street}</p>}
+                                {profile?.village && <p><span className="text-white/60">{t('farmer.village')}:</span> {profile.village}</p>}
+                                {profile?.mandal && <p><span className="text-white/60">{t('farmer.mandal')}:</span> {profile.mandal}</p>}
+                                {profile?.district && <p><span className="text-white/60">{t('farmer.district')}:</span> {profile.district}</p>}
+                                {profile?.state && <p><span className="text-white/60">{t('farmer.state')}:</span> {profile.state}</p>}
+                                {profile?.pincode && <p><span className="text-white/60">{t('farmer.pincode')}:</span> {profile.pincode}</p>}
                             </div>
                         </div>
 
                         {/* Column 3: Bank Details */}
                         <div className="bg-white/10 rounded-xl p-4">
-                            <p className="text-green-50 text-xs font-bold uppercase tracking-wider mb-3">🏦 Bank Details</p>
+                            <p className="text-green-50 text-xs font-bold uppercase tracking-wider mb-3">🏦 {t('farmer.bankDetails')}</p>
                             <div className="space-y-1 text-xs text-white">
-                                <p><span className="text-white/60">Bank:</span> <span className="font-bold">{profile?.bank_name || '—'}</span></p>
-                                <p><span className="text-white/60">A/C:</span> {profile?.account_number?.replace(/\d(?=\d{4})/g, "*") || '—'}</p>
-                                <p><span className="text-white/60">IFSC:</span> {profile?.ifsc_code || '—'}</p>
+                                <p><span className="text-white/60">{t('farmer.bankName')}:</span> <span className="font-bold">{profile?.bank_name || '—'}</span></p>
+                                <p><span className="text-white/60">{t('farmer.accountNumber')}:</span> {profile?.account_number?.replace(/\d(?=\d{4})/g, "*") || '—'}</p>
+                                <p><span className="text-white/60">{t('farmer.ifscCode')}:</span> {profile?.ifsc_code || '—'}</p>
                             </div>
                         </div>
                     </div>
@@ -863,16 +868,23 @@ export default function FarmerDashboard() {
                     size="sm"
                     className="bg-green-600 hover:bg-green-700 text-white rounded-full shadow-sm"
                 >
-                    <Plus className="h-4 w-4 mr-1" /> Add Crop
+                    <Plus className="h-4 w-4 mr-1" /> {t('farmer.addCrop')}
+                </Button>
+                <Button
+                    onClick={() => setIsDiagnosisOpen(true)}
+                    size="sm"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-md font-bold"
+                >
+                    <Stethoscope className="h-4 w-4 mr-1" /> {t('farmer.cropDiagnosis')}
                 </Button>
                 <Link href="/dashboard/farmer/market">
                     <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-md font-bold">
-                        <ShoppingBag className="h-4 w-4 mr-1" /> Buy Fertilizer
+                        <ShoppingBag className="h-4 w-4 mr-1" /> {t('sidebar.buyFertilizers')}
                     </Button>
                 </Link>
                 <Link href="/dashboard/farmer/crops">
                     <Button size="sm" variant="outline" className="border-gray-200 text-gray-700 bg-white rounded-full hover:bg-gray-50">
-                        <Wallet className="h-4 w-4 mr-1" /> Add Expense
+                        <Wallet className="h-4 w-4 mr-1" /> {t('farmer.addExpense')}
                     </Button>
                 </Link>
             </div>
@@ -917,7 +929,7 @@ export default function FarmerDashboard() {
                 <CardContent className="p-5">
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="font-bold text-foreground flex items-center gap-2">
-                            📊 Land Utilization
+                            📊 {t('farmer.totalLand')}
                         </h3>
                         <div className="flex items-center gap-3">
                             <span className="text-2xl font-black text-green-700">{utilizationPercent.toFixed(0)}%</span>
@@ -942,15 +954,15 @@ export default function FarmerDashboard() {
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-center">
                         <div className="bg-muted/50 rounded-lg p-2">
-                            <p className="text-xs text-muted-foreground">Total Land</p>
+                            <p className="text-xs text-muted-foreground">{t('farmer.totalLand')}</p>
                             <p className="font-bold text-foreground">{formatLandArea(totalLandArea)} Ac</p>
                         </div>
                         <div className="bg-green-50/10 rounded-lg p-2 border border-green-500/20">
-                            <p className="text-xs text-muted-foreground">Active Crops</p>
+                            <p className="text-xs text-muted-foreground">{t('farmer.myCrops')}</p>
                             <p className="font-bold text-green-700 dark:text-green-500">{formatLandArea(activeCropArea)} Ac</p>
                         </div>
                         <div className="bg-amber-50/10 rounded-lg p-2 border border-amber-500/20">
-                            <p className="text-xs text-muted-foreground">Available</p>
+                            <p className="text-xs text-muted-foreground">{t('farmer.availableLand')}</p>
                             <p className={`font-bold ${remainingLand < 0 ? 'text-red-600' : 'text-amber-700 dark:text-amber-500'}`}>{formatLandArea(remainingLand)} Ac</p>
                         </div>
                     </div>
@@ -964,7 +976,7 @@ export default function FarmerDashboard() {
                 <CardContent className="p-5">
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="font-bold text-foreground flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-amber-600" /> Upcoming Activities
+                            <Calendar className="h-5 w-5 text-amber-600" /> {t('farmer.upcomingActivities')}
                         </h3>
                         <Button
                             size="sm"
@@ -972,7 +984,7 @@ export default function FarmerDashboard() {
                             className="text-amber-700 border-amber-300 hover:bg-amber-100"
                             onClick={() => setShowAddActivity(!showAddActivity)}
                         >
-                            <Plus className="h-3 w-3 mr-1" /> Add
+                            <Plus className="h-3 w-3 mr-1" /> {t('common.add')}
                         </Button>
                     </div>
 
@@ -981,14 +993,14 @@ export default function FarmerDashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                                 <input
                                     type="text"
-                                    placeholder="Activity name (e.g. Apply pesticide)"
+                                    placeholder={t('farmer.activityName')}
                                     className="p-2 border rounded-md text-sm text-foreground bg-background"
                                     value={newActivity.text}
                                     onChange={(e) => setNewActivity({ ...newActivity, text: e.target.value })}
                                 />
                                 <input
                                     type="number"
-                                    placeholder="Days from now"
+                                    placeholder={t('farmer.daysFromNow')}
                                     className="p-2 border rounded-md text-sm text-foreground bg-background"
                                     value={newActivity.daysLeft}
                                     onChange={(e) => setNewActivity({ ...newActivity, daysLeft: Number(e.target.value) })}
@@ -999,9 +1011,9 @@ export default function FarmerDashboard() {
                                         value={newActivity.type}
                                         onChange={(e) => setNewActivity({ ...newActivity, type: e.target.value })}
                                     >
-                                        <option value="harvest">🌾 Harvest</option>
-                                        <option value="fertilizer">💧 Fertilizer</option>
-                                        <option value="custom">📋 Custom</option>
+                                        <option value="harvest">🌾 {t('farmer.harvest')}</option>
+                                        <option value="fertilizer">💧 {t('sidebar.buyFertilizers')}</option>
+                                        <option value="custom">📋 {t('common.description')}</option>
                                     </select>
                                     <Button
                                         size="sm"
@@ -1014,7 +1026,7 @@ export default function FarmerDashboard() {
                                             }
                                         }}
                                     >
-                                        Save
+                                        {t('common.save')}
                                     </Button>
                                 </div>
                             </div>
@@ -1051,7 +1063,7 @@ export default function FarmerDashboard() {
                             ))}
                         </div>
                     ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">No upcoming activities. Add one above!</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">{t('farmer.noActivities')}</p>
                     )}
                 </CardContent>
             </Card>
@@ -1064,11 +1076,11 @@ export default function FarmerDashboard() {
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                         <Sprout className="h-5 w-5 text-green-600" />
-                        Active Crops
+                        {t('farmer.activeCrops')}
                     </h2>
                     <Link href="/dashboard/farmer/crops">
                         <Button variant="ghost" size="sm" className="text-green-700 hover:bg-green-50">
-                            View All Crops <ArrowRight className="h-4 w-4 ml-1" />
+                            {t('farmer.viewAllCrops')} <ArrowRight className="h-4 w-4 ml-1" />
                         </Button>
                     </Link>
                 </div>
@@ -1076,10 +1088,10 @@ export default function FarmerDashboard() {
                 {activeCrops.length === 0 ? (
                     <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-8 text-center text-gray-500">
                         <Sprout className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                        <p className="font-medium">{crops.length === 0 ? 'No crops added yet.' : 'No active crops currently growing.'}</p>
+                        <p className="font-medium">{crops.length === 0 ? t('farmer.noCrops') : 'No active crops currently growing.'}</p>
                         <p className="text-sm mt-1">Start tracking your farming by adding a new crop.</p>
                         <Button onClick={() => setIsAddCropOpen(true)} className="mt-4 bg-green-600 hover:bg-green-700 text-white">
-                            <Plus className="h-4 w-4 mr-2" /> Add Your First Crop
+                            <Plus className="h-4 w-4 mr-2" /> {t('farmer.addCrop')}
                         </Button>
                     </div>
                 ) : (
@@ -1105,23 +1117,23 @@ export default function FarmerDashboard() {
                                                                                                 '🌿'}</span>
                                                     {crop.name}
                                                 </h3>
-                                                <p className="text-xs text-muted-foreground">Sown on: {new Date(crop.sowing_date).toLocaleDateString()} • {crop.area} Acres</p>
+                                                <p className="text-xs text-muted-foreground">{t('farmer.sownOn')}: {new Date(crop.sowing_date).toLocaleDateString()} • {crop.area} {t('farmer.acres')}</p>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-gray-100">
                                             <div>
-                                                <p className="text-xs text-gray-400">Total Cost</p>
+                                                <p className="text-xs text-gray-400">{t('farmer.totalCost')}</p>
                                                 <p className="font-bold text-gray-800">₹{(crop.total_cost || 0).toLocaleString()}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs text-gray-400">Revenue</p>
+                                                <p className="text-xs text-gray-400">{t('farmer.revenue')}</p>
                                                 <p className="font-bold text-gray-800">₹{(crop.total_revenue || 0).toLocaleString()}</p>
                                             </div>
                                         </div>
                                         <div className="mt-4 flex items-center justify-between gap-2">
                                             {crop.expected_harvest_date ? (
                                                 <div className="flex-1 bg-amber-50 text-amber-700 text-[11px] p-2 rounded-lg text-center font-bold border border-amber-100 truncate">
-                                                    🌾 Harvest: {new Date(crop.expected_harvest_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                    🌾 {t('farmer.harvest')}: {new Date(crop.expected_harvest_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                                 </div>
                                             ) : <div className="flex-1" />}
                                             <div className="bg-green-600 text-white p-2 rounded-lg group-hover:bg-green-700 transition-colors shadow-sm">
@@ -1194,7 +1206,7 @@ export default function FarmerDashboard() {
                             {weather?.advice && weather.advice.length > 0 && (
                                 <div className="mt-4 pt-4 border-t border-white/20">
                                     <p className="text-xs font-bold text-blue-100 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                        <MessageSquare className="h-3.5 w-3.5" /> Today's Farming Tips
+                                        <MessageSquare className="h-3.5 w-3.5" /> {t('farmer.latestNews')}
                                     </p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                         {weather.advice.slice(0, 4).map((tip, idx) => (
@@ -1224,12 +1236,12 @@ export default function FarmerDashboard() {
             <Modal
                 isOpen={isAddCropOpen}
                 onClose={() => setIsAddCropOpen(false)}
-                title="Add New Crop"
+                title={t('farmer.addCrop')}
             >
                 <form onSubmit={handleCreateCrop} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">Crop Name</label>
+                            <label className="text-sm font-medium text-gray-800">{t('crops.cropDetails')}</label>
                             <input
                                 required
                                 placeholder="e.g. Wheat, Rice, Cotton"
@@ -1239,7 +1251,7 @@ export default function FarmerDashboard() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">Variety (Optional)</label>
+                            <label className="text-sm font-medium text-gray-800">{t('crops.variety')}</label>
                             <input
                                 placeholder="e.g. Basmati, HYV, Local"
                                 className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
@@ -1250,19 +1262,19 @@ export default function FarmerDashboard() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">Season</label>
+                            <label className="text-sm font-medium text-gray-800">{t('crops.season')}</label>
                             <select
                                 className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800 bg-white"
                                 value={newCrop.season}
                                 onChange={(e) => setNewCrop({ ...newCrop, season: e.target.value })}
                             >
-                                <option value="Kharif">Kharif (Rainy – Jun to Nov)</option>
-                                <option value="Rabi">Rabi (Winter – Nov to Apr)</option>
-                                <option value="Zaid">Zaid (Summer – Mar to Jun)</option>
+                                <option value="Kharif">{t('crops.kharif')}</option>
+                                <option value="Rabi">{t('crops.rabi')}</option>
+                                <option value="Zaid">{t('crops.zaid')}</option>
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">Area (Acres.Guntas)</label>
+                            <label className="text-sm font-medium text-gray-800">{t('crops.areaLabel')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -1278,7 +1290,7 @@ export default function FarmerDashboard() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">Date of Sowing</label>
+                            <label className="text-sm font-medium text-gray-800">{t('expenses.date')}</label>
                             <input
                                 type="date"
                                 required
@@ -1288,7 +1300,7 @@ export default function FarmerDashboard() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">Expected Harvest Date</label>
+                            <label className="text-sm font-medium text-gray-800">{t('farmer.harvest')}</label>
                             <input
                                 type="date"
                                 className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
@@ -1298,7 +1310,7 @@ export default function FarmerDashboard() {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-800">Notes (Optional)</label>
+                        <label className="text-sm font-medium text-gray-800">{t('expenses.notes')}</label>
                         <textarea
                             placeholder="Any specific details..."
                             className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
@@ -1311,7 +1323,7 @@ export default function FarmerDashboard() {
                         disabled={addingCrop}
                         className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
                     >
-                        {addingCrop ? "Adding..." : "Add Crop"}
+                        {addingCrop ? t('common.loading') : t('farmer.addCrop')}
                     </Button>
                 </form>
             </Modal>
@@ -1496,6 +1508,17 @@ export default function FarmerDashboard() {
                     </Modal>
                 )
             }
+
+            {/* AI Diagnosis Modal */}
+            <Modal
+                isOpen={isDiagnosisOpen}
+                onClose={() => setIsDiagnosisOpen(false)}
+                title="AI Crop Health Diagnosis"
+            >
+                <div className="p-1">
+                    <AICropDiagnosis />
+                </div>
+            </Modal>
         </div >
     );
 }

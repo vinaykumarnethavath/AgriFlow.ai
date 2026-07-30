@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, RefreshCcw, ChevronLeft, ChevronRight, Search, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 import api, { MarketPrice } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
+import { T } from '@/components/TranslateText';
 
 export default function MarketPricesPage() {
     const [prices, setPrices] = useState<MarketPrice[]>([]);
@@ -13,6 +15,7 @@ export default function MarketPricesPage() {
     const [sortBy, setSortBy] = useState<'name' | 'price_high' | 'price_low'>('name');
     const [lastUpdated, setLastUpdated] = useState<string>('');
     const scrollRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+    const { t } = useLanguage();
 
     const fetchPrices = async () => {
         setLoading(true);
@@ -51,17 +54,17 @@ export default function MarketPricesPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Live Market Prices</h1>
-                    <p className="text-sm text-gray-500">Compare prices across nearby mandis. Find the best price for your crops.</p>
+                    <h1 className="text-2xl font-bold text-gray-900">{t('marketPrices.title')}</h1>
+                    <p className="text-sm text-gray-500">{t('marketPrices.subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-3">
                     {lastUpdated && (
                         <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full">
-                            Updated: {lastUpdated}
+                            {t('marketPrices.lastUpdated')}: {lastUpdated}
                         </span>
                     )}
                     <Button onClick={fetchPrices} variant="outline" size="sm" className="gap-2">
-                        <RefreshCcw className="h-4 w-4" /> Refresh
+                        <RefreshCcw className="h-4 w-4" /> {t('common.refresh')}
                     </Button>
                 </div>
             </div>
@@ -72,7 +75,7 @@ export default function MarketPricesPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search crop (e.g. Rice, Cotton, Wheat...)"
+                        placeholder={t('marketPrices.searchCommodity')}
                         className="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -85,9 +88,9 @@ export default function MarketPricesPage() {
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value as any)}
                     >
-                        <option value="name">Sort: A–Z</option>
-                        <option value="price_high">Price: High → Low</option>
-                        <option value="price_low">Price: Low → High</option>
+                        <option value="name">{t('marketPrices.commodity')} A–Z</option>
+                        <option value="price_high">{t('market.priceHighLow')}</option>
+                        <option value="price_low">{t('market.priceLowHigh')}</option>
                     </select>
                 </div>
             </div>
@@ -112,12 +115,12 @@ export default function MarketPricesPage() {
                                     <CardTitle className="text-xl font-bold text-gray-900">{crop.crop_name}</CardTitle>
                                     {crop.msp_comparison === 'above' && (
                                         <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
-                                            Above MSP
+                                            {t('marketPrices.priceUp')}
                                         </span>
                                     )}
                                     {crop.msp_comparison === 'below' && (
                                         <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full border border-red-200">
-                                            Below MSP
+                                            {t('marketPrices.priceDown')}
                                         </span>
                                     )}
                                 </div>
@@ -130,13 +133,13 @@ export default function MarketPricesPage() {
                                 {/* Primary Price */}
                                 <div className="flex items-end justify-between">
                                     <div>
-                                        <p className="text-xs text-gray-400 mb-0.5">Best Nearby Price</p>
+                                        <p className="text-xs text-gray-400 mb-0.5">{t('marketPrices.maxPrice')}</p>
                                         <p className="text-3xl font-bold text-gray-900">₹{crop.market_price.toLocaleString()}</p>
-                                        <p className="text-xs text-gray-500 mt-0.5">per Quintal</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{t('marketPrices.perQuintal')}</p>
                                     </div>
                                     {crop.msp > 0 && (
                                         <div className="text-right">
-                                            <p className="text-[10px] text-gray-400">MSP (Govt)</p>
+                                            <p className="text-[10px] text-gray-400">{t('marketPrices.mandi')} (MSP)</p>
                                             <p className="text-sm font-bold text-gray-600">₹{crop.msp.toLocaleString()}</p>
                                         </div>
                                     )}
@@ -145,7 +148,7 @@ export default function MarketPricesPage() {
                                 {/* Scrollable Nearby Markets */}
                                 {crop.markets && crop.markets.length > 0 && (
                                     <div>
-                                        <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Nearby Markets</p>
+                                        <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">{t('marketPrices.mandi')}</p>
                                         <div className="relative">
                                             <button
                                                 onClick={() => scrollMarkets(crop.crop_name, 'left')}
@@ -187,7 +190,7 @@ export default function MarketPricesPage() {
                                 {/* Decision Hint */}
                                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-2.5">
                                     <p className="text-xs text-blue-700 font-medium">
-                                        💡 {crop.trend === 'up' ? 'Prices increasing. Consider waiting for better rates.' : 'Prices declining. Check MSP before selling.'}
+                                        💡 <T>{crop.trend === 'up' ? 'Prices increasing. Consider waiting for better rates.' : 'Prices declining. Check MSP before selling.'}</T>
                                     </p>
                                 </div>
                             </CardContent>

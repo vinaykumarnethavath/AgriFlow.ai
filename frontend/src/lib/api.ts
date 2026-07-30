@@ -833,7 +833,7 @@ export interface MarketPrice {
 
 export interface NewsItem {
     id: number;
-    category: 'scheme' | 'tip' | 'market' | 'alert';
+    category: 'scheme' | 'tip' | 'market' | 'alert' | 'advisory' | 'technology';
     title: string;
     summary: string;
     source: string;
@@ -936,6 +936,88 @@ export interface ChatResponse {
 export const sendChatMessage = async (question: string): Promise<ChatResponse> => {
     const response = await api.post<ChatResponse>('/rag/chat', { question });
     return response.data;
+};
+
+// --- AI Crop Health Diagnosis API ---
+
+export interface DiseaseInfo {
+    disease_name: string;
+    confidence: string;
+    severity: string;
+    description: string;
+    affected_parts: string[];
+    causes: string[];
+}
+
+export interface TreatmentStep {
+    step_number: number;
+    title: string;
+    description: string;
+    timing: string;
+}
+
+export interface PesticideRecommendation {
+    name: string;
+    type: string;
+    dosage: string;
+    application_method: string;
+    frequency: string;
+    precautions: string[];
+}
+
+export interface PreventionTip {
+    tip: string;
+    category: string;
+}
+
+export interface CropHealthDiagnosis {
+    is_healthy: boolean;
+    crop_detected: string;
+    disease: DiseaseInfo | null;
+    treatment_steps: TreatmentStep[];
+    pesticide_recommendations: PesticideRecommendation[];
+    prevention_tips: PreventionTip[];
+    additional_notes: string;
+    urgency_level: string;
+}
+
+export interface SupportedCrop {
+    name: string;
+    emoji: string;
+}
+
+export const diagnoseCropHealth = async (imageFile: File, cropName?: string, cropId?: number): Promise<CropHealthDiagnosis> => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    if (cropName) {
+        formData.append('crop_name', cropName);
+    }
+    if (cropId) {
+        formData.append('crop_id', cropId.toString());
+    }
+    const response = await api.post<CropHealthDiagnosis>('/crop-health/diagnose', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000, // 60s timeout for AI analysis
+    });
+    return response.data;
+};
+
+export interface CropDiagnosisHistoryItem {
+    id: number;
+    crop_id: number;
+    image_url: string;
+    created_at: string;
+    diagnosis: CropHealthDiagnosis;
+}
+
+export const getCropDiagnosisHistory = async (cropId: number): Promise<CropDiagnosisHistoryItem[]> => {
+    const response = await api.get<CropDiagnosisHistoryItem[]>(`/crop-health/history/${cropId}`);
+    return response.data;
+};
+
+export const getSupportedCrops = async (): Promise<SupportedCrop[]> => {
+    const response = await api.get<{ crops: SupportedCrop[] }>('/crop-health/supported-crops');
+    return response.data.crops;
 };
 
 export default api;

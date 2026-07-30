@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Search, Tag, TrendingUp, Sparkles, MapPin } from "lucide-react";
@@ -9,23 +10,24 @@ import Link from "next/link";
 
 export default function CustomerDashboard() {
     const { user } = useAuth();
+    const { t } = useLanguage();
 
     return (
         <div className="space-y-8">
             {/* Hero Section */}
             <div className="bg-gradient-to-r from-green-600 to-emerald-500 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
                 <div className="relative z-10">
-                    <h1 className="text-4xl font-bold mb-2">Welcome, {user?.full_name}! 🌿</h1>
-                    <p className="text-green-100 text-lg mb-6">Fresh from the farm to your doorstep. Discover local produce today.</p>
+                    <h1 className="text-4xl font-bold mb-2">{t("common.welcome")}, {user?.full_name}! 🌿</h1>
+                    <p className="text-green-100 text-lg mb-6">{t("customer.welcomeSubtitle")}</p>
                     <div className="flex gap-3">
                         <Link href="/dashboard/customer/marketplace">
                             <Button size="lg" className="bg-white text-green-700 hover:bg-green-50">
-                                <ShoppingBag className="w-5 h-5 mr-2" /> Shop Now
+                                <ShoppingBag className="w-5 h-5 mr-2" /> {t("customer.shopNow")}
                             </Button>
                         </Link>
                         <Link href="/dashboard/customer/orders">
                             <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white/10">
-                                My Orders
+                                {t("customer.myOrders")}
                             </Button>
                         </Link>
                     </div>
@@ -39,15 +41,20 @@ export default function CustomerDashboard() {
             {/* Featured Categories */}
             <div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <Sparkles className="text-yellow-500" /> Featured Categories
+                    <Sparkles className="text-yellow-500" /> {t("customer.featuredCategories")}
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {['Fresh Crops', 'Organic', 'Grains', 'Processed Goods'].map((cat, i) => (
-                        <Link href={`/dashboard/customer/marketplace?category=${cat.toLowerCase()}`} key={i}>
+                    {[
+                        { key: 'customer.freshCrops', cat: 'Fresh Crops' },
+                        { key: 'customer.organic', cat: 'Organic' },
+                        { key: 'customer.grains', cat: 'Grains' },
+                        { key: 'customer.processedGoods', cat: 'Processed Goods' }
+                    ].map((item, i) => (
+                        <Link href={`/dashboard/customer/marketplace?category=${item.cat.toLowerCase()}`} key={i}>
                             <Card className="hover:shadow-md transition-shadow cursor-pointer bg-orange-50/50 border-orange-100">
                                 <CardContent className="flex flex-col items-center justify-center h-32 space-y-2">
                                     <Tag className="w-8 h-8 text-orange-400" />
-                                    <span className="font-semibold text-gray-700">{cat}</span>
+                                    <span className="font-semibold text-gray-700">{t(item.key)}</span>
                                 </CardContent>
                             </Card>
                         </Link>
@@ -60,7 +67,7 @@ export default function CustomerDashboard() {
                 <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-blue-700">
-                            <TrendingUp className="w-5 h-5" /> Trending Near You
+                            <TrendingUp className="w-5 h-5" /> {t("customer.trendingNearYou")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -92,13 +99,13 @@ export default function CustomerDashboard() {
                 <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-100">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-purple-700">
-                            <MapPin className="w-5 h-5" /> Buy Local
+                            <MapPin className="w-5 h-5" /> {t("customer.buyLocal")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-gray-600 mb-4 text-sm">Support farmers in your region. Reduce carbon footprint by buying local.</p>
+                        <p className="text-gray-600 mb-4 text-sm">{t("customer.supportLocalMessage")}</p>
                         <Button variant="outline" className="w-full border-purple-200 text-purple-700 hover:bg-purple-50">
-                            Explore Nearby Farmers
+                            {t("customer.exploreNearbyFarmers")}
                         </Button>
                     </CardContent>
                 </Card>

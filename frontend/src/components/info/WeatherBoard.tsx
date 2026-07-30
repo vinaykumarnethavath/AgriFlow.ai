@@ -4,10 +4,13 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cloud, CloudRain, Sun, Zap, Wind, Droplets, AlertTriangle, Thermometer } from 'lucide-react';
 import api, { WeatherData } from '@/lib/api';
+import { useLanguage } from '@/context/LanguageContext';
+import { T } from '@/components/TranslateText';
 
 export default function WeatherBoard() {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
+    const { t } = useLanguage();
 
     useEffect(() => {
         const resolveFallbackLocationFromProfile = async () => {
@@ -130,9 +133,9 @@ export default function WeatherBoard() {
                     <div className="mt-6 flex items-end gap-4">
                         <div className="text-6xl font-bold">{Math.round(weather.temperature)}°</div>
                         <div className="mb-2">
-                            <p className="font-medium text-lg">{weather.condition}</p>
+                            <p className="font-medium text-lg"><T>{weather.condition}</T></p>
                             <p className="text-blue-100 text-sm flex items-center gap-1">
-                                <Droplets className="h-3 w-3" /> {weather.humidity}% Humidity
+                                <Droplets className="h-3 w-3" /> {weather.humidity}% {t('weather.humidity')}
                                 <span className="mx-1">•</span>
                                 <Wind className="h-3 w-3" /> {weather.wind_speed} km/h
                             </p>
@@ -146,8 +149,8 @@ export default function WeatherBoard() {
                                 <div key={idx} className={`flex items-start gap-3 p-3 rounded-lg backdrop-blur-md ${alert.type === 'warning' ? 'bg-red-500/30 border border-red-500/50' : 'bg-orange-500/30 border border-orange-500/50'}`}>
                                     <AlertTriangle className={`h-5 w-5 shrink-0 ${alert.type === 'warning' ? 'text-red-200' : 'text-orange-200'}`} />
                                     <div>
-                                        <p className="font-bold text-sm text-white">{alert.title}</p>
-                                        <p className="text-xs text-white/90">{alert.message}</p>
+                                        <p className="font-bold text-sm text-white"><T>{alert.title}</T></p>
+                                        <p className="text-xs text-white/90"><T>{alert.message}</T></p>
                                     </div>
                                 </div>
                             ))}
@@ -160,7 +163,7 @@ export default function WeatherBoard() {
                     <div className="grid grid-cols-4 gap-2 text-center mb-4">
                         {weather.forecast.slice(0, 4).map((day, idx) => (
                             <div key={idx} className="bg-white/5 rounded-lg p-2">
-                                <p className="text-xs text-blue-100 mb-1">{day.day}</p>
+                                <p className="text-xs text-blue-100 mb-1"><T>{day.day}</T></p>
                                 <div className="flex justify-center my-1 scale-75">
                                     {getWeatherIcon(day.condition)}
                                 </div>
@@ -173,10 +176,10 @@ export default function WeatherBoard() {
                         <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3">
                             <p className="text-xs font-bold text-green-100 uppercase mb-1 flex items-center gap-1">
                                 <SproutIcon className="h-3 w-3" />
-                                Farming Advice
+                                {t('weather.farmingAdvice')}
                             </p>
                             <p className="text-sm font-medium text-white">
-                                "{weather.advice[0]}"
+                                "<T>{weather.advice[0]}</T>"
                             </p>
                         </div>
                     )}

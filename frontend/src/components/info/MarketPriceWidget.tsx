@@ -4,11 +4,14 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import api, { MarketPrice } from '@/lib/api';
+import { useLanguage } from '@/context/LanguageContext';
+import { T } from '@/components/TranslateText';
 
 export default function MarketPriceWidget({ filterCrops }: { filterCrops?: string[] }) {
     const [prices, setPrices] = useState<MarketPrice[]>([]);
     const [loading, setLoading] = useState(true);
     const scrollRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+    const { t } = useLanguage();
 
     useEffect(() => {
         const fetchPrices = async () => {
@@ -55,8 +58,8 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                 <div className="bg-muted p-3 rounded-full mb-3">
                     <TrendingUp className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="font-medium text-foreground">No Active Market Data</h3>
-                <p className="text-sm text-muted-foreground mt-1">Start growing crops to see their market rates here.</p>
+                <h3 className="font-medium text-foreground">{t('marketPrices.noData')}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{t('crops.addFirstCropDesc')}</p>
             </Card>
         );
     }
@@ -67,10 +70,10 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                 <CardTitle className="text-lg font-bold flex items-center justify-between">
                     <span className="flex items-center gap-2">
                         <TrendingUp className="h-5 w-5 text-green-600" />
-                        {filterCrops ? 'My Crop Prices' : 'Market Rates'}
+                        {filterCrops ? t('farmer.myCrops') : t('marketPrices.title')}
                     </span>
                     <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                        Live (₹/Qtl)
+                        {t('marketPrices.perQuintal')}
                     </span>
                 </CardTitle>
             </CardHeader>
@@ -84,12 +87,12 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                                     <h4 className="font-bold text-foreground">{crop.crop_name}</h4>
                                     {crop.msp_comparison === 'above' && (
                                         <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200">
-                                            Above MSP
+                                            {t('marketPrices.priceUp')}
                                         </span>
                                     )}
                                     {crop.msp_comparison === 'below' && (
                                         <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded border border-red-200">
-                                            Below MSP
+                                            {t('marketPrices.priceDown')}
                                         </span>
                                     )}
                                 </div>
@@ -154,7 +157,7 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                 {!filterCrops && (
                     <div className="p-3 bg-blue-50/50 text-center border-t border-blue-100">
                         <p className="text-xs text-blue-600 font-medium">
-                            💡 Tip: Prices are volatile. Check MSP before selling.
+                            💡 <T>Tip: Prices are volatile. Check MSP before selling.</T>
                         </p>
                     </div>
                 )}

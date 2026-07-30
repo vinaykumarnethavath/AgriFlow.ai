@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,6 +37,7 @@ const DELIVERY_STATUS: Record<string, { label: string; color: string }> = {
 
 export default function ManufacturerDashboard() {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const relationMap: Record<string, string> = { "son_of": "S/o", "wife_of": "W/o", "daughter_of": "D/o", "S/O": "S/o", "W/O": "W/o", "D/O": "D/o" };
     const [stats, setStats] = useState<ManufacturerStats | null>(null);
     const [profile, setProfile] = useState<any>(null);
@@ -109,7 +111,7 @@ export default function ManufacturerDashboard() {
                     )}
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold text-gray-800">{profile?.mill_name || "Mill Dashboard"}</h1>
+                            <h1 className="text-2xl font-bold text-gray-800">{profile?.mill_name || t('manufacturer.manufacturerDashboard')}</h1>
                             <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-md font-mono">ID: {profile?.mill_id || profile?.id || "—"}</span>
                         </div>
                         <p className="text-sm text-gray-600 flex items-center gap-1">

@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { UserRole } from "@/types";
 import { cn } from "@/lib/utils";
 import {
@@ -23,14 +24,19 @@ import {
     Settings,
     Wallet,
     ClipboardList,
-    BarChart2
+    BarChart2,
+    MessageSquare,
+    Droplets,
+    Video
 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
+import { LanguageSelector } from "../LanguageSelector";
 
 const Sidebar = () => {
     const { user, logout } = useAuth();
     const pathname = usePathname();
+    const { t } = useLanguage();
 
     const getNavItems = () => {
         if (!user) return [];
@@ -38,41 +44,44 @@ const Sidebar = () => {
         switch (user.role) {
             case UserRole.FARMER:
                 return [
-                    { name: "Dashboard", href: "/dashboard/farmer", icon: LayoutDashboard },
-                    { name: "My Crops", href: "/dashboard/farmer/crops", icon: Sprout },
-                    { name: "Buy Fertilizers", href: "/dashboard/farmer/market", icon: ShoppingBag },
-                    { name: "Market Prices", href: "/dashboard/farmer/market-prices", icon: TrendingUp },
-                    { name: "Weather", href: "/dashboard/farmer/weather", icon: Sun },
-                    { name: "Farmer News", href: "/dashboard/farmer/news", icon: PackageSearch },
+                    { name: t("sidebar.dashboard"), href: "/dashboard/farmer", icon: LayoutDashboard },
+                    { name: t("sidebar.myCrops"), href: "/dashboard/farmer/crops", icon: Sprout },
+                    { name: t("sidebar.buyFertilizers"), href: "/dashboard/farmer/market", icon: ShoppingBag },
+                    { name: t("sidebar.marketPrices"), href: "/dashboard/farmer/market-prices", icon: TrendingUp },
+                    { name: t("sidebar.weather"), href: "/dashboard/farmer/weather", icon: Sun },
+                    { name: t("sidebar.farmerNews", "Farmer News"), href: "/dashboard/farmer/news", icon: PackageSearch },
+                    { name: t("sidebar.communityHub", "Community Hub"), href: "/dashboard/farmer/community", icon: MessageSquare },
+                    { name: t("sidebar.nutrition", "Precision Nutrition"), href: "/dashboard/farmer/nutrition", icon: Droplets },
+                    { name: t("sidebar.learning", "Learning Hub"), href: "/dashboard/farmer/learning", icon: Video },
                 ];
             case UserRole.SHOP:
                 return [
-                    { name: "Dashboard", href: "/dashboard/shop", icon: LayoutDashboard },
-                    { name: "Inventory", href: "/dashboard/shop/inventory", icon: PackageSearch },
-                    { name: "Orders", href: "/dashboard/shop/orders", icon: Box },
-                    { name: "Accounting", href: "/dashboard/shop/accounting", icon: TrendingUp },
-                    { name: "Sales Analytics", href: "/dashboard/shop/analytics", icon: LineChart },
-                    { name: "Settings", href: "/dashboard/shop/profile", icon: Settings },
+                    { name: t("sidebar.dashboard"), href: "/dashboard/shop", icon: LayoutDashboard },
+                    { name: t("sidebar.inventory"), href: "/dashboard/shop/inventory", icon: PackageSearch },
+                    { name: t("sidebar.orders"), href: "/dashboard/shop/orders", icon: Box },
+                    { name: t("sidebar.accounting"), href: "/dashboard/shop/accounting", icon: TrendingUp },
+                    { name: t("sidebar.salesAnalytics"), href: "/dashboard/shop/analytics", icon: LineChart },
+                    { name: t("common.settings"), href: "/dashboard/shop/profile", icon: Settings },
                 ];
             case UserRole.MANUFACTURER:
                 return [
-                    { name: "Dashboard", href: "/dashboard/manufacturer", icon: LayoutDashboard },
-                    { name: "Purchases", href: "/dashboard/manufacturer/purchases", icon: ShoppingBag },
-                    { name: "Production", href: "/dashboard/manufacturer/production", icon: Factory },
-                    { name: "Inventory", href: "/dashboard/manufacturer/inventory", icon: Box },
-                    { name: "Orders", href: "/dashboard/manufacturer/orders", icon: ClipboardList },
-                    { name: "Accounting", href: "/dashboard/manufacturer/accounting", icon: Wallet },
-                    { name: "Analytics", href: "/dashboard/manufacturer/analytics", icon: BarChart2 },
-                    { name: "Sales", href: "/dashboard/manufacturer/sales", icon: LineChart },
-                    { name: "Settings", href: "/dashboard/manufacturer/profile", icon: Settings },
+                    { name: t("sidebar.dashboard"), href: "/dashboard/manufacturer", icon: LayoutDashboard },
+                    { name: t("sidebar.purchases"), href: "/dashboard/manufacturer/purchases", icon: ShoppingBag },
+                    { name: t("sidebar.production"), href: "/dashboard/manufacturer/production", icon: Factory },
+                    { name: t("sidebar.inventory"), href: "/dashboard/manufacturer/inventory", icon: Box },
+                    { name: t("sidebar.orders"), href: "/dashboard/manufacturer/orders", icon: ClipboardList },
+                    { name: t("sidebar.accounting"), href: "/dashboard/manufacturer/accounting", icon: Wallet },
+                    { name: t("sidebar.analytics"), href: "/dashboard/manufacturer/analytics", icon: BarChart2 },
+                    { name: t("sidebar.sales"), href: "/dashboard/manufacturer/sales", icon: LineChart },
+                    { name: t("common.settings"), href: "/dashboard/manufacturer/profile", icon: Settings },
                 ];
             case UserRole.CUSTOMER:
                 return [
-                    { name: "Home", href: "/dashboard/customer", icon: LayoutDashboard },
-                    { name: "Marketplace", href: "/dashboard/customer/marketplace", icon: Store },
-                    { name: "Cart", href: "/dashboard/customer/cart", icon: ShoppingCart },
-                    { name: "Orders", href: "/dashboard/customer/orders", icon: ShoppingBag },
-                    { name: "Settings", href: "/dashboard/customer/profile", icon: Settings },
+                    { name: t("sidebar.home"), href: "/dashboard/customer", icon: LayoutDashboard },
+                    { name: t("sidebar.marketplace"), href: "/dashboard/customer/marketplace", icon: Store },
+                    { name: t("sidebar.cart"), href: "/dashboard/customer/cart", icon: ShoppingCart },
+                    { name: t("sidebar.orders"), href: "/dashboard/customer/orders", icon: ShoppingBag },
+                    { name: t("common.settings"), href: "/dashboard/customer/profile", icon: Settings },
                 ];
             default:
                 return [];
@@ -88,7 +97,7 @@ const Sidebar = () => {
                     <Sprout className="h-8 w-8 text-green-400" />
                     AgriFlow
                 </h1>
-                <p className="text-xs text-green-300 mt-1">Supply Chain Platform</p>
+                <p className="text-xs text-green-300 mt-1">{t("auth.supplyChainPlatform")}</p>
             </div>
 
             <nav className="flex-1 space-y-2">
@@ -106,10 +115,15 @@ const Sidebar = () => {
             </nav>
 
             <div className="pt-4 border-t border-green-800">
+                {/* Language Selector */}
+                <div className="mb-3 px-1">
+                    <LanguageSelector />
+                </div>
+
                 <div className="mb-4 px-2 flex items-center justify-between">
                     <div>
                         <p className="font-semibold">{user?.full_name}</p>
-                        <p className="text-xs text-green-300 capitalize">{user?.role === 'manufacturer' ? 'Mill Owner' : user?.role}</p>
+                        <p className="text-xs text-green-300 capitalize">{user?.role === 'manufacturer' ? t("auth.manufacturer") : user?.role === 'farmer' ? t("auth.farmer") : user?.role === 'shop' ? t("auth.shopOwner") : user?.role === 'customer' ? t("auth.customer") : user?.role}</p>
                     </div>
                     <ThemeToggle />
                 </div>
@@ -119,7 +133,7 @@ const Sidebar = () => {
                     onClick={logout}
                 >
                     <LogOut className="mr-2 h-4 w-4" />
-                    Logout
+                    {t("common.logout")}
                 </Button>
             </div>
         </div>

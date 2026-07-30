@@ -26,3 +26,5 @@ from .shop import ShopProfile, ShopProfileCreate, ShopProfileRead
 from .payment import Payment, PaymentCreateRequest, PaymentVerifyRequest, PaymentRead
 from .shop_accounting import ShopAccountingExpense, ShopAccountingExpenseCreate, ShopAccountingExpenseRead
 from .geocode_cache import GeocodeCache
+from .chat import ChatChannel, ChannelMember, ChatMessage
+

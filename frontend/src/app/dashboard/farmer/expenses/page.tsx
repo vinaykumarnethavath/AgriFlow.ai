@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Plus, Trash2, Edit2, Filter } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { getAllFarmerExpenses, CropExpense } from '@/lib/api';
+import { useLanguage } from '@/context/LanguageContext';
+import { T } from '@/components/TranslateText';
 
 interface CropExpenseWithCrop extends CropExpense {
     crop_name: string;
@@ -13,6 +15,7 @@ interface CropExpenseWithCrop extends CropExpense {
 
 export default function ExpensesPage() {
     const router = useRouter();
+    const { t } = useLanguage();
     const [expenses, setExpenses] = useState<CropExpenseWithCrop[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -55,15 +58,15 @@ export default function ExpensesPage() {
         <div className="container mx-auto p-4 max-w-6xl">
             <div className="flex items-center mb-6">
                 <Button variant="ghost" onClick={() => router.back()} className="mr-4">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                    <ArrowLeft className="w-4 h-4 mr-2" /> {t('common.back')}
                 </Button>
-                <h1 className="text-2xl font-bold text-foreground">All Expenses</h1>
+                <h1 className="text-2xl font-bold text-foreground">{t('expenses.title')}</h1>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses Logged</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{t('expenses.totalExpenses')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{expenses.length}</div>
@@ -71,7 +74,7 @@ export default function ExpensesPage() {
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Cost (Filtered)</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{t('expenses.amount')} ({t('market.filters')})</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600">₹ {totalCost.toLocaleString()}</div>
@@ -82,11 +85,11 @@ export default function ExpensesPage() {
             <Card>
                 <CardHeader>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <CardTitle>Expense Log</CardTitle>
+                        <CardTitle>{t('expenses.expenseHistory')}</CardTitle>
                         <div className="flex gap-2 w-full md:w-auto">
                             <input
                                 type="text"
-                                placeholder="Search expenses..."
+                                placeholder={t('market.searchPlaceholder')}
                                 className="border rounded-md px-3 py-2 text-sm w-full md:w-64"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -96,13 +99,13 @@ export default function ExpensesPage() {
                                 value={categoryFilter}
                                 onChange={(e) => setCategoryFilter(e.target.value)}
                             >
-                                <option value="All">All Categories</option>
-                                <option value="Input">Input</option>
-                                <option value="Labor">Labor</option>
-                                <option value="Machinery">Machinery</option>
-                                <option value="Irrigation">Irrigation</option>
-                                <option value="Logistics">Logistics</option>
-                                <option value="Miscellaneous">Miscellaneous</option>
+                                <option value="All">{t('market.allCategories')}</option>
+                                <option value="Input">{t('expenses.seeds')}</option>
+                                <option value="Labor">{t('expenses.labour')}</option>
+                                <option value="Machinery">{t('expenses.equipment')}</option>
+                                <option value="Irrigation">{t('expenses.irrigation')}</option>
+                                <option value="Logistics">{t('expenses.transport')}</option>
+                                <option value="Miscellaneous">{t('expenses.other')}</option>
                             </select>
                         </div>
                     </div>
@@ -112,17 +115,17 @@ export default function ExpensesPage() {
                         <table className="w-full">
                             <thead className="bg-muted border-b">
                                 <tr>
-                                    <th className="text-left p-4 font-medium text-muted-foreground">Date</th>
-                                    <th className="text-left p-4 font-medium text-muted-foreground">Crop</th>
-                                    <th className="text-left p-4 font-medium text-muted-foreground">Category</th>
-                                    <th className="text-left p-4 font-medium text-muted-foreground">Details</th>
-                                    <th className="text-right p-4 font-medium text-muted-foreground">Cost</th>
+                                    <th className="text-left p-4 font-medium text-muted-foreground">{t('expenses.date')}</th>
+                                    <th className="text-left p-4 font-medium text-muted-foreground">{t('expenses.cropName')}</th>
+                                    <th className="text-left p-4 font-medium text-muted-foreground">{t('expenses.category')}</th>
+                                    <th className="text-left p-4 font-medium text-muted-foreground">{t('profile.personalDetails')}</th>
+                                    <th className="text-right p-4 font-medium text-muted-foreground">{t('expenses.amount')}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredExpenses.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="p-8 text-center text-gray-500">No expenses found.</td>
+                                        <td colSpan={5} className="p-8 text-center text-gray-500">{t('expenses.noExpenses')}</td>
                                     </tr>
                                 ) : (
                                     filteredExpenses.map(expense => (
@@ -131,7 +134,7 @@ export default function ExpensesPage() {
                                                 {new Date(expense.date).toLocaleDateString()}
                                             </td>
                                             <td className="p-4 font-medium text-foreground">
-                                                {expense.crop_name}
+                                                <T>{expense.crop_name}</T>
                                             </td>
                                             <td className="p-4">
                                                 <span className="px-2 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground">
@@ -140,27 +143,27 @@ export default function ExpensesPage() {
                                             </td>
                                             <td className="p-4">
                                                 <div className="font-bold text-foreground text-base mb-1">
-                                                    {expense.type}
+                                                    <T>{expense.type}</T>
                                                 </div>
                                                 {expense.unit === 'bags' ? (
                                                     <div className="text-sm">
                                                         <div className="text-teal-700 font-medium whitespace-nowrap">
-                                                            {expense.quantity} bags × {expense.unit_size || 1} kg/bag × ₹{expense.unit_cost}/bag
+                                                            {expense.quantity} {t('crops.bags')} × {expense.unit_size || 1} kg/{t('market.bag')} × ₹{expense.unit_cost}/{t('market.bag')}
                                                         </div>
                                                         <div className="text-emerald-600 mt-1 font-semibold text-xs">
-                                                            Total Qty: {expense.quantity * (expense.unit_size || 0)} kg
+                                                            {t('crops.totalYield')}: {expense.quantity * (expense.unit_size || 0)} kg
                                                         </div>
                                                     </div>
                                                 ) : expense.unit === 'liters' ? (
                                                     <div className="text-sm">
                                                         <div className="text-blue-700 font-medium whitespace-nowrap">
-                                                            {expense.quantity} bottles × {expense.unit_size || 1} L/bottle × ₹{expense.unit_cost}/L
+                                                            {expense.quantity} {t('market.pieces')} × {expense.unit_size || 1} L/{t('market.pieces')} × ₹{expense.unit_cost}/L
                                                         </div>
                                                     </div>
                                                 ) : expense.unit === 'packets' ? (
                                                     <div className="text-sm">
                                                         <div className="text-purple-700 font-medium whitespace-nowrap">
-                                                            {expense.quantity} packets × {expense.unit_size || 1} g/packet × ₹{expense.unit_cost}/g
+                                                            {expense.quantity} {t('market.pieces')} × {expense.unit_size || 1} g/{t('market.pieces')} × ₹{expense.unit_cost}/g
                                                         </div>
                                                     </div>
                                                 ) : (
@@ -170,7 +173,7 @@ export default function ExpensesPage() {
                                                 )}
                                                 {expense.notes && (
                                                     <div className="text-xs text-gray-400 mt-1 italic max-w-xs truncate">
-                                                        {expense.notes}
+                                                        <T>{expense.notes}</T>
                                                     </div>
                                                 )}
                                             </td>

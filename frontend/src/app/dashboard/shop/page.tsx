@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PackageSearch, TrendingUp, DollarSign, AlertTriangle, Users, BarChart2, Clock, User } from "lucide-react";
 import api from "@/lib/api";
@@ -43,6 +44,7 @@ function formatDate(dateStr: string) {
 
 export default function ShopDashboard() {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const relationMap: { [key: string]: string } = { "son_of": "S/o", "wife_of": "W/o", "daughter_of": "D/o", "S/O": "S/o", "W/O": "W/o", "D/O": "D/o" };
     const [analytics, setAnalytics] = useState<ShopAnalytics | null>(null);
     const [salesTrend, setSalesTrend] = useState<SalesTrend[]>([]);
@@ -131,7 +133,7 @@ export default function ShopDashboard() {
     };
 
     if (loading) {
-        return <div className="p-8 text-center">Loading dashboard...</div>;
+        return <div className="p-8 text-center">{t('common.loading')}</div>;
     }
 
     return (
@@ -151,7 +153,7 @@ export default function ShopDashboard() {
                     )}
                     <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-bold text-gray-800">{profile?.shop_name || "Shop Dashboard"}</h1>
+                        <h1 className="text-2xl font-bold text-gray-800">{profile?.shop_name || t('shop.shopDashboard')}</h1>
                         <span className="text-xs bg-sky-200 text-sky-800 px-2 py-0.5 rounded-md font-mono">ID: {profile?.shop_id || profile?.id || "—"}</span>
                     </div>
                     <p className="text-sm text-gray-600 flex items-center gap-1">
@@ -171,7 +173,7 @@ export default function ShopDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue (Month)</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('shop.totalRevenue')}</CardTitle>
                         <DollarSign className="h-4 w-4 text-green-600" />
                     </CardHeader>
                     <CardContent>
@@ -180,7 +182,7 @@ export default function ShopDashboard() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active Inventory (Unique)</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('shop.activeProducts')}</CardTitle>
                         <PackageSearch className="h-4 w-4 text-blue-600" />
                     </CardHeader>
                     <CardContent>
@@ -189,7 +191,7 @@ export default function ShopDashboard() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('shop.lowStock')}</CardTitle>
                         <AlertTriangle className="h-4 w-4 text-red-600" />
                     </CardHeader>
                     <CardContent>

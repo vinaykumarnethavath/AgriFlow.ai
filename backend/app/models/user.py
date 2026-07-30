@@ -8,6 +8,7 @@ class UserRole(str, Enum):
     SHOP = "shop"
     MANUFACTURER = "manufacturer"
     CUSTOMER = "customer"
+    EXPERT = "expert"
 
 class UserBase(SQLModel):
     email: Optional[EmailStr] = Field(default=None, index=True)

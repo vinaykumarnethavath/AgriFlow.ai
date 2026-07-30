@@ -26,6 +26,7 @@ import api, {
     CropSale
 } from "@/lib/api";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
+import { AICropDiagnosis } from "@/components/AICropDiagnosis";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -634,7 +635,7 @@ export default function CropDetailPage() {
                     </button>
                 ))}
                 {/* Add new tabs */}
-                {["inputs", "sell"].map((tab) => (
+                {["health", "inputs", "sell"].map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -643,7 +644,7 @@ export default function CropDetailPage() {
                             : "text-gray-500 hover:text-gray-900"
                             }`}
                     >
-                        {tab === "inputs" ? "Inputs Used" : tab === "sell" ? "Sell Crop" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        {tab === "health" ? "AI Diagnosis" : tab === "inputs" ? "Inputs Used" : tab === "sell" ? "Sell Crop" : tab.charAt(0).toUpperCase() + tab.slice(1)}
                         {activeTab === tab && (
                             <motion.div
                                 layoutId="activeTab"
@@ -1745,6 +1746,16 @@ export default function CropDetailPage() {
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {activeTab === "health" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900">AI Crop Health Diagnosis</h2>
+                            <p className="text-gray-500">Upload a photo of your {crop.name} to detect diseases and get treatment advice.</p>
+                        </div>
+                        <AICropDiagnosis cropName={crop.name} cropId={crop.id} />
                     </div>
                 )}
             </div>

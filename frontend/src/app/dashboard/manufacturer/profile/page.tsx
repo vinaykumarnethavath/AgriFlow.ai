@@ -3,7 +3,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { Save, CheckCircle2, ImagePlus, Shield, ShieldOff } from "lucide-react";
+import { Save, CheckCircle2, ImagePlus, Lock, Bell, Wallet, Settings2, Shield, ShieldOff } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface MillProfileData {
     mill_name?: string;
@@ -16,7 +17,7 @@ interface MillProfileData {
     aadhaar_number?: string;
     pan_number?: string;
     hide_personal_details?: boolean;
-    // Detailed Address (replacing single mill_address)
+    // Detailed Address
     house_no?: string;
     street?: string;
     village?: string;
@@ -27,7 +28,6 @@ interface MillProfileData {
     country?: string;
     location_text?: string;
     // Permanent address
-    permanent_address?: string;
     perm_house_no?: string;
     perm_street?: string;
     perm_village?: string;
@@ -79,6 +79,15 @@ function Field({ label, name, value, onChange, placeholder, type = "text", readO
     );
 }
 
+const TABS = [
+    { id: "profile", label: "Profile", icon: Settings2 },
+    { id: "password", label: "Change Password", icon: Lock },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "payments", label: "Payment Settings", icon: Wallet },
+] as const;
+
+type TabId = typeof TABS[number]["id"];
+
 export default function MillProfilePage() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
@@ -86,6 +95,7 @@ export default function MillProfilePage() {
     const [saved, setSaved] = useState(false);
     const [profileExists, setProfileExists] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [activeTab, setActiveTab] = useState<TabId>("profile");
     
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,7 +105,6 @@ export default function MillProfilePage() {
         aadhaar_number: "", pan_number: "", hide_personal_details: false,
         house_no: "", street: "", village: "", mandal: "", district: "",
         state: "", pincode: "", country: "India", location_text: "",
-        permanent_address: "",
         perm_house_no: "", perm_street: "", perm_village: "", perm_mandal: "",
         perm_district: "", perm_state: "", perm_pincode: "",
         bank_name: "", account_number: "", ifsc_code: "", full_name: "",
@@ -151,34 +160,47 @@ export default function MillProfilePage() {
         e.preventDefault();
         setSaving(true);
         try {
-            console.log("Submitting profile payload:", form);
             await api.post("/manufacturer/profile", form);
             setSaved(true);
             setProfileExists(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (err: any) {
             console.error("Failed to save profile", err);
-            const errorMsg = err.response?.data?.detail 
-                ? (Array.isArray(err.response.data.detail) ? err.response.data.detail[0].msg : err.response.data.detail)
-                : "Failed to save profile. Please check all required fields.";
-            alert(`Error: ${errorMsg}`);
+            alert("Failed to save profile. Please check all required fields.");
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading) return (
-        <div className="flex items-center justify-center h-64">
-            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
-        </div>
-    );
+    const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        const current_password = data.get("current_password");
+        const new_password = data.get("new_password");
+        const confirm_password = data.get("confirm_password");
+
+        if (new_password !== confirm_password) {
+            alert("New passwords do not match.");
+            return;
+        }
+
+        try {
+            await api.post("/auth/change-password", { current_password, new_password });
+            alert("Password updated successfully.");
+            e.currentTarget.reset();
+        } catch (err: any) {
+            alert(err?.response?.data?.detail || "Failed to update password");
+        }
+    };
+
+    if (loading) return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
 
     return (
-        <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6 pb-24">
-            <div className="flex items-center justify-between">
+        <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6 pb-24">
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Mill Profile</h1>
-                    <p className="text-gray-500 mt-1">Update your mill details, address, and bank information.</p>
+                    <h1 className="text-3xl font-bold text-gray-800">Mill Settings</h1>
+                    <p className="text-gray-500 mt-1">Manage industrial profile, security, and payout preferences.</p>
                 </div>
                 {!profileExists && (
                     <span className="text-xs bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-full font-medium border border-yellow-200">
@@ -187,101 +209,154 @@ export default function MillProfilePage() {
                 )}
             </div>
 
-            <form onSubmit={handleSubmit}>
-                <Section title="🏭 Mill Details">
-                    <div className="md:col-span-2 flex items-center gap-6 mb-4">
-                        <div 
-                            className="relative w-24 h-24 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer hover:border-green-500"
-                            onClick={() => fileInputRef.current?.click()}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-wrap gap-2 p-2">
+                {TABS.map(tab => {
+                    const Icon = tab.icon;
+                    const isActive = tab.id === activeTab;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                isActive ? "bg-green-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                            }`}
                         >
-                            {form.profile_picture_url ? (
-                                <img src={form.profile_picture_url} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="text-center text-gray-400">
-                                    <ImagePlus className="w-6 h-6 mx-auto mb-1" />
-                                    <span className="text-[10px]">{uploading ? "..." : "Upload"}</span>
-                                </div>
-                            )}
+                            <Icon className="w-4 h-4" /> {tab.label}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {activeTab === "profile" && (
+                <form onSubmit={handleSubmit}>
+                    <Section title="🏭 Mill Details">
+                        <div className="md:col-span-2 flex items-center gap-6 mb-4">
+                            <div 
+                                className="relative w-24 h-24 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer hover:border-green-500"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                {form.profile_picture_url ? (
+                                    <img src={form.profile_picture_url} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="text-center text-gray-400">
+                                        <ImagePlus className="w-6 h-6 mx-auto mb-1" />
+                                        <span className="text-[10px]">{uploading ? "..." : "Upload"}</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <h4 className="font-medium text-gray-800">Mill Logo / Photo</h4>
+                                <p className="text-sm text-gray-500">Click the circle to upload an image.</p>
+                                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                            </div>
                         </div>
-                        <div>
-                            <h4 className="font-medium text-gray-800">Mill Logo / Photo</h4>
-                            <p className="text-sm text-gray-500">Click the circle to upload an image.</p>
-                            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                        </div>
+
+                        <Field label="Mill Name" name="mill_name" value={form.mill_name} onChange={handleChange} required placeholder="e.g. Sri Venkatesh Agri Mill" />
+                        <Field label="Owner Name" name="owner_name" value={form.owner_name} onChange={handleChange} placeholder="e.g. Ramesh Kumar" />
+                        <Field label="Licence Number" name="license_number" value={form.license_number} onChange={handleChange} required placeholder="e.g. AGM/2024/00123" />
+                        <Field label="Contact Number" name="contact_number" value={form.contact_number} onChange={handleChange} placeholder="e.g. 9876543210" type="tel" />
+                        <Field label="Father's Name" name="father_name" value={form.father_name} required onChange={handleChange} placeholder="e.g. Suresh Kumar" />
+                        <Field label="Registered Email" name="email" value={user?.email || ""} onChange={() => {}} readOnly />
+                    </Section>
+
+                    <Section title="🪪 Personal Identification">
+                        <Field label="Aadhaar Number" name="aadhaar_number" value={form.aadhaar_number} onChange={handleChange} placeholder="1234 5678 9012" />
+                        <Field label="PAN Number" name="pan_number" value={form.pan_number} onChange={handleChange} placeholder="ABCDE1234F" />
+                    </Section>
+
+                    <Section title="📍 Mill Detailed Address">
+                        <Field label="House No. / Plot No." name="house_no" value={form.house_no} onChange={handleChange} placeholder="e.g. 12-34/A" />
+                        <Field label="Street / Road" name="street" value={form.street} onChange={handleChange} placeholder="e.g. Main Bazar Road" />
+                        <Field label="Village / City" name="village" value={form.village} onChange={handleChange} placeholder="e.g. Kodad" />
+                        <Field label="Mandal / Tehsil" name="mandal" value={form.mandal} onChange={handleChange} placeholder="e.g. Kodad Rural" />
+                        <Field label="District" name="district" value={form.district} onChange={handleChange} placeholder="e.g. Suryapet" />
+                        <Field label="State" name="state" value={form.state} onChange={handleChange} placeholder="e.g. Telangana" />
+                        <Field label="Pincode" name="pincode" value={form.pincode} onChange={handleChange} placeholder="e.g. 508206" />
+                        <Field label="Location / Landmark" name="location_text" value={form.location_text} onChange={handleChange} placeholder="e.g. Near Bus Stand" />
+                    </Section>
+
+                    <Section title="🏠 Permanent Address">
+                        <Field label="House No. / Plot No." name="perm_house_no" value={form.perm_house_no} onChange={handleChange} placeholder="e.g. 12-34/A" />
+                        <Field label="Street / Road" name="perm_street" value={form.perm_street} onChange={handleChange} placeholder="e.g. Main Bazar Road" />
+                        <Field label="Village / City" name="perm_village" value={form.perm_village} onChange={handleChange} placeholder="e.g. Kodad" />
+                        <Field label="Mandal / Tehsil" name="perm_mandal" value={form.perm_mandal} onChange={handleChange} placeholder="e.g. Kodad Rural" />
+                        <Field label="District" name="perm_district" value={form.perm_district} onChange={handleChange} placeholder="e.g. Suryapet" />
+                        <Field label="State" name="perm_state" value={form.perm_state} onChange={handleChange} placeholder="e.g. Telangana" />
+                        <Field label="Pincode" name="perm_pincode" value={form.perm_pincode} onChange={handleChange} placeholder="e.g. 508206" />
+                    </Section>
+
+                    <Section title="🏦 Bank Details">
+                        <Field label="Bank Name" name="bank_name" value={form.bank_name} required onChange={handleChange} placeholder="e.g. State Bank of India" />
+                        <Field label="IFSC Code" name="ifsc_code" value={form.ifsc_code} required onChange={handleChange} placeholder="e.g. SBIN0001234" />
+                        <Field label="Account Number" name="account_number" value={form.account_number} required onChange={handleChange} placeholder="e.g. 1234567890" fullWidth />
+                    </Section>
+
+                    <div className="mt-8 flex items-center justify-end gap-4 border-t pt-6 border-gray-200">
+                        {saved && (
+                            <div className="flex items-center gap-2 text-green-600 font-medium text-sm animate-in fade-in slide-in-from-bottom-1">
+                                <CheckCircle2 className="w-4 h-4" /> Profile saved successfully!
+                            </div>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-8 py-2.5 rounded-lg shadow-sm transition-colors"
+                        >
+                            <Save className="w-4 h-4" />
+                            {saving ? "Saving..." : profileExists ? "Save Changes" : "Create Profile"}
+                        </button>
                     </div>
+                </form>
+            )}
 
-                    <Field label="Mill Name" name="mill_name" value={form.mill_name} onChange={handleChange} required placeholder="e.g. Sri Venkatesh Agri Mill" />
-                    <Field label="Owner Name" name="owner_name" value={form.owner_name} onChange={handleChange} placeholder="e.g. Ramesh Kumar" />
-                    <Field label="Licence Number" name="license_number" value={form.license_number} onChange={handleChange} required placeholder="e.g. AGM/2024/00123" />
-                    <Field label="Contact Number" name="contact_number" value={form.contact_number} onChange={handleChange} placeholder="e.g. 9876543210" type="tel" />
-                    <Field label="Father's Name" name="father_name" value={form.father_name} required onChange={handleChange} placeholder="e.g. Suresh Kumar" />
-                    <Field label="Registered Email" name="email" value={user?.email || ""} onChange={() => {}} readOnly />
-                </Section>
+            {activeTab === "password" && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                            <Lock className="w-5 h-5 text-emerald-600" /> Update Password
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <form className="space-y-4" onSubmit={handlePasswordChange}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Current Password</label>
+                                    <input type="password" name="current_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">New Password</label>
+                                    <input type="password" name="new_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Confirm New Password</label>
+                                    <input type="password" name="confirm_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                </div>
+                            </div>
+                            <button type="submit" className="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700">Update Password</button>
+                        </form>
+                    </CardContent>
+                </Card>
+            )}
 
-                <Section 
-                    title="🪪 Personal Identification" 
-                    extra={
-                        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                            <input 
-                                type="checkbox" 
-                                name="hide_personal_details" 
-                                checked={form.hide_personal_details} 
-                                onChange={handleChange}
-                                className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                            />
-                            {form.hide_personal_details ? <Shield className="w-4 h-4 text-green-600" /> : <ShieldOff className="w-4 h-4 text-gray-400" />}
-                            Hide details publicly
-                        </label>
-                    }
-                >
-                    <Field label="Aadhaar Number" name="aadhaar_number" value={form.aadhaar_number} onChange={handleChange} placeholder="1234 5678 9012" />
-                    <Field label="PAN Number" name="pan_number" value={form.pan_number} onChange={handleChange} placeholder="ABCDE1234F" />
-                </Section>
+            {activeTab === "notifications" && (
+                <Card>
+                    <CardHeader><CardTitle>Notification Preferences</CardTitle></CardHeader>
+                    <CardContent>
+                        <p className="text-gray-500 mb-4">Manufacturer-specific notification settings coming soon.</p>
+                        {/* Placeholder for similar logic as Shop */}
+                    </CardContent>
+                </Card>
+            )}
 
-                <Section title="📍 Mill Detailed Address">
-                    <Field label="House No. / Plot No." name="house_no" value={form.house_no} onChange={handleChange} placeholder="e.g. 12-34/A" />
-                    <Field label="Street / Road" name="street" value={form.street} onChange={handleChange} placeholder="e.g. Main Bazar Road" />
-                    <Field label="Village / City" name="village" value={form.village} onChange={handleChange} placeholder="e.g. Kodad" />
-                    <Field label="Mandal / Tehsil" name="mandal" value={form.mandal} onChange={handleChange} placeholder="e.g. Kodad Rural" />
-                    <Field label="District" name="district" value={form.district} onChange={handleChange} placeholder="e.g. Suryapet" />
-                    <Field label="State" name="state" value={form.state} onChange={handleChange} placeholder="e.g. Telangana" />
-                    <Field label="Pincode" name="pincode" value={form.pincode} onChange={handleChange} placeholder="e.g. 508206" />
-                    <Field label="Location / Landmark" name="location_text" value={form.location_text} onChange={handleChange} placeholder="e.g. Near Bus Stand" />
-                </Section>
-
-                <Section title="🏠 Permanent Address">
-                    <Field label="House No. / Plot No." name="perm_house_no" value={form.perm_house_no} onChange={handleChange} placeholder="e.g. 12-34/A" />
-                    <Field label="Street / Road" name="perm_street" value={form.perm_street} onChange={handleChange} placeholder="e.g. Main Bazar Road" />
-                    <Field label="Village / City" name="perm_village" value={form.perm_village} onChange={handleChange} placeholder="e.g. Kodad" />
-                    <Field label="Mandal / Tehsil" name="perm_mandal" value={form.perm_mandal} onChange={handleChange} placeholder="e.g. Kodad Rural" />
-                    <Field label="District" name="perm_district" value={form.perm_district} onChange={handleChange} placeholder="e.g. Suryapet" />
-                    <Field label="State" name="perm_state" value={form.perm_state} onChange={handleChange} placeholder="e.g. Telangana" />
-                    <Field label="Pincode" name="perm_pincode" value={form.perm_pincode} onChange={handleChange} placeholder="e.g. 508206" />
-                </Section>
-
-                <Section title="🏦 Bank Details">
-                    <Field label="Bank Name" name="bank_name" value={form.bank_name} required onChange={handleChange} placeholder="e.g. State Bank of India" />
-                    <Field label="IFSC Code" name="ifsc_code" value={form.ifsc_code} required onChange={handleChange} placeholder="e.g. SBIN0001234" />
-                    <Field label="Account Number" name="account_number" value={form.account_number} required onChange={handleChange} placeholder="e.g. 1234567890" fullWidth />
-                </Section>
-
-                {/* Inline bottom bar for save action */}
-                <div className="mt-8 flex items-center justify-end gap-4 border-t pt-6 border-gray-200">
-                    {saved && (
-                        <div className="flex items-center gap-2 text-green-600 font-medium text-sm animate-in fade-in slide-in-from-bottom-1">
-                            <CheckCircle2 className="w-4 h-4" /> Profile saved successfully!
-                        </div>
-                    )}
-                    <button
-                        type="submit"
-                        disabled={saving}
-                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-8 py-2.5 rounded-lg shadow-sm transition-colors"
-                    >
-                        <Save className="w-4 h-4" />
-                        {saving ? "Saving..." : profileExists ? "Save Changes" : "Create Profile"}
-                    </button>
-                </div>
-            </form>
+            {activeTab === "payments" && (
+                <Card>
+                    <CardHeader><CardTitle>Payment Settings</CardTitle></CardHeader>
+                    <CardContent>
+                        <p className="text-gray-500 mb-4">Configure your payout methods and bank links for bulk sales.</p>
+                        {/* Placeholder for similar logic as Shop */}
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }

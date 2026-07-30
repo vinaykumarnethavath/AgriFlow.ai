@@ -4,13 +4,15 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api, { Crop } from "@/lib/api";
+import { useLanguage } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import { ArrowLeft, Plus, Sprout, ArrowRight } from "lucide-react";
+import { ArrowLeft, Plus, Sprout, ArrowRight, Stethoscope } from "lucide-react";
 
 export default function CropsListPage() {
     const router = useRouter();
+    const { t } = useLanguage();
     const [crops, setCrops] = useState<Crop[]>([]);
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -284,7 +286,7 @@ export default function CropsListPage() {
     };
 
     if (loading) {
-        return <div className="p-8 text-green-600 font-bold animate-pulse">Loading crops...</div>;
+        return <div className="p-8 text-green-600 font-bold animate-pulse">{t('common.loading')}</div>;
     }
 
     return (
@@ -293,15 +295,15 @@ export default function CropsListPage() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" onClick={() => router.push("/dashboard/farmer")}>
-                        <ArrowLeft className="w-5 h-5 mr-2" /> Back to Dashboard
+                        <ArrowLeft className="w-5 h-5 mr-2" /> {t('common.back')}
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold text-green-900">My Crops</h1>
-                        <p className="text-gray-500">Manage all your crops and track their progress</p>
+                        <h1 className="text-3xl font-bold text-green-900">{t('farmer.myCrops')}</h1>
+                        <p className="text-gray-500">{t('crops.manageDesc')}</p>
                     </div>
                 </div>
                 <Button onClick={() => setIsAddCropOpen(true)} className="bg-green-600 hover:bg-green-700">
-                    <Plus className="h-4 w-4 mr-2" /> Add New Crop
+                    <Plus className="h-4 w-4 mr-2" /> {t('farmer.addCrop')}
                 </Button>
             </div>
 
@@ -310,7 +312,7 @@ export default function CropsListPage() {
                 <div className="mb-8">
                     <h2 className="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-purple-500"></span>
-                        Harvested / Sold Crops ({harvestedCrops.length})
+                        {t('crops.harvestedSold')} ({harvestedCrops.length})
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {harvestedCrops.map(crop => (
@@ -337,29 +339,29 @@ export default function CropsListPage() {
                                         {/* Dates and Yield */}
                                         <div className="space-y-2 mb-4">
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">Sowing Date:</span>
+                                                <span className="text-gray-500">{t('farmer.sowingDate')}:</span>
                                                 <span className="font-medium">{new Date(crop.sowing_date).toLocaleDateString()}</span>
                                             </div>
                                             {crop.expected_harvest_date && (
                                                 <div className="flex justify-between text-sm">
-                                                    <span className="text-purple-600 font-medium">Harvest Date:</span>
+                                                    <span className="text-purple-600 font-medium">{t('farmer.harvestDate')}:</span>
                                                     <span className="font-bold text-purple-700">{new Date(crop.expected_harvest_date).toLocaleDateString()}</span>
                                                 </div>
                                             )}
                                             {crop.actual_yield && (
                                                 <div className="flex justify-between text-sm bg-purple-50 p-2 rounded-lg">
-                                                    <span className="text-gray-500">Total Yield:</span>
-                                                    <span className="font-bold text-purple-700">{crop.actual_yield} Bags</span>
+                                                    <span className="text-gray-500">{t('crops.totalYield')}:</span>
+                                                    <span className="font-bold text-purple-700">{crop.actual_yield} {t('crops.bags')}</span>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
                                             <div>
-                                                <p className="text-xs text-gray-400">Total Cost</p>
+                                                <p className="text-xs text-gray-400">{t('farmer.totalCost')}</p>
                                                 <p className="font-bold text-gray-700">₹{(crop.total_cost || 0).toLocaleString()}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs text-gray-400">Revenue</p>
+                                                <p className="text-xs text-gray-400">{t('farmer.revenue')}</p>
                                                 <p className="font-bold text-green-600">₹{(crop.total_revenue || 0).toLocaleString()}</p>
                                             </div>
                                         </div>
@@ -373,7 +375,7 @@ export default function CropsListPage() {
                                                     handleOpenHarvestModal(crop);
                                                 }}
                                             >
-                                                Edit Harvest
+                                                {t('crops.editHarvest')}
                                             </Button>
                                             <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
                                                 <ArrowRight className="h-4 w-4" />
@@ -391,25 +393,25 @@ export default function CropsListPage() {
             <div ref={activeCropsRef}>
                 <h2 className="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                    Active Crops ({activeCrops.length})
+                    {t('farmer.activeCrops')} ({activeCrops.length})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {crops.length === 0 ? (
                         <div className="col-span-3 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-12 text-center">
                             <Sprout className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                            <h3 className="text-xl font-bold text-gray-700 mb-2">No crops added yet</h3>
-                            <p className="text-gray-500 mb-4">Start tracking your farming activities by adding your first crop.</p>
+                            <h3 className="text-xl font-bold text-gray-700 mb-2">{t('farmer.noCrops')}</h3>
+                            <p className="text-gray-500 mb-4">{t('crops.addFirstCropDesc')}</p>
                             <Button onClick={() => setIsAddCropOpen(true)} className="bg-green-600 hover:bg-green-700">
-                                <Plus className="h-4 w-4 mr-2" /> Add Your First Crop
+                                <Plus className="h-4 w-4 mr-2" /> {t('crops.addFirstCrop')}
                             </Button>
                         </div>
                     ) : activeCrops.length === 0 ? (
                         <div className="col-span-3 bg-green-50 border-2 border-dashed border-green-200 rounded-xl p-8 text-center">
                             <Sprout className="h-12 w-12 mx-auto mb-3 text-green-400" />
-                            <p className="font-medium text-green-700">No active crops currently</p>
-                            <p className="text-sm text-green-600 mb-4">All your crops have been harvested!</p>
+                            <p className="font-medium text-green-700">{t('farmer.noActiveCrops')}</p>
+                            <p className="text-sm text-green-600 mb-4">{t('crops.allHarvested')}</p>
                             <Button onClick={() => setIsAddCropOpen(true)} className="bg-green-600 hover:bg-green-700">
-                                <Plus className="h-4 w-4 mr-2" /> Add New Crop
+                                <Plus className="h-4 w-4 mr-2" /> {t('farmer.addCrop')}
                             </Button>
                         </div>
                     ) : (
@@ -428,31 +430,31 @@ export default function CropsListPage() {
                                                                         '🌿'}</span>
                                                     {crop.name}
                                                 </h3>
-                                                <p className="text-sm text-muted-foreground">{crop.area} Acres</p>
+                                                <p className="text-sm text-muted-foreground">{crop.area} {t('farmer.acres')}</p>
                                             </div>
                                             <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                                                {crop.status}
+                                                {crop.status === 'Growing' ? t('status.growing') : crop.status === 'Harvested' ? t('status.harvested') : t('status.sold')}
                                             </span>
                                         </div>
                                         <div className="space-y-3 mb-4">
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">Sowing Date:</span>
+                                                <span className="text-gray-500">{t('farmer.sowingDate')}:</span>
                                                 <span className="font-medium">{new Date(crop.sowing_date).toLocaleDateString()}</span>
                                             </div>
                                             {crop.expected_harvest_date && (
                                                 <div className="flex justify-between text-sm">
-                                                    <span className="text-gray-500">Expected Harvest:</span>
+                                                    <span className="text-gray-500">{t('farmer.harvestDate')}:</span>
                                                     <span className="font-medium">{new Date(crop.expected_harvest_date).toLocaleDateString()}</span>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
                                             <div>
-                                                <p className="text-xs text-gray-400">Total Cost</p>
+                                                <p className="text-xs text-gray-400">{t('farmer.totalCost')}</p>
                                                 <p className="font-bold text-gray-700">₹{(crop.total_cost || 0).toLocaleString()}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs text-gray-400">Expected Revenue</p>
+                                                <p className="text-xs text-gray-400">{t('crops.expectedRevenue')}</p>
                                                 <p className="font-bold text-gray-700">₹{(crop.total_revenue || 0).toLocaleString()}</p>
                                             </div>
                                         </div>
@@ -467,7 +469,18 @@ export default function CropsListPage() {
                                                         handleOpenHarvestModal(crop);
                                                     }}
                                                 >
-                                                    Record Harvest
+                                                    {t('crops.recordHarvest')}
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="text-indigo-600 hover:bg-indigo-50"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        router.push(`/dashboard/farmer/crops/${crop.id}?tab=health`);
+                                                    }}
+                                                >
+                                                    <Stethoscope className="h-4 w-4 mr-1" /> {t('crops.healthCheck')}
                                                 </Button>
                                                 <Button
                                                     size="sm"
@@ -478,7 +491,7 @@ export default function CropsListPage() {
                                                         router.push(`/dashboard/farmer/crops/${crop.id}?tab=expenses`);
                                                     }}
                                                 >
-                                                    Add Expense
+                                                    {t('farmer.addExpense')}
                                                 </Button>
                                             </div>
                                             <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-green-50 group-hover:text-green-600 transition-colors">
@@ -497,12 +510,12 @@ export default function CropsListPage() {
             <Modal
                 isOpen={isHarvestModalOpen}
                 onClose={() => setIsHarvestModalOpen(false)}
-                title={`Record Harvest for ${selectedCrop?.name}`}
+                title={`${t('crops.recordHarvest')}: ${selectedCrop?.name}`}
             >
                 <form onSubmit={handleRecordHarvest} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Actual Yield (Quintals)</label>
+                            <label className="text-sm font-medium text-gray-700">{t('crops.actualYield')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -513,7 +526,7 @@ export default function CropsListPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Harvest Date</label>
+                            <label className="text-sm font-medium text-gray-700">{t('farmer.harvestDate')}</label>
                             <input
                                 type="date"
                                 required
@@ -523,7 +536,7 @@ export default function CropsListPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Selling Price (Per Quintal)</label>
+                            <label className="text-sm font-medium text-gray-700">{t('crops.sellingPrice')}</label>
                             <div className="relative">
                                 <span className="absolute left-3 top-2 text-gray-500">₹</span>
                                 <input
@@ -540,19 +553,19 @@ export default function CropsListPage() {
 
                     <div className="bg-blue-50 p-4 rounded-lg space-y-2">
                         <div className="flex justify-between text-sm">
-                            <span className="text-blue-700">Total Revenue:</span>
+                            <span className="text-blue-700">{t('crops.totalRevenue')}:</span>
                             <span className="font-bold text-blue-900">
                                 ₹{((parseFloat(harvestData.actual_yield) || 0) * (parseFloat(harvestData.selling_price_per_unit) || 0)).toLocaleString()}
                             </span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-red-600">Total Cost:</span>
+                            <span className="text-red-600">{t('farmer.totalCost')}:</span>
                             <span className="font-bold text-red-700">
                                 - ₹{(selectedCrop?.total_cost || 0).toLocaleString()}
                             </span>
                         </div>
                         <div className="pt-2 border-t border-blue-200 flex justify-between font-bold">
-                            <span className="text-blue-900">Estimated Profit:</span>
+                            <span className="text-blue-900">{t('crops.estimatedProfit')}:</span>
                             <span className={`${((parseFloat(harvestData.actual_yield) || 0) * (parseFloat(harvestData.selling_price_per_unit) || 0) - (selectedCrop?.total_cost || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 ₹{(((parseFloat(harvestData.actual_yield) || 0) * (parseFloat(harvestData.selling_price_per_unit) || 0)) - (selectedCrop?.total_cost || 0)).toLocaleString()}
                             </span>
@@ -564,7 +577,7 @@ export default function CropsListPage() {
                         disabled={submittingHarvest}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-4"
                     >
-                        {submittingHarvest ? "Recording..." : "Record Harvest & Close Crop"}
+                        {submittingHarvest ? t('common.loading') : t('crops.recordAndClose')}
                     </Button>
                 </form>
             </Modal>
@@ -573,12 +586,12 @@ export default function CropsListPage() {
             <Modal
                 isOpen={isAddCropOpen}
                 onClose={() => setIsAddCropOpen(false)}
-                title="Add New Crop"
+                title={t('farmer.addCrop')}
             >
                 <form onSubmit={handleCreateCrop} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Crop Name</label>
+                            <label className="text-sm font-medium text-gray-700">{t('farmer.cropName')}</label>
                             <input
                                 required
                                 placeholder="e.g. Wheat, Rice, Cotton"
@@ -588,7 +601,7 @@ export default function CropsListPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Variety (Optional)</label>
+                            <label className="text-sm font-medium text-gray-700">{t('crops.variety')}</label>
                             <input
                                 placeholder="e.g. Basmati, HYV"
                                 className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"
@@ -599,20 +612,20 @@ export default function CropsListPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Season</label>
+                            <label className="text-sm font-medium text-gray-700">{t('crops.season')}</label>
                             <select
                                 className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 bg-white"
                                 value={newCrop.season}
                                 onChange={(e) => setNewCrop({ ...newCrop, season: e.target.value })}
                             >
-                                <option value="Kharif">Kharif</option>
-                                <option value="Rabi">Rabi</option>
-                                <option value="Zaid">Zaid</option>
-                                <option value="Year-round">Year-round</option>
+                                <option value="Kharif">{t('crops.kharif')}</option>
+                                <option value="Rabi">{t('crops.rabi')}</option>
+                                <option value="Zaid">{t('crops.zaid')}</option>
+                                <option value="Year-round">{t('crops.yearRound')}</option>
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Area (Acres.Guntas)</label>
+                            <label className="text-sm font-medium text-gray-700">{t('crops.areaLabel')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -628,7 +641,7 @@ export default function CropsListPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Sowing Date</label>
+                            <label className="text-sm font-medium text-gray-700">{t('farmer.sowingDate')}</label>
                             <input
                                 type="date"
                                 required
@@ -638,7 +651,7 @@ export default function CropsListPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Expected Harvest</label>
+                            <label className="text-sm font-medium text-gray-700">{t('farmer.harvestDate')}</label>
                             <input
                                 type="date"
                                 className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"
@@ -648,7 +661,7 @@ export default function CropsListPage() {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Notes (Optional)</label>
+                        <label className="text-sm font-medium text-gray-700">{t('farmer.notes')}</label>
                         <textarea
                             placeholder="Any specific details..."
                             className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"
@@ -661,7 +674,7 @@ export default function CropsListPage() {
                         disabled={addingCrop}
                         className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
                     >
-                        {addingCrop ? "Adding..." : "Add Crop"}
+                        {addingCrop ? t('common.loading') : t('farmer.addCrop')}
                     </Button>
                 </form>
             </Modal>

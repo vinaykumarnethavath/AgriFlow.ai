@@ -5,6 +5,7 @@ import { User, Upload, Building2, Store, CreditCard, MapPin, Eye, EyeOff } from 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import api from "@/lib/api";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ProfileFormProps {
     role: "mill" | "shop" | "customer" | "farmer";
@@ -13,6 +14,7 @@ interface ProfileFormProps {
 }
 
 export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormProps) => {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [imageUrl, setImageUrl] = useState(initialData?.profile_picture_url || "");
@@ -46,7 +48,6 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
     const permStateRef = useRef<HTMLInputElement>(null);
     const permPinRef = useRef<HTMLInputElement>(null);
 
-
     const maskValue = (val: string, showLast: number = 4) => {
         if (!val) return "";
         if (!isHideMode) return val;
@@ -66,7 +67,7 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
             const { data } = await api.post("/upload", formData);
             setImageUrl(data.url);
         } catch (err) {
-            alert("Upload failed");
+            alert(t('common.error') || "Upload failed");
         } finally {
             setUploading(false);
         }
@@ -78,8 +79,8 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
 
         const profileData: any = {
             profile_picture_url: imageUrl,
-            father_name: fatherRef.current?.value,
             relation_type: relationType,
+            father_name: fatherRef.current?.value,
             house_no: houseRef.current?.value,
             street: streetRef.current?.value,
             village: villageRef.current?.value,
@@ -94,11 +95,11 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
 
         if (role === 'mill') {
             profileData.mill_name = nameRef.current?.value;
-            profileData.mill_id = idRef.current?.value;
             profileData.license_number = licenseRef.current?.value;
-            profileData.location_text = locationRef.current?.value;
+            profileData.mill_id = idRef.current?.value;
             profileData.aadhaar_number = aadhaarRef.current?.value;
             profileData.pan_number = panRef.current?.value;
+            profileData.location_text = locationRef.current?.value;
             profileData.perm_house_no = permHouseRef.current?.value;
             profileData.perm_street = permStreetRef.current?.value;
             profileData.perm_village = permVillageRef.current?.value;
@@ -111,11 +112,11 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
             profileData.license_number = licenseRef.current?.value;
             profileData.location_text = locationRef.current?.value;
         } else if (role === 'customer') {
+            profileData.full_name = nameRef.current?.value;
             profileData.id_number = idRef.current?.value;
         } else if (role === 'farmer') {
-            profileData.farmer_id = idRef.current?.value;
             profileData.full_name = nameRef.current?.value;
-            // Farmer backend expects some fields with different names in some places but we standardized in profile_routers
+            profileData.farmer_id = idRef.current?.value;
         }
 
         try {
@@ -124,7 +125,7 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
                     (role === 'customer' ? '/customer/profile' : '/farmer/profile'));
             await api.post(specificEndpoint, profileData);
             if (onSaveSuccess) onSaveSuccess();
-            alert("Profile saved successfully!");
+            alert(t('profile.profileUpdated') || "Profile saved successfully!");
         } catch (err: any) {
             console.error(err);
             alert("Failed to save profile: " + (err.response?.data?.detail || err.message));
@@ -166,13 +167,13 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
                                 )}
                                 {uploading && (
                                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs">
-                                        Uploading...
+                                        {t('common.loading')}
                                     </div>
                                 )}
                             </div>
                             <label className="cursor-pointer inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
                                 <Upload className="h-4 w-4" />
-                                Upload Photo
+                                {t('profile.uploadPhoto')}
                                 <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
                             </label>
                         </div>
@@ -180,13 +181,13 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
                         <div className="flex-1 space-y-4 w-full">
                             <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
                                 {role === 'mill' ? <Building2 className="h-5 w-5" /> : (role === 'shop' ? <Store className="h-5 w-5" /> : <User className="h-5 w-5" />)}
-                                {role === 'mill' ? 'Mill' : (role === 'shop' ? 'Shop' : (role === 'farmer' ? 'Farmer' : 'Personal'))} Details
+                                {role === 'mill' ? t('manufacturer.manufacturerDashboard') : (role === 'shop' ? t('dashboard.shop') : (role === 'farmer' ? t('profile.farmerProfile') : t('profile.personalDetails')))}
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {(role === 'mill' || role === 'shop' || role === 'farmer') && (
                                     <div className="space-y-2">
                                         <label className="text-sm font-semibold text-muted-foreground">
-                                            {role === 'mill' ? 'Mill Name' : (role === 'shop' ? 'Shop Name' : 'Full Name')}
+                                            {role === 'mill' ? 'Mill Name' : (role === 'shop' ? 'Shop Name' : t('profile.fullName'))}
                                         </label>
                                         <input ref={nameRef} defaultValue={role === 'farmer' ? initialData?.full_name : initialData?.[`${role}_name`]} required className="w-full border-2 rounded-xl p-2.5 bg-background text-foreground focus:border-primary outline-none" />
                                     </div>
@@ -249,7 +250,7 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
                                             <input ref={idRef} defaultValue={initialData?.mill_id} className="w-full border-2 rounded-xl p-2.5 bg-background text-foreground focus:border-primary outline-none" placeholder="e.g. MILL-12345" />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-semibold text-muted-foreground">Aadhaar Number</label>
+                                            <label className="text-sm font-semibold text-muted-foreground">{t('profile.aadhaarNumber')}</label>
                                             <input ref={aadhaarRef} defaultValue={initialData?.aadhaar_number} className="w-full border-2 rounded-xl p-2.5 bg-background text-foreground focus:border-primary outline-none" placeholder="1234 5678 9012" />
                                         </div>
                                     </>
@@ -264,7 +265,7 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
                 <CardContent className="p-6 space-y-4">
                     <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
                         <MapPin className="h-5 w-5" />
-                        Address Details
+                        {t('profile.landDetails')}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
@@ -344,7 +345,7 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
                 <CardContent className="p-6 space-y-4">
                     <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
                         <CreditCard className="h-5 w-5" />
-                        Bank Details
+                        {t('profile.bankDetails')}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
@@ -367,7 +368,7 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
                         </div>
                         {role === 'mill' && (
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-muted-foreground">PAN Number</label>
+                                <label className="text-sm font-semibold text-muted-foreground">{t('profile.panNumber')}</label>
                                 <input ref={panRef} defaultValue={initialData?.pan_number} className="w-full border-2 rounded-xl p-2.5 bg-background text-foreground focus:border-primary outline-none" placeholder="ABCDE1234F" />
                             </div>
                         )}
@@ -375,8 +376,8 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
                 </CardContent>
             </Card>
 
-            <Button type="submit" disabled={loading} className="w-full py-6 text-lg font-bold">
-                {loading ? 'Saving...' : 'Save Profile'}
+            <Button type="submit" disabled={loading} className="w-full py-6 text-lg font-bold bg-green-600 hover:bg-green-700 text-white">
+                {loading ? t('common.loading') : t('profile.updateProfile')}
             </Button>
         </form>
     );
