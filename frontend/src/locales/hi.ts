@@ -477,6 +477,25 @@ const hi = {
     apiError: "AI सेवा उपलब्ध नहीं। कृपया API कुंजी जांचें।",
     selectCrop: "फसल प्रकार चुनें (वैकल्पिक)", diagnoseBtn: "मेरी फसल का निदान करें",
   },
+  voice: {
+    title: "वॉइस असिस्टेंट",
+    tapToSpeak: "बोलने के लिए माइक्रोफ़ोन दबाएँ",
+    listening: "सुन रहा हूँ... बोलिए",
+    processing: "आपकी बात समझ रहा हूँ...",
+    speaking: "बोल रहा हूँ...",
+    error: "कुछ गलत हो गया",
+    unsupported: "इस ब्राउज़र में वॉइस उपलब्ध नहीं है",
+    tryAgain: "फिर से कोशिश करें",
+    close: "बंद करें",
+    poweredBy: "Web Speech API द्वारा संचालित",
+    browserHint: "Chrome और Edge में सबसे अच्छा काम करता है",
+    sidebarLabel: "वॉइस असिस्टेंट",
+    checkPrice: "भाव देखो",
+    checkWeather: "मौसम",
+    myExpenses: "मेरे खर्चे",
+    openCrops: "फसल खोलो",
+    priceOf: "का भाव",
+  },
 };
 
 export default hi;

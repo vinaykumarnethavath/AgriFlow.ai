@@ -519,7 +519,7 @@ export default function CommunityPage() {
                                                     <div className="min-w-0">
                                                         <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate flex items-center gap-1">
                                                             {farmer.full_name}
-                                                            {farmer.role === 'expert' && <CheckCircle2 className="h-3 w-3 text-blue-500" title="Verified Expert" />}
+                                                            {farmer.role === 'expert' && <span title="Verified Expert"><CheckCircle2 className="h-3 w-3 text-blue-500" /></span>}
                                                         </h4>
                                                         {(farmer.district || farmer.state) && (
                                                             <p className="text-[10px] text-slate-500 flex items-center gap-0.5 truncate">

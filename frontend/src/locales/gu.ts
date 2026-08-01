@@ -120,6 +120,25 @@ const gu = {
     analytics: "વિશ્લેષણ", overview: "સારાંશ", trends: "વલણો", reports: "અહેવાલો",
     exportData: "ડેટા નિકાસ કરો", revenue: "આવક", expenses: "ખર્ચ", profit: "નફો", growth: "વૃદ્ધિ",
   },
+  voice: {
+    title: "વોઇસ આસિસ્ટન્ટ",
+    tapToSpeak: "બોલવા માટે માઇક્રોફોન દબાવો",
+    listening: "સાંભળી રહ્યો છું... બોલો",
+    processing: "તમારો આદેશ સમજી રહ્યો છું...",
+    speaking: "બોલી રહ્યો છું...",
+    error: "કંઈક ખોટું થયું",
+    unsupported: "આ બ્રાઉઝરમાં વોઇસ ઉપલબ્ધ નથી",
+    tryAgain: "ફરીથી પ્રયાસ કરો",
+    close: "બંધ કરો",
+    poweredBy: "Web Speech API દ્વારા સંચાલિત",
+    browserHint: "Chrome અને Edge માં શ્રેષ્ઠ કામ કરે છે",
+    sidebarLabel: "વોઇસ આસિસ્ટન્ટ",
+    checkPrice: "ભાવ જુઓ",
+    checkWeather: "હવામાન",
+    myExpenses: "મારા ખર્ચ",
+    openCrops: "પાક ખોલો",
+    priceOf: "નો ભાવ",
+  },
 };
 
 export default gu;

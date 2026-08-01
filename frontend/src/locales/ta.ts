@@ -476,6 +476,25 @@ const ta = {
     apiError: "AI சேவை கிடைக்கவில்லை. API விசையை சரிபார்க்கவும்.",
     selectCrop: "பயிர் வகையை தேர்ந்தெடு (விரும்பினால்)", diagnoseBtn: "என் பயிரை நோயறிதல் செய்",
   },
+  voice: {
+    title: "குரல் உதவியாளர்",
+    tapToSpeak: "பேச மைக்ரோஃபோனை தொடவும்",
+    listening: "கேட்கிறேன்... இப்போது பேசவும்",
+    processing: "உங்கள் கட்டளையை புரிந்துகொள்கிறேன்...",
+    speaking: "பேசுகிறேன்...",
+    error: "ஏதோ தவறு நடந்தது",
+    unsupported: "இந்த உலாவியில் குரல் ஆதரிக்கப்படவில்லை",
+    tryAgain: "மீண்டும் முயற்சிக்கவும்",
+    close: "மூடு",
+    poweredBy: "Web Speech API மூலம்",
+    browserHint: "Chrome & Edge இல் சிறப்பாக செயல்படும்",
+    sidebarLabel: "குரல் உதவியாளர்",
+    checkPrice: "விலை பார்",
+    checkWeather: "வானிலை",
+    myExpenses: "என் செலவுகள்",
+    openCrops: "பயிர்களை திற",
+    priceOf: "விலை",
+  },
 };
 
 export default ta;

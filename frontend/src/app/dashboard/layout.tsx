@@ -1,6 +1,7 @@
 import Sidebar from "@/components/layout/Sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChatBot } from "@/components/ChatBot";
+import { VoiceAssistant } from "@/components/VoiceAssistant";
 
 export default function DashboardLayout({
     children,
@@ -17,6 +18,7 @@ export default function DashboardLayout({
                 {children}
             </div>
             <ChatBot />
+            <VoiceAssistant />
         </div>
     );
 }

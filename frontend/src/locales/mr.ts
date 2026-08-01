@@ -146,6 +146,25 @@ const mr = {
     analytics: "विश्लेषण", overview: "सारांश", trends: "कल", reports: "अहवाल",
     exportData: "डेटा निर्यात करा", revenue: "महसूल", expenses: "खर्च", profit: "नफा", growth: "वाढ",
   },
+  voice: {
+    title: "वॉइस असिस्टंट",
+    tapToSpeak: "बोलण्यासाठी माइक्रोफोन दाबा",
+    listening: "ऐकत आहे... बोला",
+    processing: "तुमची आज्ञा समजून घेत आहे...",
+    speaking: "बोलत आहे...",
+    error: "काहीतरी चूक झाली",
+    unsupported: "या ब्राउझरमध्ये वॉइस उपलब्ध नाही",
+    tryAgain: "पुन्हा प्रयत्न करा",
+    close: "बंद करा",
+    poweredBy: "Web Speech API द्वारे",
+    browserHint: "Chrome आणि Edge मध्ये उत्तम कार्य करते",
+    sidebarLabel: "वॉइस असिस्टंट",
+    checkPrice: "भाव बघा",
+    checkWeather: "हवामान",
+    myExpenses: "माझे खर्च",
+    openCrops: "पीक उघडा",
+    priceOf: "चा भाव",
+  },
 };
 
 export default mr;

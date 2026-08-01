@@ -298,6 +298,25 @@ const kn = {
     profit: "ಲಾಭ",
     growth: "ಬೆಳವಣಿಗೆ",
   },
+  voice: {
+    title: "ವಾಯ್ಸ್ ಅಸಿಸ್ಟೆಂಟ್",
+    tapToSpeak: "ಮಾತನಾಡಲು ಮೈಕ್ರೋಫೋನ್ ಒತ್ತಿ",
+    listening: "ಕೇಳುತ್ತಿದ್ದೇನೆ... ಈಗ ಮಾತನಾಡಿ",
+    processing: "ನಿಮ್ಮ ಆಜ್ಞೆಯನ್ನು ಅರ್ಥ ಮಾಡಿಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ...",
+    speaking: "ಹೇಳುತ್ತಿದ್ದೇನೆ...",
+    error: "ಏನೋ ತಪ್ಪಾಗಿದೆ",
+    unsupported: "ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ವಾಯ್ಸ್ ಬೆಂಬಲ ಇಲ್ಲ",
+    tryAgain: "ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ",
+    close: "ಮುಚ್ಚಿ",
+    poweredBy: "Web Speech API ಮೂಲಕ",
+    browserHint: "Chrome & Edge ನಲ್ಲಿ ಉತ್ತಮವಾಗಿ ಕೆಲಸ ಮಾಡುತ್ತದೆ",
+    sidebarLabel: "ವಾಯ್ಸ್ ಅಸಿಸ್ಟೆಂಟ್",
+    checkPrice: "ಬೆಲೆ ನೋಡಿ",
+    checkWeather: "ಹವಾಮಾನ",
+    myExpenses: "ನನ್ನ ಖರ್ಚುಗಳು",
+    openCrops: "ಬೆಳೆಗಳನ್ನು ತೆರೆಯಿರಿ",
+    priceOf: "ಬೆಲೆ",
+  },
 };
 
 export default kn;

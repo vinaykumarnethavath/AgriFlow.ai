@@ -6,7 +6,7 @@ import { Droplets, FlaskConical, Sprout, Loader2, Info, CheckCircle2, AlertTrian
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import api from "@/lib/axios";
+import api from "@/lib/api";
 
 interface FertilizerRec {
     name: string;

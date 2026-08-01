@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { Video, PlayCircle, Loader2, BookOpen, Clock, Tag } from "lucide-react";
-import api from "@/lib/axios";
+import api from "@/lib/api";
 
 interface YouTubeVideo {
     id: string;

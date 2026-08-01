@@ -120,6 +120,25 @@ const bn = {
     analytics: "বিশ্লেষণ", overview: "সারাংশ", trends: "প্রবণতা", reports: "প্রতিবেদন",
     exportData: "তথ্য রপ্তানি করুন", revenue: "রাজস্ব", expenses: "খরচ", profit: "লাভ", growth: "বৃদ্ধি",
   },
+  voice: {
+    title: "ভয়েস সহকারী",
+    tapToSpeak: "কথা বলতে মাইক্রোফোনে ট্যাপ করুন",
+    listening: "শুনছি... এখন বলুন",
+    processing: "আপনার নির্দেশ বুঝছি...",
+    speaking: "বলছি...",
+    error: "কিছু ভুল হয়েছে",
+    unsupported: "এই ব্রাউজারে ভয়েস সমর্থিত নয়",
+    tryAgain: "আবার চেষ্টা করুন",
+    close: "বন্ধ করুন",
+    poweredBy: "Web Speech API দ্বারা",
+    browserHint: "Chrome ও Edge এ সবচেয়ে ভালো কাজ করে",
+    sidebarLabel: "ভয়েস সহকারী",
+    checkPrice: "দাম দেখুন",
+    checkWeather: "আবহাওয়া",
+    myExpenses: "আমার খরচ",
+    openCrops: "ফসল খুলুন",
+    priceOf: "এর দাম",
+  },
 };
 
 export default bn;

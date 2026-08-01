@@ -615,6 +615,27 @@ const en = {
     selectCrop: "Select Crop Type (Optional)",
     diagnoseBtn: "Diagnose My Crop",
   },
+
+  // ── Voice Assistant ───────────────────────────────────────────────────
+  voice: {
+    title: "Voice Assistant",
+    tapToSpeak: "Tap the microphone to start",
+    listening: "Listening... Speak now",
+    processing: "Understanding your command...",
+    speaking: "Speaking...",
+    error: "Something went wrong",
+    unsupported: "Voice not supported in this browser",
+    tryAgain: "Try Again",
+    close: "Close",
+    poweredBy: "Powered by Web Speech API",
+    browserHint: "Works best in Chrome & Edge",
+    sidebarLabel: "Voice Assistant",
+    checkPrice: "Check prices",
+    checkWeather: "Weather",
+    myExpenses: "My expenses",
+    openCrops: "Open crops",
+    priceOf: "Price of",
+  },
 };
 
 export type TranslationKeys = typeof en;

@@ -476,6 +476,25 @@ const te = {
     apiError: "AI సేవ అందుబాటులో లేదు. దయచేసి API కీని తనిఖీ చేయండి.",
     selectCrop: "పంట రకం ఎంచుకోండి (ఐచ్ఛికం)", diagnoseBtn: "నా పంటను నిర్ధారించండి",
   },
+  voice: {
+    title: "వాయిస్ అసిస్టెంట్",
+    tapToSpeak: "మాట్లాడటానికి మైక్రోఫోన్ నొక్కండి",
+    listening: "వింటున్నాను... చెప్పండి",
+    processing: "మీ ఆదేశాన్ని అర్థం చేసుకుంటున్నాను...",
+    speaking: "చెబుతున్నాను...",
+    error: "ఏదో తప్పు జరిగింది",
+    unsupported: "ఈ బ్రౌజర్‌లో వాయిస్ అందుబాటులో లేదు",
+    tryAgain: "మళ్ళీ ప్రయత్నించండి",
+    close: "మూసివేయండి",
+    poweredBy: "Web Speech API ద్వారా",
+    browserHint: "Chrome & Edge లో బాగా పని చేస్తుంది",
+    sidebarLabel: "వాయిస్ అసిస్టెంట్",
+    checkPrice: "ధరలు చూడండి",
+    checkWeather: "వాతావరణం",
+    myExpenses: "నా ఖర్చులు",
+    openCrops: "పంటలు తెరవండి",
+    priceOf: "ధర",
+  },
 };
 
 export default te;

@@ -120,6 +120,25 @@ const pa = {
     analytics: "ਵਿਸ਼ਲੇਸ਼ਣ", overview: "ਸਾਰ", trends: "ਰੁਝਾਨ", reports: "ਰਿਪੋਰਟਾਂ",
     exportData: "ਡੇਟਾ ਨਿਰਯਾਤ ਕਰੋ", revenue: "ਆਮਦਨ", expenses: "ਖਰਚੇ", profit: "ਮੁਨਾਫ਼ਾ", growth: "ਵਾਧਾ",
   },
+  voice: {
+    title: "ਵਾਇਸ ਅਸਿਸਟੈਂਟ",
+    tapToSpeak: "ਬੋਲਣ ਲਈ ਮਾਈਕ੍ਰੋਫੋਨ ਦਬਾਓ",
+    listening: "ਸੁਣ ਰਿਹਾ ਹਾਂ... ਬੋਲੋ",
+    processing: "ਤੁਹਾਡੀ ਗੱਲ ਸਮਝ ਰਿਹਾ ਹਾਂ...",
+    speaking: "ਬੋਲ ਰਿਹਾ ਹਾਂ...",
+    error: "ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ",
+    unsupported: "ਇਸ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਵਾਇਸ ਉਪਲਬਧ ਨਹੀਂ ਹੈ",
+    tryAgain: "ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ",
+    close: "ਬੰਦ ਕਰੋ",
+    poweredBy: "Web Speech API ਦੁਆਰਾ",
+    browserHint: "Chrome ਅਤੇ Edge ਵਿੱਚ ਵਧੀਆ ਕੰਮ ਕਰਦਾ ਹੈ",
+    sidebarLabel: "ਵਾਇਸ ਅਸਿਸਟੈਂਟ",
+    checkPrice: "ਭਾਅ ਦੇਖੋ",
+    checkWeather: "ਮੌਸਮ",
+    myExpenses: "ਮੇਰੇ ਖਰਚੇ",
+    openCrops: "ਫ਼ਸਲ ਖੋਲ੍ਹੋ",
+    priceOf: "ਦਾ ਭਾਅ",
+  },
 };
 
 export default pa;
