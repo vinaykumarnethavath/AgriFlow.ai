@@ -27,7 +27,8 @@ import {
     BarChart2,
     MessageSquare,
     Droplets,
-    Video
+    Video,
+    Lightbulb
 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
@@ -61,6 +62,7 @@ const Sidebar = () => {
                     { name: t("sidebar.orders"), href: "/dashboard/shop/orders", icon: Box },
                     { name: t("sidebar.accounting"), href: "/dashboard/shop/accounting", icon: TrendingUp },
                     { name: t("sidebar.salesAnalytics"), href: "/dashboard/shop/analytics", icon: LineChart },
+                    { name: t("shop.discovery", "Discovery"), href: "/dashboard/shop/discovery", icon: Lightbulb },
                     { name: t("common.settings"), href: "/dashboard/shop/profile", icon: Settings },
                 ];
             case UserRole.MANUFACTURER:

@@ -90,8 +90,9 @@ export function VoiceAssistant() {
     useEffect(() => {
         if (voice.status === "processing" && !processedRef.current) {
             processedRef.current = true;
-            if (voice.transcript.trim()) {
-                handleProcessTranscript(voice.transcript);
+            const finalCommand = voice.transcript.trim() || voice.interimTranscript.trim();
+            if (finalCommand) {
+                handleProcessTranscript(finalCommand);
             } else {
                 // If the microphone didn't pick up any speech, just reset
                 voice.setStatus("idle");
@@ -101,7 +102,7 @@ export function VoiceAssistant() {
         if (voice.status === "idle" || voice.status === "listening") {
             processedRef.current = false;
         }
-    }, [voice.status, voice.transcript]);
+    }, [voice.status, voice.transcript, voice.interimTranscript]);
 
     const handleProcessTranscript = async (text: string) => {
         setIsExecuting(true);

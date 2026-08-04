@@ -234,6 +234,7 @@ const en = {
     orderValue: "Order Value",
     customer: "Customer",
     orderDate: "Order Date",
+    discovery: "Discovery & Insights",
   },
 
   // ── Customer Dashboard ────────────────────────────────────────────────
