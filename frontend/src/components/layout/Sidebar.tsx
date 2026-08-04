@@ -96,7 +96,7 @@ const Sidebar = () => {
         <div className="h-screen w-64 bg-green-900 text-white flex flex-col p-4 fixed left-0 top-0">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <Sprout className="h-8 w-8 text-green-400" />
+                    <img src="/logo.png" alt="AgriFlow Logo" className="h-8 w-8 object-contain" />
                     AgriFlow
                 </h1>
                 <p className="text-xs text-green-300 mt-1">{t("auth.supplyChainPlatform")}</p>

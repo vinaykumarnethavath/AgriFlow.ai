@@ -90,8 +90,8 @@ export default function TraceabilityPage() {
             <div className="max-w-3xl mx-auto space-y-8">
                 {/* Header Section */}
                 <div className="text-center space-y-2">
-                    <div className="inline-flex items-center justify-center p-3 bg-green-100 rounded-full mb-4">
-                        <Sprout className="h-8 w-8 text-green-600" />
+                    <div className="inline-flex items-center justify-center mb-4">
+                        <img src="/logo.png" alt="AgriFlow Logo" className="h-16 w-16 object-contain" />
                     </div>
                     <h1 className="text-3xl font-bold text-green-900">{data.product.name}</h1>
                     <p className="text-green-700 font-medium">Verified Product Journey</p>

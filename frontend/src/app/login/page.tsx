@@ -107,9 +107,9 @@ export default function LoginPage() {
             <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
                 {/* Header */}
                 <div className="p-6 text-center space-y-2 border-b border-border">
-                    <div className="flex justify-center mt-2">
-                        <div className="h-12 w-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                            <Sprout className="h-6 w-6 text-green-600" />
+                    <div className="flex justify-center mt-2 mb-2">
+                        <div className="w-40 flex items-center justify-center">
+                            <img src="/logo.png" alt="AgriFlow Logo" className="w-full h-auto object-contain drop-shadow-md" />
                         </div>
                     </div>
                     <h1 className="text-2xl font-bold text-foreground">{t('auth.login')}</h1>
