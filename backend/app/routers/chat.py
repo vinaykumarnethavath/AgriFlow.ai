@@ -334,3 +334,55 @@ async def send_message(
         sender_role=current_user.role,
         created_at=new_msg.created_at
     )
+
+@router.get("/channels/groups/all", response_model=List[ChannelRead])
+async def get_all_group_channels(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Get all group channels available to join.
+    """
+    stmt = select(ChatChannel).where(ChatChannel.channel_type == ChannelType.GROUP)
+    res = await db.execute(stmt)
+    groups = res.scalars().all()
+    
+    response_list = []
+    for ch in groups:
+        response_list.append(ChannelRead(
+            id=ch.id,
+            name=ch.name,
+            channel_type=ch.channel_type,
+            location_tag=ch.location_tag,
+            created_at=ch.created_at
+        ))
+    return response_list
+
+@router.post("/channels/{channel_id}/join")
+async def join_channel(
+    channel_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Join a specific group channel.
+    """
+    stmt_ch = select(ChatChannel).where(ChatChannel.id == channel_id)
+    res_ch = await db.execute(stmt_ch)
+    channel = res_ch.scalar_one_or_none()
+    
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+        
+    if channel.channel_type != ChannelType.GROUP:
+        raise HTTPException(status_code=400, detail="Can only join group channels directly")
+        
+    stmt_mem = select(ChannelMember).where(
+        and_(ChannelMember.channel_id == channel_id, ChannelMember.user_id == current_user.id)
+    )
+    res_mem = await db.execute(stmt_mem)
+    if not res_mem.scalar_one_or_none():
+        db.add(ChannelMember(channel_id=channel_id, user_id=current_user.id))
+        await db.commit()
+    
+    return {"status": "joined"}

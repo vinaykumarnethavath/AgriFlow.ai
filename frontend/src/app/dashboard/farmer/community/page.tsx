@@ -80,7 +80,9 @@ export default function CommunityPage() {
     const [uploading, setUploading] = useState(false);
 
     // Form/Search inputs
-    const [activeTab, setActiveTab] = useState<"chats" | "discover">("chats");
+    const [activeTab, setActiveTab] = useState<"chats" | "discover" | "experts" | "groups">("chats");
+    const [allGroups, setAllGroups] = useState<ChannelRead[]>([]);
+    const [loadingGroups, setLoadingGroups] = useState(false);
     const [discoverQuery, setDiscoverQuery] = useState("");
     const [newMessage, setNewMessage] = useState("");
     const [mediaUrl, setMediaUrl] = useState<string | null>(null);
@@ -174,10 +176,36 @@ export default function CommunityPage() {
 
     // Auto-trigger discover search on empty query/mount to show some farmers
     useEffect(() => {
-        if (activeTab === "discover") {
+        if (activeTab === "discover" || activeTab === "experts") {
             handleDiscoverSearch();
         }
+        if (activeTab === "groups") {
+            fetchAllGroups();
+        }
     }, [activeTab]);
+
+    const fetchAllGroups = async () => {
+        try {
+            setLoadingGroups(true);
+            const res = await api.get("/chat/channels/groups/all");
+            setAllGroups(res.data);
+        } catch (err) {
+            console.error("Failed to fetch all groups", err);
+        } finally {
+            setLoadingGroups(false);
+        }
+    };
+
+    const handleJoinGroup = async (channelId: number) => {
+        try {
+            await api.post(`/chat/channels/${channelId}/join`);
+            setActiveTab("chats");
+            await fetchChannels(channelId);
+            setMobileShowChat(true);
+        } catch (err) {
+            console.error("Failed to join group", err);
+        }
+    };
 
     // Start a P2P chat with a farmer
     const startP2PChat = async (farmerId: number) => {
@@ -412,6 +440,28 @@ export default function CommunityPage() {
                             <Search className="h-4 w-4" />
                             {t("community.discover", "Discover")}
                         </Button>
+                        <Button
+                            variant={activeTab === "experts" ? "default" : "ghost"}
+                            className={`flex-1 text-xs gap-2 py-1.5 h-auto rounded-lg ${
+                                activeTab === "experts" ? "bg-green-700 hover:bg-green-800 text-white" : "text-slate-600 dark:text-slate-400"
+                            }`}
+                            id="btn-tab-experts"
+                            onClick={() => setActiveTab("experts")}
+                        >
+                            <HelpCircle className="h-4 w-4" />
+                            {t("community.experts", "Experts Q&A")}
+                        </Button>
+                        <Button
+                            variant={activeTab === "groups" ? "default" : "ghost"}
+                            className={`flex-1 text-xs gap-2 py-1.5 h-auto rounded-lg ${
+                                activeTab === "groups" ? "bg-green-700 hover:bg-green-800 text-white" : "text-slate-600 dark:text-slate-400"
+                            }`}
+                            id="btn-tab-groups"
+                            onClick={() => setActiveTab("groups")}
+                        >
+                            <Users className="h-4 w-4" />
+                            {t("community.groups", "Groups")}
+                        </Button>
                     </div>
 
                     {/* Active Chats list tab */}
@@ -536,6 +586,105 @@ export default function CommunityPage() {
                                                     className="bg-green-700 hover:bg-green-800 text-white text-[11px] h-7 px-3 shrink-0 rounded-lg"
                                                 >
                                                     {t("community.chatBtn", "Chat")}
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    {/* Experts tab */}
+                    {activeTab === "experts" && (
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                                {loadingDiscover ? (
+                                    <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                                        <Loader2 className="h-8 w-8 animate-spin mb-2 text-green-600" />
+                                        <p className="text-xs">{t("community.searching", "Searching experts...")}</p>
+                                    </div>
+                                ) : discoveredFarmers.filter(f => f.role === 'expert').length === 0 ? (
+                                    <div className="p-6 text-center text-slate-400 text-xs">
+                                        <HelpCircle className="h-8 w-8 mx-auto mb-2 opacity-30 text-green-700" />
+                                        <p>{t("community.noExpertsFound", "No experts found.")}</p>
+                                    </div>
+                                ) : (
+                                    discoveredFarmers.filter(f => f.role === 'expert').map((farmer) => (
+                                        <Card key={farmer.id} className="overflow-hidden border-slate-100 dark:border-slate-900 shadow-sm hover:shadow-md transition-shadow">
+                                            <CardContent className="p-3 flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-semibold shrink-0">
+                                                        {farmer.full_name.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate flex items-center gap-1">
+                                                            {farmer.full_name}
+                                                            <span title="Verified Expert"><CheckCircle2 className="h-3 w-3 text-blue-500" /></span>
+                                                        </h4>
+                                                        {(farmer.district || farmer.state) && (
+                                                            <p className="text-[10px] text-slate-500 flex items-center gap-0.5 truncate">
+                                                                <MapPin className="h-2 w-2 text-slate-400" />
+                                                                {farmer.district && `${farmer.district}, `}{farmer.state}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    id={`btn-chat-expert-${farmer.id}`}
+                                                    onClick={() => startP2PChat(farmer.id)}
+                                                    className="bg-green-700 hover:bg-green-800 text-white text-[11px] h-7 px-3 shrink-0 rounded-lg"
+                                                >
+                                                    {t("community.askBtn", "Ask")}
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Groups tab */}
+                    {activeTab === "groups" && (
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                                {loadingGroups ? (
+                                    <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                                        <Loader2 className="h-8 w-8 animate-spin mb-2 text-green-600" />
+                                        <p className="text-xs">{t("community.loadingGroups", "Loading groups...")}</p>
+                                    </div>
+                                ) : allGroups.length === 0 ? (
+                                    <div className="p-6 text-center text-slate-400 text-xs">
+                                        <Users className="h-8 w-8 mx-auto mb-2 opacity-30 text-green-700" />
+                                        <p>{t("community.noGroupsFound", "No groups available to join.")}</p>
+                                    </div>
+                                ) : (
+                                    allGroups.map((group) => (
+                                        <Card key={group.id} className="overflow-hidden border-slate-100 dark:border-slate-900 shadow-sm hover:shadow-md transition-shadow">
+                                            <CardContent className="p-3 flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <div className="h-8 w-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                                                        <Users className="h-4 w-4" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate">
+                                                            {group.name}
+                                                        </h4>
+                                                        {group.location_tag && (
+                                                            <p className="text-[10px] text-slate-500 flex items-center gap-0.5 truncate">
+                                                                <MapPin className="h-2 w-2 text-slate-400" />
+                                                                {group.location_tag}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleJoinGroup(group.id)}
+                                                    className="bg-green-700 hover:bg-green-800 text-white text-[11px] h-7 px-3 shrink-0 rounded-lg"
+                                                >
+                                                    {t("community.joinBtn", "Join")}
                                                 </Button>
                                             </CardContent>
                                         </Card>
