@@ -2,7 +2,7 @@
 
 AgriFlow AI is a full-stack web application for agriculture supply-chain and farm operations. It provides role-based modules (farmer, manufacturer, customer/shop) for managing crops, products, orders, analytics, and AI-assisted workflows (RAG chatbot), with optional integrations for payments and external data sources (weather/market/news).
 
-## Features
+### Features
 
 - **Role-based access for real users**
   - Separate experiences for farmer, fertiliser shop, mills, and customers.
@@ -20,55 +20,54 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
   - Ask questions and get guided help using application knowledge.
 - **Live external insights**
   - Weather, market prices, and agriculture news endpoints for operational awareness.
+- **Immutable Blockchain Ledger**
+  - Cryptographically secured supply chain traceability using SHA-256 hash chaining and proof-of-work mining to guarantee organic certifications and fair-trade verifications.
 
 ## Architecture
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│                           Users                              │
-│  - Farmer                                                     │
-│  - Fertiliser Shop                                            │
-│  - Mills                                                      │
-│  - Customers                                                  │
-└──────────────────────────────────────────────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────────┐
-│                        Frontend UI                           │
-│        (Next.js + React + TypeScript + TailwindCSS)           │
-│  - Role-based screens                                         │
-│  - Dashboards / charts                                        │
-│  - Forms (crop, product, order, accounting)                   │
-│  - Chat UI (RAG assistant)                                    │
-└──────────────────────────────────────────────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────────┐
-│                       FastAPI Backend                         │
-│              (backend/app/main.py + routers/)                 │
-│  - REST APIs (auth, crops, products, orders, analytics,       │
-│    shop_accounting, payments, rag, weather, market_prices,    │
-│    news, etc.)                                                │
-│  - Request/response handling + CORS + error handling          │
-│  - Service orchestration (app/services/*)                     │
-└──────────────────────────────────────────────────────────────┘
-            ↓                          ↓                       ↓
-┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
-│     AI / RAG Layer     │   │       Payments        │   │   External Insights    │
-│ (app/services/rag_*)   │   │      (Razorpay)       │   │ (Weather/Market/News)  │
-│ - Groq LLM integration │   │ - Checkout + verify   │   │ - Live data endpoints  │
-│ - DB-aware answers     │   │                       │   │                       │
-└───────────────────────┘   └───────────────────────┘   └───────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────────┐
-│                         Data Layer                           │
-│        (SQLModel + SQLAlchemy Async + asyncpg driver)         │
-│  - Models + sessions + transactions                           │
-└──────────────────────────────────────────────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────────┐
-│                         PostgreSQL                            │
-│  - Application tables (users, crops, products, orders, etc.)  │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Users ["Target Users & Stakeholders"]
+        F["🧑‍🌾 Farmer"]
+        S["🏪 Fertiliser Shop"]
+        M["🏭 Mills / Processor"]
+        C["🛒 Customer"]
+    end
+
+    subgraph Frontend ["Frontend UI (Next.js, TypeScript, Tailwind)"]
+        UI["💻 Role-Based Interfaces"]
+        QR["🔍 Public QR Code Traceability Page"]
+        BE["🛡️ Blockchain Explorer & Audit Tool"]
+    end
+
+    subgraph Backend ["FastAPI Application (Service Orchestration)"]
+        API["⚙️ REST API Endpoints"]
+        BSE["🔗 Blockchain Service (SHA-256 Chaining & Proof of Work Mining)"]
+        RAG["🧠 AI / RAG Chatbot (Groq LLM Integration)"]
+        PAY["💳 Payment Orchestrator (Razorpay Integration)"]
+        EXT["🌦️ External Insights Services (Weather/Market/News)"]
+    end
+
+    subgraph Data ["Data & Storage Layer"]
+        ORM["🗄️ SQLModel / SQLAlchemy (Async ORM)"]
+        DB[("🛢️ PostgreSQL / SQLite Database")]
+        BC[("🔗 Blockchain Blocks (Immutable Ledger Table)")]
+    end
+
+    Users --> Frontend
+    Frontend --> API
+    API --> BSE
+    API --> RAG
+    API --> PAY
+    API --> EXT
+    BSE --> BC
+    RAG --> ORM
+    PAY --> ORM
+    EXT --> ORM
+    ORM --> DB
+    BC --> DB
 ```
+
 
 ## Tech Stack
 
