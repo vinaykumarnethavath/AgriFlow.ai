@@ -27,4 +27,4 @@ from .payment import Payment, PaymentCreateRequest, PaymentVerifyRequest, Paymen
 from .shop_accounting import ShopAccountingExpense, ShopAccountingExpenseCreate, ShopAccountingExpenseRead
 from .geocode_cache import GeocodeCache
 from .chat import ChatChannel, ChannelMember, ChatMessage
-
+from .blockchain import BlockchainBlock

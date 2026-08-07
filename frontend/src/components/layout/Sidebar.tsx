@@ -30,7 +30,8 @@ import {
     Droplets,
     Video,
     Lightbulb,
-    Brain
+    Brain,
+    ShieldCheck
 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
@@ -56,6 +57,7 @@ const Sidebar = () => {
                     { name: t("sidebar.communityHub", "Community Hub"), href: "/dashboard/farmer/community", icon: MessageSquare },
                     { name: t("sidebar.nutrition", "Precision Nutrition"), href: "/dashboard/farmer/nutrition", icon: Droplets },
                     { name: t("sidebar.learning", "Learning Hub"), href: "/dashboard/farmer/learning", icon: Video },
+                    { name: t("sidebar.blockchain", "Blockchain Ledger"), href: "/dashboard/blockchain", icon: ShieldCheck },
                 ];
             case UserRole.SHOP:
                 return [
@@ -65,6 +67,7 @@ const Sidebar = () => {
                     { name: t("sidebar.accounting"), href: "/dashboard/shop/accounting", icon: TrendingUp },
                     { name: t("sidebar.salesAnalytics"), href: "/dashboard/shop/analytics", icon: LineChart },
                     { name: t("shop.discovery", "Discovery"), href: "/dashboard/shop/discovery", icon: Lightbulb },
+                    { name: t("sidebar.blockchain", "Blockchain Ledger"), href: "/dashboard/blockchain", icon: ShieldCheck },
                     { name: t("common.settings"), href: "/dashboard/shop/profile", icon: Settings },
                 ];
             case UserRole.MANUFACTURER:
@@ -78,6 +81,7 @@ const Sidebar = () => {
                     { name: t("sidebar.analytics"), href: "/dashboard/manufacturer/analytics", icon: BarChart2 },
                     { name: t("sidebar.sales"), href: "/dashboard/manufacturer/sales", icon: LineChart },
                     { name: t("sidebar.intelligence", "Intelligence"), href: "/dashboard/manufacturer/intelligence", icon: Brain },
+                    { name: t("sidebar.blockchain", "Blockchain Ledger"), href: "/dashboard/blockchain", icon: ShieldCheck },
                     { name: t("common.settings"), href: "/dashboard/manufacturer/profile", icon: Settings },
                 ];
             case UserRole.CUSTOMER:
@@ -87,6 +91,7 @@ const Sidebar = () => {
                     { name: t("sidebar.cart"), href: "/dashboard/customer/cart", icon: ShoppingCart },
                     { name: t("sidebar.orders"), href: "/dashboard/customer/orders", icon: ShoppingBag },
                     { name: t("sidebar.smartBuying", "Smart Buying"), href: "/dashboard/customer/smart-buying", icon: TrendingDown },
+                    { name: t("sidebar.blockchain", "Blockchain Ledger"), href: "/dashboard/blockchain", icon: ShieldCheck },
                     { name: t("common.settings"), href: "/dashboard/customer/profile", icon: Settings },
                 ];
             default:

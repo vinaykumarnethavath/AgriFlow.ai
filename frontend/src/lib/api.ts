@@ -1178,4 +1178,65 @@ export const getCustomerSmartBuyingInsights = async (): Promise<CustomerSmartBuy
     });
 };
 
+// --- Blockchain Ledger APIs ---
+export interface BlockchainBlock {
+    id: number;
+    block_index: number;
+    timestamp: string;
+    previous_hash: string;
+    hash: string;
+    nonce: number;
+    payload: string;
+    product_id?: number;
+    certification_type?: string;
+    verifier_name?: string;
+}
+
+export interface BlockchainStats {
+    total_blocks: number;
+    organic_certifications: number;
+    fair_trade_verifications: number;
+    traceability_events: number;
+    is_ledger_valid: boolean;
+}
+
+export interface VerificationResult {
+    is_valid: boolean;
+    failing_block_index: number | null;
+    message: string;
+}
+
+export const getBlockchainBlocks = async (): Promise<BlockchainBlock[]> => {
+    const response = await api.get<BlockchainBlock[]>("/blockchain/blocks");
+    return response.data;
+};
+
+export const verifyBlockchain = async (): Promise<VerificationResult> => {
+    const response = await api.get<VerificationResult>("/blockchain/verify");
+    return response.data;
+};
+
+export const getBlockchainStats = async (): Promise<BlockchainStats> => {
+    const response = await api.get<BlockchainStats>("/blockchain/stats");
+    return response.data;
+};
+
+export const certifyProduct = async (data: {
+    product_id: number;
+    certification_type: string;
+    verifier_name: string;
+    details: any;
+}): Promise<BlockchainBlock> => {
+    const response = await api.post<BlockchainBlock>("/blockchain/certify", data);
+    return response.data;
+};
+
+export const tamperBlockchain = async (blockIndex: number, tamperedPayload: string) => {
+    const response = await api.post("/blockchain/tamper-demo", null, {
+        params: { block_index: blockIndex, tampered_payload: tamperedPayload }
+    });
+    return response.data;
+};
+
 export default api;
+
