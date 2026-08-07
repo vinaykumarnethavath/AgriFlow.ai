@@ -1020,4 +1020,93 @@ export const getSupportedCrops = async (): Promise<SupportedCrop[]> => {
     return response.data.crops;
 };
 
+// --- Manufacturer Intelligence Mock API ---
+export interface ProcurementInsight {
+    date: string;
+    predictedPrice: number;
+    trend: 'up' | 'down' | 'stable';
+    regionForecasts: { region: string; harvestStatus: string; impact: string }[];
+    recommendation: "BUY NOW" | "WAIT" | "HOLD";
+}
+
+export interface InventoryOptimizationInsight {
+    date: string;
+    predictedDemand: number;
+    currentStock: number;
+    recommendation: string;
+    alerts: { type: 'warning' | 'info' | 'critical'; message: string }[];
+}
+
+export const getProcurementIntelligence = async (): Promise<ProcurementInsight[]> => {
+    // Mock data for Procurement Intelligence
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve([
+                {
+                    date: "Week 1",
+                    predictedPrice: 4500,
+                    trend: "down",
+                    regionForecasts: [
+                        { region: "North Region", harvestStatus: "Starting in 2 weeks", impact: "Price drop expected" },
+                        { region: "South Region", harvestStatus: "Ongoing", impact: "Stable supply" }
+                    ],
+                    recommendation: "WAIT"
+                },
+                {
+                    date: "Week 2",
+                    predictedPrice: 4300,
+                    trend: "down",
+                    regionForecasts: [],
+                    recommendation: "WAIT"
+                },
+                {
+                    date: "Week 3",
+                    predictedPrice: 4100,
+                    trend: "stable",
+                    regionForecasts: [],
+                    recommendation: "BUY NOW"
+                },
+                {
+                    date: "Week 4",
+                    predictedPrice: 4150,
+                    trend: "up",
+                    regionForecasts: [],
+                    recommendation: "HOLD"
+                }
+            ]);
+        }, 800);
+    });
+};
+
+export const getInventoryOptimization = async (): Promise<InventoryOptimizationInsight[]> => {
+    // Mock data for Inventory Optimization
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve([
+                {
+                    date: "Jan",
+                    predictedDemand: 12000,
+                    currentStock: 15000,
+                    recommendation: "Decrease production of Wheat Flour by 10%",
+                    alerts: [{ type: "warning", message: "Risk of overstocking next month" }]
+                },
+                {
+                    date: "Feb",
+                    predictedDemand: 18000,
+                    currentStock: 14000,
+                    recommendation: "Increase production of Rice by 20%",
+                    alerts: [{ type: "critical", message: "Potential stockout for Rice in 2 weeks" }]
+                },
+                {
+                    date: "Mar",
+                    predictedDemand: 15000,
+                    currentStock: 16000,
+                    recommendation: "Maintain current production levels",
+                    alerts: [{ type: "info", message: "Inventory levels optimal" }]
+                }
+            ]);
+        }, 800);
+    });
+};
+
 export default api;

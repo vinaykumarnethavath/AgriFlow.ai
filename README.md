@@ -99,6 +99,63 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 
 - PostgreSQL
 
+## Local Setup
+
+### Prerequisites
+- Node.js 18+ and npm
+- Python 3.10+
+- PostgreSQL database
+
+### Backend Setup
+
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   # On Windows
+   venv\Scripts\activate
+   # On macOS/Linux
+   source venv/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Set up environment variables:
+   Copy `.env.example` to `.env` and fill in the required values, especially `DATABASE_URL`.
+   ```bash
+   cp .env.example .env
+   ```
+5. Initialize the database and run seeds (optional but recommended):
+   ```bash
+   python force_init_db.py
+   python seed_data.py
+   ```
+6. Start the FastAPI server:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+### Frontend Setup
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Next.js development server:
+   ```bash
+   npm run dev
+   ```
+
+The application should now be running at `http://localhost:3000` (frontend) and `http://localhost:8000` (backend API).
+
 ## Deployment
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.

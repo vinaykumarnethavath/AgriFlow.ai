@@ -28,7 +28,8 @@ import {
     MessageSquare,
     Droplets,
     Video,
-    Lightbulb
+    Lightbulb,
+    Brain
 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
@@ -75,6 +76,7 @@ const Sidebar = () => {
                     { name: t("sidebar.accounting"), href: "/dashboard/manufacturer/accounting", icon: Wallet },
                     { name: t("sidebar.analytics"), href: "/dashboard/manufacturer/analytics", icon: BarChart2 },
                     { name: t("sidebar.sales"), href: "/dashboard/manufacturer/sales", icon: LineChart },
+                    { name: t("sidebar.intelligence", "Intelligence"), href: "/dashboard/manufacturer/intelligence", icon: Brain },
                     { name: t("common.settings"), href: "/dashboard/manufacturer/profile", icon: Settings },
                 ];
             case UserRole.CUSTOMER:
