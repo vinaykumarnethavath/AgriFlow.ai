@@ -46,11 +46,15 @@ In your Railway backend service, go to **Settings → Variables** and add:
 # Use the Railway-provided DATABASE_URL but replace postgres:// with postgresql+asyncpg://
 DATABASE_URL=postgresql+asyncpg://postgres:PASSWORD@HOST:PORT/railway
 
-# Security
-JWT_SECRET=<generate a strong random string>
+# Security (Generate secret: python -c "import secrets; print(secrets.token_urlsafe(64))")
+JWT_SECRET=your_generated_secure_jwt_secret
 
 # Frontend URL for CORS (add after Vercel deployment)
 FRONTEND_URL=https://your-app.vercel.app
+
+# Razorpay (if using payment checkouts)
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 
 # Email
 SMTP_HOST=smtp.gmail.com
@@ -71,7 +75,14 @@ OPENWEATHER_API_KEY=your_openweather_api_key
 > **Important**: For `DATABASE_URL`, Railway gives you a URL starting with `postgres://`. 
 > You must change the prefix to `postgresql+asyncpg://` for our async driver.
 
-### 1.4 Deploy
+### 1.4 Persistent Storage for Uploads (Highly Recommended)
+
+By default, uploaded images (like crop disease leaf photos or profile pictures) are written to the local `/uploads` directory. Since Railway containers have ephemeral storage, these files will be lost whenever the container restarts or redeploys.
+1. In your Railway backend service settings, go to the **"Volumes"** tab.
+2. Click **"Add Volume"**.
+3. Set the Mount Path to `/app/uploads` (or `/uploads` depending on your working directory). This ensures user-uploaded files are persisted across server rebuilds.
+
+### 1.5 Deploy
 
 Railway will automatically detect the `Procfile` and `requirements.txt`, install dependencies, and start the server. The health check at `/health` confirms successful deployment.
 
@@ -131,10 +142,18 @@ After deployment, verify:
 - [ ] Weather data loads on farmer dashboard
 - [ ] News feed displays articles
 - [ ] RAG chatbot responds to queries
+- [ ] Blockchain ledger status verifies as "SECURE" and the integrity scan completes successfully
+- [ ] Organic / Fair-Trade certification blocks can be successfully mined on-chain
 
 ---
 
 ## Troubleshooting
+
+### Compromised Ledger Status (Blockchain Error)
+If the dashboard or QR trace page displays a **"LEDGER SECURITY COMPROMISED!"** or **"TAMPERED"** alert:
+1. This is a security feature detecting that database records have been edited directly without re-mining the blockchain hash links.
+2. If this occurred during testing, click the "Verify Ledger Integrity" button in the Blockchain Explorer to find the offending block index.
+3. To reset the ledger, you can drop the database table `blockchain_blocks` and restart the backend server; the system will automatically re-initialize a fresh Genesis Block.
 
 ### CORS Errors
 Make sure `FRONTEND_URL` in Railway matches your exact Vercel domain (including `https://`).
