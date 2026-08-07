@@ -1109,4 +1109,73 @@ export const getInventoryOptimization = async (): Promise<InventoryOptimizationI
     });
 };
 
+// --- Customer Smart Buying Mock API ---
+export interface CustomerSmartBuyingInsight {
+    id: string;
+    commodityName: string;
+    currentPrice: number;
+    trend: 'up' | 'down' | 'stable';
+    priceHistory: { date: string; price: number }[];
+    recommendation: "BUY NOW" | "WAIT";
+    rationale: string;
+    imageEmoji: string;
+}
+
+export const getCustomerSmartBuyingInsights = async (): Promise<CustomerSmartBuyingInsight[]> => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve([
+                {
+                    id: "c1",
+                    commodityName: "Premium Basmati Rice",
+                    currentPrice: 75,
+                    trend: "down",
+                    priceHistory: [
+                        { date: "Day 1", price: 85 },
+                        { date: "Day 2", price: 83 },
+                        { date: "Day 3", price: 80 },
+                        { date: "Day 4", price: 78 },
+                        { date: "Day 5", price: 75 },
+                    ],
+                    recommendation: "BUY NOW",
+                    rationale: "Prices are at a 3-month low due to recent bumper harvests in Punjab.",
+                    imageEmoji: "🍚"
+                },
+                {
+                    id: "c2",
+                    commodityName: "Kashmiri Apples",
+                    currentPrice: 150,
+                    trend: "up",
+                    priceHistory: [
+                        { date: "Day 1", price: 130 },
+                        { date: "Day 2", price: 135 },
+                        { date: "Day 3", price: 140 },
+                        { date: "Day 4", price: 145 },
+                        { date: "Day 5", price: 150 },
+                    ],
+                    recommendation: "WAIT",
+                    rationale: "Prices are artificially high due to transport delays. Expected to drop 10% next week.",
+                    imageEmoji: "🍎"
+                },
+                {
+                    id: "c3",
+                    commodityName: "Toor Dal (Pigeon Pea)",
+                    currentPrice: 110,
+                    trend: "stable",
+                    priceHistory: [
+                        { date: "Day 1", price: 112 },
+                        { date: "Day 2", price: 111 },
+                        { date: "Day 3", price: 110 },
+                        { date: "Day 4", price: 110 },
+                        { date: "Day 5", price: 110 },
+                    ],
+                    recommendation: "BUY NOW",
+                    rationale: "Stable pricing with no immediate drops expected. Good time to stock up.",
+                    imageEmoji: "🍲"
+                }
+            ]);
+        }, 800);
+    });
+};
+
 export default api;

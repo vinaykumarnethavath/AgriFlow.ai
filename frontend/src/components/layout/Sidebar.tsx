@@ -20,6 +20,7 @@ import {
     Box,
     Store,
     TrendingUp,
+    TrendingDown,
     User,
     Settings,
     Wallet,
@@ -85,6 +86,7 @@ const Sidebar = () => {
                     { name: t("sidebar.marketplace"), href: "/dashboard/customer/marketplace", icon: Store },
                     { name: t("sidebar.cart"), href: "/dashboard/customer/cart", icon: ShoppingCart },
                     { name: t("sidebar.orders"), href: "/dashboard/customer/orders", icon: ShoppingBag },
+                    { name: t("sidebar.smartBuying", "Smart Buying"), href: "/dashboard/customer/smart-buying", icon: TrendingDown },
                     { name: t("common.settings"), href: "/dashboard/customer/profile", icon: Settings },
                 ];
             default:
