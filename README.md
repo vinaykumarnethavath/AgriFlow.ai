@@ -5,67 +5,89 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 ### Features
 
 - **Role-based access for real users**
-  - Separate experiences for farmer, fertiliser shop, mills, and customers.
+  - Separate custom experiences for Farmers, Fertiliser Shops, Processing Mills, and Customers.
 - **Farm operations management**
-  - Manage crop records, activities, and status updates during the season.
+  - Manage crop records, farming logs, and status updates during the cultivation seasons.
 - **Product and order lifecycle**
-  - Create products, place orders, and track order status changes.
+  - Create listings, confirm orders, handle bulk stocks, and track progress along the supply chain.
 - **Real-time style dashboards**
-  - Analytics endpoints used to power dashboards for day-to-day decisions.
+  - High-performance analytics endpoints powering active dashboards for crop sales and store revenues.
 - **Shop accounting support**
-  - Track expenses and basic shop accounting entries.
+  - Apportioned logistics cost tracking, wage/labor allocations, and automated shop accounting ledgers.
 - **Payments (real-world checkout)**
-  - Razorpay-based payments integration.
+  - Razorpay-based billing integration with verification checkpoints.
 - **AI assistant (RAG chatbot)**
-  - Ask questions and get guided help using application knowledge.
-- **Live external insights**
-  - Weather, market prices, and agriculture news endpoints for operational awareness.
+  - Context-aware chatbot trained on farm regulations and agronomic guides.
+- **AI Crop Disease Diagnosis**
+  - Direct analysis of crop leaf images utilizing Llama 3.2 Vision models to diagnose pest/fungus infections and prescribe pesticide recommendations.
+- **Hands-Free Voice Assistant**
+  - Highly interactive voice command parser with live wave audio feedback supporting multi-lingual navigation, logs registry, and settings toggling.
+- **Multilingual Support (Localization)**
+  - System-wide language switching across English, Hindi, Telugu, Tamil, Kannada, Marathi, Gujarati, Punjabi, and Bengali.
+- **Precision Crop Nutrition Guidance**
+  - Specialized calculators recommending customized fertilizer combinations and schedules according to target soil conditions.
+- **Farmer Community Chat Hub**
+  - Collaborative channel threads enabling real-time communications and messaging amongst farmers.
+- **Procurement & Processing Portal**
+  - Advanced manufacturer suite tracking raw procurement transactions, production runs, waste levels, and processing efficiencies.
+- **Learning & Video Guides**
+  - Integrated playlists and video resources covering modern agritech and smart farming practices.
+- **Live External Insights**
+  - Instant weather forecasts, mandi market prices, and agriculture news endpoints for real-time operational awareness.
 - **Immutable Blockchain Ledger**
   - Cryptographically secured supply chain traceability using SHA-256 hash chaining and proof-of-work mining to guarantee organic certifications and fair-trade verifications.
 
+
+
 ## Architecture
 
-```mermaid
-graph TD
-    subgraph Users ["Target Users & Stakeholders"]
-        F["🧑‍🌾 Farmer"]
-        S["🏪 Fertiliser Shop"]
-        M["🏭 Mills / Processor"]
-        C["🛒 Customer"]
-    end
-
-    subgraph Frontend ["Frontend UI (Next.js, TypeScript, Tailwind)"]
-        UI["💻 Role-Based Interfaces"]
-        QR["🔍 Public QR Code Traceability Page"]
-        BE["🛡️ Blockchain Explorer & Audit Tool"]
-    end
-
-    subgraph Backend ["FastAPI Application (Service Orchestration)"]
-        API["⚙️ REST API Endpoints"]
-        BSE["🔗 Blockchain Service (SHA-256 Chaining & Proof of Work Mining)"]
-        RAG["🧠 AI / RAG Chatbot (Groq LLM Integration)"]
-        PAY["💳 Payment Orchestrator (Razorpay Integration)"]
-        EXT["🌦️ External Insights Services (Weather/Market/News)"]
-    end
-
-    subgraph Data ["Data & Storage Layer"]
-        ORM["🗄️ SQLModel / SQLAlchemy (Async ORM)"]
-        DB[("🛢️ PostgreSQL / SQLite Database")]
-        BC[("🔗 Blockchain Blocks (Immutable Ledger Table)")]
-    end
-
-    Users --> Frontend
-    Frontend --> API
-    API --> BSE
-    API --> RAG
-    API --> PAY
-    API --> EXT
-    BSE --> BC
-    RAG --> ORM
-    PAY --> ORM
-    EXT --> ORM
-    ORM --> DB
-    BC --> DB
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                           Users                              │
+│  - Farmer                                                     │
+│  - Fertiliser Shop                                            │
+│  - Mills / Manufacturers                                      │
+│  - Retail Customers                                           │
+└──────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│                        Frontend UI                           │
+│        (Next.js + React + TypeScript + TailwindCSS)           │
+│  - Role-based screens & Dashboards                            │
+│  - Chatbot Assistant (RAG)                                    │
+│  - public/trace/[id] (QR Traceability Journey Verification)   │
+│  - dashboard/blockchain (Ledger Explorer & Integrity Audit)  │
+└──────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│                       FastAPI Backend                         │
+│              (backend/app/main.py + routers/)                 │
+│  - API Routers: auth, crops, products, orders, analytics,    │
+│    traceability, blockchain, rag, payments, weather, etc.     │
+│  - Service Orchestration Layer (app/services/*)               │
+└──────────────────────────────────────────────────────────────┘
+         │               │               │               │
+         ▼               ▼               ▼               ▼
+┌────────────────┐┌──────────────┐┌──────────────┐┌──────────────┐
+│ AI / RAG Layer ││   Payments   ││  Blockchain  ││   External   │
+│ (rag_service)  ││  (Razorpay)  ││ (Ledger PoW) ││   Insights   │
+└────────────────┘└──────────────┘└──────────────┘└──────────────┘
+         │               │               │               │
+         ▼               ▼               ▼               ▼
+┌──────────────────────────────────────────────────────────────┐
+│                         Data Layer                           │
+│         (SQLModel / SQLAlchemy Async Core Engine)            │
+│  - Database Tables: users, crops, products, orders, etc.      │
+│  - Blockchain Block Registry Table (blockchain_blocks)        │
+└──────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│                 PostgreSQL / SQLite Database                 │
+│  - Persists all relational records & ledger blocks securely   │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 
