@@ -1185,7 +1185,6 @@ export interface BlockchainBlock {
     timestamp: string;
     previous_hash: string;
     hash: string;
-    nonce: number;
     payload: string;
     product_id?: number;
     certification_type?: string;

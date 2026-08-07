@@ -6,23 +6,10 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from ..models.blockchain import BlockchainBlock
 
-DIFFICULTY_TARGET = "00"  # Fast but shows proof of work mechanism
-
-def calculate_hash(block_index: int, timestamp_str: str, previous_hash: str, nonce: int, payload: str) -> str:
+def calculate_hash(block_index: int, timestamp_str: str, previous_hash: str, payload: str) -> str:
     """Calculate the SHA-256 hash of a block's contents."""
-    block_string = f"{block_index}|{timestamp_str}|{previous_hash}|{nonce}|{payload}"
+    block_string = f"{block_index}|{timestamp_str}|{previous_hash}|{payload}"
     return hashlib.sha256(block_string.encode('utf-8')).hexdigest()
-
-def mine_block(block_index: int, previous_hash: str, payload: str, difficulty: str = DIFFICULTY_TARGET) -> Tuple[int, str]:
-    """Mine a block by finding a nonce that yields a hash starting with the difficulty target."""
-    nonce = 0
-    timestamp_str = datetime.utcnow().isoformat()
-    
-    while True:
-        block_hash = calculate_hash(block_index, timestamp_str, previous_hash, nonce, payload)
-        if block_hash.startswith(difficulty):
-            return nonce, block_hash, timestamp_str
-        nonce += 1
 
 async def get_latest_block(session: AsyncSession) -> Optional[BlockchainBlock]:
     """Retrieve the latest block in the chain from the database."""
@@ -43,15 +30,15 @@ async def ensure_genesis_block(session: AsyncSession) -> BlockchainBlock:
         "version": "1.0.0"
     })
     
-    # Mine genesis block
-    nonce, block_hash, timestamp_str = mine_block(0, "0" * 64, genesis_payload)
+    # Create genesis block
+    timestamp_str = datetime.utcnow().isoformat()
+    block_hash = calculate_hash(0, timestamp_str, "0" * 64, genesis_payload)
     
     genesis = BlockchainBlock(
         block_index=0,
         timestamp=datetime.fromisoformat(timestamp_str),
         previous_hash="0" * 64,
         hash=block_hash,
-        nonce=nonce,
         payload=genesis_payload,
         certification_type="genesis",
         verifier_name="System Admin"
@@ -84,8 +71,9 @@ async def record_ledger_entry(
     # 3. Stringify payload
     payload_str = json.dumps(payload_data, sort_keys=True)
     
-    # 4. Mine new block
-    nonce, block_hash, timestamp_str = mine_block(next_index, previous_hash, payload_str)
+    # 4. Create new block hash
+    timestamp_str = datetime.utcnow().isoformat()
+    block_hash = calculate_hash(next_index, timestamp_str, previous_hash, payload_str)
     
     # 5. Save block
     new_block = BlockchainBlock(
@@ -93,7 +81,6 @@ async def record_ledger_entry(
         timestamp=datetime.fromisoformat(timestamp_str),
         previous_hash=previous_hash,
         hash=block_hash,
-        nonce=nonce,
         payload=payload_str,
         product_id=product_id,
         certification_type=certification_type,
@@ -136,16 +123,11 @@ async def verify_blockchain_integrity(session: AsyncSession) -> Tuple[bool, Opti
             block.block_index,
             block.timestamp.isoformat() if isinstance(block.timestamp, datetime) else str(block.timestamp),
             block.previous_hash,
-            block.nonce,
             block.payload
         )
         
         # If computed hash doesn't match saved hash, block is tampered
         if block.hash != computed:
             return False, block.block_index, f"Cryptographic integrity failed: Hash mismatch at block {block.block_index}. Saved: {block.hash}, Computed: {computed}"
-            
-        # 4. Check target difficulty met
-        if not block.hash.startswith(DIFFICULTY_TARGET):
-            return False, block.block_index, f"Proof of work target not met at block {block.block_index}."
             
     return True, None, "Blockchain ledger integrity fully verified. No tempering detected."

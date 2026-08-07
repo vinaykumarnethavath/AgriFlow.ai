@@ -10,7 +10,6 @@ class BlockchainBlock(SQLModel, table=True):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     previous_hash: str
     hash: str
-    nonce: int
     payload: str  # JSON-encoded transaction / certification data
     
     product_id: Optional[int] = Field(default=None, foreign_key="product.id")
