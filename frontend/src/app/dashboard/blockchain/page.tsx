@@ -441,7 +441,7 @@ export default function BlockchainExplorerPage() {
                                                         {getCertificationBadge(block.certification_type)}
                                                     </div>
                                                     <span className="text-xs text-gray-400 dark:text-zinc-500 mt-1 block">
-                                                        Mined: {new Date(block.timestamp).toLocaleString()} | Nonce: {block.nonce}
+                                                        Recorded: {new Date(block.timestamp).toLocaleString()}
                                                     </span>
                                                 </div>
                                             </div>

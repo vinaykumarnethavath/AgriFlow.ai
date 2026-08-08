@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { Sprout, Mail, Phone } from "lucide-react";
+import { Sprout, Mail, Phone, Store, Factory, ShoppingCart } from "lucide-react";
 import { UserRole } from "@/types";
 
 type AuthMethod = "email" | "phone";
@@ -104,34 +104,34 @@ export default function RegisterPage() {
         <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300">
             <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
                 {/* Header */}
-                <div className="p-6 text-center space-y-2 border-b border-border">
-                    <div className="flex justify-center mt-2 mb-2">
-                        <div className="w-40 flex items-center justify-center">
-                            <img src="/logo.png" alt="AgriFlow Logo" className="w-full h-auto object-contain drop-shadow-md" />
+                <div className="p-3 text-center border-b border-border">
+                    <div className="flex justify-center mb-1">
+                        <div className="w-28 flex items-center justify-center">
+                            <img src="/logo.png?v=5" alt="AgriFlow Logo" className="w-full h-auto object-contain drop-shadow-md" />
                         </div>
                     </div>
-                    <h1 className="text-2xl font-bold text-foreground">Join AgriFlow</h1>
-                    <p className="text-sm text-muted-foreground">Create an account to get started</p>
+                    <h1 className="text-xl font-bold text-foreground mt-0.5">Join AgriFlow</h1>
+                    <p className="text-xs text-muted-foreground">Create an account to get started</p>
                 </div>
 
-                <div className="p-8 pb-10 space-y-5">
+                <div className="p-4 space-y-3">
                     {/* Method Toggle */}
                     <div className="flex rounded-lg border border-border overflow-hidden">
                         <button type="button"
                             onClick={() => { setAuthMethod("email"); setError(""); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "email" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}>
+                            className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-sm font-semibold transition-colors ${authMethod === "email" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}>
                             <Mail className="h-4 w-4" /> Email
                         </button>
                         <button type="button"
                             onClick={() => { setAuthMethod("phone"); setError(""); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "phone" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}>
+                            className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-sm font-semibold transition-colors ${authMethod === "phone" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}>
                             <Phone className="h-4 w-4" /> Phone Number
                         </button>
                     </div>
 
                     {/* ── EMAIL FORM ── */}
                     {authMethod === "email" && (
-                        <form onSubmit={handleEmailSubmit} className="space-y-5">
+                        <form onSubmit={handleEmailSubmit} className="space-y-3">
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-muted-foreground block">Full Name</label>
                                 <input type="text" placeholder="John Doe" required autoComplete="name"
@@ -170,21 +170,29 @@ export default function RegisterPage() {
                                         className={`w-full rounded-lg border px-4 py-2 text-sm outline-none transition-all focus:ring-2 placeholder:text-muted-foreground text-foreground ${!passwordsMatch ? "border-red-500 bg-red-50 focus:ring-red-500/10" : "border-input bg-background focus:border-green-500 focus:ring-green-500/10"}`} />
                                 </div>
                             </div>
-                            <div className="space-y-1.5">
+                            <div className="space-y-1">
                                 <label className="text-sm font-semibold text-muted-foreground block">Your Role</label>
-                                <select required
-                                    value={emailFormData.role}
-                                    onChange={e => setEmailFormData(p => ({ ...p, role: e.target.value as UserRole }))}
-                                    className={selectCls}>
-                                    <option value={UserRole.FARMER}>Farmer</option>
-                                    <option value={UserRole.SHOP}>Shop Owner</option>
-                                    <option value={UserRole.MANUFACTURER}>Mill Owner</option>
-                                    <option value={UserRole.CUSTOMER}>Customer</option>
-                                </select>
+                                <div className="flex gap-1.5">
+                                    {[
+                                        { id: UserRole.FARMER, label: "Farmer", icon: Sprout },
+                                        { id: UserRole.SHOP, label: "Shop", icon: Store },
+                                        { id: UserRole.MANUFACTURER, label: "Mill", icon: Factory },
+                                        { id: UserRole.CUSTOMER, label: "Customer", icon: ShoppingCart }
+                                    ].map(role => (
+                                        <button
+                                            key={role.id} type="button"
+                                            onClick={() => setEmailFormData(p => ({ ...p, role: role.id }))}
+                                            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border transition-colors ${emailFormData.role === role.id ? 'bg-green-100 border-green-500 text-green-700' : 'bg-background border-input text-muted-foreground hover:bg-muted'}`}
+                                        >
+                                            <role.icon className="h-5 w-5 mb-0.5" />
+                                            <span className="text-[10px] font-bold leading-none">{role.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">{error}</div>}
+                            {error && <div className="p-2 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-xs font-medium">{error}</div>}
                             <button type="submit" disabled={loading || !passwordsMatch}
-                                className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
+                                className="w-full bg-green-600 text-white rounded-lg py-2 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
                                 {loading
                                     ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating...</span>
                                     : <span className="flex items-center justify-center gap-2"><Mail className="h-4 w-4" /> Create Account</span>}
@@ -198,7 +206,7 @@ export default function RegisterPage() {
 
                     {/* ── PHONE FORM ── */}
                     {authMethod === "phone" && (
-                        <form onSubmit={handlePhoneSubmit} className="space-y-5">
+                        <form onSubmit={handlePhoneSubmit} className="space-y-3">
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-muted-foreground block">Phone Number</label>
                                 <div className="flex gap-2">
@@ -228,18 +236,29 @@ export default function RegisterPage() {
                                         className={`w-full rounded-lg border px-4 py-2 text-sm outline-none transition-all focus:ring-2 placeholder:text-muted-foreground text-foreground ${!passwordsMatch ? "border-red-500 bg-red-50 focus:ring-red-500/10" : "border-input bg-background focus:border-green-500 focus:ring-green-500/10"}`} />
                                 </div>
                             </div>
-                            <div className="space-y-1.5">
+                            <div className="space-y-1">
                                 <label className="text-sm font-semibold text-muted-foreground block">Your Role</label>
-                                <select value={phoneRole} onChange={e => setPhoneRole(e.target.value as UserRole)} required className={selectCls}>
-                                    <option value={UserRole.FARMER}>Farmer</option>
-                                    <option value={UserRole.SHOP}>Shop Owner</option>
-                                    <option value={UserRole.MANUFACTURER}>Mill Owner</option>
-                                    <option value={UserRole.CUSTOMER}>Customer</option>
-                                </select>
+                                <div className="flex gap-1.5">
+                                    {[
+                                        { id: UserRole.FARMER, label: "Farmer", icon: Sprout },
+                                        { id: UserRole.SHOP, label: "Shop", icon: Store },
+                                        { id: UserRole.MANUFACTURER, label: "Mill", icon: Factory },
+                                        { id: UserRole.CUSTOMER, label: "Customer", icon: ShoppingCart }
+                                    ].map(role => (
+                                        <button
+                                            key={role.id} type="button"
+                                            onClick={() => setPhoneRole(role.id)}
+                                            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border transition-colors ${phoneRole === role.id ? 'bg-green-100 border-green-500 text-green-700' : 'bg-background border-input text-muted-foreground hover:bg-muted'}`}
+                                        >
+                                            <role.icon className="h-5 w-5 mb-0.5" />
+                                            <span className="text-[10px] font-bold leading-none">{role.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">{error}</div>}
+                            {error && <div className="p-2 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-xs font-medium">{error}</div>}
                             <button type="submit" disabled={loading}
-                                className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
+                                className="w-full bg-green-600 text-white rounded-lg py-2 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
                                 {loading ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating...</span> : "Create Account"}
                             </button>
                             <div className="text-center text-sm pt-2">

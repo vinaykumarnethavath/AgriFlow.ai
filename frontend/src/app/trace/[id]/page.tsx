@@ -330,7 +330,7 @@ export default function TraceabilityPage() {
                                                 </div>
                                             </div>
                                             <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                                                Nonce: {block.nonce}
+                                                Block #{block.block_index}
                                             </span>
                                         </div>
                                     ))}

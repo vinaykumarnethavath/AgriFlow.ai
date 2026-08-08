@@ -57,7 +57,6 @@ const Sidebar = () => {
                     { name: t("sidebar.communityHub", "Community Hub"), href: "/dashboard/farmer/community", icon: MessageSquare },
                     { name: t("sidebar.nutrition", "Precision Nutrition"), href: "/dashboard/farmer/nutrition", icon: Droplets },
                     { name: t("sidebar.learning", "Learning Hub"), href: "/dashboard/farmer/learning", icon: Video },
-                    { name: t("sidebar.blockchain", "Blockchain Ledger"), href: "/dashboard/blockchain", icon: ShieldCheck },
                 ];
             case UserRole.SHOP:
                 return [
@@ -67,7 +66,6 @@ const Sidebar = () => {
                     { name: t("sidebar.accounting"), href: "/dashboard/shop/accounting", icon: TrendingUp },
                     { name: t("sidebar.salesAnalytics"), href: "/dashboard/shop/analytics", icon: LineChart },
                     { name: t("shop.discovery", "Discovery"), href: "/dashboard/shop/discovery", icon: Lightbulb },
-                    { name: t("sidebar.blockchain", "Blockchain Ledger"), href: "/dashboard/blockchain", icon: ShieldCheck },
                     { name: t("common.settings"), href: "/dashboard/shop/profile", icon: Settings },
                 ];
             case UserRole.MANUFACTURER:
@@ -81,7 +79,6 @@ const Sidebar = () => {
                     { name: t("sidebar.analytics"), href: "/dashboard/manufacturer/analytics", icon: BarChart2 },
                     { name: t("sidebar.sales"), href: "/dashboard/manufacturer/sales", icon: LineChart },
                     { name: t("sidebar.intelligence", "Intelligence"), href: "/dashboard/manufacturer/intelligence", icon: Brain },
-                    { name: t("sidebar.blockchain", "Blockchain Ledger"), href: "/dashboard/blockchain", icon: ShieldCheck },
                     { name: t("common.settings"), href: "/dashboard/manufacturer/profile", icon: Settings },
                 ];
             case UserRole.CUSTOMER:
@@ -91,7 +88,6 @@ const Sidebar = () => {
                     { name: t("sidebar.cart"), href: "/dashboard/customer/cart", icon: ShoppingCart },
                     { name: t("sidebar.orders"), href: "/dashboard/customer/orders", icon: ShoppingBag },
                     { name: t("sidebar.smartBuying", "Smart Buying"), href: "/dashboard/customer/smart-buying", icon: TrendingDown },
-                    { name: t("sidebar.blockchain", "Blockchain Ledger"), href: "/dashboard/blockchain", icon: ShieldCheck },
                     { name: t("common.settings"), href: "/dashboard/customer/profile", icon: Settings },
                 ];
             default:
@@ -103,19 +99,19 @@ const Sidebar = () => {
 
     return (
         <div className="h-screen w-64 bg-green-900 text-white flex flex-col p-4 fixed left-0 top-0">
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <img src="/logo.png" alt="AgriFlow Logo" className="h-8 w-8 object-contain" />
+            <div className="mb-4">
+                <h1 className="text-2xl font-bold flex items-center gap-1">
+                    <img src="/logo.png" alt="AgriFlow Logo" className="h-14 w-14 object-contain -ml-2" />
                     AgriFlow
                 </h1>
                 <p className="text-xs text-green-300 mt-1">{t("auth.supplyChainPlatform")}</p>
             </div>
 
-            <nav className="flex-1 space-y-2">
+            <nav className="flex-1 space-y-1 overflow-y-auto pr-1">
                 {navItems.map((item) => (
                     <Link key={item.href} href={item.href}>
                         <div className={cn(
-                            "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-green-800",
+                            "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-green-800",
                             pathname === item.href ? "bg-green-700 text-white" : "text-green-100"
                         )}>
                             <item.icon className="h-5 w-5" />
@@ -125,13 +121,13 @@ const Sidebar = () => {
                 ))}
             </nav>
 
-            <div className="pt-4 border-t border-green-800">
+            <div className="pt-3 border-t border-green-800 mt-2">
                 {/* Language Selector */}
-                <div className="mb-3 px-1">
+                <div className="mb-2 px-1">
                     <LanguageSelector />
                 </div>
 
-                <div className="mb-4 px-2 flex items-center justify-between">
+                <div className="mb-3 px-2 flex items-center justify-between">
                     <div>
                         <p className="font-semibold">{user?.full_name}</p>
                         <p className="text-xs text-green-300 capitalize">{user?.role === 'manufacturer' ? t("auth.manufacturer") : user?.role === 'farmer' ? t("auth.farmer") : user?.role === 'shop' ? t("auth.shopOwner") : user?.role === 'customer' ? t("auth.customer") : user?.role}</p>
