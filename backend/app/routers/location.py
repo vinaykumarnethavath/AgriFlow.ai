@@ -796,11 +796,10 @@ async def nearby_internal_providers(
             dist: float | None = None
             if u_lat is not None and u_lng is not None:
                 geo = await geocode_cached(session=session, query_text=q, address_key=k)
-                if not geo:
-                    continue
-                dist = _haversine(u_lat, u_lng, float(geo["lat"]), float(geo["lng"]))
-                if dist > radius_km:
-                    continue
+                if geo:
+                    dist = _haversine(u_lat, u_lng, float(geo["lat"]), float(geo["lng"]))
+                    if dist > radius_km:
+                        continue
 
             providers.append({
                 "provider_type": "shop",
@@ -853,11 +852,10 @@ async def nearby_internal_providers(
             dist: float | None = None
             if u_lat is not None and u_lng is not None:
                 geo = await geocode_cached(session=session, query_text=q, address_key=k)
-                if not geo:
-                    continue
-                dist = _haversine(u_lat, u_lng, float(geo["lat"]), float(geo["lng"]))
-                if dist > radius_km:
-                    continue
+                if geo:
+                    dist = _haversine(u_lat, u_lng, float(geo["lat"]), float(geo["lng"]))
+                    if dist > radius_km:
+                        continue
 
             providers.append({
                 "provider_type": "mill",

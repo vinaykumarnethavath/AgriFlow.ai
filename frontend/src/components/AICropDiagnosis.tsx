@@ -161,7 +161,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                 <div className="flex flex-col sm:flex-row">
                                     <div className="sm:w-48 h-48 bg-gray-100 shrink-0">
                                         {item.image_url ? (
-                                            <img src={`http://localhost:8000${item.image_url}`} alt="Crop" className="w-full h-full object-cover" />
+                                            <img src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${item.image_url}`} alt="Crop" className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                                         )}

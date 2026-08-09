@@ -160,13 +160,7 @@ export default function LoginPage() {
                                     ].map(role => (
                                         <button
                                             key={role.id} type="button"
-                                            onClick={() => {
-                                                if (roleRef.current) roleRef.current.value = role.id;
-                                                // Trigger a change event if needed, but since we rely on ref during submit, it's fine.
-                                                // Wait, roleRef is a ref to the select. We need to use state for the visual buttons instead of ref.
-                                                // I will convert roleRef to a state variable.
-                                                setRoleState(role.id);
-                                            }}
+                                            onClick={() => setRoleState(role.id)}
                                             className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border transition-colors ${roleState === role.id ? 'bg-green-100 border-green-500 text-green-700' : 'bg-background border-input text-muted-foreground hover:bg-muted'}`}
                                         >
                                             <role.icon className="h-5 w-5 mb-0.5" />
