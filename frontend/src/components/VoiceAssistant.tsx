@@ -1,18 +1,17 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Mic, MicOff, X, Volume2, VolumeX, Loader2,
-    CheckCircle2, Check, AlertCircle, Navigation, ArrowRight,
-    Sparkles, Languages
+    CheckCircle2, AlertCircle, Navigation, ArrowRight,
+    Sparkles, Languages, Send, Keyboard
 } from "lucide-react";
 import { useLanguage, LANGUAGES } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useVoiceCommand, VoiceStatus } from "@/hooks/useVoiceCommand";
-import { parseVoiceIntent, VoiceIntent } from "@/lib/voiceIntentParser";
-import { executeVoiceAction, VoiceActionResult } from "@/lib/voiceActionExecutor";
+import { processVoiceCommand, executeVoiceAction, VoiceExecutionResult } from "@/lib/voiceActionHandler";
 import { LargeWaveform } from "@/components/voice/VoiceWaveform";
 import { VoiceCommandChips } from "@/components/voice/VoiceCommandChip";
 
@@ -20,25 +19,25 @@ import { VoiceCommandChips } from "@/components/voice/VoiceCommandChip";
 
 const STATUS_LABELS: Record<string, Record<VoiceStatus, string>> = {
     en: {
-        idle: "Tap the microphone to start",
+        idle: "Tap the microphone or type a command",
         listening: "Listening... Speak now",
-        processing: "Understanding your command...",
+        processing: "AI is thinking...",
         speaking: "Speaking...",
         error: "Something went wrong",
         unsupported: "Voice not supported in this browser",
     },
     hi: {
-        idle: "माइक्रोफ़ोन दबाएँ",
+        idle: "माइक्रोफ़ोन दबाएँ या कमांड टाइप करें",
         listening: "सुन रहा हूँ... बोलिए",
-        processing: "समझ रहा हूँ...",
+        processing: "AI सोच रहा है...",
         speaking: "बोल रहा हूँ...",
         error: "कुछ गलत हो गया",
         unsupported: "इस ब्राउज़र में वॉइस उपलब्ध नहीं है",
     },
     te: {
-        idle: "మైక్రోఫోన్ నొక్కండి",
+        idle: "మైక్రోఫోన్ నొక్కండి లేదా కమాండ్ టైప్ చేయండి",
         listening: "వింటున్నాను... చెప్పండి",
-        processing: "అర్థం చేసుకుంటున్నాను...",
+        processing: "AI ఆలోచిస్తోంది...",
         speaking: "చెబుతున్నాను...",
         error: "ఏదో తప్పు జరిగింది",
         unsupported: "ఈ బ్రౌజర్‌లో వాయిస్ అందుబాటులో లేదు",
@@ -50,41 +49,22 @@ function getStatusLabel(locale: string, status: VoiceStatus): string {
     return labels[status] || STATUS_LABELS.en[status];
 }
 
-// ── Intent Labels ────────────────────────────────────────────────────────────
-
-const INTENT_ICONS: Record<string, React.ReactNode> = {
-    check_price: <Sparkles className="h-4 w-4" />,
-    check_weather: <Sparkles className="h-4 w-4" />,
-    log_expense: <ArrowRight className="h-4 w-4" />,
-    check_expenses: <Sparkles className="h-4 w-4" />,
-    navigate: <Navigation className="h-4 w-4" />,
-    fallback_chat: <Sparkles className="h-4 w-4" />,
-};
-
-const INTENT_LABELS: Record<string, string> = {
-    check_price: "Checking price",
-    check_weather: "Checking weather",
-    log_expense: "Logging expense",
-    check_expenses: "Checking expenses",
-    navigate: "Navigating",
-    fallback_chat: "Asking AI assistant",
-};
-
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export function VoiceAssistant() {
     const router = useRouter();
-    const { locale } = useLanguage();
+    const pathname = usePathname();
+    const { locale, setLocale } = useLanguage();
     const { user } = useAuth();
     const voice = useVoiceCommand(locale);
 
     const [isOpen, setIsOpen] = useState(false);
-    const [result, setResult] = useState<VoiceActionResult | null>(null);
-    const [detectedIntent, setDetectedIntent] = useState<VoiceIntent | null>(null);
-    const [pendingConfirmation, setPendingConfirmation] = useState<VoiceIntent | null>(null);
+    const [result, setResult] = useState<VoiceExecutionResult | null>(null);
     const [isExecuting, setIsExecuting] = useState(false);
-    const [fallbackText, setFallbackText] = useState("");
+    const [textInput, setTextInput] = useState("");
+    const [showTextInput, setShowTextInput] = useState(false);
     const processedRef = useRef(false);
+    const textInputRef = useRef<HTMLInputElement>(null);
 
     // Process transcript when speech recognition ends
     useEffect(() => {
@@ -92,77 +72,64 @@ export function VoiceAssistant() {
             processedRef.current = true;
             const finalCommand = voice.transcript.trim() || voice.interimTranscript.trim();
             if (finalCommand) {
-                handleProcessTranscript(finalCommand);
+                handleCommand(finalCommand);
             } else {
-                // If the microphone didn't pick up any speech, just reset
                 voice.setStatus("idle");
             }
         }
-        // Reset the processed flag when going back to idle/listening
         if (voice.status === "idle" || voice.status === "listening") {
             processedRef.current = false;
         }
     }, [voice.status, voice.transcript, voice.interimTranscript]);
 
-    const handleProcessTranscript = async (text: string) => {
+    // ── Core: Send command to AI backend ──────────────────────────────────────
+
+    const handleCommand = async (text: string) => {
         setIsExecuting(true);
         setResult(null);
 
-        // Parse intent
-        const intent = parseVoiceIntent(text, locale);
-        setDetectedIntent(intent);
-        setPendingConfirmation(intent);
-        setIsExecuting(false);
-    };
-
-    const confirmIntent = async () => {
-        if (!pendingConfirmation) return;
-        setIsExecuting(true);
-        const intent = pendingConfirmation;
-        setPendingConfirmation(null);
-
-        // Execute action
         try {
-            const actionResult = await executeVoiceAction(intent, locale);
-            setResult(actionResult);
+            // 1. Send to backend AI for parsing
+            const action = await processVoiceCommand(text, pathname, locale);
 
-            // Speak the result
-            if (actionResult.message) {
-                voice.speak(actionResult.message);
+            // 2. Execute the parsed action
+            const execResult = await executeVoiceAction(action, {
+                router,
+                setLocale,
+            });
+
+            setResult(execResult);
+
+            // 3. Speak the response
+            if (execResult.message) {
+                voice.speak(execResult.message);
             } else {
                 voice.setStatus("idle");
             }
 
-            // Navigate if needed (after a short delay for TTS to start)
-            if (actionResult.navigateTo) {
+            // 4. Navigate if needed (delay for TTS to start)
+            if (execResult.navigateTo) {
                 setTimeout(() => {
-                    router.push(actionResult.navigateTo!);
-                }, 2000);
+                    router.push(execResult.navigateTo!);
+                }, 1500);
             }
-        } catch {
-            setResult({
-                success: false,
-                message: "Sorry, something went wrong. Please try again.",
-            });
-            voice.setStatus("idle");
+        } catch (err: any) {
+            console.error("[Voice] Processing failed:", err);
+            const errorMsg = "Sorry, something went wrong. Please try again.";
+            setResult({ success: false, message: errorMsg });
+            voice.speak(errorMsg);
         } finally {
             setIsExecuting(false);
         }
     };
 
-    const cancelIntent = () => {
-        setPendingConfirmation(null);
-        voice.setStatus("idle");
-        voice.resetTranscript();
-        processedRef.current = false;
-    };
+    // ── UI Handlers ──────────────────────────────────────────────────────────
 
     const handleOpen = () => {
         setIsOpen(true);
         setResult(null);
-        setDetectedIntent(null);
-        setPendingConfirmation(null);
-        setFallbackText("");
+        setTextInput("");
+        setShowTextInput(false);
         processedRef.current = false;
     };
 
@@ -171,9 +138,8 @@ export function VoiceAssistant() {
         voice.stopSpeaking();
         setIsOpen(false);
         setResult(null);
-        setDetectedIntent(null);
-        setPendingConfirmation(null);
-        setFallbackText("");
+        setTextInput("");
+        setShowTextInput(false);
         voice.setStatus("idle");
         processedRef.current = false;
     };
@@ -183,49 +149,42 @@ export function VoiceAssistant() {
             voice.stopListening();
         } else {
             setResult(null);
-            setDetectedIntent(null);
-            setPendingConfirmation(null);
-            setFallbackText("");
+            setTextInput("");
             processedRef.current = false;
             voice.resetTranscript();
             voice.startListening();
         }
     };
 
-    const handleChipCommand = (command: string) => {
+    const handleTextSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!textInput.trim() || isExecuting) return;
         setResult(null);
-        setDetectedIntent(null);
-        setPendingConfirmation(null);
         processedRef.current = true;
         voice.setStatus("processing");
-        handleProcessTranscript(command);
+        handleCommand(textInput.trim());
+        setTextInput("");
+    };
+
+    const handleChipCommand = (command: string) => {
+        setResult(null);
+        processedRef.current = true;
+        voice.setStatus("processing");
+        handleCommand(command);
     };
 
     const handleRetry = () => {
         setResult(null);
-        setDetectedIntent(null);
-        setPendingConfirmation(null);
-        setFallbackText("");
+        setTextInput("");
         processedRef.current = false;
         voice.resetTranscript();
         voice.setStatus("idle");
     };
 
-    const handleFallbackSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!fallbackText.trim()) return;
-        setResult(null);
-        setDetectedIntent(null);
-        setPendingConfirmation(null);
-        processedRef.current = true;
-        voice.setStatus("processing");
-        handleProcessTranscript(fallbackText);
-    };
-
     const currentLang = LANGUAGES.find((l) => l.code === locale);
 
-    // Only show for farmer role
-    if (user?.role !== "farmer") return null;
+    // Show for all roles (not just farmer)
+    if (!user) return null;
 
     return (
         <>
@@ -253,13 +212,12 @@ export function VoiceAssistant() {
                         aria-label="Open Voice Assistant"
                     >
                         <Mic className="h-6 w-6" />
-                        {/* Pulse ring */}
                         <span className="absolute inset-0 rounded-full animate-ping bg-green-400/30" />
                     </motion.button>
                 )}
             </AnimatePresence>
 
-            {/* ── Voice Assistant Modal Overlay ───────────────────────── */}
+            {/* ── Voice Assistant Modal ───────────────────────────────── */}
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -295,36 +253,52 @@ export function VoiceAssistant() {
                             <div className="flex items-center justify-between px-5 pt-5 pb-2">
                                 <div className="flex items-center gap-2">
                                     <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center">
-                                        <Mic className="h-4 w-4 text-white" />
+                                        <Sparkles className="h-4 w-4 text-white" />
                                     </div>
                                     <div>
                                         <h3 className="text-white font-semibold text-sm">
-                                            Voice Assistant
+                                            AI Voice Assistant
                                         </h3>
                                         <div className="flex items-center gap-1 text-[10px] text-white/50">
                                             <Languages className="h-3 w-3" />
                                             <span>{currentLang?.nativeName || "English"}</span>
+                                            <span className="mx-1">•</span>
+                                            <span className="text-emerald-400">Powered by Groq AI</span>
                                         </div>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={handleClose}
-                                    className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                                >
-                                    <X className="h-4 w-4 text-white/70" />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => {
+                                            setShowTextInput(!showTextInput);
+                                            setTimeout(() => textInputRef.current?.focus(), 100);
+                                        }}
+                                        className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                                        title="Type a command"
+                                    >
+                                        <Keyboard className="h-4 w-4 text-white/70" />
+                                    </button>
+                                    <button
+                                        onClick={handleClose}
+                                        className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                                    >
+                                        <X className="h-4 w-4 text-white/70" />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Status Label */}
                             <div className="px-5 py-2">
                                 <p className="text-center text-white/60 text-xs font-medium">
-                                    {getStatusLabel(locale, voice.status)}
+                                    {isExecuting
+                                        ? (locale === "te" ? "AI ఆలోచిస్తోంది..." : locale === "hi" ? "AI सोच रहा है..." : "AI is thinking...")
+                                        : getStatusLabel(locale, voice.status)}
                                 </p>
                             </div>
 
                             {/* Waveform */}
                             <div className="px-5">
-                                <LargeWaveform status={voice.status} />
+                                <LargeWaveform status={isExecuting ? "processing" : voice.status} />
                             </div>
 
                             {/* Live Transcript */}
@@ -333,14 +307,12 @@ export function VoiceAssistant() {
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="
-                                            bg-white/5 border border-white/10 rounded-2xl
-                                            px-4 py-2.5 max-w-full
-                                        "
+                                        className="bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 max-w-full"
                                     >
                                         <p className="text-white/90 text-sm text-center leading-relaxed">
-                                            {voice.transcript || (
-                                                <span className="text-white/50 italic">
+                                            {voice.transcript}
+                                            {voice.interimTranscript && (
+                                                <span className="text-white/50 italic ml-1">
                                                     {voice.interimTranscript}
                                                 </span>
                                             )}
@@ -348,54 +320,6 @@ export function VoiceAssistant() {
                                     </motion.div>
                                 )}
                             </div>
-
-                            {/* Detected Intent Badge */}
-                            <AnimatePresence>
-                                {detectedIntent && detectedIntent.type !== "fallback_chat" && (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        className="flex justify-center px-5 py-1"
-                                    >
-                                        <span className="
-                                            inline-flex items-center gap-1.5 px-3 py-1
-                                            bg-emerald-500/20 border border-emerald-500/30
-                                            text-emerald-300 rounded-full text-[11px] font-medium
-                                        ">
-                                            {INTENT_ICONS[detectedIntent.type]}
-                                            {INTENT_LABELS[detectedIntent.type] || detectedIntent.type}
-                                        </span>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            {/* Confirmation Step */}
-                            {pendingConfirmation && !isExecuting && !result && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mx-5 my-2 p-4 bg-emerald-900/40 border border-emerald-500/30 rounded-2xl"
-                                >
-                                    <p className="text-emerald-100 text-sm mb-3 font-medium">
-                                        Did you mean to <strong>{pendingConfirmation.type.replace(/_/g, " ")}</strong>?
-                                    </p>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={confirmIntent}
-                                            className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 font-medium"
-                                        >
-                                            <Check className="h-4 w-4" /> Yes
-                                        </button>
-                                        <button
-                                            onClick={cancelIntent}
-                                            className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 font-medium"
-                                        >
-                                            <X className="h-4 w-4" /> No
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            )}
 
                             {/* Result Display */}
                             <AnimatePresence>
@@ -434,31 +358,66 @@ export function VoiceAssistant() {
                                 )}
                             </AnimatePresence>
 
-                            {/* Error Message & Fallback Input */}
-                            {voice.error && (
+                            {/* Text Input (toggled via keyboard button) */}
+                            <AnimatePresence>
+                                {showTextInput && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="px-5 mt-2"
+                                    >
+                                        <form onSubmit={handleTextSubmit} className="flex gap-2">
+                                            <input
+                                                ref={textInputRef}
+                                                type="text"
+                                                value={textInput}
+                                                onChange={(e) => setTextInput(e.target.value)}
+                                                placeholder={
+                                                    locale === "te" ? "మీ కమాండ్ టైప్ చేయండి..."
+                                                    : locale === "hi" ? "अपना कमांड टाइप करें..."
+                                                    : "Type your command..."
+                                                }
+                                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                                disabled={isExecuting}
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={!textInput.trim() || isExecuting}
+                                                className="bg-emerald-500 hover:bg-emerald-600 text-white p-2.5 rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center shrink-0"
+                                            >
+                                                {isExecuting ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Send className="h-4 w-4" />
+                                                )}
+                                            </button>
+                                        </form>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Error + Fallback Input */}
+                            {voice.error && !showTextInput && (
                                 <div className="mx-5 mt-2 mb-1 space-y-3">
                                     <div className="rounded-2xl p-3 bg-red-500/10 border border-red-500/20">
                                         <div className="flex items-center gap-2">
                                             <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-                                            <p className="text-red-300/80 text-xs">
-                                                {voice.error}
-                                            </p>
+                                            <p className="text-red-300/80 text-xs">{voice.error}</p>
                                         </div>
                                     </div>
-                                    
-                                    {/* Fallback text input */}
                                     {!result && (
-                                        <form onSubmit={handleFallbackSubmit} className="flex gap-2">
+                                        <form onSubmit={handleTextSubmit} className="flex gap-2">
                                             <input
                                                 type="text"
-                                                value={fallbackText}
-                                                onChange={(e) => setFallbackText(e.target.value)}
+                                                value={textInput}
+                                                onChange={(e) => setTextInput(e.target.value)}
                                                 placeholder="Type your command instead..."
                                                 className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500/50"
                                             />
                                             <button
                                                 type="submit"
-                                                disabled={!fallbackText.trim() || isExecuting}
+                                                disabled={!textInput.trim() || isExecuting}
                                                 className="bg-emerald-500 hover:bg-emerald-600 text-white p-2 rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center"
                                             >
                                                 {isExecuting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
@@ -469,7 +428,7 @@ export function VoiceAssistant() {
                             )}
 
                             {/* Quick Command Chips */}
-                            {(voice.status === "idle" || voice.status === "error") && !result && (
+                            {(voice.status === "idle" || voice.status === "error") && !result && !isExecuting && (
                                 <div className="px-5 pb-1">
                                     <VoiceCommandChips onCommand={handleChipCommand} />
                                 </div>
@@ -483,12 +442,7 @@ export function VoiceAssistant() {
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         onClick={voice.stopSpeaking}
-                                        className="
-                                            h-10 w-10 rounded-full
-                                            bg-white/10 hover:bg-white/20
-                                            flex items-center justify-center
-                                            transition-colors
-                                        "
+                                        className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                                     >
                                         <VolumeX className="h-5 w-5 text-white/70" />
                                     </motion.button>
@@ -502,8 +456,7 @@ export function VoiceAssistant() {
                                     className={`
                                         h-16 w-16 rounded-full
                                         flex items-center justify-center
-                                        transition-all duration-300
-                                        relative
+                                        transition-all duration-300 relative
                                         disabled:opacity-50 disabled:cursor-not-allowed
                                         ${voice.status === "listening"
                                             ? "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/40"
@@ -519,24 +472,18 @@ export function VoiceAssistant() {
                                         <Mic className="h-7 w-7 text-white" />
                                     )}
 
-                                    {/* Active pulse ring */}
                                     {voice.status === "listening" && (
                                         <span className="absolute inset-0 rounded-full animate-ping bg-red-400/30" />
                                     )}
                                 </motion.button>
 
-                                {/* Retry / Replay button */}
+                                {/* Retry button */}
                                 {(result || voice.status === "error") && (
                                     <motion.button
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         onClick={handleRetry}
-                                        className="
-                                            h-10 w-10 rounded-full
-                                            bg-white/10 hover:bg-white/20
-                                            flex items-center justify-center
-                                            transition-colors
-                                        "
+                                        className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                                     >
                                         <ArrowRight className="h-5 w-5 text-white/70 rotate-[-90deg]" />
                                     </motion.button>
@@ -548,25 +495,19 @@ export function VoiceAssistant() {
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         onClick={() => voice.speak(result.message)}
-                                        className="
-                                            h-10 w-10 rounded-full
-                                            bg-white/10 hover:bg-white/20
-                                            flex items-center justify-center
-                                            transition-colors
-                                        "
+                                        className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                                     >
                                         <Volume2 className="h-5 w-5 text-white/70" />
                                     </motion.button>
                                 )}
                             </div>
 
-                            {/* Footer hint */}
+                            {/* Footer */}
                             <div className="pb-4 px-5">
                                 <p className="text-center text-white/30 text-[10px]">
                                     {voice.isSupported
-                                        ? "Powered by Web Speech API • Works best in Chrome & Edge"
-                                        : "⚠️ Please use Chrome or Edge for voice features"
-                                    }
+                                        ? "Powered by Groq AI • Speak in any Indian language"
+                                        : "⚠️ Please use Chrome or Edge for voice features"}
                                 </p>
                             </div>
                         </motion.div>

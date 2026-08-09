@@ -114,7 +114,7 @@ function isSpeechSynthesisSupported(): boolean {
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 
-const SILENCE_TIMEOUT_MS = 1200; // Auto-stop after 1.2s of silence
+const SILENCE_TIMEOUT_MS = 3000; // Auto-stop after 3s of silence
 
 export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn {
     const [status, setStatus] = useState<VoiceStatus>("idle");
@@ -179,7 +179,7 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
         const recognition = new SpeechRecognitionClass();
         recognition.lang = LOCALE_TO_SPEECH_LANG[locale] || "en-IN";
         recognition.interimResults = true;
-        recognition.continuous = false;
+        recognition.continuous = true;
         recognition.maxAlternatives = 1;
 
         recognition.onstart = () => {
@@ -204,10 +204,8 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
                 }
             }
 
-            if (finalText) {
-                setTranscript(finalText.trim());
-                setConfidence(bestConfidence);
-            }
+            setTranscript(finalText.trim());
+            if (bestConfidence > 0) setConfidence(bestConfidence);
             setInterimTranscript(interimText);
         };
 
