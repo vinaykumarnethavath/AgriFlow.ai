@@ -10,69 +10,69 @@ router = APIRouter(prefix="/news", tags=["news"])
 load_dotenv()
 NEWS_API_BASE = "https://newsapi.org/v2/everything"
 
-# Agricultural keywords for search
+# Agricultural keywords for search (tightened)
 AGRI_KEYWORDS = (
-    "agriculture OR farming OR crop OR farmer OR mandi OR agri OR harvest "
-    "OR fertilizer OR irrigation OR kisan OR agricultural OR pesticide "
-    "OR horticulture OR dairy farming OR organic farming OR agribusiness"
+    "agriculture OR farming OR agribusiness OR horticulture OR kisan OR mandi "
+    "OR fertilizer OR pesticide OR irrigation OR \"minimum support price\" OR agritech"
 )
 
 GEO_POLITICS_EXCLUDE = (
-    "war OR wars OR military OR missile OR attack OR conflict OR security OR terrorism "
+    "war OR military OR missile OR attack OR conflict OR security OR terrorism "
     "OR ukraine OR russia OR israel OR gaza OR hamas OR iran OR china OR taiwan "
-    "OR nato OR border dispute OR geopolitical OR geopolitics"
+    "OR nato OR geopolitical OR geopolitics OR election OR sports OR movie OR bollywood"
 )
 
 
 def _is_agri_relevant(title: str, description: str, source: str) -> bool:
     text = f"{title} {description} {source}".lower()
 
-    strong = [
-        "agriculture", "agricultural", "farming", "farmer", "farmers",
-        "crop", "crops", "mandi", "msp", "minimum support", "kisan", "pm-kisan",
-        "irrigation", "pesticide", "fertilizer", "seed", "seeds",
-        "harvest", "horticulture", "agribusiness", "soil", "monsoon",
+    # Highly specific agriculture terms that rarely appear elsewhere
+    unambiguous_agri = [
+        "agriculture", "agricultural", "agribusiness", "farming", "farmer", "farmers",
+        "agritech", "horticulture", "pesticide", "fertilizer", "irrigation",
+        "mandi", "pm-kisan", "kisan", "minimum support price", "agro"
+    ]
+    
+    # Common crop names that need context (must appear with an unambiguous term)
+    crops_and_terms = [
+        "crop", "crops", "harvest", "seed", "seeds", "sowing", "yield",
         "paddy", "rice", "wheat", "cotton", "maize", "sugarcane",
-        "pulse", "pulses", "oilseed", "dairy",
+        "pulse", "pulses", "oilseed", "dairy", "poultry", "livestock", "tractor"
     ]
-
-    core = [
-        "crop", "crops", "mandi", "msp", "minimum support", "irrigation",
-        "pesticide", "fertilizer", "seed", "seeds", "harvest",
-        "paddy", "rice", "wheat", "cotton", "maize", "sugarcane",
-        "horticulture", "oilseed", "pulses",
-    ]
-
-    weak = [
-        "milk", "rainfall", "weather",
-    ]
-
+    
     exclude = [
         "football", "cricket", "match", "league", "premier", "transfer",
-        "coach", "team", "tournament",
-        "celebrity", "movie", "film", "music", "actor",
-        "ui trend", "user interface", "design trend", "blogging platform",
-        "school protest", "protests", "election", "parliament",
-        "oil price", "oil prices", "shipping", "strait", "hormuz", "cargo",
-        "garden", "lawn", "weeds", "cultivate her garden",
-        "war", "wars", "military", "missile", "attack", "conflict", "security", "terror",
-        "ukraine", "russia", "israel", "gaza", "hamas", "iran", "china", "taiwan",
-        "geopolitical", "geopolitics", "nato", "border dispute",
+        "coach", "team", "tournament", "tennis", "basketball", "sports", "olympics",
+        "celebrity", "movie", "film", "music", "actor", "actress", "hollywood", "bollywood",
+        "ui trend", "user interface", "design", "tech crunch", "startup", "funding", "seed funding",
+        "school protest", "protests", "election", "parliament", "political", "politics", "mla", "mp",
+        "oil price", "oil prices", "shipping", "strait", "cargo", "logistics",
+        "garden", "lawn", "weeds", "yard",
+        "war", "military", "missile", "attack", "conflict", "security", "terror", "bomb",
+        "ukraine", "russia", "israel", "gaza", "hamas", "iran", "china", "taiwan", "nato",
+        "rice university", "state farm", "farmer's insurance", "farmers insurance",
+        "stock market", "wall street", "sensex", "nifty", "nasdaq", "bse", "nse"
     ]
 
     if any(x in text for x in exclude):
         return False
 
-    core_hits = sum(1 for x in core if x in text)
-    if core_hits >= 1:
+    import re
+    # Check for unambiguous terms with word boundaries to avoid matching subwords
+    unambiguous_hits = sum(1 for x in unambiguous_agri if re.search(r'\b' + re.escape(x) + r'\b', text))
+    
+    # Check for secondary terms with word boundaries
+    secondary_hits = sum(1 for x in crops_and_terms if re.search(r'\b' + re.escape(x) + r'\b', text))
+    
+    # Require at least one highly unambiguous term
+    if unambiguous_hits >= 1:
         return True
-
-    strong_hits = sum(1 for x in strong if x in text)
-    if strong_hits >= 2:
+        
+    # Or require multiple secondary terms (e.g. "crop" AND "yield")
+    if secondary_hits >= 2:
         return True
-
-    weak_hits = sum(1 for x in weak if x in text)
-    return weak_hits >= 2
+        
+    return False
 
 
 def _categorize_article(title: str, description: str) -> str:

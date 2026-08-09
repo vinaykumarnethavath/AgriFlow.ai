@@ -26,7 +26,11 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                             validUserCrops.some(userCrop => {
                                 const pName = price.crop_name.toLowerCase();
                                 const uName = userCrop.toLowerCase().trim();
-                                return pName.includes(uName) || uName.includes(pName);
+                                // Stricter matching: exact match, or one contains the other as a distinct word
+                                if (pName === uName) return true;
+                                const pWords = pName.split(/[\s-]+/);
+                                const uWords = uName.split(/[\s-]+/);
+                                return pWords.some(w => uWords.includes(w)) || uName.includes(pName);
                             })
                         );
                     } else {
