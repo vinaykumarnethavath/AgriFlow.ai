@@ -101,7 +101,7 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300 relative">
             <div className="absolute top-4 right-4 flex items-center gap-3">
-                <LanguageSelector />
+                <LanguageSelector direction="down" />
                 <ThemeToggle />
             </div>
             <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * Shows the current language in its native script with a globe icon.
  * Designed to fit in the sidebar or header.
  */
-export function LanguageSelector({ compact = false }: { compact?: boolean }) {
+export function LanguageSelector({ compact = false, direction = "up" }: { compact?: boolean, direction?: "up" | "down" }) {
   const { locale, setLocale, currentLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -62,8 +62,8 @@ export function LanguageSelector({ compact = false }: { compact?: boolean }) {
             "bg-gray-900/95 backdrop-blur-xl border border-green-700/40",
             "shadow-2xl shadow-black/40",
             "animate-in fade-in slide-in-from-top-2 duration-200",
-            // Position: opens upward from sidebar bottom
-            "bottom-full mb-2 left-0"
+            // Position: opens upward from sidebar bottom or downward from top bar
+            direction === "up" ? "bottom-full mb-2 left-0" : "top-full mt-2 right-0"
           )}
         >
           {/* Header */}

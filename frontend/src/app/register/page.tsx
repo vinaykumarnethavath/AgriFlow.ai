@@ -7,6 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { Sprout, Mail, Phone, Store, Factory, ShoppingCart } from "lucide-react";
 import { UserRole } from "@/types";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useLanguage } from "@/context/LanguageContext";
 
 type AuthMethod = "email" | "phone";
 
@@ -32,6 +35,7 @@ export default function RegisterPage() {
 
     const { login } = useAuth();
     const router = useRouter();
+    const { t } = useLanguage();
 
     const inputCls = "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground";
     const selectCls = "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-foreground";
@@ -101,7 +105,11 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300 relative">
+            <div className="absolute top-4 right-4 flex items-center gap-3">
+                <LanguageSelector direction="down" />
+                <ThemeToggle />
+            </div>
             <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
                 {/* Header */}
                 <div className="p-3 text-center border-b border-border">

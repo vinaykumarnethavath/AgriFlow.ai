@@ -142,7 +142,7 @@ export default function MarketPage() {
 
     const fetchProducts = async () => {
         try {
-            const response = await api.get("/products");
+            const response = await api.get("/products/");
             setProducts(response.data);
         } catch (error) {
             console.error("Failed to fetch products:", error);
