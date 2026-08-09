@@ -20,12 +20,18 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                 let data = res.data;
 
                 if (filterCrops && filterCrops.length > 0) {
-                    data = data.filter((price: MarketPrice) =>
-                        filterCrops.some(userCrop =>
-                            price.crop_name.toLowerCase().includes(userCrop.toLowerCase()) ||
-                            userCrop.toLowerCase().includes(price.crop_name.toLowerCase())
-                        )
-                    );
+                    const validUserCrops = filterCrops.filter(c => c && c.trim().length > 0);
+                    if (validUserCrops.length > 0) {
+                        data = data.filter((price: MarketPrice) =>
+                            validUserCrops.some(userCrop => {
+                                const pName = price.crop_name.toLowerCase();
+                                const uName = userCrop.toLowerCase().trim();
+                                return pName.includes(uName) || uName.includes(pName);
+                            })
+                        );
+                    } else {
+                        data = [];
+                    }
                 } else if (filterCrops) {
                     data = [];
                 } else {
