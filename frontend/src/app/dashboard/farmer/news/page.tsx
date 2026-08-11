@@ -76,11 +76,11 @@ export default function NewsPage() {
                                     </div>
 
                                     {/* Dynamic title — translated via AI */}
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                                    <h3 className="text-xl font-bold text-foreground leading-tight">
                                         <T>{item.title}</T>
                                     </h3>
                                     {/* Dynamic summary — translated via AI */}
-                                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                                    <p className="text-muted-foreground leading-relaxed">
                                         <T>{item.summary}</T>
                                     </p>
 

@@ -100,17 +100,17 @@ def _categorize_article(title: str, description: str) -> str:
 
 async def _fetch_news_api(*, api_key: str, query: Optional[str] = None, lang: str = "en") -> list | None:
     """Fetch real agricultural news from NewsAPI (past 15 days)."""
-    # Tighten query to reduce unrelated results; still allow user-provided q.
+    # Tighten query to reduce unrelated results and focus on local Indian news.
     search_query = f"({query}) AND ({AGRI_KEYWORDS})" if query else AGRI_KEYWORDS
-    search_query = f"({search_query}) AND NOT ({GEO_POLITICS_EXCLUDE})"
-    from_date = (datetime.now() - timedelta(days=15)).strftime("%Y-%m-%d")
+    search_query = f"({search_query}) AND (India OR Indian OR state OR local OR village) AND NOT ({GEO_POLITICS_EXCLUDE})"
+    from_date = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(NEWS_API_BASE, params={
                 "q": search_query,
                 "from": from_date,
-                "sortBy": "publishedAt",
+                "sortBy": "relevancy",
                 "language": lang,
                 "pageSize": 30,
                 "apiKey": api_key,
@@ -229,7 +229,7 @@ async def get_news(
     lang: str = Query("en", description="Language code (en, hi, etc.)")
 ):
     """
-    Returns agricultural news from the past 15 days.
+    Returns agricultural news from the past 5 days.
     Uses NewsAPI when API key is configured, otherwise returns mock data.
     Only agriculture-related news is fetched.
     """

@@ -459,7 +459,7 @@ export default function CropsListPage() {
                                             </div>
                                         </div>
                                         <div className="mt-4 flex flex-wrap justify-between items-center gap-2">
-                                            <div className="flex gap-2">
+                                            <div className="flex flex-wrap gap-2">
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
