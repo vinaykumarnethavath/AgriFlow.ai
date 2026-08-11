@@ -97,7 +97,7 @@ export function LanguageSelector({ compact = false, direction = "up" }: { compac
                   </span>
 
                   {/* English name (subtle) */}
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     {lang.name}
                   </span>
 

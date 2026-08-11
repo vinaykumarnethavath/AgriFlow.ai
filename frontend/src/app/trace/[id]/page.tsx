@@ -138,8 +138,8 @@ export default function TraceabilityPage() {
                         <div className="bg-red-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 text-red-650">
                             <ShieldAlert className="h-8 w-8" />
                         </div>
-                        <h1 className="text-xl font-extrabold text-gray-800 mb-2">Verification Failed</h1>
-                        <p className="text-gray-600">{error}</p>
+                        <h1 className="text-xl font-extrabold text-foreground mb-2">Verification Failed</h1>
+                        <p className="text-muted-foreground">{error}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -184,8 +184,8 @@ export default function TraceabilityPage() {
                                     <User className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Grown by</p>
-                                    <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Grown by</p>
+                                    <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
                                         {data.farmer.name}
                                         {data.farmer.is_verified && (
                                             <CheckCircle className="h-4 w-4 text-blue-500" />
@@ -198,13 +198,13 @@ export default function TraceabilityPage() {
                                     <MapPin className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Origin</p>
-                                    <p className="font-semibold text-gray-700">Andhra Pradesh, India</p>
+                                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Origin</p>
+                                    <p className="font-semibold text-foreground">Andhra Pradesh, India</p>
                                 </div>
                             </div>
                         </div>
                         <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-100 flex items-center">
-                            <p className="text-sm text-gray-600 italic">"{data.product.description || "Fresh farm products cultivated under premium agricultural practices."}"</p>
+                            <p className="text-sm text-muted-foreground italic">"{data.product.description || "Fresh farm products cultivated under premium agricultural practices."}"</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -220,7 +220,7 @@ export default function TraceabilityPage() {
                                     </div>
                                     <div className="space-y-1">
                                         <h4 className="font-extrabold text-emerald-900 text-base">Certified Organic</h4>
-                                        <p className="text-xs text-gray-500">Verified ecological cultivation. No chemical pesticides used.</p>
+                                        <p className="text-xs text-muted-foreground">Verified ecological cultivation. No chemical pesticides used.</p>
                                         <div className="pt-2 text-[10px] text-emerald-800 font-mono flex items-center gap-1">
                                             <span>Verifier: {organicBlock?.verifier_name}</span>
                                         </div>
@@ -236,7 +236,7 @@ export default function TraceabilityPage() {
                                     </div>
                                     <div className="space-y-1">
                                         <h4 className="font-extrabold text-amber-900 text-base">Fair-Trade Verified</h4>
-                                        <p className="text-xs text-gray-500">Audited transaction. Fair price guaranteed to farmer.</p>
+                                        <p className="text-xs text-muted-foreground">Audited transaction. Fair price guaranteed to farmer.</p>
                                         <div className="pt-2 text-[10px] text-amber-800 font-mono flex items-center gap-1">
                                             <span>Auditor: {fairTradeBlock?.verifier_name}</span>
                                         </div>
@@ -259,7 +259,7 @@ export default function TraceabilityPage() {
                                 <button 
                                     onClick={runBlockchainAudit}
                                     disabled={auditing}
-                                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-200 text-white disabled:text-gray-500 text-xs px-3.5 py-2 font-bold rounded-lg flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-200 text-white disabled:text-muted-foreground text-xs px-3.5 py-2 font-bold rounded-lg flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
                                 >
                                     <RefreshCw className={`h-3 w-3 ${auditing ? "animate-spin" : ""}`} />
                                     {auditing ? "Scanning Ledger..." : "Audit Ledger"}
@@ -270,7 +270,7 @@ export default function TraceabilityPage() {
                             {/* Scanning Progress */}
                             {auditing && (
                                 <div className="space-y-2">
-                                    <div className="flex justify-between text-xs font-semibold text-gray-500">
+                                    <div className="flex justify-between text-xs font-semibold text-muted-foreground">
                                         <span>Cryptographic proof-of-work validation:</span>
                                         <span>Block {scannedBlocks} of {data.blockchain_blocks.length}</span>
                                     </div>
@@ -312,7 +312,7 @@ export default function TraceabilityPage() {
 
                             {/* Display Block summary list */}
                             <div className="space-y-2.5">
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Blockchain Blocks</span>
+                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Blockchain Blocks</span>
                                 <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                                     {data.blockchain_blocks.map((block) => (
                                         <div key={block.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center text-xs">
@@ -321,15 +321,15 @@ export default function TraceabilityPage() {
                                                     #{block.block_index}
                                                 </div>
                                                 <div>
-                                                    <span className="font-bold text-gray-700 capitalize">
+                                                    <span className="font-bold text-foreground capitalize">
                                                         {block.certification_type === "genesis" ? "Genesis Block" : block.certification_type || "Event Entry"}
                                                     </span>
-                                                    <span className="text-[10px] text-gray-400 block mt-0.5 font-mono break-all">
+                                                    <span className="text-[10px] text-muted-foreground block mt-0.5 font-mono break-all">
                                                         Hash: {block.hash.substring(0, 24)}...
                                                     </span>
                                                 </div>
                                             </div>
-                                            <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                                                 Block #{block.block_index}
                                             </span>
                                         </div>
@@ -348,7 +348,7 @@ export default function TraceabilityPage() {
                     </h3>
                     <div className="relative pl-8 border-l-2 border-green-200 space-y-8">
                         {data.events.length === 0 ? (
-                            <div className="text-center py-8 text-gray-400">
+                            <div className="text-center py-8 text-muted-foreground">
                                 No timeline events recorded yet.
                             </div>
                         ) : (
@@ -363,12 +363,12 @@ export default function TraceabilityPage() {
                                         <CardContent className="p-4">
                                             <div className="flex justify-between items-start mb-2 gap-2">
                                                 <h4 className="font-bold text-gray-805 text-sm sm:text-base capitalize">{event.action}</h4>
-                                                <span className="text-[10px] sm:text-xs text-gray-400 flex items-center gap-1 whitespace-nowrap">
+                                                <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
                                                     <Clock className="h-3.5 w-3.5" />
                                                     {new Date(event.timestamp).toLocaleDateString()}
                                                 </span>
                                             </div>
-                                            <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">{event.details}</p>
+                                            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{event.details}</p>
                                         </CardContent>
                                     </Card>
                                 </div>
@@ -378,7 +378,7 @@ export default function TraceabilityPage() {
                 </div>
 
                 <div className="text-center pt-8 border-t border-gray-100">
-                    <p className="text-xs text-gray-400 flex items-center justify-center gap-1.5">
+                    <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
                         <Lock className="h-3.5 w-3.5 text-green-600" />
                         Secured by <span className="font-bold text-green-650">AgriChain</span> Cryptographic Ledger
                     </p>

@@ -54,12 +54,12 @@ export default function MarketPricesPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{t('marketPrices.title')}</h1>
-                    <p className="text-sm text-gray-500">{t('marketPrices.subtitle')}</p>
+                    <h1 className="text-2xl font-bold text-foreground">{t('marketPrices.title')}</h1>
+                    <p className="text-sm text-muted-foreground">{t('marketPrices.subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-3">
                     {lastUpdated && (
-                        <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full">
+                        <span className="text-xs text-muted-foreground bg-gray-100 px-3 py-1.5 rounded-full">
                             {t('marketPrices.lastUpdated')}: {lastUpdated}
                         </span>
                     )}
@@ -72,7 +72,7 @@ export default function MarketPricesPage() {
             {/* Search & Sort */}
             <div className="flex flex-col md:flex-row gap-3">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                         type="text"
                         placeholder={t('marketPrices.searchCommodity')}
@@ -82,7 +82,7 @@ export default function MarketPricesPage() {
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <ArrowUpDown className="h-4 w-4 text-gray-400" />
+                    <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
                     <select
                         className="border rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer focus:ring-2 focus:ring-green-500 outline-none"
                         value={sortBy}
@@ -102,7 +102,7 @@ export default function MarketPricesPage() {
                     ))}
                 </div>
             ) : filteredPrices.length === 0 ? (
-                <div className="text-center py-16 text-gray-400">
+                <div className="text-center py-16 text-muted-foreground">
                     <TrendingUp className="h-12 w-12 mx-auto mb-3 opacity-40" />
                     <p className="font-medium">No crops found matching &quot;{searchQuery}&quot;</p>
                 </div>
@@ -112,7 +112,7 @@ export default function MarketPricesPage() {
                         <Card key={idx} className="hover:shadow-lg transition-shadow overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-3 bg-gray-50/80 border-b">
                                 <div className="flex items-center gap-3">
-                                    <CardTitle className="text-xl font-bold text-gray-900">{crop.crop_name}</CardTitle>
+                                    <CardTitle className="text-xl font-bold text-foreground">{crop.crop_name}</CardTitle>
                                     {crop.msp_comparison === 'above' && (
                                         <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
                                             {t('marketPrices.priceUp')}
@@ -133,14 +133,14 @@ export default function MarketPricesPage() {
                                 {/* Primary Price */}
                                 <div className="flex items-end justify-between">
                                     <div>
-                                        <p className="text-xs text-gray-400 mb-0.5">{t('marketPrices.maxPrice')}</p>
-                                        <p className="text-3xl font-bold text-gray-900">₹{crop.market_price.toLocaleString()}</p>
-                                        <p className="text-xs text-gray-500 mt-0.5">{t('marketPrices.perQuintal')}</p>
+                                        <p className="text-xs text-muted-foreground mb-0.5">{t('marketPrices.maxPrice')}</p>
+                                        <p className="text-3xl font-bold text-foreground">₹{crop.market_price.toLocaleString()}</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5">{t('marketPrices.perQuintal')}</p>
                                     </div>
                                     {crop.msp > 0 && (
                                         <div className="text-right">
-                                            <p className="text-[10px] text-gray-400">{t('marketPrices.mandi')} (MSP)</p>
-                                            <p className="text-sm font-bold text-gray-600">₹{crop.msp.toLocaleString()}</p>
+                                            <p className="text-[10px] text-muted-foreground">{t('marketPrices.mandi')} (MSP)</p>
+                                            <p className="text-sm font-bold text-muted-foreground">₹{crop.msp.toLocaleString()}</p>
                                         </div>
                                     )}
                                 </div>
@@ -148,13 +148,13 @@ export default function MarketPricesPage() {
                                 {/* Scrollable Nearby Markets */}
                                 {crop.markets && crop.markets.length > 0 && (
                                     <div>
-                                        <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">{t('marketPrices.mandi')}</p>
+                                        <p className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wider">{t('marketPrices.mandi')}</p>
                                         <div className="relative">
                                             <button
                                                 onClick={() => scrollMarkets(crop.crop_name, 'left')}
                                                 className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 shadow-md rounded-full p-1 border border-gray-200 hover:bg-gray-50 -ml-2"
                                             >
-                                                <ChevronLeft className="h-3.5 w-3.5 text-gray-600" />
+                                                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
                                             </button>
                                             <div
                                                 ref={el => { scrollRefs.current[crop.crop_name] = el; }}
@@ -166,10 +166,10 @@ export default function MarketPricesPage() {
                                                         key={mIdx}
                                                         className="flex-shrink-0 bg-gradient-to-b from-white to-gray-50 border border-gray-150 rounded-xl px-4 py-3 min-w-[160px] hover:border-green-300 hover:shadow-sm transition-all cursor-pointer"
                                                     >
-                                                        <p className="text-xs font-bold text-gray-800 truncate">{market.market_name}</p>
-                                                        <p className="text-lg font-bold text-gray-900 mt-1">₹{market.price.toLocaleString()}</p>
+                                                        <p className="text-xs font-bold text-foreground truncate">{market.market_name}</p>
+                                                        <p className="text-lg font-bold text-foreground mt-1">₹{market.price.toLocaleString()}</p>
                                                         <div className="flex items-center justify-between mt-1.5">
-                                                            <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{market.distance_km} km</span>
+                                                            <span className="text-[10px] text-muted-foreground bg-gray-100 px-1.5 py-0.5 rounded">{market.distance_km} km</span>
                                                             <span className={`text-[10px] font-bold flex items-center gap-0.5 ${market.trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
                                                                 {market.trend === 'up' ? '↑' : '↓'}₹{Math.abs(market.change)}
                                                             </span>
@@ -181,7 +181,7 @@ export default function MarketPricesPage() {
                                                 onClick={() => scrollMarkets(crop.crop_name, 'right')}
                                                 className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 shadow-md rounded-full p-1 border border-gray-200 hover:bg-gray-50 -mr-2"
                                             >
-                                                <ChevronRight className="h-3.5 w-3.5 text-gray-600" />
+                                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                                             </button>
                                         </div>
                                     </div>

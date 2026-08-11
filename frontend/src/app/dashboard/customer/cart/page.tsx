@@ -137,7 +137,7 @@ export default function CartPage() {
     if (error) {
         return (
             <div className="max-w-4xl mx-auto space-y-6 p-4">
-                <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+                <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                     <ShoppingBag className="w-8 h-8" /> Your Shopping Cart
                 </h1>
                 <Card className="border-red-200 bg-red-50">
@@ -160,15 +160,15 @@ export default function CartPage() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 p-4">
-            <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                 <ShoppingBag className="w-8 h-8 text-green-600" /> Your Shopping Cart
             </h1>
 
             {cartItems.length === 0 ? (
                 <div className="text-center py-16 bg-white rounded-lg border shadow-sm">
                     <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                    <h2 className="text-xl font-semibold text-gray-700">Your cart is empty</h2>
-                    <p className="text-gray-500 mb-6">Looks like you haven&apos;t added anything yet.</p>
+                    <h2 className="text-xl font-semibold text-foreground">Your cart is empty</h2>
+                    <p className="text-muted-foreground mb-6">Looks like you haven&apos;t added anything yet.</p>
                     <Link href="/dashboard/customer/marketplace">
                         <Button className="bg-green-600 hover:bg-green-700 text-white">Browse Marketplace</Button>
                     </Link>
@@ -190,13 +190,13 @@ export default function CartPage() {
                                             )}
                                         </div>
                                         <div className="flex-grow">
-                                            <h3 className="font-bold text-lg text-gray-800">{item.product_name}</h3>
-                                            <p className="text-sm text-gray-500 flex items-center gap-1">
+                                            <h3 className="font-bold text-lg text-foreground">{item.product_name}</h3>
+                                            <p className="text-sm text-muted-foreground flex items-center gap-1">
                                                 <Store className="h-3 w-3" /> {item.seller_name}
                                             </p>
                                             <div className="flex items-center gap-4 mt-1">
-                                                <span className="text-sm font-medium text-gray-700">Qty: {item.quantity}</span>
-                                                <span className="text-xs text-gray-400">@ ₹{item.price}/unit</span>
+                                                <span className="text-sm font-medium text-foreground">Qty: {item.quantity}</span>
+                                                <span className="text-xs text-muted-foreground">@ ₹{item.price}/unit</span>
                                             </div>
                                         </div>
                                         <div className="text-right">
@@ -219,23 +219,23 @@ export default function CartPage() {
                     {/* Order Summary */}
                     <Card className="h-fit border-gray-200 shadow-lg">
                         <CardHeader>
-                            <CardTitle className="text-gray-800">Order Summary</CardTitle>
+                            <CardTitle className="text-foreground">Order Summary</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Subtotal ({cartItems.length} items)</span>
-                                <span className="font-medium text-gray-800">₹{total.toLocaleString()}</span>
+                                <span className="text-muted-foreground">Subtotal ({cartItems.length} items)</span>
+                                <span className="font-medium text-foreground">₹{total.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Shipping</span>
+                                <span className="text-muted-foreground">Shipping</span>
                                 <span className="text-green-600 font-medium">Free</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Taxes</span>
-                                <span className="text-gray-800">₹0.00</span>
+                                <span className="text-muted-foreground">Taxes</span>
+                                <span className="text-foreground">₹0.00</span>
                             </div>
                             <div className="border-t pt-3 mt-2 flex justify-between font-bold text-lg">
-                                <span className="text-gray-800">Total</span>
+                                <span className="text-foreground">Total</span>
                                 <span className="text-green-700">₹{total.toLocaleString()}</span>
                             </div>
                         </CardContent>

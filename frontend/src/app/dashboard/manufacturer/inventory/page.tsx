@@ -40,7 +40,7 @@ export default function InventoryPage() {
         return (
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-700 font-medium border-b">
+                    <thead className="bg-gray-50 text-foreground font-medium border-b">
                         <tr>
                             <th className="px-6 py-3">Product Name</th>
                             <th className="px-6 py-3">Batch ID</th>
@@ -53,7 +53,7 @@ export default function InventoryPage() {
                     <tbody className="divide-y divide-gray-100">
                         {data.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No {type} inventory found.</td>
+                                <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">No {type} inventory found.</td>
                             </tr>
                         ) : data.map(p => {
                             const unitVal = isRaw ? (p.cost_price || 0) : (p.price || 0);
@@ -61,16 +61,16 @@ export default function InventoryPage() {
                             const isLow = p.quantity < 10;
                             return (
                                 <tr key={p.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-medium text-gray-900">
+                                    <td className="px-6 py-4 font-medium text-foreground">
                                         {p.name}
-                                        <div className="text-xs text-gray-400">{p.brand}</div>
+                                        <div className="text-xs text-muted-foreground">{p.brand}</div>
                                     </td>
-                                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.batch_number}</td>
+                                    <td className="px-6 py-4 font-mono text-xs text-muted-foreground">{p.batch_number}</td>
                                     <td className="px-6 py-4 text-right font-bold">
-                                        {p.quantity} <span className="text-gray-500 font-normal">{p.unit}</span>
+                                        {p.quantity} <span className="text-muted-foreground font-normal">{p.unit}</span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <span className={isRaw ? "text-gray-700" : "text-green-700"}>₹{unitVal.toLocaleString()}</span>
+                                        <span className={isRaw ? "text-foreground" : "text-green-700"}>₹{unitVal.toLocaleString()}</span>
                                     </td>
                                     <td className="px-6 py-4 text-right font-semibold">
                                         <span className={isRaw ? "text-orange-600" : "text-green-600"}>₹{totalVal.toLocaleString()}</span>
@@ -103,8 +103,8 @@ export default function InventoryPage() {
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Inventory Overview</h1>
-                    <p className="text-gray-500">Track raw materials and finished goods stock</p>
+                    <h1 className="text-3xl font-bold text-foreground">Inventory Overview</h1>
+                    <p className="text-muted-foreground">Track raw materials and finished goods stock</p>
                 </div>
             </div>
 
@@ -112,30 +112,30 @@ export default function InventoryPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="border-l-4 border-l-orange-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Raw Material Stock Value</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{rawValue.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Raw Material Stock Value</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">₹{rawValue.toLocaleString()}</p>
                         <p className="text-xs text-orange-500 mt-1">{rawMaterials.length} batches · {rawMaterials.reduce((s, p) => s + p.quantity, 0).toLocaleString()} kg</p>
                     </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-green-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Finished Goods Stock Value</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{finishedValue.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Finished Goods Stock Value</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">₹{finishedValue.toLocaleString()}</p>
                         <p className="text-xs text-green-500 mt-1">{finishedGoods.length} products · {finishedGoods.reduce((s, p) => s + p.quantity, 0).toLocaleString()} kg</p>
                     </CardContent>
                 </Card>
                 <Card className={`border-l-4 ${lowStockCount > 0 ? "border-l-red-500" : "border-l-gray-300"}`}>
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Low Stock Alerts</p>
-                        <p className={`text-2xl font-bold mt-1 ${lowStockCount > 0 ? "text-red-600" : "text-gray-400"}`}>{lowStockCount}</p>
-                        <p className={`text-xs mt-1 ${lowStockCount > 0 ? "text-red-400" : "text-gray-400"}`}>{lowStockCount > 0 ? "Items need restocking" : "All stock levels OK"}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Low Stock Alerts</p>
+                        <p className={`text-2xl font-bold mt-1 ${lowStockCount > 0 ? "text-red-600" : "text-muted-foreground"}`}>{lowStockCount}</p>
+                        <p className={`text-xs mt-1 ${lowStockCount > 0 ? "text-red-400" : "text-muted-foreground"}`}>{lowStockCount > 0 ? "Items need restocking" : "All stock levels OK"}</p>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Search */}
             <div className="relative w-72">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <input
                     type="text"
                     placeholder="Search product or batch…"

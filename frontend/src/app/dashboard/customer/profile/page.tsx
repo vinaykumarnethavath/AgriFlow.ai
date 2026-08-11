@@ -56,14 +56,14 @@ export default function CustomerProfilePage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
+    if (loading) return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>;
 
     return (
         <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6 pb-24">
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Account Settings</h1>
-                    <p className="text-gray-500 mt-1">Manage your personal profile, security, and payment preferences.</p>
+                    <h1 className="text-3xl font-bold text-foreground">Account Settings</h1>
+                    <p className="text-muted-foreground mt-1">Manage your personal profile, security, and payment preferences.</p>
                 </div>
             </div>
 
@@ -76,7 +76,7 @@ export default function CustomerProfilePage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                                isActive ? "bg-green-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                                isActive ? "bg-green-600 text-white" : "text-muted-foreground hover:bg-gray-100"
                             }`}
                         >
                             <Icon className="w-4 h-4" /> {tab.label}
@@ -94,7 +94,7 @@ export default function CustomerProfilePage() {
             {activeTab === "password" && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
                             <Lock className="w-5 h-5 text-emerald-600" /> Update Password
                         </CardTitle>
                     </CardHeader>
@@ -102,15 +102,15 @@ export default function CustomerProfilePage() {
                         <form className="space-y-4" onSubmit={handlePasswordChange}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Current Password</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Current Password</label>
                                     <input type="password" name="current_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">New Password</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Password</label>
                                     <input type="password" name="new_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Confirm New Password</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Confirm New Password</label>
                                     <input type="password" name="confirm_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
                                 </div>
                             </div>
@@ -124,7 +124,7 @@ export default function CustomerProfilePage() {
                 <Card>
                     <CardHeader><CardTitle>Notification Preferences</CardTitle></CardHeader>
                     <CardContent>
-                        <p className="text-gray-500 mb-4">Notification settings for orders and promos coming soon.</p>
+                        <p className="text-muted-foreground mb-4">Notification settings for orders and promos coming soon.</p>
                     </CardContent>
                 </Card>
             )}
@@ -133,7 +133,7 @@ export default function CustomerProfilePage() {
                 <Card>
                     <CardHeader><CardTitle>Payment Methods</CardTitle></CardHeader>
                     <CardContent>
-                        <p className="text-gray-500 mb-4">Manage your saved cards and UPI IDs for faster checkout.</p>
+                        <p className="text-muted-foreground mb-4">Manage your saved cards and UPI IDs for faster checkout.</p>
                     </CardContent>
                 </Card>
             )}

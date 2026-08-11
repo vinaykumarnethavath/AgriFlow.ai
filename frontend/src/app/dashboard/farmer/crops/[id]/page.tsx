@@ -587,7 +587,7 @@ export default function CropDetailPage() {
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                             {crop.name}
                         </h1>
-                        <Button variant="ghost" size="icon" onClick={() => setIsEditOpen(true)} className="h-8 w-8 text-gray-400 hover:text-green-600">
+                        <Button variant="ghost" size="icon" onClick={() => setIsEditOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-green-600">
                             <Pencil className="w-4 h-4" />
                         </Button>
                         <Button
@@ -622,7 +622,7 @@ export default function CropDetailPage() {
                         onClick={() => setActiveTab(tab)}
                         className={`px-6 py-3 text-sm font-medium transition-colors relative ${activeTab === tab
                             ? "text-green-600"
-                            : "text-gray-500 hover:text-gray-900"
+                            : "text-muted-foreground hover:text-foreground"
                             }`}
                     >
                         {tab === "harvest" ? "Yield & Profit" : tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -641,7 +641,7 @@ export default function CropDetailPage() {
                         onClick={() => setActiveTab(tab)}
                         className={`px-6 py-3 text-sm font-medium transition-colors relative ${activeTab === tab
                             ? "text-green-600"
-                            : "text-gray-500 hover:text-gray-900"
+                            : "text-muted-foreground hover:text-foreground"
                             }`}
                     >
                         {tab === "health" ? "AI Diagnosis" : tab === "inputs" ? "Inputs Used" : tab === "sell" ? "Sell Crop" : tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -841,7 +841,7 @@ export default function CropDetailPage() {
                                                             value={newExpense.unit_size}
                                                             onChange={(e) => setNewExpense({ ...newExpense, unit_size: Number(e.target.value) })}
                                                         />
-                                                        <p className="text-xs text-gray-400 italic">Informational only -- shows total quantity used</p>
+                                                        <p className="text-xs text-muted-foreground italic">Informational only -- shows total quantity used</p>
                                                     </div>
                                                 )}
 
@@ -931,7 +931,7 @@ export default function CropDetailPage() {
                                                         onChange={(e) => setNewExpense({ ...newExpense, area_acres: Number(e.target.value) } as any)}
                                                         placeholder={`Crop area: ${crop?.area || 0} acres`}
                                                     />
-                                                    <p className="text-xs text-gray-400 italic">Your crop area is {formatLandArea(crop?.area || 0)} Ac</p>
+                                                    <p className="text-xs text-muted-foreground italic">Your crop area is {formatLandArea(crop?.area || 0)} Ac</p>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="text-sm font-medium">Cost per Acre (\u20b9)</label>
@@ -955,7 +955,7 @@ export default function CropDetailPage() {
                                                     onChange={(e) => setNewExpense({ ...newExpense, direct_total: Number(e.target.value) } as any)}
                                                     placeholder="Enter the full amount"
                                                 />
-                                                <p className="text-xs text-gray-400 italic">Enter the total expense amount directly</p>
+                                                <p className="text-xs text-muted-foreground italic">Enter the total expense amount directly</p>
                                             </div>
                                         )}
                                         {/* Total Cost (computed) — shown for all categories */}
@@ -965,10 +965,10 @@ export default function CropDetailPage() {
                                                 ₹ {calculateTotalCost(newExpense).toLocaleString()}
                                             </div>
                                             {(newExpense.category === "Machinery" || newExpense.category === "Irrigation") && (newExpense as any).area_acres > 0 && (newExpense as any).cost_per_acre > 0 && (
-                                                <p className="text-xs text-gray-500">{(newExpense as any).area_acres} acres × ₹{(newExpense as any).cost_per_acre}/acre</p>
+                                                <p className="text-xs text-muted-foreground">{(newExpense as any).area_acres} acres × ₹{(newExpense as any).cost_per_acre}/acre</p>
                                             )}
                                             {newExpense.category === "Input" && (newExpense.unit === "bags" || newExpense.unit === "liters" || newExpense.unit === "packets") && (newExpense.quantity || 0) > 0 && (newExpense.unit_cost || 0) > 0 && (
-                                                <p className="text-xs text-gray-500">{newExpense.quantity} × ₹{newExpense.unit_cost}/{newExpense.unit === "bags" ? "bag" : newExpense.unit === "liters" ? "bottle" : "packet"}</p>
+                                                <p className="text-xs text-muted-foreground">{newExpense.quantity} × ₹{newExpense.unit_cost}/{newExpense.unit === "bags" ? "bag" : newExpense.unit === "liters" ? "bottle" : "packet"}</p>
                                             )}
                                         </div>
                                         <div className="space-y-2">
@@ -1042,7 +1042,7 @@ export default function CropDetailPage() {
                                 <tbody>
                                     {expenses.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="p-8 text-center text-gray-500">No expenses recorded yet.</td>
+                                            <td colSpan={5} className="p-8 text-center text-muted-foreground">No expenses recorded yet.</td>
                                         </tr>
                                     ) : (
                                         expenses.map(expense => (
@@ -1063,17 +1063,17 @@ export default function CropDetailPage() {
                                                     {expense.unit === 'bags' ? (
                                                         <div className="text-sm text-teal-700 font-medium">
                                                             {expense.quantity} bags × ₹{expense.unit_cost}/bag
-                                                            <span className="text-xs text-gray-400 ml-1">({expense.unit_size || 1} kg/bag = {(expense.quantity || 0) * (expense.unit_size || 1)} kg)</span>
+                                                            <span className="text-xs text-muted-foreground ml-1">({expense.unit_size || 1} kg/bag = {(expense.quantity || 0) * (expense.unit_size || 1)} kg)</span>
                                                         </div>
                                                     ) : expense.unit === 'liters' ? (
                                                         <div className="text-sm text-blue-700 font-medium">
                                                             {expense.quantity} bottles × ₹{expense.unit_cost}/bottle
-                                                            <span className="text-xs text-gray-400 ml-1">({expense.unit_size || 1} L each)</span>
+                                                            <span className="text-xs text-muted-foreground ml-1">({expense.unit_size || 1} L each)</span>
                                                         </div>
                                                     ) : expense.unit === 'packets' ? (
                                                         <div className="text-sm text-purple-700 font-medium">
                                                             {expense.quantity} packets × ₹{expense.unit_cost}/packet
-                                                            <span className="text-xs text-gray-400 ml-1">({expense.unit_size || 1} g each)</span>
+                                                            <span className="text-xs text-muted-foreground ml-1">({expense.unit_size || 1} g each)</span>
                                                         </div>
                                                     ) : expense.category === 'Labor' ? (
                                                         <div className="text-sm text-orange-700 font-medium">
@@ -1084,7 +1084,7 @@ export default function CropDetailPage() {
                                                             {expense.quantity || (expense as any).area_acres || '-'} acres × ₹{expense.unit_cost || (expense as any).cost_per_acre || '-'}/acre
                                                         </div>
                                                     ) : (expense.category === 'Logistics' || expense.category === 'Miscellaneous') ? (
-                                                        <div className="text-sm text-gray-700 font-medium">
+                                                        <div className="text-sm text-foreground font-medium">
                                                             Total: ₹{expense.total_cost?.toLocaleString()}
                                                         </div>
                                                     ) : (
@@ -1121,7 +1121,7 @@ export default function CropDetailPage() {
                         <div className="flex justify-between items-center">
                             <div>
                                 <h2 className="text-xl font-semibold">Yield & Revenue</h2>
-                                <p className="text-sm text-gray-500">Track multiple harvest stages.</p>
+                                <p className="text-sm text-muted-foreground">Track multiple harvest stages.</p>
                             </div>
                             <Button onClick={() => {
                                 setEditingHarvestId(null);
@@ -1145,13 +1145,13 @@ export default function CropDetailPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Card>
-                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">Total Yield</CardTitle></CardHeader>
+                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Yield</CardTitle></CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{harvests.reduce((sum, h) => sum + h.quantity, 0)} Quintals</div>
                                 </CardContent>
                             </Card>
                             <Card>
-                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">Harvest Events</CardTitle></CardHeader>
+                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Harvest Events</CardTitle></CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{harvests.length}</div>
                                 </CardContent>
@@ -1160,7 +1160,7 @@ export default function CropDetailPage() {
 
                         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-50 text-gray-700 font-medium">
+                                <thead className="bg-gray-50 text-foreground font-medium">
                                     <tr>
                                         <th className="p-4 w-10">
                                             <input
@@ -1191,7 +1191,7 @@ export default function CropDetailPage() {
                                 <tbody className="divide-y divide-gray-100">
                                     {harvests.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} className="p-8 text-center text-gray-500">No harvest records yet.</td>
+                                            <td colSpan={8} className="p-8 text-center text-muted-foreground">No harvest records yet.</td>
                                         </tr>
                                     ) : harvests.map((h) => {
                                         const bagSize = (h as any).unit_size || 50;
@@ -1202,7 +1202,7 @@ export default function CropDetailPage() {
                                             <tr key={h.id} className={`hover:bg-gray-50 ${isSelected ? 'bg-green-50' : ''}`}>
                                                 <td className="p-4">
                                                     {h.status === 'Sold' ? (
-                                                        <span className="bg-gray-200 text-gray-500 text-xs px-2 py-1 rounded font-semibold uppercase">Sold</span>
+                                                        <span className="bg-gray-200 text-muted-foreground text-xs px-2 py-1 rounded font-semibold uppercase">Sold</span>
                                                     ) : (
                                                         <input
                                                             type="checkbox"
@@ -1218,15 +1218,15 @@ export default function CropDetailPage() {
                                                         />
                                                     )}
                                                 </td>
-                                                <td className="p-4 text-gray-800">{new Date(h.date).toLocaleDateString()}</td>
-                                                <td className="p-4 font-medium text-gray-800">{h.stage}</td>
+                                                <td className="p-4 text-foreground">{new Date(h.date).toLocaleDateString()}</td>
+                                                <td className="p-4 font-medium text-foreground">{h.stage}</td>
                                                 <td className="p-4 font-bold text-green-700">{bags} bags</td>
-                                                <td className="p-4 text-gray-700">{bagSize} kg/bag</td>
-                                                <td className="p-4 font-bold text-gray-800">{quintals.toFixed(2)} Q</td>
-                                                <td className="p-4 text-gray-600">{h.notes || '-'}</td>
+                                                <td className="p-4 text-foreground">{bagSize} kg/bag</td>
+                                                <td className="p-4 font-bold text-foreground">{quintals.toFixed(2)} Q</td>
+                                                <td className="p-4 text-muted-foreground">{h.notes || '-'}</td>
                                                 <td className="p-4 text-right flex items-center justify-end gap-1">
                                                     {h.status === 'Sold' ? (
-                                                        <span className="text-gray-400 text-sm italic">Listing created</span>
+                                                        <span className="text-muted-foreground text-sm italic">Listing created</span>
                                                     ) : (
                                                         <>
                                                             <Button
@@ -1314,9 +1314,9 @@ export default function CropDetailPage() {
                         <Modal isOpen={showHarvestModal} onClose={() => setShowHarvestModal(false)} title={editingHarvestId ? "Edit Harvest Record" : "Record Harvest"}>
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-800">Harvest Stage</label>
+                                    <label className="text-sm font-medium text-foreground">Harvest Stage</label>
                                     <select
-                                        className="w-full p-2 border rounded-md text-gray-800 bg-white"
+                                        className="w-full p-2 border rounded-md text-foreground bg-white"
                                         value={newHarvest.stage}
                                         onChange={(e) => setNewHarvest({ ...newHarvest, stage: e.target.value })}
                                     >
@@ -1327,12 +1327,12 @@ export default function CropDetailPage() {
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-800">Date of Harvest</label>
+                                    <label className="text-sm font-medium text-foreground">Date of Harvest</label>
                                     <Input type="date" value={newHarvest.date} onChange={(e) => setNewHarvest({ ...newHarvest, date: e.target.value })} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-800">No. of Bags</label>
+                                        <label className="text-sm font-medium text-foreground">No. of Bags</label>
                                         <Input
                                             type="number"
                                             min={0}
@@ -1342,7 +1342,7 @@ export default function CropDetailPage() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-800">Bag Size (kg each)</label>
+                                        <label className="text-sm font-medium text-foreground">Bag Size (kg each)</label>
                                         <Input
                                             type="number"
                                             min={1}
@@ -1357,24 +1357,24 @@ export default function CropDetailPage() {
                                     <p className="text-xs font-bold text-green-700 uppercase mb-2">Calculated Yield</p>
                                     <div className="grid grid-cols-2 gap-4 text-center">
                                         <div>
-                                            <p className="text-xs text-gray-600">Total Weight</p>
+                                            <p className="text-xs text-muted-foreground">Total Weight</p>
                                             <p className="text-xl font-black text-green-800">
                                                 {((newHarvest.quantity || 0) * ((newHarvest as any).unit_size || 50)).toLocaleString()} kg
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-xs text-gray-600">In Quintals</p>
+                                            <p className="text-xs text-muted-foreground">In Quintals</p>
                                             <p className="text-xl font-black text-green-800">
                                                 {(((newHarvest.quantity || 0) * ((newHarvest as any).unit_size || 50)) / 100).toFixed(2)} Q
                                             </p>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-2 text-center">
+                                    <p className="text-xs text-muted-foreground mt-2 text-center">
                                         Formula: {newHarvest.quantity || 0} bags × {(newHarvest as any).unit_size || 50} kg = {((newHarvest.quantity || 0) * ((newHarvest as any).unit_size || 50)).toLocaleString()} kg = {(((newHarvest.quantity || 0) * ((newHarvest as any).unit_size || 50)) / 100).toFixed(2)} Quintals
                                     </p>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-800">Notes (Optional)</label>
+                                    <label className="text-sm font-medium text-foreground">Notes (Optional)</label>
                                     <Input
                                         value={newHarvest.notes || ""}
                                         onChange={(e) => setNewHarvest({ ...newHarvest, notes: e.target.value })}
@@ -1425,11 +1425,11 @@ export default function CropDetailPage() {
                                         <div className="font-bold text-emerald-900 text-lg mb-1">{item.type}</div>
                                         <div className="text-sm text-emerald-800 font-medium">
                                             {item.unit === 'bags' ? (
-                                                <span>{item.totalQty} bags × ₹{item.unitCost}/bag <span className="text-xs text-gray-400">({item.unitSize} kg/bag)</span></span>
+                                                <span>{item.totalQty} bags × ₹{item.unitCost}/bag <span className="text-xs text-muted-foreground">({item.unitSize} kg/bag)</span></span>
                                             ) : item.unit === 'liters' ? (
-                                                <span>{item.totalQty} bottles × ₹{item.unitCost}/bottle <span className="text-xs text-gray-400">({item.unitSize} L each)</span></span>
+                                                <span>{item.totalQty} bottles × ₹{item.unitCost}/bottle <span className="text-xs text-muted-foreground">({item.unitSize} L each)</span></span>
                                             ) : item.unit === 'packets' ? (
-                                                <span>{item.totalQty} packets × ₹{item.unitCost}/packet <span className="text-xs text-gray-400">({item.unitSize} g each)</span></span>
+                                                <span>{item.totalQty} packets × ₹{item.unitCost}/packet <span className="text-xs text-muted-foreground">({item.unitSize} g each)</span></span>
                                             ) : (
                                                 <span>{item.totalQty} {item.unit} × ₹{item.unitCost}/{item.unit}</span>
                                             )}
@@ -1454,8 +1454,8 @@ export default function CropDetailPage() {
                     <div className="space-y-6">
                         <div className="flex justify-between items-center">
                             <div>
-                                <h2 className="text-xl font-semibold text-gray-800">Sell Your Crop</h2>
-                                <p className="text-sm text-gray-500">List your harvested crop for sale to mills, markets, or direct buyers</p>
+                                <h2 className="text-xl font-semibold text-foreground">Sell Your Crop</h2>
+                                <p className="text-sm text-muted-foreground">List your harvested crop for sale to mills, markets, or direct buyers</p>
                             </div>
                             <Button
                                 onClick={() => setShowSellForm(!showSellForm)}
@@ -1468,14 +1468,14 @@ export default function CropDetailPage() {
                         {showSellForm && (
                             <Card className="border-green-200 bg-green-50/30">
                                 <CardHeader>
-                                    <CardTitle className="text-gray-800">Create Sell Listing</CardTitle>
+                                    <CardTitle className="text-foreground">Create Sell Listing</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Buyer Type</label>
+                                            <label className="text-sm font-medium text-foreground">Buyer Type</label>
                                             <select
-                                                className="w-full p-2 border rounded-md text-gray-800 bg-white"
+                                                className="w-full p-2 border rounded-md text-foreground bg-white"
                                                 value={sellForm.buyer_type}
                                                 onChange={(e) => setSellForm({ ...sellForm, buyer_type: e.target.value, buyer_name: "", buyer_id: "" })}
                                             >
@@ -1486,7 +1486,7 @@ export default function CropDetailPage() {
                                             </select>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">
+                                            <label className="text-sm font-medium text-foreground">
                                                 {sellForm.buyer_type === "Mill" ? "Mill Name" :
                                                  sellForm.buyer_type === "Market" ? "Market / Mandi Name" :
                                                  sellForm.buyer_type === "Direct" ? "Buyer Name" : "Trader Name"}
@@ -1499,11 +1499,11 @@ export default function CropDetailPage() {
                                                     sellForm.buyer_type === "Market" ? "e.g., Karnal Mandi, Nizamabad Market" :
                                                     sellForm.buyer_type === "Direct" ? "e.g., Ramesh Kumar" : "e.g., Agarwal Traders"
                                                 }
-                                                className="text-gray-800"
+                                                className="text-foreground"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">
+                                            <label className="text-sm font-medium text-foreground">
                                                 {sellForm.buyer_type === "Mill" ? "Mill License No." :
                                                  sellForm.buyer_type === "Market" ? "Location" :
                                                  sellForm.buyer_type === "Direct" ? "Phone Number" : "Phone Number"}
@@ -1516,11 +1516,11 @@ export default function CropDetailPage() {
                                                     sellForm.buyer_type === "Market" ? "e.g., NH-44 Bypass, Karnal" :
                                                     "e.g., 9876543210"
                                                 }
-                                                className="text-gray-800"
+                                                className="text-foreground"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Total Bags</label>
+                                            <label className="text-sm font-medium text-foreground">Total Bags</label>
                                             <Input
                                                 type="number"
                                                 value={sellForm.total_bags || ""}
@@ -1533,11 +1533,11 @@ export default function CropDetailPage() {
                                                     });
                                                 }}
                                                 placeholder="e.g., 20"
-                                                className="text-gray-800"
+                                                className="text-foreground"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Bag Size (kg each)</label>
+                                            <label className="text-sm font-medium text-foreground">Bag Size (kg each)</label>
                                             <Input
                                                 type="number"
                                                 value={sellForm.bag_size || ""}
@@ -1550,33 +1550,33 @@ export default function CropDetailPage() {
                                                     });
                                                 }}
                                                 placeholder="e.g., 50"
-                                                className="text-gray-800"
+                                                className="text-foreground"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Quantity (Quintals)</label>
+                                            <label className="text-sm font-medium text-foreground">Quantity (Quintals)</label>
                                             <Input
                                                 type="number"
                                                 value={sellForm.quantity_quintals || ""}
                                                 onChange={(e) => setSellForm({ ...sellForm, quantity_quintals: Number(e.target.value) })}
                                                 placeholder="e.g., 5"
-                                                className="text-gray-800"
+                                                className="text-foreground"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Price per Quintal (₹)</label>
+                                            <label className="text-sm font-medium text-foreground">Price per Quintal (₹)</label>
                                             <Input
                                                 type="number"
                                                 value={sellForm.price_per_quintal || ""}
                                                 onChange={(e) => setSellForm({ ...sellForm, price_per_quintal: Number(e.target.value) })}
                                                 placeholder="e.g., 2200"
-                                                className="text-gray-800"
+                                                className="text-foreground"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Payment Mode</label>
+                                            <label className="text-sm font-medium text-foreground">Payment Mode</label>
                                             <select
-                                                className="w-full p-2 border rounded-md text-gray-800 bg-white"
+                                                className="w-full p-2 border rounded-md text-foreground bg-white"
                                                 value={sellForm.payment_mode}
                                                 onChange={(e) => setSellForm({ ...sellForm, payment_mode: e.target.value })}
                                             >
@@ -1587,12 +1587,12 @@ export default function CropDetailPage() {
                                             </select>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Notes (Optional)</label>
+                                            <label className="text-sm font-medium text-foreground">Notes (Optional)</label>
                                             <Input
                                                 value={sellForm.notes}
                                                 onChange={(e) => setSellForm({ ...sellForm, notes: e.target.value })}
                                                 placeholder="Transport details, quality grade..."
-                                                className="text-gray-800"
+                                                className="text-foreground"
                                             />
                                         </div>
                                     </div>
@@ -1605,7 +1605,7 @@ export default function CropDetailPage() {
                                         <Button variant="outline" onClick={() => {
                                             setShowSellForm(false);
                                             setSelectedHarvestIds([]);
-                                        }} className="text-gray-700">Cancel</Button>
+                                        }} className="text-foreground">Cancel</Button>
                                         <Button
                                             onClick={async () => {
                                                 if (!sellForm.buyer_name || sellForm.quantity_quintals <= 0 || sellForm.price_per_quintal <= 0) {
@@ -1658,8 +1658,8 @@ export default function CropDetailPage() {
                         {sellListings.length === 0 && !showSellForm ? (
                             <div className="text-center py-16">
                                 <ShoppingCart className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                                <h3 className="text-lg font-semibold text-gray-600">No sell listings yet</h3>
-                                <p className="text-gray-500 mb-4">Create a listing to sell your harvested crop to mills, markets, or buyers.</p>
+                                <h3 className="text-lg font-semibold text-muted-foreground">No sell listings yet</h3>
+                                <p className="text-muted-foreground mb-4">Create a listing to sell your harvested crop to mills, markets, or buyers.</p>
                                 <Button onClick={() => setShowSellForm(true)} className="bg-green-600 hover:bg-green-700 text-white">
                                     <Plus className="w-4 h-4 mr-2" /> Create First Listing
                                 </Button>
@@ -1667,16 +1667,16 @@ export default function CropDetailPage() {
                         ) : (
                             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-sm text-gray-700">
+                                    <table className="w-full text-left text-sm text-foreground">
                                         <thead className="bg-gray-50 border-b border-gray-200">
                                             <tr>
-                                                <th className="p-4 font-semibold text-gray-600">Date</th>
-                                                <th className="p-4 font-semibold text-gray-600">Buyer</th>
-                                                <th className="p-4 font-semibold text-gray-600 text-center">Quantity</th>
-                                                <th className="p-4 font-semibold text-gray-600 text-right">Rate (₹)</th>
-                                                <th className="p-4 font-semibold text-gray-600 text-right">Total Revenue</th>
-                                                <th className="p-4 font-semibold text-gray-600 text-center">Status</th>
-                                                <th className="p-4 font-semibold text-gray-600 text-center">Actions</th>
+                                                <th className="p-4 font-semibold text-muted-foreground">Date</th>
+                                                <th className="p-4 font-semibold text-muted-foreground">Buyer</th>
+                                                <th className="p-4 font-semibold text-muted-foreground text-center">Quantity</th>
+                                                <th className="p-4 font-semibold text-muted-foreground text-right">Rate (₹)</th>
+                                                <th className="p-4 font-semibold text-muted-foreground text-right">Total Revenue</th>
+                                                <th className="p-4 font-semibold text-muted-foreground text-center">Status</th>
+                                                <th className="p-4 font-semibold text-muted-foreground text-center">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
@@ -1684,30 +1684,30 @@ export default function CropDetailPage() {
                                                 <tr key={listing.id} className="hover:bg-gray-50/50 transition-colors">
                                                     <td className="p-4 whitespace-nowrap">
                                                         <div className="font-medium">{new Date(listing.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
-                                                        <div className="text-xs text-gray-500 mt-0.5">{listing.payment_mode}</div>
+                                                        <div className="text-xs text-muted-foreground mt-0.5">{listing.payment_mode}</div>
                                                     </td>
                                                     <td className="p-4">
                                                         <div className="flex items-center gap-2">
                                                             <Store className="w-4 h-4 text-blue-500" />
-                                                            <span className="font-semibold text-gray-900">{listing.buyer_name}</span>
+                                                            <span className="font-semibold text-foreground">{listing.buyer_name}</span>
                                                         </div>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-100">
                                                                 {listing.buyer_type}
                                                             </span>
-                                                            {listing.buyer_id && <span className="text-xs text-gray-500">ID: {listing.buyer_id}</span>}
+                                                            {listing.buyer_id && <span className="text-xs text-muted-foreground">ID: {listing.buyer_id}</span>}
                                                         </div>
-                                                        {listing.notes && <div className="text-xs text-gray-500 mt-1 italic max-w-[200px] truncate" title={listing.notes}>{listing.notes}</div>}
+                                                        {listing.notes && <div className="text-xs text-muted-foreground mt-1 italic max-w-[200px] truncate" title={listing.notes}>{listing.notes}</div>}
                                                     </td>
                                                     <td className="p-4 text-center">
-                                                        <div className="font-bold text-gray-900">{listing.quantity_quintals} Q</div>
+                                                        <div className="font-bold text-foreground">{listing.quantity_quintals} Q</div>
                                                         {listing.total_bags > 0 && (
-                                                            <div className="text-xs text-gray-500 mt-0.5">
+                                                            <div className="text-xs text-muted-foreground mt-0.5">
                                                                 {listing.total_bags} bags ({listing.bag_size || 50}kg)
                                                             </div>
                                                         )}
                                                     </td>
-                                                    <td className="p-4 text-right font-medium text-gray-700">
+                                                    <td className="p-4 text-right font-medium text-foreground">
                                                         ₹{listing.price_per_quintal.toLocaleString()}/Q
                                                     </td>
                                                     <td className="p-4 text-right">
@@ -1752,8 +1752,8 @@ export default function CropDetailPage() {
                 {activeTab === "health" && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="mb-6">
-                            <h2 className="text-2xl font-bold text-gray-900">AI Crop Health Diagnosis</h2>
-                            <p className="text-gray-500">Upload a photo of your {crop.name} to detect diseases and get treatment advice.</p>
+                            <h2 className="text-2xl font-bold text-foreground">AI Crop Health Diagnosis</h2>
+                            <p className="text-muted-foreground">Upload a photo of your {crop.name} to detect diseases and get treatment advice.</p>
                         </div>
                         <AICropDiagnosis cropName={crop.name} cropId={crop.id} />
                     </div>
@@ -1778,7 +1778,7 @@ export default function CropDetailPage() {
                         <div className="space-y-2">
                             <Label>Season</Label>
                             <select
-                                className="w-full p-2 border rounded-md bg-white text-gray-800"
+                                className="w-full p-2 border rounded-md bg-white text-foreground"
                                 value={editForm.season || "Kharif"}
                                 onChange={(e) => setEditForm({ ...editForm, season: e.target.value })}
                             >
@@ -1794,7 +1794,7 @@ export default function CropDetailPage() {
                                 value={editForm.variety || ""}
                                 placeholder="e.g. Sona Masuri"
                                 onChange={(e) => setEditForm({ ...editForm, variety: e.target.value })}
-                                className="text-gray-800"
+                                className="text-foreground"
                             />
                         </div>
                     </div>
@@ -1817,9 +1817,9 @@ export default function CropDetailPage() {
                                 }
                             }}
                             onBlur={(e) => handleAreaBlurEvent(e.target.value, (val) => setEditForm({ ...editForm, area: parseFloat(val) }))}
-                            className="text-gray-800"
+                            className="text-foreground"
                         />
-                        <p className="text-[10px] text-gray-500 italic">Max .39 guntas per acre (e.g. 1.39 → 2.00)</p>
+                        <p className="text-[10px] text-muted-foreground italic">Max .39 guntas per acre (e.g. 1.39 → 2.00)</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -1879,8 +1879,8 @@ export default function CropDetailPage() {
                         />
                     </div>
                     <div className="text-center space-y-2">
-                        <h3 className="font-bold text-lg text-gray-800">Scan for Journey</h3>
-                        <p className="text-sm text-gray-500 max-w-xs">
+                        <h3 className="font-bold text-lg text-foreground">Scan for Journey</h3>
+                        <p className="text-sm text-muted-foreground max-w-xs">
                             Consumers can scan this QR code to view the full journey of this crop from farm to table.
                         </p>
                     </div>

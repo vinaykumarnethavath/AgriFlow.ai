@@ -50,7 +50,7 @@ function Section({ title, children, extra }: { title: string; children: React.Re
     return (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
             <div className="bg-gray-50 border-b px-6 py-3 flex justify-between items-center">
-                <h3 className="font-semibold text-gray-800 text-base">{title}</h3>
+                <h3 className="font-semibold text-foreground text-base">{title}</h3>
                 {extra}
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">{children}</div>
@@ -64,7 +64,7 @@ function Field({ label, name, value, onChange, placeholder, type = "text", readO
 }) {
     return (
         <div className={`space-y-1 ${fullWidth ? "md:col-span-2" : ""}`}>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 {label} {required && <span className="text-red-500">*</span>}
             </label>
             <input
@@ -76,7 +76,7 @@ function Field({ label, name, value, onChange, placeholder, type = "text", readO
                 readOnly={readOnly}
                 required={required}
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400 transition ${
-                    readOnly ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white text-gray-800"
+                    readOnly ? "bg-gray-100 text-muted-foreground cursor-not-allowed" : "bg-white text-foreground"
                 }`}
             />
         </div>
@@ -262,14 +262,14 @@ export default function ShopProfilePage() {
         fetchNotifications();
     }, []);
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
+    if (loading) return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>;
 
     return (
         <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6 pb-24">
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Shop Settings</h1>
-                    <p className="text-gray-500 mt-1">Manage profile details, security, notifications and payout preferences.</p>
+                    <h1 className="text-3xl font-bold text-foreground">Shop Settings</h1>
+                    <p className="text-muted-foreground mt-1">Manage profile details, security, notifications and payout preferences.</p>
                 </div>
                 {!profileExists && (
                     <span className="text-xs bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-full font-medium border border-yellow-200">
@@ -287,7 +287,7 @@ export default function ShopProfilePage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                                isActive ? "bg-green-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                                isActive ? "bg-green-600 text-white" : "text-muted-foreground hover:bg-gray-100"
                             }`}
                         >
                             <Icon className="w-4 h-4" /> {tab.label}
@@ -307,15 +307,15 @@ export default function ShopProfilePage() {
                             {form.profile_picture_url ? (
                                 <img src={form.profile_picture_url} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
-                                <div className="text-center text-gray-400">
+                                <div className="text-center text-muted-foreground">
                                     <ImagePlus className="w-6 h-6 mx-auto mb-1" />
                                     <span className="text-[10px]">{uploading ? "..." : "Upload"}</span>
                                 </div>
                             )}
                         </div>
                         <div>
-                            <h4 className="font-medium text-gray-800">Shop Logo / Photo</h4>
-                            <p className="text-sm text-gray-500">Click the circle to upload an image.</p>
+                            <h4 className="font-medium text-foreground">Shop Logo / Photo</h4>
+                            <p className="text-sm text-muted-foreground">Click the circle to upload an image.</p>
                             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                         </div>
                     </div>
@@ -328,7 +328,7 @@ export default function ShopProfilePage() {
                     <Field label="Shop ID" name="shop_id" value={form.shop_id || ""} onChange={handleChange} placeholder="e.g. SHOP-12345" />
                     
                     <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                             Relation & Name <span className="text-red-500">*</span>
                         </label>
                         <div className="flex gap-2">
@@ -336,7 +336,7 @@ export default function ShopProfilePage() {
                                 name="relation_type" 
                                 value={form.relation_type || "S/O"} 
                                 onChange={handleChange}
-                                className="px-2 py-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 w-24"
+                                className="px-2 py-2.5 border rounded-lg text-sm bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-green-400 w-24"
                             >
                                 <option value="S/O">S/O</option>
                                 <option value="W/O">W/O</option>
@@ -349,7 +349,7 @@ export default function ShopProfilePage() {
                                 onChange={handleChange}
                                 placeholder="Name of Father/Husband"
                                 required
-                                className="flex-1 px-3 py-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                                className="flex-1 px-3 py-2.5 border rounded-lg text-sm bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-green-400"
                             />
                         </div>
                     </div>
@@ -410,7 +410,7 @@ export default function ShopProfilePage() {
             {activeTab === "password" && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
                             <Lock className="w-5 h-5 text-emerald-600" /> Update Password
                         </CardTitle>
                     </CardHeader>
@@ -418,19 +418,19 @@ export default function ShopProfilePage() {
                         <form className="space-y-4" onSubmit={handlePasswordChange}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Current Password</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Current Password</label>
                                     <input type="password" name="current_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">New Password</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Password</label>
                                     <input type="password" name="new_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Confirm New Password</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Confirm New Password</label>
                                     <input type="password" name="confirm_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
                                 </div>
                             </div>
-                            <p className="text-[11px] text-gray-400">Tip: Use at least 8 characters with a mix of letters, numbers and symbols.</p>
+                            <p className="text-[11px] text-muted-foreground">Tip: Use at least 8 characters with a mix of letters, numbers and symbols.</p>
                             <button type="submit" className="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700">Update Password</button>
                         </form>
                     </CardContent>
@@ -440,12 +440,12 @@ export default function ShopProfilePage() {
             {activeTab === "notifications" && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
                             <Bell className="w-5 h-5 text-emerald-600" /> Notification Preferences
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p className="text-sm text-gray-500">Choose how you want to be notified about sales, alerts and reports.</p>
+                        <p className="text-sm text-muted-foreground">Choose how you want to be notified about sales, alerts and reports.</p>
                         <div className="space-y-3">
                             {[{
                                 key: "sales_alerts" as const,
@@ -472,8 +472,8 @@ export default function ShopProfilePage() {
                                         className="mt-1 accent-green-600"
                                     />
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-700">{pref.title}</p>
-                                        <p className="text-xs text-gray-500">{pref.description}</p>
+                                        <p className="text-sm font-semibold text-foreground">{pref.title}</p>
+                                        <p className="text-xs text-muted-foreground">{pref.description}</p>
                                     </div>
                                 </label>
                             ))}
@@ -489,7 +489,7 @@ export default function ShopProfilePage() {
             {activeTab === "payments" && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
                             <Wallet className="w-5 h-5 text-emerald-600" /> Payment Settings
                         </CardTitle>
                     </CardHeader>
@@ -497,30 +497,30 @@ export default function ShopProfilePage() {
                         <form className="space-y-4" onSubmit={handlePaymentSave}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Beneficiary Name</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Beneficiary Name</label>
                                     <input name="beneficiary_name" defaultValue={form.full_name || user?.full_name || ""} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">UPI ID</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">UPI ID</label>
                                     <input name="upi_id" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" placeholder="example@upi" />
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Bank Name</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Bank Name</label>
                                     <input name="bank_name" defaultValue={form.bank_name} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Account Number</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Account Number</label>
                                     <input name="account_number" defaultValue={form.account_number} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">IFSC Code</label>
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">IFSC Code</label>
                                     <input name="ifsc_code" defaultValue={form.ifsc_code} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Payout Notes</label>
+                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Payout Notes</label>
                                 <textarea
                                     name="payout_notes"
                                     className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"

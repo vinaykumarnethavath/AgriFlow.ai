@@ -40,7 +40,7 @@ export default function CustomerDashboard() {
 
             {/* Featured Categories */}
             <div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
                     <Sparkles className="text-yellow-500" /> {t("customer.featuredCategories")}
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -54,7 +54,7 @@ export default function CustomerDashboard() {
                             <Card className="hover:shadow-md transition-shadow cursor-pointer bg-orange-50/50 border-orange-100">
                                 <CardContent className="flex flex-col items-center justify-center h-32 space-y-2">
                                     <Tag className="w-8 h-8 text-orange-400" />
-                                    <span className="font-semibold text-gray-700">{t(item.key)}</span>
+                                    <span className="font-semibold text-foreground">{t(item.key)}</span>
                                 </CardContent>
                             </Card>
                         </Link>
@@ -77,7 +77,7 @@ export default function CustomerDashboard() {
                                     <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center">🌾</div>
                                     <div>
                                         <p className="font-medium">Premium Basmati Rice</p>
-                                        <p className="text-xs text-gray-500">From Punjab Farms</p>
+                                        <p className="text-xs text-muted-foreground">From Punjab Farms</p>
                                     </div>
                                 </div>
                                 <span className="font-bold text-green-600">₹80/kg</span>
@@ -87,7 +87,7 @@ export default function CustomerDashboard() {
                                     <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">🍎</div>
                                     <div>
                                         <p className="font-medium">Kashmiri Apples</p>
-                                        <p className="text-xs text-gray-500">Fresh Harvest</p>
+                                        <p className="text-xs text-muted-foreground">Fresh Harvest</p>
                                     </div>
                                 </div>
                                 <span className="font-bold text-green-600">₹120/kg</span>
@@ -103,7 +103,7 @@ export default function CustomerDashboard() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-gray-600 mb-4 text-sm">{t("customer.supportLocalMessage")}</p>
+                        <p className="text-muted-foreground mb-4 text-sm">{t("customer.supportLocalMessage")}</p>
                         <Button variant="outline" className="w-full border-purple-200 text-purple-700 hover:bg-purple-50">
                             {t("customer.exploreNearbyFarmers")}
                         </Button>

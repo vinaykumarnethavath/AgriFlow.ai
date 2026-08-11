@@ -85,8 +85,8 @@ export default function ProductionPage() {
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Production & Processing</h1>
-                    <p className="text-gray-500">Convert raw materials into finished goods</p>
+                    <h1 className="text-3xl font-bold text-foreground">Production & Processing</h1>
+                    <p className="text-muted-foreground">Convert raw materials into finished goods</p>
                 </div>
                 <Button onClick={() => setIsModalOpen(true)} className="bg-green-600 hover:bg-green-700">
                     <Factory className="w-4 h-4 mr-2" /> Start New Batch
@@ -97,14 +97,14 @@ export default function ProductionPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="border-l-4 border-l-green-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Total Batches</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">{totalBatches}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Total Batches</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{totalBatches}</p>
                         <p className="text-xs text-green-500 mt-1">Production runs</p>
                     </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-cyan-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Avg Efficiency</p>
+                        <p className="text-xs text-muted-foreground font-medium">Avg Efficiency</p>
                         <p className={`text-2xl font-bold mt-1 ${avgEfficiency >= 90 ? "text-green-600" : avgEfficiency >= 70 ? "text-yellow-600" : "text-red-600"}`}>
                             {avgEfficiency.toFixed(1)}%
                         </p>
@@ -113,15 +113,15 @@ export default function ProductionPage() {
                 </Card>
                 <Card className="border-l-4 border-l-purple-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Total Processing Cost</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{totalProcessingCost.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Total Processing Cost</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">₹{totalProcessingCost.toLocaleString()}</p>
                         <p className="text-xs text-purple-500 mt-1">Labour + Power</p>
                     </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-blue-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Total Output</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">{totalOutputQty.toLocaleString()} kg</p>
+                        <p className="text-xs text-muted-foreground font-medium">Total Output</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{totalOutputQty.toLocaleString()} kg</p>
                         <p className="text-xs text-blue-500 mt-1">Finished goods produced</p>
                     </CardContent>
                 </Card>
@@ -131,13 +131,13 @@ export default function ProductionPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Activity className="w-5 h-5" /> Production Log
-                        <span className="ml-auto text-xs font-normal text-gray-400">{batches.length} batches</span>
+                        <span className="ml-auto text-xs font-normal text-muted-foreground">{batches.length} batches</span>
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-700 font-medium border-b">
+                            <thead className="bg-gray-50 text-foreground font-medium border-b">
                                 <tr>
                                     <th className="px-6 py-4">Batch No</th>
                                     <th className="px-6 py-4">Output Product</th>
@@ -152,16 +152,16 @@ export default function ProductionPage() {
                             <tbody className="divide-y divide-gray-100">
                                 {batches.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">
                                             No production batches run yet.
                                         </td>
                                     </tr>
                                 ) : (
                                     batches.map((b) => (
                                         <tr key={b.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 font-mono text-xs text-gray-500">{b.batch_number}</td>
-                                            <td className="px-6 py-4 font-medium text-gray-900">{b.output_product_name}</td>
-                                            <td className="px-6 py-4 text-right text-gray-600">{b.input_qty} kg</td>
+                                            <td className="px-6 py-4 font-mono text-xs text-muted-foreground">{b.batch_number}</td>
+                                            <td className="px-6 py-4 font-medium text-foreground">{b.output_product_name}</td>
+                                            <td className="px-6 py-4 text-right text-muted-foreground">{b.input_qty} kg</td>
                                             <td className="px-6 py-4 text-right font-semibold">{b.output_qty} {b.output_unit}</td>
                                             <td className="px-6 py-4 text-right text-red-500">{(b.waste_qty || 0).toFixed(1)} kg</td>
                                             <td className="px-6 py-4 text-center">
@@ -170,7 +170,7 @@ export default function ProductionPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right text-purple-700 font-medium">₹{b.processing_cost.toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-gray-500">{new Date(b.date).toLocaleDateString("en-IN")}</td>
+                                            <td className="px-6 py-4 text-muted-foreground">{new Date(b.date).toLocaleDateString("en-IN")}</td>
                                         </tr>
                                     ))
                                 )}
@@ -199,7 +199,7 @@ export default function ProductionPage() {
                                 <Label>Quantity to Process</Label>
                                 <div className="flex gap-2">
                                     <Input type="number" step="0.01" {...register("input_qty", { required: true })} />
-                                    <span className="p-2 bg-white border rounded text-gray-500 text-sm flex items-center">{selectedProduct?.unit || 'unit'}</span>
+                                    <span className="p-2 bg-white border rounded text-muted-foreground text-sm flex items-center">{selectedProduct?.unit || 'unit'}</span>
                                 </div>
                                 {selectedProduct && (
                                     <div className="text-xs text-blue-600">Available: {selectedProduct.quantity} {selectedProduct.unit}</div>
@@ -210,7 +210,7 @@ export default function ProductionPage() {
 
                     <div className="flex justify-center -my-2 relative z-10">
                         <div className="bg-white rounded-full p-2 border shadow-sm">
-                            <ArrowRight className="text-gray-400" />
+                            <ArrowRight className="text-muted-foreground" />
                         </div>
                     </div>
 
@@ -241,7 +241,7 @@ export default function ProductionPage() {
                             <Input type="number" step="0.01" {...register("processing_cost", { required: true })} placeholder="Total cost (Labor + Power)" />
                         </div>
                         <div className="flex flex-col justify-end pb-2">
-                            <div className="text-sm text-gray-600">Expected Efficiency: <span className="font-bold text-gray-800">{calculateEfficiency()}%</span></div>
+                            <div className="text-sm text-muted-foreground">Expected Efficiency: <span className="font-bold text-foreground">{calculateEfficiency()}%</span></div>
                         </div>
                     </div>
 

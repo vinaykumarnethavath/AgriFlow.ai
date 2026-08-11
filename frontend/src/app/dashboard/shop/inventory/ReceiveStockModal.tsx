@@ -162,7 +162,7 @@ export default function ReceiveStockModal({ isOpen, onClose, onSuccess }: Receiv
 
                 <div className="space-y-4 pt-4 border-t">
                     <h3 className="font-semibold text-lg text-green-800">Shared Overhead Expenses</h3>
-                    <p className="text-sm text-gray-600">These will be mathematically divided among the above products relative to each product's base cost weight (quantity × cost price) and added correctly to the Inventory landed cost.</p>
+                    <p className="text-sm text-muted-foreground">These will be mathematically divided among the above products relative to each product's base cost weight (quantity × cost price) and added correctly to the Inventory landed cost.</p>
                     
                     <div className="grid grid-cols-3 gap-3">
                         <div>

@@ -411,7 +411,7 @@ export default function MarketPage() {
             case "pesticide": return "bg-rose-100 text-rose-700";
             case "seeds": return "bg-blue-100 text-blue-700";
             case "equipment": return "bg-amber-100 text-amber-700";
-            default: return "bg-gray-100 text-gray-700";
+            default: return "bg-gray-100 text-foreground";
         }
     };
 
@@ -422,7 +422,7 @@ export default function MarketPage() {
             case "dispatched": return "bg-purple-100 text-purple-700";
             case "pending": return "bg-amber-100 text-amber-700";
             case "cancelled": return "bg-red-100 text-red-700";
-            default: return "bg-gray-100 text-gray-700";
+            default: return "bg-gray-100 text-foreground";
         }
     };
 
@@ -444,19 +444,19 @@ export default function MarketPage() {
                     <Button
                         variant="outline"
                         onClick={() => { setShowHistory(false); setSelectedOrder(null); }}
-                        className="flex items-center gap-2 border-gray-300 text-gray-700"
+                        className="flex items-center gap-2 border-gray-300 text-foreground"
                     >
                         <ArrowLeft className="h-4 w-4" /> Back to Shopping
                     </Button>
-                    <h1 className="text-3xl font-bold text-gray-800">Order History</h1>
+                    <h1 className="text-3xl font-bold text-foreground">Order History</h1>
                 </div>
 
                 {orders.length === 0 ? (
                     <Card className="border-dashed border-2">
                         <CardContent className="p-12 text-center">
                             <History className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                            <h3 className="text-xl font-bold text-gray-600">No orders yet</h3>
-                            <p className="text-gray-500">Your order history will appear here</p>
+                            <h3 className="text-xl font-bold text-muted-foreground">No orders yet</h3>
+                            <p className="text-muted-foreground">Your order history will appear here</p>
                         </CardContent>
                     </Card>
                 ) : (
@@ -475,8 +475,8 @@ export default function MarketPage() {
                                 >
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <p className="font-bold text-gray-800">Order #{order.id}</p>
-                                            <p className="text-xs text-gray-500 mt-0.5">
+                                            <p className="font-bold text-foreground">Order #{order.id}</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">
                                                 {new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                 {" · "}
                                                 {new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute:'2-digit' })}
@@ -495,7 +495,7 @@ export default function MarketPage() {
                                         </div>
                                     </div>
                                     {order.items && (
-                                        <p className="text-[11px] text-gray-400 mt-2 truncate">
+                                        <p className="text-[11px] text-muted-foreground mt-2 truncate">
                                             {order.items.map(i => i.product_name).join(", ")}
                                         </p>
                                     )}
@@ -506,7 +506,7 @@ export default function MarketPage() {
                         {/* Order Detail Panel (Right) */}
                         <div className="hidden md:flex flex-1 overflow-y-auto">
                             {!selectedOrder ? (
-                                <div className="flex-1 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
+                                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-gray-200 rounded-xl">
                                     <History className="h-12 w-12 mb-3 opacity-50" />
                                     <p className="font-medium">Select an order to view details</p>
                                 </div>
@@ -516,7 +516,7 @@ export default function MarketPage() {
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <CardTitle className="text-xl">Order #{selectedOrder.id}</CardTitle>
-                                                <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                                                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                                                     <Clock className="h-3.5 w-3.5" />
                                                     {new Date(selectedOrder.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                     {" at "}
@@ -537,7 +537,7 @@ export default function MarketPage() {
                                     <CardContent className="p-5 space-y-5">
                                         {/* Cart Items */}
                                         <div>
-                                            <h3 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-3">Cart Items</h3>
+                                            <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider mb-3">Cart Items</h3>
                                             <div className="space-y-3">
                                                 {selectedOrder.items?.map((item, idx) => (
                                                     <div key={idx} className="flex justify-between items-start py-2.5 border-b border-gray-50 last:border-0">
@@ -546,12 +546,12 @@ export default function MarketPage() {
                                                                 {item.image_url || item.product_image_url ? (
                                                                     <img src={item.image_url || item.product_image_url} alt={item.product_name} className="w-full h-full object-cover" />
                                                                 ) : (
-                                                                    <div className="w-full h-full flex items-center justify-center text-gray-400"><Package className="h-5 w-5" /></div>
+                                                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Package className="h-5 w-5" /></div>
                                                                 )}
                                                             </div>
                                                             <div>
-                                                                <p className="font-semibold text-gray-800">{item.product_name}</p>
-                                                                <p className="text-xs text-gray-500">
+                                                                <p className="font-semibold text-foreground">{item.product_name}</p>
+                                                                <p className="text-xs text-muted-foreground">
                                                                     {item.brand || item.manufacturer ? <span className="text-emerald-700 font-medium">{item.brand || item.manufacturer}</span> : ''}
                                                                     {item.brand || item.manufacturer ? ' · ' : ''}Qty: {item.quantity} × ₹{item.unit_price}
                                                                 </p>
@@ -562,7 +562,7 @@ export default function MarketPage() {
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <p className="font-semibold text-gray-800">₹{item.subtotal.toLocaleString()}</p>
+                                                        <p className="font-semibold text-foreground">₹{item.subtotal.toLocaleString()}</p>
                                                     </div>
                                                 ))}
                                             </div>
@@ -570,20 +570,20 @@ export default function MarketPage() {
 
                                         {/* Transaction Details */}
                                         <div className="border-t pt-4">
-                                            <h3 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-3">Transaction Details</h3>
+                                            <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider mb-3">Transaction Details</h3>
                                             <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
                                                 <div className="flex justify-between text-sm">
-                                                    <span className="text-gray-500">Subtotal</span>
-                                                    <span className="font-medium text-gray-800">₹{selectedOrder.total_amount.toLocaleString()}</span>
+                                                    <span className="text-muted-foreground">Subtotal</span>
+                                                    <span className="font-medium text-foreground">₹{selectedOrder.total_amount.toLocaleString()}</span>
                                                 </div>
                                                 {selectedOrder.discount > 0 && (
                                                     <div className="flex justify-between text-sm">
-                                                        <span className="text-gray-500">Discount</span>
+                                                        <span className="text-muted-foreground">Discount</span>
                                                         <span className="font-medium text-green-600">- ₹{selectedOrder.discount.toLocaleString()}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex justify-between text-sm border-t pt-2">
-                                                    <span className="font-bold text-gray-800">Total</span>
+                                                    <span className="font-bold text-foreground">Total</span>
                                                     <span className="font-bold text-green-700 text-lg">₹{selectedOrder.final_amount.toLocaleString()}</span>
                                                 </div>
                                             </div>
@@ -591,14 +591,14 @@ export default function MarketPage() {
 
                                         {/* Payment Details */}
                                         <div className="border-t pt-4">
-                                            <h3 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-3">Payment</h3>
+                                            <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider mb-3">Payment</h3>
                                             <div className="flex items-center gap-3">
                                                 <div className="bg-blue-50 p-2 rounded-lg">
                                                     <CreditCard className="h-5 w-5 text-blue-600" />
                                                 </div>
                                                 <div>
-                                                    <p className="font-medium text-gray-800 capitalize">{selectedOrder.payment_mode}</p>
-                                                    <p className="text-xs text-gray-500">
+                                                    <p className="font-medium text-foreground capitalize">{selectedOrder.payment_mode}</p>
+                                                    <p className="text-xs text-muted-foreground">
                                                         {selectedOrder.payment_status === "paid" ? (
                                                             <span className="text-green-600 font-bold">✅ Payment Completed</span>
                                                         ) : (
@@ -655,11 +655,11 @@ export default function MarketPage() {
                     <Button
                         variant="outline"
                         onClick={() => setShowCart(false)}
-                        className="flex items-center gap-2 border-gray-300 text-gray-700"
+                        className="flex items-center gap-2 border-gray-300 text-foreground"
                     >
                         <ArrowLeft className="h-4 w-4" /> Continue Shopping
                     </Button>
-                    <h1 className="text-3xl font-bold text-gray-800">Your Cart</h1>
+                    <h1 className="text-3xl font-bold text-foreground">Your Cart</h1>
                 </div>
 
                 {orderPlaced ? (
@@ -674,8 +674,8 @@ export default function MarketPage() {
                     <Card className="border-dashed border-2">
                         <CardContent className="p-12 text-center">
                             <ShoppingCart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                            <h3 className="text-xl font-bold text-gray-600">Your cart is empty</h3>
-                            <p className="text-gray-500">Add products to get started</p>
+                            <h3 className="text-xl font-bold text-muted-foreground">Your cart is empty</h3>
+                            <p className="text-muted-foreground">Add products to get started</p>
                         </CardContent>
                     </Card>
                 ) : (
@@ -698,7 +698,7 @@ export default function MarketPage() {
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2">
                                                     {getCategoryIcon(item.product.category)}
-                                                    <h3 className="font-bold text-gray-800">{getShortName(item.product)}</h3>
+                                                    <h3 className="font-bold text-foreground">{getShortName(item.product)}</h3>
                                                 </div>
                                                 {item.product.seller_name && (
                                                     <button
@@ -717,21 +717,21 @@ export default function MarketPage() {
                                                         size="sm"
                                                         variant="ghost"
                                                         onClick={() => updateCartQuantity(item.product.id, -1)}
-                                                        className="h-8 w-8 p-0 text-gray-700"
+                                                        className="h-8 w-8 p-0 text-foreground"
                                                     >
                                                         <Minus className="h-4 w-4" />
                                                     </Button>
-                                                    <span className="font-bold w-8 text-center text-gray-800">{item.quantity}</span>
+                                                    <span className="font-bold w-8 text-center text-foreground">{item.quantity}</span>
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
                                                         onClick={() => updateCartQuantity(item.product.id, 1)}
-                                                        className="h-8 w-8 p-0 text-gray-700"
+                                                        className="h-8 w-8 p-0 text-foreground"
                                                     >
                                                         <Plus className="h-4 w-4" />
                                                     </Button>
                                                 </div>
-                                                <p className="font-bold text-lg w-24 text-right text-gray-800">
+                                                <p className="font-bold text-lg w-24 text-right text-foreground">
                                                     ₹{(item.product.price * item.quantity).toLocaleString()}
                                                 </p>
                                                 <Button
@@ -800,17 +800,17 @@ export default function MarketPage() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Link href="/dashboard/farmer">
-                        <Button variant="outline" className="flex items-center gap-2 border-gray-300 text-gray-700">
+                        <Button variant="outline" className="flex items-center gap-2 border-gray-300 text-foreground">
                             <ArrowLeft className="h-4 w-4" /> Back
                         </Button>
                     </Link>
-                    <h1 className="text-2xl font-bold text-gray-800">Market</h1>
+                    <h1 className="text-2xl font-bold text-foreground">Market</h1>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
                         variant="outline"
                         onClick={() => { setShowHistory(true); fetchOrders(); }}
-                        className="flex items-center gap-2 border-gray-300 text-gray-700"
+                        className="flex items-center gap-2 border-gray-300 text-foreground"
                     >
                         <History className="h-4 w-4" /> Order History
                     </Button>
@@ -834,13 +834,13 @@ export default function MarketPage() {
             {/* Search and Shop Filter */}
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <input
                         type="text"
                         placeholder="Search by name, brand (e.g., DAP, Urea, IFFCO)..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none text-gray-800 bg-white"
+                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none text-foreground bg-white"
                     />
                 </div>
                 {/* Shop Filter */}
@@ -848,7 +848,7 @@ export default function MarketPage() {
                     <select
                         value={selectedShop ?? "all"}
                         onChange={(e) => setSelectedShop(e.target.value === "all" ? null : parseInt(e.target.value))}
-                        className="appearance-none pl-10 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none text-gray-800 bg-white min-w-[200px]"
+                        className="appearance-none pl-10 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none text-foreground bg-white min-w-[200px]"
                     >
                         <option value="all">All Shops</option>
                         {shops.map(shop => (
@@ -859,8 +859,8 @@ export default function MarketPage() {
                             </option>
                         ))}
                     </select>
-                    <Store className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Store className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>
             </div>
 
@@ -873,7 +873,7 @@ export default function MarketPage() {
                         onClick={() => setSelectedCategory(cat.id)}
                         className={`flex items-center gap-2 whitespace-nowrap ${selectedCategory === cat.id
                             ? "bg-green-600 hover:bg-green-700 text-white"
-                            : "hover:bg-green-50 text-gray-700 border-gray-300"
+                            : "hover:bg-green-50 text-foreground border-gray-300"
                             }`}
                     >
                         <cat.icon className="h-4 w-4" />
@@ -887,8 +887,8 @@ export default function MarketPage() {
                 <Card className="border-dashed border-2">
                     <CardContent className="p-12 text-center">
                         <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                        <h3 className="text-xl font-bold text-gray-600">No products found</h3>
-                        <p className="text-gray-500">Try adjusting your search or filters</p>
+                        <h3 className="text-xl font-bold text-muted-foreground">No products found</h3>
+                        <p className="text-muted-foreground">Try adjusting your search or filters</p>
                     </CardContent>
                 </Card>
             ) : (
@@ -933,11 +933,11 @@ export default function MarketPage() {
 
                                 <CardContent className="p-4">
                                     <div className="flex-1">
-                                        <h3 className="font-bold text-lg text-gray-800 group-hover:text-green-700 transition-colors line-clamp-1">
+                                        <h3 className="font-bold text-lg text-foreground group-hover:text-green-700 transition-colors line-clamp-1">
                                             {getShortName(product)}
                                         </h3>
                                         {product.brand && (
-                                            <p className="text-xs text-gray-500 mb-1">{product.brand}</p>
+                                            <p className="text-xs text-muted-foreground mb-1">{product.brand}</p>
                                         )}
 
                                         {/* Shop Name */}
@@ -966,7 +966,7 @@ export default function MarketPage() {
                                         </div>
                                         {product.main_composition && (
                                             <div className="mt-1 mb-2">
-                                                <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded inline-block">
+                                                <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-1 rounded inline-block">
                                                     <span className="font-semibold">Composition:</span> {product.main_composition}
                                                 </span>
                                             </div>
@@ -977,10 +977,10 @@ export default function MarketPage() {
                                     <div className="flex justify-between items-end mb-3 mt-auto">
                                         <div>
                                             <p className="text-2xl font-bold text-green-700">₹{product.price}</p>
-                                            <p className="text-xs text-gray-500">per unit</p>
+                                            <p className="text-xs text-muted-foreground">per unit</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-medium text-gray-600">{product.quantity} in stock</p>
+                                            <p className="text-sm font-medium text-muted-foreground">{product.quantity} in stock</p>
                                         </div>
                                     </div>
 

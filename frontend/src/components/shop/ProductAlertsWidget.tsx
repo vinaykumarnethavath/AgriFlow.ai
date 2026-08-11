@@ -72,8 +72,8 @@ export function ProductAlertsWidget() {
                         )}
                         <div className="flex justify-between items-start mb-2">
                             <div>
-                                <h4 className="font-bold text-gray-900 text-base">{alert.productName}</h4>
-                                <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                <h4 className="font-bold text-foreground text-base">{alert.productName}</h4>
+                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                     <Factory className="w-3 h-3" /> {alert.manufacturer}
                                 </p>
                             </div>
@@ -91,7 +91,7 @@ export function ProductAlertsWidget() {
                         </div>
 
                         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-                            <span className="text-sm font-semibold text-gray-800">
+                            <span className="text-sm font-semibold text-foreground">
                                 {alert.priceHint}
                             </span>
                             <span className="text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">

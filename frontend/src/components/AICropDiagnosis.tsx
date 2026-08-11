@@ -113,7 +113,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
         switch (level.toLowerCase()) {
             case "critical": return "bg-red-500 text-white";
             case "high": return "bg-orange-500 text-white";
-            case "medium": return "bg-yellow-500 text-black";
+            case "medium": return "bg-yellow-500 text-foreground";
             case "low": return "bg-blue-500 text-white";
             default: return "bg-gray-500 text-white";
         }
@@ -125,7 +125,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
             case "severe": return "text-orange-600";
             case "moderate": return "text-yellow-600";
             case "mild": return "text-green-600";
-            default: return "text-gray-600";
+            default: return "text-muted-foreground";
         }
     };
 
@@ -135,13 +135,13 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                 <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit mb-4">
                     <button
                         onClick={() => setActiveTab("new")}
-                        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === "new" ? "bg-white text-green-700 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+                        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === "new" ? "bg-white text-green-700 shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                     >
                         <Activity className="w-4 h-4 inline mr-2" /> {t('farmer.cropDiagnosis')}
                     </button>
                     <button
                         onClick={() => setActiveTab("history")}
-                        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === "history" ? "bg-white text-green-700 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+                        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === "history" ? "bg-white text-green-700 shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                     >
                         <History className="w-4 h-4 inline mr-2" /> {t('customer.orderHistory')}
                     </button>
@@ -153,7 +153,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                     {historyData.length === 0 ? (
                         <div className="text-center p-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                             <History className="mx-auto w-12 h-12 text-gray-300 mb-2" />
-                            <p className="text-gray-500 font-medium">No past diagnoses found for this crop.</p>
+                            <p className="text-muted-foreground font-medium">No past diagnoses found for this crop.</p>
                         </div>
                     ) : (
                         historyData.map((item) => (
@@ -163,13 +163,13 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                         {item.image_url ? (
                                             <img src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${item.image_url}`} alt="Crop" className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">No Image</div>
                                         )}
                                     </div>
                                     <div className="p-4 flex-1">
                                         <div className="flex justify-between items-start mb-2">
-                                            <h4 className="font-bold text-gray-900">{item.diagnosis.disease?.disease_name || "Healthy"}</h4>
-                                            <span className="text-xs text-gray-500">{new Date(item.created_at).toLocaleDateString()}</span>
+                                            <h4 className="font-bold text-foreground">{item.diagnosis.disease?.disease_name || "Healthy"}</h4>
+                                            <span className="text-xs text-muted-foreground">{new Date(item.created_at).toLocaleDateString()}</span>
                                         </div>
                                         <div className="flex gap-2 mb-3">
                                             {item.diagnosis.is_healthy ? (
@@ -181,7 +181,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                                 </>
                                             )}
                                         </div>
-                                        <p className="text-sm text-gray-600 line-clamp-2">{item.diagnosis.disease?.description || item.diagnosis.additional_notes}</p>
+                                        <p className="text-sm text-muted-foreground line-clamp-2">{item.diagnosis.disease?.description || item.diagnosis.additional_notes}</p>
                                     </div>
                                 </div>
                             </Card>
@@ -220,7 +220,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                 <h3 className="text-xl font-bold text-green-900">
                                     {previewUrl ? t('common.success') : t('farmer.cropDiagnosis')}
                                 </h3>
-                                <p className="text-gray-600 max-w-sm mx-auto">
+                                <p className="text-muted-foreground max-w-sm mx-auto">
                                     {previewUrl 
                                         ? t('diagnosis.analyzing') 
                                         : t('diagnosis.dragDrop')}
@@ -269,8 +269,8 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-xl font-bold text-gray-900">{t('diagnosis.analyzing')}</h3>
-                            <p className="text-gray-500 animate-pulse">{t('common.loading')} {cropName || t('farmer.myCrops')}</p>
+                            <h3 className="text-xl font-bold text-foreground">{t('diagnosis.analyzing')}</h3>
+                            <p className="text-muted-foreground animate-pulse">{t('common.loading')} {cropName || t('farmer.myCrops')}</p>
                         </div>
                         <div className="w-full max-w-xs bg-gray-100 h-2 rounded-full overflow-hidden">
                             <motion.div 
@@ -280,7 +280,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                 transition={{ duration: 15, ease: "linear" }}
                             />
                         </div>
-                        <p className="text-xs text-gray-400">This usually takes about 10-20 seconds</p>
+                        <p className="text-xs text-muted-foreground">This usually takes about 10-20 seconds</p>
                     </CardContent>
                 </Card>
             )}
@@ -316,7 +316,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                 <h3 className={`font-bold text-lg ${diagnosis.is_healthy ? 'text-green-900' : 'text-red-900'}`}>
                                     {diagnosis.is_healthy ? t('diagnosis.healthy') : t('diagnosis.disease')}
                                 </h3>
-                                <p className="text-sm text-gray-600">{t('common.status')}: <span className="font-bold">{diagnosis.crop_detected}</span></p>
+                                <p className="text-sm text-muted-foreground">{t('common.status')}: <span className="font-bold">{diagnosis.crop_detected}</span></p>
                             </div>
                         </div>
                         <Badge className={`${getUrgencyColor(diagnosis.urgency_level)} px-3 py-1 rounded-full text-xs uppercase tracking-wider`}>
@@ -328,7 +328,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                         {/* Disease Details */}
                         <Card className="md:col-span-2 shadow-md hover:shadow-lg transition-shadow border-gray-100">
                             <CardHeader className="border-b bg-gray-50/50">
-                                <CardTitle className="text-gray-900 flex items-center gap-2">
+                                <CardTitle className="text-foreground flex items-center gap-2">
                                     <FileText className="text-blue-600" size={20} />
                                     {t('diagnosis.result')}
                                 </CardTitle>
@@ -338,7 +338,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h4 className="text-2xl font-black text-gray-900">{diagnosis.disease.disease_name}</h4>
+                                                <h4 className="text-2xl font-black text-foreground">{diagnosis.disease.disease_name}</h4>
                                                 <div className="flex gap-2 mt-2">
                                                     <Badge variant="outline" className={`${getSeverityColor(diagnosis.disease.severity)} border-current font-bold uppercase`}>
                                                         {t('diagnosis.severity')}: {diagnosis.disease.severity}
@@ -350,7 +350,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                             </div>
                                         </div>
                                         
-                                        <p className="text-gray-700 leading-relaxed bg-white border rounded-xl p-4 italic">
+                                        <p className="text-foreground leading-relaxed bg-white border rounded-xl p-4 italic">
                                             "{diagnosis.disease.description}"
                                         </p>
 
@@ -386,7 +386,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                 )}
 
                                 <div className="space-y-4 pt-4 border-t">
-                                    <h5 className="font-bold text-gray-900 flex items-center gap-2">
+                                    <h5 className="font-bold text-foreground flex items-center gap-2">
                                         <Activity size={18} className="text-indigo-600" /> {t('diagnosis.treatment')}
                                     </h5>
                                     <div className="space-y-3">
@@ -396,8 +396,8 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                                     {step.step_number}
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-gray-900 text-sm">{step.title} <span className="text-[10px] font-normal text-indigo-600 uppercase ml-2 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">{step.timing}</span></p>
-                                                    <p className="text-xs text-gray-600 mt-0.5">{step.description}</p>
+                                                    <p className="font-bold text-foreground text-sm">{step.title} <span className="text-[10px] font-normal text-indigo-600 uppercase ml-2 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">{step.timing}</span></p>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -424,12 +424,12 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-2">
                                                     <div className="text-[10px]">
-                                                        <span className="text-gray-400 block uppercase font-bold tracking-tighter">Dosage</span>
-                                                        <span className="text-gray-800 font-medium">{p.dosage}</span>
+                                                        <span className="text-muted-foreground block uppercase font-bold tracking-tighter">Dosage</span>
+                                                        <span className="text-foreground font-medium">{p.dosage}</span>
                                                     </div>
                                                     <div className="text-[10px]">
-                                                        <span className="text-gray-400 block uppercase font-bold tracking-tighter">Frequency</span>
-                                                        <span className="text-gray-800 font-medium">{p.frequency}</span>
+                                                        <span className="text-muted-foreground block uppercase font-bold tracking-tighter">Frequency</span>
+                                                        <span className="text-foreground font-medium">{p.frequency}</span>
                                                     </div>
                                                 </div>
                                                 <div className="text-[10px] bg-amber-50 p-1.5 rounded border border-amber-100">
@@ -450,7 +450,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="text-xs text-gray-500 italic text-center p-4">No specific pesticide recommendation needed.</p>
+                                        <p className="text-xs text-muted-foreground italic text-center p-4">No specific pesticide recommendation needed.</p>
                                     )}
                                 </CardContent>
                             </Card>
@@ -468,7 +468,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
                                                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0"></div>
                                                 <div>
                                                     <p className="text-xs font-bold text-green-800">{tip.category}</p>
-                                                    <p className="text-[11px] text-gray-600">{tip.tip}</p>
+                                                    <p className="text-[11px] text-muted-foreground">{tip.tip}</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -478,7 +478,7 @@ export const AICropDiagnosis: React.FC<AICropDiagnosisProps> = ({ cropName, crop
 
                             <Button 
                                 variant="outline" 
-                                className="w-full border-dashed border-gray-200 text-gray-400 hover:text-green-600 hover:border-green-300"
+                                className="w-full border-dashed border-gray-200 text-muted-foreground hover:text-green-600 hover:border-green-300"
                                 onClick={reset}
                             >
                                 <RefreshCw size={16} className="mr-2" /> Start New Analysis

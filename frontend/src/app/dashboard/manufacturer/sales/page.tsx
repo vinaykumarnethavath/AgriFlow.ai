@@ -180,8 +180,8 @@ export default function SalesPage() {
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Sales & Distribution</h1>
-                    <p className="text-gray-500">Sell finished goods to shops and distributors</p>
+                    <h1 className="text-3xl font-bold text-foreground">Sales & Distribution</h1>
+                    <p className="text-muted-foreground">Sell finished goods to shops and distributors</p>
                 </div>
                 <Button onClick={() => setIsModalOpen(true)} className="bg-purple-600 hover:bg-purple-700">
                     <ShoppingCart className="w-4 h-4 mr-2" /> Record New Sale
@@ -192,29 +192,29 @@ export default function SalesPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="border-l-4 border-l-purple-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Total Revenue</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{totalRevenue.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Total Revenue</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">₹{totalRevenue.toLocaleString()}</p>
                         <div className="flex items-center text-xs text-purple-500 mt-1"><ArrowUpRight className="w-3 h-3 mr-0.5" /> From sales</div>
                     </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-blue-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Total Units Sold</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">{totalQtySold.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Total Units Sold</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{totalQtySold.toLocaleString()}</p>
                         <p className="text-xs text-blue-500 mt-1">Across {filteredSales.length} invoices</p>
                     </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-green-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Avg Sale Value</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{avgSaleValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Avg Sale Value</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">₹{avgSaleValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                         <p className="text-xs text-green-500 mt-1">Per invoice</p>
                     </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-orange-400">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Total Discounts</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{totalDiscounts.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Total Discounts</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">₹{totalDiscounts.toLocaleString()}</p>
                         <p className="text-xs text-orange-400 mt-1">Given to buyers</p>
                     </CardContent>
                 </Card>
@@ -225,7 +225,7 @@ export default function SalesPage() {
                 {PERIOD_OPTIONS.map(opt => (
                     <button key={opt.value} onClick={() => setPeriod(opt.value)}
                         className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                            period === opt.value ? "bg-purple-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
+                            period === opt.value ? "bg-purple-600 text-white" : "bg-white text-muted-foreground hover:bg-gray-50"
                         }`}>
                         {opt.label}
                     </button>
@@ -236,13 +236,13 @@ export default function SalesPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <TrendingUp className="w-5 h-5" /> Sales History
-                        <span className="ml-auto text-xs font-normal text-gray-400">{filteredSales.length} records</span>
+                        <span className="ml-auto text-xs font-normal text-muted-foreground">{filteredSales.length} records</span>
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-700 font-medium border-b">
+                            <thead className="bg-gray-50 text-foreground font-medium border-b">
                                 <tr>
                                     <th className="px-6 py-4">Invoice ID</th>
                                     <th className="px-6 py-4">Buyer</th>
@@ -258,7 +258,7 @@ export default function SalesPage() {
                             <tbody className="divide-y divide-gray-100">
                                 {filteredSales.length === 0 ? (
                                     <tr>
-                                        <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">
                                             No sales recorded yet.
                                         </td>
                                     </tr>
@@ -268,12 +268,12 @@ export default function SalesPage() {
                                         const dsCfg = DELIVERY_STATUS_CONFIG[ds] || DELIVERY_STATUS_CONFIG["pending"];
                                         return (
                                             <tr key={s.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 font-mono text-xs text-gray-500">{s.invoice_id}</td>
+                                                <td className="px-6 py-4 font-mono text-xs text-muted-foreground">{s.invoice_id}</td>
                                                 <td className="px-6 py-4">
-                                                    <div className="font-medium text-gray-900">{s.buyer_name}</div>
-                                                    <div className="text-xs text-gray-500 capitalize">{s.buyer_type}</div>
+                                                    <div className="font-medium text-foreground">{s.buyer_name}</div>
+                                                    <div className="text-xs text-muted-foreground capitalize">{s.buyer_type}</div>
                                                 </td>
-                                                <td className="px-6 py-4 text-gray-700">{productNameMap[s.product_id] || `#${s.product_id}`}</td>
+                                                <td className="px-6 py-4 text-foreground">{productNameMap[s.product_id] || `#${s.product_id}`}</td>
                                                 <td className="px-6 py-4 text-right">{s.quantity}</td>
                                                 <td className="px-6 py-4 text-right">₹{s.selling_price.toLocaleString()}</td>
                                                 <td className="px-6 py-4 text-right text-orange-500">{s.discount ? `₹${s.discount}` : "—"}</td>
@@ -281,7 +281,7 @@ export default function SalesPage() {
                                                 <td className="px-6 py-4">
                                                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${dsCfg.color}`}>{dsCfg.label}</span>
                                                 </td>
-                                                <td className="px-6 py-4 text-gray-500">{new Date(s.date).toLocaleDateString("en-IN")}</td>
+                                                <td className="px-6 py-4 text-muted-foreground">{new Date(s.date).toLocaleDateString("en-IN")}</td>
                                             </tr>
                                         );
                                     })
@@ -325,14 +325,14 @@ export default function SalesPage() {
                             <Label>Quantity</Label>
                             <div className="flex gap-2">
                                 <Input type="number" step="0.01" {...register("quantity", { required: true })} />
-                                <span className="p-2 flex items-center text-sm text-gray-500 bg-gray-50 rounded border">{selectedProduct?.unit || 'unit'}</span>
+                                <span className="p-2 flex items-center text-sm text-muted-foreground bg-gray-50 rounded border">{selectedProduct?.unit || 'unit'}</span>
                             </div>
                         </div>
                         <div className="space-y-2">
                             <Label>Selling Price (Per Unit)</Label>
                             <Input type="number" step="0.01" {...register("selling_price", { required: true })} />
                             {selectedProduct && selectedProduct.cost_price && (
-                                <div className="text-xs text-gray-400">Est. Cost: ₹{selectedProduct.cost_price.toFixed(2)}</div>
+                                <div className="text-xs text-muted-foreground">Est. Cost: ₹{selectedProduct.cost_price.toFixed(2)}</div>
                             )}
                         </div>
                     </div>
@@ -354,7 +354,7 @@ export default function SalesPage() {
                     </div>
 
                     <div className="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
-                        <span className="font-semibold text-gray-700">Total Invoice Amount:</span>
+                        <span className="font-semibold text-foreground">Total Invoice Amount:</span>
                         <span className="text-xl font-bold text-green-700">₹{calculateTotal().toLocaleString()}</span>
                     </div>
 

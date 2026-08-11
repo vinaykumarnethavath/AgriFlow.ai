@@ -31,7 +31,7 @@ export default function ProcurementTab() {
             case "BUY NOW": return "bg-green-100 text-green-800 border-green-200";
             case "WAIT": return "bg-red-100 text-red-800 border-red-200";
             case "HOLD": return "bg-yellow-100 text-yellow-800 border-yellow-200";
-            default: return "bg-gray-100 text-gray-800";
+            default: return "bg-gray-100 text-foreground";
         }
     };
 
@@ -51,7 +51,7 @@ export default function ProcurementTab() {
                             <div className={`px-6 py-3 rounded-xl border-2 font-bold text-2xl tracking-wider ${getRecommendationColor(currentInsight?.recommendation)}`}>
                                 {currentInsight?.recommendation || "N/A"}
                             </div>
-                            <p className="mt-4 text-sm text-center text-gray-600">
+                            <p className="mt-4 text-sm text-center text-muted-foreground">
                                 {currentInsight?.recommendation === "WAIT" && "Prices are expected to drop due to upcoming harvests. Delay bulk purchases."}
                                 {currentInsight?.recommendation === "BUY NOW" && "Prices are at an optimal low. Secure raw materials now."}
                                 {currentInsight?.recommendation === "HOLD" && "Monitor market conditions closely before large orders."}
@@ -91,14 +91,14 @@ export default function ProcurementTab() {
             <Card className="shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5 text-gray-500" />
+                        <AlertCircle className="w-5 h-5 text-muted-foreground" />
                         Regional Harvest Forecasts
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-700 font-medium">
+                            <thead className="bg-gray-50 text-foreground font-medium">
                                 <tr>
                                     <th className="px-4 py-3 rounded-tl-lg">Region</th>
                                     <th className="px-4 py-3">Harvest Status</th>
@@ -108,24 +108,24 @@ export default function ProcurementTab() {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {currentInsight?.regionForecasts.length === 0 ? (
-                                    <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-500">No regional data available.</td></tr>
+                                    <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">No regional data available.</td></tr>
                                 ) : (
                                     currentInsight?.regionForecasts.map((forecast, idx) => (
                                         <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="px-4 py-4 font-medium text-gray-900">{forecast.region}</td>
+                                            <td className="px-4 py-4 font-medium text-foreground">{forecast.region}</td>
                                             <td className="px-4 py-4">
                                                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                                                     {forecast.harvestStatus}
                                                 </Badge>
                                             </td>
-                                            <td className="px-4 py-4 text-gray-600">{forecast.impact}</td>
+                                            <td className="px-4 py-4 text-muted-foreground">{forecast.impact}</td>
                                             <td className="px-4 py-4">
                                                 {forecast.impact.toLowerCase().includes("drop") ? (
                                                     <TrendingDown className="w-5 h-5 text-green-500" /> // Price drop is good for buyer
                                                 ) : forecast.impact.toLowerCase().includes("rise") ? (
                                                     <TrendingUp className="w-5 h-5 text-red-500" />
                                                 ) : (
-                                                    <Minus className="w-5 h-5 text-gray-400" />
+                                                    <Minus className="w-5 h-5 text-muted-foreground" />
                                                 )}
                                             </td>
                                         </tr>

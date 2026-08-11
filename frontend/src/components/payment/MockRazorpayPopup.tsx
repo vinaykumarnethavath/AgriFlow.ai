@@ -33,12 +33,12 @@ export default function MockRazorpayPopup({
                 
                 {/* Header Navbar */}
                 <div className="bg-white border-b px-4 py-3 flex items-center gap-3 sticky top-0 z-10 shadow-sm">
-                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition text-gray-700">
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition text-foreground">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h2 className="font-bold text-gray-900 text-[17px]">Payment Options</h2>
-                        <div className="text-xs text-gray-500 font-medium">
+                        <h2 className="font-bold text-foreground text-[17px]">Payment Options</h2>
+                        <div className="text-xs text-muted-foreground font-medium">
                             <span>1 item • Total: ₹{(options.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                         </div>
                     </div>
@@ -52,7 +52,7 @@ export default function MockRazorpayPopup({
                             <div className="bg-[#126b59] p-4 text-white rounded-b-xl flex justify-between items-center shadow-md">
                                 <div>
                                     <p className="text-xs font-semibold opacity-90">instant payments!</p>
-                                    <button className="bg-white text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full mt-2 shadow-sm uppercase tracking-wide">
+                                    <button className="bg-white text-foreground text-xs font-bold px-3 py-1.5 rounded-full mt-2 shadow-sm uppercase tracking-wide">
                                         Activate in 10s
                                     </button>
                                 </div>
@@ -65,14 +65,14 @@ export default function MockRazorpayPopup({
                             <div className="px-4 space-y-5">
                                 {/* Preferred Payment */}
                                 <div>
-                                    <h3 className="font-bold text-gray-800 text-sm mb-3 ml-1">Preferred Payment</h3>
+                                    <h3 className="font-bold text-foreground text-sm mb-3 ml-1">Preferred Payment</h3>
                                     <div className="bg-white rounded-[16px] shadow-sm overflow-hidden border border-gray-100">
                                         <div className="p-4 border-b border-gray-100/60">
                                             <label className="flex items-center gap-3 cursor-pointer">
                                                 <div className="w-8 h-8 bg-purple-900 rounded-md flex items-center justify-center text-white font-bold text-lg">
                                                     Navi
                                                 </div>
-                                                <div className="flex-1 font-semibold text-gray-800 text-[15px]">Navi</div>
+                                                <div className="flex-1 font-semibold text-foreground text-[15px]">Navi</div>
                                                 <div className="text-green-500 bg-green-50 rounded-full p-0.5">
                                                     <CheckCircle2 className="w-5 h-5 fill-current text-white" />
                                                 </div>
@@ -88,7 +88,7 @@ export default function MockRazorpayPopup({
                                             <div className="w-8 h-8 bg-white border rounded-md shadow-sm p-1 flex items-center justify-center">
                                                 <strong className="text-green-600 text-xs">BHIM</strong>
                                             </div>
-                                            <div className="flex-1 font-semibold text-gray-800 text-[15px]">BHIM</div>
+                                            <div className="flex-1 font-semibold text-foreground text-[15px]">BHIM</div>
                                             <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
                                         </div>
                                     </div>
@@ -96,8 +96,8 @@ export default function MockRazorpayPopup({
 
                                 {/* Pay by any UPI App */}
                                 <div>
-                                    <h3 className="font-bold text-gray-800 text-sm mb-3 ml-1 flex items-center gap-2">
-                                        <span className="font-black italic text-gray-500">UPI<span className="text-[#f16f2c] shrink-0 inline-flex">►</span></span> 
+                                    <h3 className="font-bold text-foreground text-sm mb-3 ml-1 flex items-center gap-2">
+                                        <span className="font-black italic text-muted-foreground">UPI<span className="text-[#f16f2c] shrink-0 inline-flex">►</span></span> 
                                         Pay by any UPI App
                                     </h3>
                                     <div className="bg-white rounded-[16px] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100">
@@ -111,7 +111,7 @@ export default function MockRazorpayPopup({
                                                     {app.icon}
                                                 </div>
                                                 <div className="flex-1 relative top-0.5">
-                                                    <div className="font-semibold text-gray-800 text-[15px]">{app.name}</div>
+                                                    <div className="font-semibold text-foreground text-[15px]">{app.name}</div>
                                                     {app.sub && <div className="text-[11.5px] text-[#1ba672] leading-tight mt-1 pr-6">{app.sub}</div>}
                                                 </div>
                                                 <div className="flex items-center h-8">
@@ -124,7 +124,7 @@ export default function MockRazorpayPopup({
 
                                 {/* Credit & Debit Cards */}
                                 <div>
-                                    <h3 className="font-bold text-gray-800 text-sm mb-3 ml-1">Credit & Debit Cards</h3>
+                                    <h3 className="font-bold text-foreground text-sm mb-3 ml-1">Credit & Debit Cards</h3>
                                     <div className="bg-white rounded-[16px] shadow-sm border border-gray-100 overflow-hidden p-4 cursor-pointer hover:bg-gray-50 border-dashed hover:border-orange-500 hover:border-solid transition-colors group">
                                         <div className="flex items-center gap-4" onClick={() => setSelectedMethod('card')}>
                                             <div className="w-8 h-8 border border-gray-200 rounded-md flex items-center justify-center text-orange-500 group-hover:bg-orange-50 bg-white">
@@ -132,7 +132,7 @@ export default function MockRazorpayPopup({
                                             </div>
                                             <div className="flex-1">
                                                 <div className="font-bold text-orange-600 text-[15px]">Add New Card</div>
-                                                <div className="text-xs text-gray-500 mt-0.5">Save and Pay via Cards.</div>
+                                                <div className="text-xs text-muted-foreground mt-0.5">Save and Pay via Cards.</div>
                                             </div>
                                         </div>
                                     </div>
@@ -152,12 +152,12 @@ export default function MockRazorpayPopup({
 
                                 {/* More Payment Options */}
                                 <div>
-                                    <h3 className="font-bold text-gray-800 text-sm mb-3 ml-1">More Payment Options</h3>
+                                    <h3 className="font-bold text-foreground text-sm mb-3 ml-1">More Payment Options</h3>
                                     <div className="bg-white rounded-[16px] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100">
                                         {[
-                                            { id: 'wallets', name: 'Wallets', sub: 'PhonePe, Amazon Pay & more', icon: <Wallet className="w-4 h-4 text-gray-600" /> },
-                                            { id: 'netbanking', name: 'Netbanking', sub: 'Select from a list of banks', icon: <Building className="w-4 h-4 text-gray-600" /> },
-                                            { id: 'cod', name: 'Pay on Delivery', sub: 'Pay in cash or pay online.', icon: <span className="font-bold text-gray-600 text-[10px]">₹</span> },
+                                            { id: 'wallets', name: 'Wallets', sub: 'PhonePe, Amazon Pay & more', icon: <Wallet className="w-4 h-4 text-muted-foreground" /> },
+                                            { id: 'netbanking', name: 'Netbanking', sub: 'Select from a list of banks', icon: <Building className="w-4 h-4 text-muted-foreground" /> },
+                                            { id: 'cod', name: 'Pay on Delivery', sub: 'Pay in cash or pay online.', icon: <span className="font-bold text-muted-foreground text-[10px]">₹</span> },
                                         ].map((opt) => (
                                             <div key={opt.id}>
                                                 <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50" onClick={() => setSelectedMethod((prev: string | null) => prev === opt.id ? null : opt.id)}>
@@ -165,10 +165,10 @@ export default function MockRazorpayPopup({
                                                         {opt.icon}
                                                     </div>
                                                     <div className="flex-1">
-                                                        <div className="font-semibold text-gray-800 text-[15px]">{opt.name}</div>
-                                                        <div className="text-xs text-gray-500 mt-0.5">{opt.sub}</div>
+                                                        <div className="font-semibold text-foreground text-[15px]">{opt.name}</div>
+                                                        <div className="text-xs text-muted-foreground mt-0.5">{opt.sub}</div>
                                                     </div>
-                                                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                                                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                                                 </div>
                                                 {selectedMethod === opt.id && (
                                                     <div className="px-4 pb-4 animate-in slide-in-from-top-2">
@@ -188,8 +188,8 @@ export default function MockRazorpayPopup({
                     {step === "processing" && (
                         <div className="flex flex-col items-center justify-center p-12 text-center h-[60vh]">
                             <Loader2 className="w-12 h-12 text-[#1ba672] animate-spin mb-4" />
-                            <h3 className="text-lg font-bold text-gray-800">Processing Payment...</h3>
-                            <p className="text-sm text-gray-500">Please wait while we process your mock transaction.</p>
+                            <h3 className="text-lg font-bold text-foreground">Processing Payment...</h3>
+                            <p className="text-sm text-muted-foreground">Please wait while we process your mock transaction.</p>
                         </div>
                     )}
 
@@ -198,8 +198,8 @@ export default function MockRazorpayPopup({
                             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 text-[#1ba672]">
                                 <CheckCircle2 className="w-10 h-10" />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-800">Payment Successful!</h3>
-                            <p className="text-sm text-gray-500">Redirecting to order confirmation...</p>
+                            <h3 className="text-xl font-bold text-foreground">Payment Successful!</h3>
+                            <p className="text-sm text-muted-foreground">Redirecting to order confirmation...</p>
                         </div>
                     )}
                 </div>

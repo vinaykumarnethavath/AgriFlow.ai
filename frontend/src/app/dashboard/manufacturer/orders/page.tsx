@@ -103,8 +103,8 @@ export default function ManufacturerOrdersPage() {
             <div className="flex flex-col h-full space-y-4">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800">Orders & Delivery</h1>
-                        <p className="text-gray-500 text-sm">Track and advance delivery status of all outgoing sales</p>
+                        <h1 className="text-3xl font-bold text-foreground">Orders & Delivery</h1>
+                        <p className="text-muted-foreground text-sm">Track and advance delivery status of all outgoing sales</p>
                     </div>
                     <button onClick={fetchAll}
                         className="flex items-center gap-1.5 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg border border-blue-200 font-medium transition-colors">
@@ -119,14 +119,14 @@ export default function ManufacturerOrdersPage() {
                             <CardTitle className="text-lg">Order History</CardTitle>
                             <div className="flex gap-2 mt-2 flex-wrap">
                                 <select value={timeFilter} onChange={e => setTimeFilter(e.target.value)}
-                                    className="p-1 border rounded text-xs text-gray-700 bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    className="p-1 border rounded text-xs text-foreground bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
                                     <option value="all">Any Time</option>
                                     <option value="today">Today</option>
                                     <option value="week">This Week</option>
                                     <option value="month">This Month</option>
                                 </select>
                                 <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                                    className="p-1 border rounded text-xs text-gray-700 bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    className="p-1 border rounded text-xs text-foreground bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
                                     <option value="all">Any Status</option>
                                     <option value="pending">Pending</option>
                                     <option value="dispatched">Dispatched</option>
@@ -137,7 +137,7 @@ export default function ManufacturerOrdersPage() {
                         <CardContent className="p-0">
                             <div className="divide-y divide-gray-100">
                                 {filtered.length === 0 ? (
-                                    <div className="p-6 text-center text-gray-500 text-sm">No matching orders</div>
+                                    <div className="p-6 text-center text-muted-foreground text-sm">No matching orders</div>
                                 ) : (
                                     filtered.map(sale => {
                                         const st = sale.delivery_status || "pending";
@@ -146,13 +146,13 @@ export default function ManufacturerOrdersPage() {
                                             <div key={sale.id} onClick={() => setSelectedSale(sale)}
                                                 className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${selectedSale?.id === sale.id ? "bg-blue-50 border-l-4 border-l-blue-600" : ""}`}>
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <span className="font-bold text-gray-800 text-sm">#{sale.id}</span>
-                                                    <span className="text-xs text-gray-500">{new Date(sale.date).toLocaleDateString()}</span>
+                                                    <span className="font-bold text-foreground text-sm">#{sale.id}</span>
+                                                    <span className="text-xs text-muted-foreground">{new Date(sale.date).toLocaleDateString()}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center">
                                                     <div className="text-sm">
-                                                        <div className="font-medium text-gray-900">{sale.buyer_name}</div>
-                                                        <div className="text-gray-500 capitalize text-xs">{sale.buyer_type}</div>
+                                                        <div className="font-medium text-foreground">{sale.buyer_name}</div>
+                                                        <div className="text-muted-foreground capitalize text-xs">{sale.buyer_type}</div>
                                                     </div>
                                                     <div className="text-right">
                                                         <div className="font-bold text-green-700">₹{sale.total_amount.toLocaleString()}</div>
@@ -178,7 +178,7 @@ export default function ManufacturerOrdersPage() {
                                                 Order #{sel.id}
                                                 <Badge className={selCfg.badgeClass}>{selCfg.label}</Badge>
                                             </CardTitle>
-                                            <p className="text-sm text-gray-500 mt-1">
+                                            <p className="text-sm text-muted-foreground mt-1">
                                                 {new Date(sel.date).toLocaleString("en-IN")} · {sel.buyer_name}
                                             </p>
                                         </div>
@@ -201,18 +201,18 @@ export default function ManufacturerOrdersPage() {
                                 <CardContent className="p-6 space-y-6">
                                     {/* Sale Details Table */}
                                     <div>
-                                        <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm text-gray-700">
+                                        <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm text-foreground">
                                             <ShoppingCart className="w-4 h-4" /> Sale Details
                                         </h3>
                                         <div className="border rounded-xl overflow-hidden">
                                             <table className="w-full text-sm">
                                                 <thead className="bg-gray-50 border-b">
                                                     <tr>
-                                                        <th className="px-4 py-3 text-left font-medium text-gray-600">Product</th>
-                                                        <th className="px-4 py-3 text-center font-medium text-gray-600">Qty</th>
-                                                        <th className="px-4 py-3 text-right font-medium text-gray-600">Unit Price</th>
-                                                        <th className="px-4 py-3 text-right font-medium text-gray-600">Discount</th>
-                                                        <th className="px-4 py-3 text-right font-medium text-gray-600">Total</th>
+                                                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">Product</th>
+                                                        <th className="px-4 py-3 text-center font-medium text-muted-foreground">Qty</th>
+                                                        <th className="px-4 py-3 text-right font-medium text-muted-foreground">Unit Price</th>
+                                                        <th className="px-4 py-3 text-right font-medium text-muted-foreground">Discount</th>
+                                                        <th className="px-4 py-3 text-right font-medium text-muted-foreground">Total</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -221,12 +221,12 @@ export default function ManufacturerOrdersPage() {
                                                         <td className="px-4 py-3 text-center">{sel.quantity} kg</td>
                                                         <td className="px-4 py-3 text-right">₹{sel.selling_price}</td>
                                                         <td className="px-4 py-3 text-right text-green-600">{sel.discount > 0 ? `-₹${sel.discount}` : "—"}</td>
-                                                        <td className="px-4 py-3 text-right font-bold text-gray-900">₹{sel.total_amount.toLocaleString()}</td>
+                                                        <td className="px-4 py-3 text-right font-bold text-foreground">₹{sel.total_amount.toLocaleString()}</td>
                                                     </tr>
                                                 </tbody>
                                                 <tfoot className="bg-gray-50 font-medium text-sm">
                                                     <tr>
-                                                        <td colSpan={4} className="px-4 py-2 text-right text-gray-600">Gross Amount</td>
+                                                        <td colSpan={4} className="px-4 py-2 text-right text-muted-foreground">Gross Amount</td>
                                                         <td className="px-4 py-2 text-right">₹{grossRevenue.toLocaleString()}</td>
                                                     </tr>
                                                     {sel.discount > 0 && (
@@ -257,8 +257,8 @@ export default function ManufacturerOrdersPage() {
                                             { label: "Quantity", value: `${sel.quantity} kg @ ₹${sel.selling_price}/kg` },
                                         ].map(item => (
                                             <div key={item.label} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                                                <p className="text-xs text-gray-400 font-medium mb-1">{item.label}</p>
-                                                <p className={`font-semibold text-gray-800 ${item.mono ? "font-mono text-xs" : ""} ${item.capitalize ? "capitalize" : ""}`}>{item.value}</p>
+                                                <p className="text-xs text-muted-foreground font-medium mb-1">{item.label}</p>
+                                                <p className={`font-semibold text-foreground ${item.mono ? "font-mono text-xs" : ""} ${item.capitalize ? "capitalize" : ""}`}>{item.value}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -275,7 +275,7 @@ export default function ManufacturerOrdersPage() {
                                                 { label: "Net Revenue", value: `₹${selProfit.toLocaleString()}`, color: "text-emerald-700 font-bold", bg: "bg-emerald-100" },
                                             ].map(item => (
                                                 <div key={item.label} className={`${item.bg} rounded-lg p-3`}>
-                                                    <div className="text-xs text-gray-500 mb-1">{item.label}</div>
+                                                    <div className="text-xs text-muted-foreground mb-1">{item.label}</div>
                                                     <div className={`text-base ${item.color}`}>{item.value}</div>
                                                 </div>
                                             ))}
@@ -284,7 +284,7 @@ export default function ManufacturerOrdersPage() {
                                 </CardContent>
                             </>
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                                 <Package className="w-16 h-16 mb-4 opacity-20" />
                                 <p>Select an order to view details</p>
                             </div>

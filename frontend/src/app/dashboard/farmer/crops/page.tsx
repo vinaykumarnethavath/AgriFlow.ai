@@ -299,7 +299,7 @@ export default function CropsListPage() {
                     </Button>
                     <div>
                         <h1 className="text-3xl font-bold text-green-900">{t('farmer.myCrops')}</h1>
-                        <p className="text-gray-500">{t('crops.manageDesc')}</p>
+                        <p className="text-muted-foreground">{t('crops.manageDesc')}</p>
                     </div>
                 </div>
                 <Button onClick={() => setIsAddCropOpen(true)} className="bg-green-600 hover:bg-green-700">
@@ -310,7 +310,7 @@ export default function CropsListPage() {
             {/* Harvested/Sold Crops Section */}
             {harvestedCrops.length > 0 && (
                 <div className="mb-8">
-                    <h2 className="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-purple-500"></span>
                         {t('crops.harvestedSold')} ({harvestedCrops.length})
                     </h2>
@@ -339,7 +339,7 @@ export default function CropsListPage() {
                                         {/* Dates and Yield */}
                                         <div className="space-y-2 mb-4">
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">{t('farmer.sowingDate')}:</span>
+                                                <span className="text-muted-foreground">{t('farmer.sowingDate')}:</span>
                                                 <span className="font-medium">{new Date(crop.sowing_date).toLocaleDateString()}</span>
                                             </div>
                                             {crop.expected_harvest_date && (
@@ -350,18 +350,18 @@ export default function CropsListPage() {
                                             )}
                                             {crop.actual_yield && (
                                                 <div className="flex justify-between text-sm bg-purple-50 p-2 rounded-lg">
-                                                    <span className="text-gray-500">{t('crops.totalYield')}:</span>
+                                                    <span className="text-muted-foreground">{t('crops.totalYield')}:</span>
                                                     <span className="font-bold text-purple-700">{crop.actual_yield} {t('crops.bags')}</span>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
                                             <div>
-                                                <p className="text-xs text-gray-400">{t('farmer.totalCost')}</p>
-                                                <p className="font-bold text-gray-700">₹{(crop.total_cost || 0).toLocaleString()}</p>
+                                                <p className="text-xs text-muted-foreground">{t('farmer.totalCost')}</p>
+                                                <p className="font-bold text-foreground">₹{(crop.total_cost || 0).toLocaleString()}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs text-gray-400">{t('farmer.revenue')}</p>
+                                                <p className="text-xs text-muted-foreground">{t('farmer.revenue')}</p>
                                                 <p className="font-bold text-green-600">₹{(crop.total_revenue || 0).toLocaleString()}</p>
                                             </div>
                                         </div>
@@ -377,7 +377,7 @@ export default function CropsListPage() {
                                             >
                                                 {t('crops.editHarvest')}
                                             </Button>
-                                            <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                                            <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-muted-foreground group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
                                                 <ArrowRight className="h-4 w-4" />
                                             </div>
                                         </div>
@@ -391,16 +391,16 @@ export default function CropsListPage() {
 
             {/* Active Crops Section */}
             <div ref={activeCropsRef}>
-                <h2 className="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
                     {t('farmer.activeCrops')} ({activeCrops.length})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {crops.length === 0 ? (
                         <div className="col-span-3 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-12 text-center">
-                            <Sprout className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                            <h3 className="text-xl font-bold text-gray-700 mb-2">{t('farmer.noCrops')}</h3>
-                            <p className="text-gray-500 mb-4">{t('crops.addFirstCropDesc')}</p>
+                            <Sprout className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                            <h3 className="text-xl font-bold text-foreground mb-2">{t('farmer.noCrops')}</h3>
+                            <p className="text-muted-foreground mb-4">{t('crops.addFirstCropDesc')}</p>
                             <Button onClick={() => setIsAddCropOpen(true)} className="bg-green-600 hover:bg-green-700">
                                 <Plus className="h-4 w-4 mr-2" /> {t('crops.addFirstCrop')}
                             </Button>
@@ -438,24 +438,24 @@ export default function CropsListPage() {
                                         </div>
                                         <div className="space-y-3 mb-4">
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">{t('farmer.sowingDate')}:</span>
+                                                <span className="text-muted-foreground">{t('farmer.sowingDate')}:</span>
                                                 <span className="font-medium">{new Date(crop.sowing_date).toLocaleDateString()}</span>
                                             </div>
                                             {crop.expected_harvest_date && (
                                                 <div className="flex justify-between text-sm">
-                                                    <span className="text-gray-500">{t('farmer.harvestDate')}:</span>
+                                                    <span className="text-muted-foreground">{t('farmer.harvestDate')}:</span>
                                                     <span className="font-medium">{new Date(crop.expected_harvest_date).toLocaleDateString()}</span>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
                                             <div>
-                                                <p className="text-xs text-gray-400">{t('farmer.totalCost')}</p>
-                                                <p className="font-bold text-gray-700">₹{(crop.total_cost || 0).toLocaleString()}</p>
+                                                <p className="text-xs text-muted-foreground">{t('farmer.totalCost')}</p>
+                                                <p className="font-bold text-foreground">₹{(crop.total_cost || 0).toLocaleString()}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs text-gray-400">{t('crops.expectedRevenue')}</p>
-                                                <p className="font-bold text-gray-700">₹{(crop.total_revenue || 0).toLocaleString()}</p>
+                                                <p className="text-xs text-muted-foreground">{t('crops.expectedRevenue')}</p>
+                                                <p className="font-bold text-foreground">₹{(crop.total_revenue || 0).toLocaleString()}</p>
                                             </div>
                                         </div>
                                         <div className="mt-4 flex flex-wrap justify-between items-center gap-2">
@@ -494,7 +494,7 @@ export default function CropsListPage() {
                                                     {t('farmer.addExpense')}
                                                 </Button>
                                             </div>
-                                            <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-green-50 group-hover:text-green-600 transition-colors">
+                                            <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-muted-foreground group-hover:bg-green-50 group-hover:text-green-600 transition-colors">
                                                 <ArrowRight className="h-4 w-4" />
                                             </div>
                                         </div>
@@ -515,7 +515,7 @@ export default function CropsListPage() {
                 <form onSubmit={handleRecordHarvest} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('crops.actualYield')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('crops.actualYield')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -526,7 +526,7 @@ export default function CropsListPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('farmer.harvestDate')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('farmer.harvestDate')}</label>
                             <input
                                 type="date"
                                 required
@@ -536,9 +536,9 @@ export default function CropsListPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('crops.sellingPrice')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('crops.sellingPrice')}</label>
                             <div className="relative">
-                                <span className="absolute left-3 top-2 text-gray-500">₹</span>
+                                <span className="absolute left-3 top-2 text-muted-foreground">₹</span>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -591,7 +591,7 @@ export default function CropsListPage() {
                 <form onSubmit={handleCreateCrop} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('farmer.cropName')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('farmer.cropName')}</label>
                             <input
                                 required
                                 placeholder="e.g. Wheat, Rice, Cotton"
@@ -601,7 +601,7 @@ export default function CropsListPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('crops.variety')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('crops.variety')}</label>
                             <input
                                 placeholder="e.g. Basmati, HYV"
                                 className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"
@@ -612,7 +612,7 @@ export default function CropsListPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('crops.season')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('crops.season')}</label>
                             <select
                                 className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 bg-white"
                                 value={newCrop.season}
@@ -625,23 +625,23 @@ export default function CropsListPage() {
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('crops.areaLabel')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('crops.areaLabel')}</label>
                             <input
                                 type="number"
                                 step="0.01"
                                 required
                                 placeholder="0.00"
-                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-foreground"
                                 value={newCrop.area}
                                 onChange={(e) => handleAreaChangeEvent(e.target.value, (val) => setNewCrop({ ...newCrop, area: val }))}
                                 onBlur={(e) => handleAreaBlurEvent(e.target.value, (val) => setNewCrop({ ...newCrop, area: val }))}
                             />
-                            <p className="text-[10px] text-gray-500 italic">Max .39 guntas per acre (e.g. 1.39 → 2.00)</p>
+                            <p className="text-[10px] text-muted-foreground italic">Max .39 guntas per acre (e.g. 1.39 → 2.00)</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('farmer.sowingDate')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('farmer.sowingDate')}</label>
                             <input
                                 type="date"
                                 required
@@ -651,7 +651,7 @@ export default function CropsListPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('farmer.harvestDate')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('farmer.harvestDate')}</label>
                             <input
                                 type="date"
                                 className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"
@@ -661,7 +661,7 @@ export default function CropsListPage() {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">{t('farmer.notes')}</label>
+                        <label className="text-sm font-medium text-foreground">{t('farmer.notes')}</label>
                         <textarea
                             placeholder="Any specific details..."
                             className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500"

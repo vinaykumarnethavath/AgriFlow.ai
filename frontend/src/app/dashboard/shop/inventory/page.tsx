@@ -457,8 +457,8 @@ export default function InventoryPage() {
             {/* ── Header ── */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Inventory Management</h1>
-                    <p className="text-gray-500 text-sm mt-0.5">Manage your products, stock, and pricing</p>
+                    <h1 className="text-3xl font-bold text-foreground">Inventory Management</h1>
+                    <p className="text-muted-foreground text-sm mt-0.5">Manage your products, stock, and pricing</p>
                 </div>
                 <div className="flex gap-3">
                     <Button onClick={openAddModal} className="bg-green-600 hover:bg-green-700">
@@ -482,7 +482,7 @@ export default function InventoryPage() {
                                 ? tab.value === 'draft' ? "bg-amber-500 text-white border-amber-500"
                                 : tab.value === 'active' ? "bg-green-600 text-white border-green-600"
                                 : "bg-gray-800 text-white border-gray-800"
-                                : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                                : "bg-white text-muted-foreground border-gray-200 hover:border-gray-400"
                         }`}
                     >{tab.label}</button>
                 ))}
@@ -494,13 +494,13 @@ export default function InventoryPage() {
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors capitalize ${
                             activeCategory === cat
                                 ? "bg-green-600 text-white border-green-600"
-                                : "bg-white text-gray-600 border-gray-200 hover:border-green-400"
+                                : "bg-white text-muted-foreground border-gray-200 hover:border-green-400"
                         }`}
                     >{cat}</button>
                 ))}
                 <div className="flex-1 min-w-[180px]" />
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search by name, category, brand..."
                         className="pl-10 w-64"
@@ -530,7 +530,7 @@ export default function InventoryPage() {
                                 <tbody className="divide-y divide-border">
                                     {groupedProducts.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                            <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
                                                 No products found.{activeCategory !== "" ? " Try changing the category filter." : " Add one to get started!"}
                                             </td>
                                         </tr>
@@ -544,25 +544,25 @@ export default function InventoryPage() {
                                                     <tr className="hover:bg-gray-50 transition-colors cursor-pointer group" onClick={() => toggleGroup(group.id)}>
                                                         <td className="px-6 py-4">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="text-gray-400 group-hover:text-green-600 transition-colors">
+                                                                <div className="text-muted-foreground group-hover:text-green-600 transition-colors">
                                                                     {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                                                                 </div>
                                                                 {group.image_url ? (
                                                                     <img src={group.image_url} alt={group.name} className="w-10 h-10 rounded object-cover border" />
                                                                 ) : (
-                                                                    <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center border text-gray-400">
+                                                                    <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center border text-muted-foreground">
                                                                         <Package className="w-5 h-5" />
                                                                     </div>
                                                                 )}
                                                                 <div>
-                                                                    <div className="font-medium text-gray-900 flex items-center gap-2 flex-wrap">
+                                                                    <div className="font-medium text-foreground flex items-center gap-2 flex-wrap">
                                                                         {group.name}
-                                                                        <span className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-full border font-bold">
+                                                                        <span className="bg-gray-100 text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full border font-bold">
                                                                             {group.batches.length} Batch{group.batches.length > 1 ? 'es' : ''}
                                                                         </span>
                                                                         {group.hasDraft && <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded-full border border-amber-200 font-bold">📝 Has Drafts</span>}
                                                                     </div>
-                                                                    <div className="text-xs text-gray-500">{group.brand}{group.manufacturer ? ` · ${group.manufacturer}` : ""}</div>
+                                                                    <div className="text-xs text-muted-foreground">{group.brand}{group.manufacturer ? ` · ${group.manufacturer}` : ""}</div>
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -581,7 +581,7 @@ export default function InventoryPage() {
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <div>₹{group.minPrice === group.maxPrice ? group.minPrice.toLocaleString() : `${group.minPrice.toLocaleString()} - ${group.maxPrice.toLocaleString()}`}</div>
-                                                            <div className="text-xs text-gray-400">Avg Cost: ₹{group.weightedCost.toFixed(2)}</div>
+                                                            <div className="text-xs text-muted-foreground">Avg Cost: ₹{group.weightedCost.toFixed(2)}</div>
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             {group.batches[0]?.main_composition ? (
@@ -589,7 +589,7 @@ export default function InventoryPage() {
                                                                     {group.batches[0].main_composition}
                                                                 </span>
                                                             ) : (
-                                                                <span className="text-[10px] text-gray-400">—</span>
+                                                                <span className="text-[10px] text-muted-foreground">—</span>
                                                             )}
                                                         </td>
                                                         <td className="px-6 py-4 text-right">
@@ -624,25 +624,25 @@ export default function InventoryPage() {
                                                                             <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full font-bold">✅ ACTIVE</span>
                                                                         )}
                                                                     </div>
-                                                                    <div className="text-sm font-medium text-gray-800 mt-0.5">Batch: {product.batch_number}</div>
-                                                                    <div className="text-xs text-gray-500">
+                                                                    <div className="text-sm font-medium text-foreground mt-0.5">Batch: {product.batch_number}</div>
+                                                                    <div className="text-xs text-muted-foreground">
                                                                         {product.manufacture_date ? `Mfg: ${new Date(product.manufacture_date).toLocaleDateString("en-IN")}` : 'No Mfg Date'}
                                                                     </div>
                                                                 </td>
                                                                 {/* Category: variety + manufacturer */}
                                                                 <td className="px-6 py-3">
-                                                                    <div className="text-xs font-medium text-gray-700">{product.brand || product.category}</div>
-                                                                    <div className="text-[10px] text-gray-400">{product.manufacturer || '—'}</div>
+                                                                    <div className="text-xs font-medium text-foreground">{product.brand || product.category}</div>
+                                                                    <div className="text-[10px] text-muted-foreground">{product.manufacturer || '—'}</div>
                                                                 </td>
                                                                 {/* Stock */}
-                                                                <td className="px-6 py-3 font-medium text-gray-700">
+                                                                <td className="px-6 py-3 font-medium text-foreground">
                                                                     {product.quantity} {product.unit}
                                                                 </td>
                                                                 {/* Price / Cost */}
                                                                 <td className="px-6 py-3">
                                                                     <div className="font-medium" title="Selling Price">₹{product.price.toFixed(2)}</div>
                                                                     {product.cost_price && (
-                                                                        <div className="text-xs text-gray-500" title="Cost Price">Base: ₹{product.cost_price.toFixed(2)}</div>
+                                                                        <div className="text-xs text-muted-foreground" title="Cost Price">Base: ₹{product.cost_price.toFixed(2)}</div>
                                                                     )}
                                                                 </td>
                                                                 {/* Composition */}
@@ -656,8 +656,8 @@ export default function InventoryPage() {
                                                                             </>
                                                                         ) : (
                                                                             <>
-                                                                                <div className="text-[10px] text-gray-400 mb-0.5">Batch Overhead</div>
-                                                                                <div className="font-medium text-gray-400 text-xs mb-1">₹0.00</div>
+                                                                                <div className="text-[10px] text-muted-foreground mb-0.5">Batch Overhead</div>
+                                                                                <div className="font-medium text-muted-foreground text-xs mb-1">₹0.00</div>
                                                                             </>
                                                                         )}
                                                                         {Number(product.price) > 0 && (
@@ -718,7 +718,7 @@ export default function InventoryPage() {
                             <h2 className="font-bold text-lg flex items-center gap-2">
                                 <ShoppingCart className="w-5 h-5 text-green-600" /> Current Order
                             </h2>
-                            <button onClick={() => setIsSellModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors">
+                            <button onClick={() => setIsSellModalOpen(false)} className="text-muted-foreground hover:text-red-500 transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -735,14 +735,14 @@ export default function InventoryPage() {
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-3">
                             {sellCart.length === 0 ? (
-                                <div className="text-center text-gray-400 py-10">Select products to sell</div>
+                                <div className="text-center text-muted-foreground py-10">Select products to sell</div>
                             ) : (
                                 sellCart.map((item, index) => (
                                     <div key={`${item.product.id}-${index}`} className="flex justify-between items-center border-b pb-3">
                                         <div className="flex-1 min-w-0">
                                             <div className="text-sm font-semibold truncate" title={item.product.name}>{item.product.name}</div>
-                                            <div className="text-xs text-gray-500">₹{item.product.price} / {item.product.unit}</div>
-                                            <div className="text-xs text-gray-400">Batch: {item.product.batch_number}</div>
+                                            <div className="text-xs text-muted-foreground">₹{item.product.price} / {item.product.unit}</div>
+                                            <div className="text-xs text-muted-foreground">Batch: {item.product.batch_number}</div>
                                         </div>
                                         <div className="flex items-center gap-2 ml-2">
                                             <Input
@@ -764,7 +764,7 @@ export default function InventoryPage() {
                             {sellCart.length > 0 && (
                                 <div className="space-y-3 border-t pt-3">
                                     <div>
-                                        <Label className="text-xs text-gray-500">Customer Name (Optional)</Label>
+                                        <Label className="text-xs text-muted-foreground">Customer Name (Optional)</Label>
                                         <Input
                                             placeholder="e.g. Ramesh"
                                             value={sellCustomerName}
@@ -773,7 +773,7 @@ export default function InventoryPage() {
                                         />
                                     </div>
                                     <div>
-                                        <Label className="text-xs text-gray-500">Discount (₹)</Label>
+                                        <Label className="text-xs text-muted-foreground">Discount (₹)</Label>
                                         <Input
                                             type="number"
                                             value={sellDiscount}
@@ -782,7 +782,7 @@ export default function InventoryPage() {
                                         />
                                     </div>
                                     <div>
-                                        <Label className="text-xs text-gray-500">Payment Mode</Label>
+                                        <Label className="text-xs text-muted-foreground">Payment Mode</Label>
                                         <select
                                             className="w-full h-8 px-2 text-sm border rounded-md mt-1"
                                             value={sellPaymentMode}
@@ -798,7 +798,7 @@ export default function InventoryPage() {
                         </div>
 
                         <div className="p-4 border-t bg-gray-50 rounded-b-xl">
-                            <div className="flex justify-between items-center mb-1 text-sm text-gray-600">
+                            <div className="flex justify-between items-center mb-1 text-sm text-muted-foreground">
                                 <span>Subtotal</span><span>₹{cartSubtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between items-center mb-3 text-sm text-red-500">
@@ -842,7 +842,7 @@ export default function InventoryPage() {
                                     </button>
                                 </>
                             ) : (
-                                <div className="text-center text-gray-400">
+                                <div className="text-center text-muted-foreground">
                                     <ImagePlus className="w-8 h-8 mx-auto mb-1" />
                                     <p className="text-sm">{uploading ? "Uploading..." : "Click to upload photo"}</p>
                                 </div>
@@ -963,7 +963,7 @@ export default function InventoryPage() {
                     </div>
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <Label>Selling Price <span className="text-gray-400 font-normal text-[11px]">(Req. for Active)</span></Label>
+                            <Label>Selling Price <span className="text-muted-foreground font-normal text-[11px]">(Req. for Active)</span></Label>
                             <span 
                                 className="text-[11px] text-blue-600 cursor-pointer hover:underline font-medium flex items-center gap-1"
                                 onClick={() => {
@@ -993,7 +993,7 @@ export default function InventoryPage() {
 
                     <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
-                            <Label>Batch Qty <span className="text-gray-400 font-normal text-[11px]">(Req. for Active)</span></Label>
+                            <Label>Batch Qty <span className="text-muted-foreground font-normal text-[11px]">(Req. for Active)</span></Label>
                             <Input type="number" {...register("quantity", { min: 0 })} placeholder="0" />
                         </div>
                         <div className="space-y-2">

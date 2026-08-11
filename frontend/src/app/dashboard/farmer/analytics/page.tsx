@@ -67,8 +67,8 @@ export default function AnalyticsPage() {
                     <Brain className="h-6 w-6 text-indigo-600" />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Analytics & Insights</h1>
-                    <p className="text-gray-500">AI-driven recommendations and financial overview</p>
+                    <h1 className="text-3xl font-bold text-foreground">Analytics & Insights</h1>
+                    <p className="text-muted-foreground">AI-driven recommendations and financial overview</p>
                 </div>
             </div>
 
@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <IndianRupee className="h-5 w-5 text-gray-500" /> Expense Distribution
+                            <IndianRupee className="h-5 w-5 text-muted-foreground" /> Expense Distribution
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="h-[300px]">
@@ -103,7 +103,7 @@ export default function AnalyticsPage() {
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                                 <AlertCircle className="h-8 w-8 mb-2" />
                                 <p>No expense data available yet.</p>
                             </div>
@@ -115,7 +115,7 @@ export default function AnalyticsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <TrendingUp className="h-5 w-5 text-gray-500" /> Current Market Prices
+                            <TrendingUp className="h-5 w-5 text-muted-foreground" /> Current Market Prices
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="h-[300px]">
@@ -136,7 +136,7 @@ export default function AnalyticsPage() {
             {/* AI Recommendations */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-3">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
                         <Sprout className="h-5 w-5 text-green-600" /> Recommended Crops for this Season
                     </h2>
                 </div>
@@ -159,7 +159,7 @@ export default function AnalyticsPage() {
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="border-b text-left text-sm text-gray-500">
+                                <tr className="border-b text-left text-sm text-muted-foreground">
                                     <th className="pb-3 px-4">Crop</th>
                                     <th className="pb-3 px-4">Current Price</th>
                                     <th className="pb-3 px-4">Change (24h)</th>
@@ -171,13 +171,13 @@ export default function AnalyticsPage() {
                                     <tr key={i} className="text-sm">
                                         <td className="py-3 px-4 font-medium">{item.crop}</td>
                                         <td className="py-3 px-4">₹{item.price}/{item.unit}</td>
-                                        <td className={`py-3 px-4 ${item.change > 0 ? 'text-green-600' : item.change < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                        <td className={`py-3 px-4 ${item.change > 0 ? 'text-green-600' : item.change < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
                                             {item.change > 0 ? '+' : ''}{item.change}%
                                         </td>
                                         <td className="py-3 px-4">
                                             {item.trend === 'up' && <span className="flex items-center text-green-600 gap-1"><ArrowUpRight className="h-4 w-4" /> Up</span>}
                                             {item.trend === 'down' && <span className="flex items-center text-red-600 gap-1"><ArrowDownRight className="h-4 w-4" /> Down</span>}
-                                            {item.trend === 'stable' && <span className="flex items-center text-gray-500 gap-1"><Minus className="h-4 w-4" /> Stable</span>}
+                                            {item.trend === 'stable' && <span className="flex items-center text-muted-foreground gap-1"><Minus className="h-4 w-4" /> Stable</span>}
                                         </td>
                                     </tr>
                                 ))}

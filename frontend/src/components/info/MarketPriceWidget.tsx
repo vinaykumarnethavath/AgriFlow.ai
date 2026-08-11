@@ -107,7 +107,7 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                                     )}
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-lg font-bold text-gray-900">₹{crop.market_price.toLocaleString()}</div>
+                                    <div className="text-lg font-bold text-foreground">₹{crop.market_price.toLocaleString()}</div>
                                     <div className={`text-xs font-bold flex items-center justify-end gap-1 ${crop.trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
                                         {crop.trend === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                                         ₹{Math.abs(crop.change)}
@@ -137,7 +137,7 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                                                 <p className="text-xs font-bold text-muted-foreground truncate">{market.market_name}</p>
                                                 <p className="text-sm font-bold text-foreground mt-0.5">₹{market.price.toLocaleString()}</p>
                                                 <div className="flex items-center justify-between mt-1">
-                                                    <span className="text-[10px] text-gray-400">{market.distance_km} km</span>
+                                                    <span className="text-[10px] text-muted-foreground">{market.distance_km} km</span>
                                                     <span className={`text-[10px] font-bold flex items-center gap-0.5 ${market.trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
                                                         {market.trend === 'up' ? '↑' : '↓'}₹{Math.abs(market.change)}
                                                     </span>
@@ -156,7 +156,7 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
 
                             {/* MSP Info */}
                             {crop.msp > 0 && (
-                                <div className="mt-2 text-[10px] text-gray-400">
+                                <div className="mt-2 text-[10px] text-muted-foreground">
                                     MSP: ₹{crop.msp.toLocaleString()}/Qtl
                                 </div>
                             )}

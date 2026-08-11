@@ -137,8 +137,8 @@ export default function ShopOrdersPage() {
             <div className="flex flex-col h-full space-y-4">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800">Shop Orders</h1>
-                        <p className="text-gray-500 text-sm">Manage orders with full cost & profit breakdown</p>
+                        <h1 className="text-3xl font-bold text-foreground">Shop Orders</h1>
+                        <p className="text-muted-foreground text-sm">Manage orders with full cost & profit breakdown</p>
                     </div>
                 </div>
 
@@ -151,7 +151,7 @@ export default function ShopOrdersPage() {
                                 <select
                                     value={timeFilter}
                                     onChange={(e) => setTimeFilter(e.target.value)}
-                                    className="p-1 border rounded text-xs text-gray-700 bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="p-1 border rounded text-xs text-foreground bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500"
                                 >
                                     <option value="all">Any Time</option>
                                     <option value="today">Today</option>
@@ -161,7 +161,7 @@ export default function ShopOrdersPage() {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="p-1 border rounded text-xs text-gray-700 bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="p-1 border rounded text-xs text-foreground bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500"
                                 >
                                     <option value="all">Any Status</option>
                                     <option value="pending">Pending</option>
@@ -175,7 +175,7 @@ export default function ShopOrdersPage() {
                         <CardContent className="p-0">
                             <div className="divide-y divide-gray-100">
                                 {filteredOrders.length === 0 ? (
-                                    <div className="p-6 text-center text-gray-500">No matching orders</div>
+                                    <div className="p-6 text-center text-muted-foreground">No matching orders</div>
                                 ) : (
                                     filteredOrders.map((order) => (
                                         <div
@@ -184,13 +184,13 @@ export default function ShopOrdersPage() {
                                             className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${selectedOrder?.id === order.id ? "bg-green-50 border-l-4 border-l-green-600" : ""}`}
                                         >
                                             <div className="flex justify-between items-start mb-1">
-                                                <span className="font-bold text-gray-800">#{order.id}</span>
-                                                <span className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</span>
+                                                <span className="font-bold text-foreground">#{order.id}</span>
+                                                <span className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</span>
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <div className="text-sm">
-                                                    <div className="font-medium text-gray-900">{order.farmer_name || `Farmer #${order.farmer_id}`}</div>
-                                                    <div className="text-gray-500">{order.items?.length || 0} items</div>
+                                                    <div className="font-medium text-foreground">{order.farmer_name || `Farmer #${order.farmer_id}`}</div>
+                                                    <div className="text-muted-foreground">{order.items?.length || 0} items</div>
                                                 </div>
                                                 <div className="text-right">
                                                     <div className="font-bold text-green-700">₹{order.final_amount}</div>
@@ -229,7 +229,7 @@ export default function ShopOrdersPage() {
                                                 Order #{selectedOrder.id}
                                                 {getStatusBadge(selectedOrder.status)}
                                             </CardTitle>
-                                            <p className="text-sm text-gray-500 mt-1">
+                                            <p className="text-sm text-muted-foreground mt-1">
                                                 {new Date(selectedOrder.created_at).toLocaleString()} · {selectedOrder.farmer_name || "Walk-in Customer"}
                                             </p>
                                         </div>
@@ -327,18 +327,18 @@ export default function ShopOrdersPage() {
 
                                     {/* Items Table */}
                                     <div>
-                                        <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm text-gray-700">
+                                        <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm text-foreground">
                                             <ShoppingCart className="w-4 h-4" /> Order Items
                                         </h3>
                                         <div className="border rounded-xl overflow-hidden">
                                             <table className="w-full text-sm">
                                                 <thead className="bg-gray-50 border-b">
                                                     <tr>
-                                                        <th className="px-4 py-3 text-left font-medium text-gray-600">Product</th>
-                                                        <th className="px-4 py-3 text-center font-medium text-gray-600">Qty</th>
-                                                        <th className="px-4 py-3 text-right font-medium text-gray-600">Unit Price</th>
-                                                        <th className="px-4 py-3 text-right font-medium text-gray-600">Cost Price</th>
-                                                        <th className="px-4 py-3 text-right font-medium text-gray-600">Total</th>
+                                                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">Product</th>
+                                                        <th className="px-4 py-3 text-center font-medium text-muted-foreground">Qty</th>
+                                                        <th className="px-4 py-3 text-right font-medium text-muted-foreground">Unit Price</th>
+                                                        <th className="px-4 py-3 text-right font-medium text-muted-foreground">Cost Price</th>
+                                                        <th className="px-4 py-3 text-right font-medium text-muted-foreground">Total</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y">
@@ -366,7 +366,7 @@ export default function ShopOrdersPage() {
                                                 </tbody>
                                                 <tfoot className="bg-gray-50 font-medium text-sm">
                                                     <tr>
-                                                        <td colSpan={4} className="px-4 py-2 text-right text-gray-600">Subtotal</td>
+                                                        <td colSpan={4} className="px-4 py-2 text-right text-muted-foreground">Subtotal</td>
                                                         <td className="px-4 py-2 text-right">₹{selectedOrder.total_amount}</td>
                                                     </tr>
                                                     {selectedOrder.discount > 0 && (
@@ -408,7 +408,7 @@ export default function ShopOrdersPage() {
                                                 },
                                             ].map((item) => (
                                                 <div key={item.label} className={`${item.bg} rounded-lg p-3`}>
-                                                    <div className="text-xs text-gray-500 mb-1">{item.label}</div>
+                                                    <div className="text-xs text-muted-foreground mb-1">{item.label}</div>
                                                     <div className={`text-base ${item.color}`}>
                                                         {item.value >= 0 ? "" : "-"}₹{Math.abs(item.value).toLocaleString()}
                                                     </div>
@@ -419,7 +419,7 @@ export default function ShopOrdersPage() {
                                 </CardContent>
                             </>
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                                 <Package className="w-16 h-16 mb-4 opacity-20" />
                                 <p>Select an order to view details</p>
                             </div>
@@ -433,7 +433,7 @@ export default function ShopOrdersPage() {
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5">
                         <div className="flex justify-between items-center">
-                            <h2 className="text-lg font-bold text-gray-800">Confirm Order #{selectedOrder.id}</h2>
+                            <h2 className="text-lg font-bold text-foreground">Confirm Order #{selectedOrder.id}</h2>
                             <button onClick={() => setShowConfirmModal(false)} className="p-1 hover:bg-gray-100 rounded">
                                 <X className="w-5 h-5" />
                             </button>
@@ -441,15 +441,15 @@ export default function ShopOrdersPage() {
 
                         <div className="bg-gray-50 p-4 rounded-xl space-y-2 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Customer</span>
+                                <span className="text-muted-foreground">Customer</span>
                                 <span className="font-medium">{selectedOrder.farmer_name || "Walk-in"}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Order Total</span>
+                                <span className="text-muted-foreground">Order Total</span>
                                 <span className="font-medium">₹{selectedOrder.total_amount}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Items</span>
+                                <span className="text-muted-foreground">Items</span>
                                 <span>{selectedOrder.items?.length || 0} products</span>
                             </div>
                         </div>
@@ -463,7 +463,7 @@ export default function ShopOrdersPage() {
                                 placeholder="0"
                                 className="text-lg"
                             />
-                            <p className="text-xs text-gray-400">Give a discount to the farmer before confirming</p>
+                            <p className="text-xs text-muted-foreground">Give a discount to the farmer before confirming</p>
                         </div>
 
                         <div className="bg-green-50 p-4 rounded-xl">

@@ -37,7 +37,7 @@ export default function SmartBuyingDashboard() {
     const getTrendIcon = (trend: string) => {
         if (trend === "up") return <TrendingUp className="w-4 h-4 text-red-500" />;
         if (trend === "down") return <TrendingDown className="w-4 h-4 text-green-500" />;
-        return <Minus className="w-4 h-4 text-gray-400" />;
+        return <Minus className="w-4 h-4 text-muted-foreground" />;
     };
 
     return (
@@ -64,13 +64,13 @@ export default function SmartBuyingDashboard() {
                     <Card key={insight.id} className="shadow-sm hover:shadow-md transition-shadow border-green-50 flex flex-col h-full">
                         <CardHeader className="pb-3 border-b border-gray-100">
                             <div className="flex justify-between items-start">
-                                <CardTitle className="text-xl flex items-center gap-2 text-gray-800">
+                                <CardTitle className="text-xl flex items-center gap-2 text-foreground">
                                     <span className="text-2xl">{insight.imageEmoji}</span>
                                     {insight.commodityName}
                                 </CardTitle>
                                 <div className="text-right">
-                                    <span className="text-2xl font-bold text-gray-900">₹{insight.currentPrice}</span>
-                                    <span className="text-sm text-gray-500">/kg</span>
+                                    <span className="text-2xl font-bold text-foreground">₹{insight.currentPrice}</span>
+                                    <span className="text-sm text-muted-foreground">/kg</span>
                                 </div>
                             </div>
                         </CardHeader>
@@ -82,7 +82,7 @@ export default function SmartBuyingDashboard() {
                                 </Badge>
                                 <div className="flex items-center gap-1 text-sm font-medium bg-gray-50 px-2 py-1 rounded-md">
                                     Trend: {getTrendIcon(insight.trend)}
-                                    <span className="capitalize ml-1 text-gray-600">{insight.trend}</span>
+                                    <span className="capitalize ml-1 text-muted-foreground">{insight.trend}</span>
                                 </div>
                             </div>
 

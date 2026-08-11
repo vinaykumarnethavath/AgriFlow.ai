@@ -29,8 +29,8 @@ export default function DiscoveryPage() {
                         <MapPin className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">{t('shop.discovery') || "Market Insights & Discovery"}</h1>
-                        <p className="text-sm text-gray-600">Smart recommendations tailored for your 50km radius based on regional trends and crop cycles.</p>
+                        <h1 className="text-2xl font-bold text-foreground">{t('shop.discovery') || "Market Insights & Discovery"}</h1>
+                        <p className="text-sm text-muted-foreground">Smart recommendations tailored for your 50km radius based on regional trends and crop cycles.</p>
                     </div>
                 </div>
             </div>
@@ -43,7 +43,7 @@ export default function DiscoveryPage() {
             <Card className="border-gray-200">
                 <CardHeader>
                     <div className="flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-gray-500" />
+                        <TrendingUp className="w-5 h-5 text-muted-foreground" />
                         <div>
                             <CardTitle className="text-lg">Regional Demand Trends</CardTitle>
                             <CardDescription>Historical demand for top categories in your area</CardDescription>

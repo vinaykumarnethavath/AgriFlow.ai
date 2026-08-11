@@ -111,20 +111,20 @@ export default function ManufacturerDashboard() {
                     )}
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold text-gray-800">{profile?.mill_name || t('manufacturer.manufacturerDashboard')}</h1>
+                            <h1 className="text-2xl font-bold text-foreground">{profile?.mill_name || t('manufacturer.manufacturerDashboard')}</h1>
                             <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-md font-mono">ID: {profile?.mill_id || profile?.id || "—"}</span>
                         </div>
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
                             <User className="w-4 h-4 text-blue-600" />
-                            Owner: <span className="font-semibold text-gray-800 ml-1">{profile?.owner_name || user?.full_name}</span>
+                            Owner: <span className="font-semibold text-foreground ml-1">{profile?.owner_name || user?.full_name}</span>
                             {profile?.father_name && (
-                                <span className="ml-2 bg-white/80 px-2 py-0.5 rounded border border-gray-100 text-gray-500 text-xs font-medium">
-                                    {relationMap[profile?.relation_type || ""] || profile?.relation_type || "S/o"}: <span className="text-gray-700">{profile.father_name}</span>
+                                <span className="ml-2 bg-white/80 px-2 py-0.5 rounded border border-gray-100 text-muted-foreground text-xs font-medium">
+                                    {relationMap[profile?.relation_type || ""] || profile?.relation_type || "S/o"}: <span className="text-foreground">{profile.father_name}</span>
                                 </span>
                             )}
                         </p>
                         {profile?.district && (
-                            <p className="text-xs text-gray-500">{[profile.village, profile.mandal, profile.district].filter(Boolean).join(", ")}</p>
+                            <p className="text-xs text-muted-foreground">{[profile.village, profile.mandal, profile.district].filter(Boolean).join(", ")}</p>
                         )}
                     </div>
                 </div>
@@ -146,7 +146,7 @@ export default function ManufacturerDashboard() {
                             <p className="text-sm font-medium text-muted-foreground">Month Revenue</p>
                             <div className="bg-purple-100 p-2 rounded-lg"><TrendingUp className="h-5 w-5 text-purple-600" /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900">₹{Number(stats?.month_revenue || 0).toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-foreground">₹{Number(stats?.month_revenue || 0).toLocaleString()}</h3>
                         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1"><ArrowUpRight className="w-3 h-3 text-purple-500" /> This month</p>
                     </CardContent>
                 </Card>
@@ -156,7 +156,7 @@ export default function ManufacturerDashboard() {
                             <p className="text-sm font-medium text-muted-foreground">Month Purchases</p>
                             <div className="bg-orange-100 p-2 rounded-lg"><Truck className="h-5 w-5 text-orange-600" /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900">₹{Number(stats?.month_purchases || 0).toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-foreground">₹{Number(stats?.month_purchases || 0).toLocaleString()}</h3>
                         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1"><ArrowDownRight className="w-3 h-3 text-orange-500" /> Raw material cost</p>
                     </CardContent>
                 </Card>
@@ -166,7 +166,7 @@ export default function ManufacturerDashboard() {
                             <p className="text-sm font-medium text-muted-foreground">Raw Stock</p>
                             <div className="bg-blue-100 p-2 rounded-lg"><Package className="h-5 w-5 text-blue-600" /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900">{Number(stats?.raw_stock || 0).toLocaleString()} kg</h3>
+                        <h3 className="text-2xl font-bold text-foreground">{Number(stats?.raw_stock || 0).toLocaleString()} kg</h3>
                         <p className="text-xs text-muted-foreground mt-1">Finished: {Number(stats?.finished_stock || 0).toLocaleString()} kg</p>
                     </CardContent>
                 </Card>
@@ -195,7 +195,7 @@ export default function ManufacturerDashboard() {
                         <div className="flex items-center border rounded-lg overflow-hidden">
                             {PERIOD_OPTIONS.map(opt => (
                                 <button key={opt.value} onClick={() => handlePeriodChange(opt.value)}
-                                    className={`px-3 py-1.5 text-sm font-medium transition-colors ${period === opt.value ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}>
+                                    className={`px-3 py-1.5 text-sm font-medium transition-colors ${period === opt.value ? "bg-blue-600 text-white" : "bg-white text-muted-foreground hover:bg-gray-50"}`}>
                                     {opt.label}
                                 </button>
                             ))}
@@ -203,11 +203,11 @@ export default function ManufacturerDashboard() {
                     </CardHeader>
                     <CardContent className="h-[280px] pt-4">
                         {chartLoading ? (
-                            <div className="flex items-center justify-center h-full text-gray-400">
+                            <div className="flex items-center justify-center h-full text-muted-foreground">
                                 <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full" />
                             </div>
                         ) : salesTrend.length === 0 ? (
-                            <div className="flex items-center justify-center h-full text-gray-400 text-sm">No sales data for this period</div>
+                            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No sales data for this period</div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={salesTrend}>
@@ -257,7 +257,7 @@ export default function ManufacturerDashboard() {
                 <CardContent>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-700 font-medium">
+                            <thead className="bg-gray-50 text-foreground font-medium">
                                 <tr>
                                     <th className="px-4 py-3">Date</th>
                                     <th className="px-4 py-3">Invoice</th>
@@ -271,20 +271,20 @@ export default function ManufacturerDashboard() {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {recentSales.length === 0 ? (
-                                    <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">No recent sales found.</td></tr>
+                                    <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No recent sales found.</td></tr>
                                 ) : (
                                     recentSales.map(s => {
                                         const ds = DELIVERY_STATUS[s.delivery_status || "pending"] || DELIVERY_STATUS.pending;
                                         return (
                                             <tr key={s.id} className="hover:bg-gray-50 border-b">
-                                                <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{new Date(s.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                                                <td className="px-4 py-3 font-mono text-xs text-gray-400">{s.invoice_id}</td>
+                                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{new Date(s.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.invoice_id}</td>
                                                 <td className="px-4 py-3 font-medium whitespace-nowrap">{s.buyer_name}</td>
                                                 <td className="px-4 py-3"><span className="capitalize text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-100">{s.buyer_type}</span></td>
-                                                <td className="px-4 py-3 text-gray-600">{s.quantity} kg</td>
+                                                <td className="px-4 py-3 text-muted-foreground">{s.quantity} kg</td>
                                                 <td className="px-4 py-3"><span className="capitalize text-xs font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">{s.payment_mode}</span></td>
                                                 <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${ds.color}`}>{ds.label}</span></td>
-                                                <td className="px-4 py-3 text-right font-bold text-gray-900">₹{s.total_amount.toLocaleString()}</td>
+                                                <td className="px-4 py-3 text-right font-bold text-foreground">₹{s.total_amount.toLocaleString()}</td>
                                             </tr>
                                         );
                                     })

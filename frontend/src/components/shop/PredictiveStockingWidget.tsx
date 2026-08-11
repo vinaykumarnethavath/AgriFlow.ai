@@ -70,8 +70,8 @@ export function PredictiveStockingWidget() {
                         <div className="flex-1 space-y-1">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h4 className="font-semibold text-gray-900">{rec.productName}</h4>
-                                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{rec.category}</span>
+                                    <h4 className="font-semibold text-foreground">{rec.productName}</h4>
+                                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{rec.category}</span>
                                 </div>
                                 <div className="flex flex-col items-end">
                                     <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full">
@@ -79,7 +79,7 @@ export function PredictiveStockingWidget() {
                                     </span>
                                 </div>
                             </div>
-                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                 {rec.reason}
                             </p>
                             <div className="pt-2 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -19,7 +19,7 @@ const EXPENSE_CATEGORIES = [
     { value: "batch_labour", label: "💪 Batch Unloading Labour", color: "bg-orange-100 text-orange-700", isBatch: true },
     { value: "batch_other", label: "📦 Batch Other Cost", color: "bg-pink-100 text-pink-700", isBatch: true },
     { value: "utilities", label: "⚡ Utilities", color: "bg-yellow-100 text-yellow-700", isBatch: false },
-    { value: "other", label: "📋 Other", color: "bg-gray-100 text-gray-700", isBatch: false },
+    { value: "other", label: "📋 Other", color: "bg-gray-100 text-foreground", isBatch: false },
 ];
 
 const PURCHASE_CATEGORY = { value: "batch_purchase", label: "🧾 Purchase Cost", color: "bg-blue-100 text-blue-800", isBatch: false };
@@ -201,7 +201,7 @@ export default function ShopAccountingPage() {
     const getCategoryInfo = (cat: string) => {
         if (cat === "batch_purchase") return PURCHASE_CATEGORY;
         if (cat === "batch_activation") return { value: "batch_activation", label: "✅ Batch Activated", color: "bg-emerald-100 text-emerald-800", isBatch: false };
-        return EXPENSE_CATEGORIES.find(c => c.value === cat) || { value: cat, label: cat, color: "bg-gray-100 text-gray-700" };
+        return EXPENSE_CATEGORIES.find(c => c.value === cat) || { value: cat, label: cat, color: "bg-gray-100 text-foreground" };
     };
 
     // Helper: find batch names linked to a given expense
@@ -340,14 +340,14 @@ export default function ShopAccountingPage() {
                                 <div className="flex items-center gap-4">
                                     <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100"><Wallet className="w-6 h-6" /></div>
                                     <div>
-                                        <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Total Expenses</p>
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Total Expenses</p>
                                         <p className="text-3xl font-black text-emerald-700 leading-tight">₹{(summary.total_business_expenses || 0).toLocaleString()}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4 md:border-l border-gray-100 md:pl-6">
                                     <div className="p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100"><Package className="w-6 h-6" /></div>
                                     <div>
-                                        <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Purchase Cost</p>
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Purchase Cost</p>
                                         <p className="text-3xl font-black text-blue-700 leading-tight">₹{(purchaseTotal || 0).toLocaleString()}</p>
                                     </div>
                                 </div>
@@ -400,7 +400,7 @@ export default function ShopAccountingPage() {
                                 <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
                                     <span className="font-semibold text-slate-600 mb-2 truncate">Misc. Other</span>
                                     <div className="mt-auto">
-                                        <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-gray-100 text-gray-800 border-gray-200">₹{(otherTotal || 0).toLocaleString()}</span>
+                                        <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-gray-100 text-foreground border-gray-200">₹{(otherTotal || 0).toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>
@@ -437,7 +437,7 @@ export default function ShopAccountingPage() {
                             {activeBatches.length > 0 ? (
                             <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
                                 <table className="w-full text-sm text-left">
-                                    <thead className="bg-emerald-50/40 text-gray-600 font-medium text-[11px] uppercase tracking-wider">
+                                    <thead className="bg-emerald-50/40 text-muted-foreground font-medium text-[11px] uppercase tracking-wider">
                                         <tr>
                                             <th className="px-4 py-3 border-b border-emerald-100">Product & Batch</th>
                                             <th className="px-4 py-3 border-b border-emerald-100">Qty</th>
@@ -457,7 +457,7 @@ export default function ShopAccountingPage() {
                                                 <tr key={batch.id} className="hover:bg-emerald-50/20 transition-colors">
                                                     <td className="px-4 py-3">
                                                         <div className="flex flex-col">
-                                                            <span className="font-bold text-gray-900">{batch.name}</span>
+                                                            <span className="font-bold text-foreground">{batch.name}</span>
                                                             <div className="flex items-center gap-1.5 mt-0.5">
                                                                 <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1 rounded border border-emerald-100">{batch.batch_number}</span>
                                                                 <span className="text-[10px] text-emerald-600 font-bold uppercase">{batch.category}</span>
@@ -562,14 +562,14 @@ export default function ShopAccountingPage() {
                                         <Info className="h-4 w-4 text-cyan-600" />
                                         <p className="text-xs font-semibold text-cyan-800">Link to Draft Batches (Optional)</p>
                                     </div>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         Select which product batches this expense belongs to. The ₹{newExpense.amount || 0} will be distributed proportionally by each batch's purchase weight (cost × qty).
                                     </p>
 
                                     {loadingBatches ? (
-                                        <p className="text-xs text-gray-400 py-2">Loading draft batches...</p>
+                                        <p className="text-xs text-muted-foreground py-2">Loading draft batches...</p>
                                     ) : draftBatches.length === 0 ? (
-                                        <p className="text-xs text-gray-400 py-2 italic">No draft batches found. Add products first, then they'll appear here.</p>
+                                        <p className="text-xs text-muted-foreground py-2 italic">No draft batches found. Add products first, then they'll appear here.</p>
                                     ) : (
                                         <div className="space-y-1.5 max-h-48 overflow-y-auto">
                                             {draftBatches.map(batch => {
@@ -593,11 +593,11 @@ export default function ShopAccountingPage() {
                                                             className="accent-cyan-600"
                                                         />
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="text-sm font-medium text-gray-800">{batch.name}</div>
-                                                            <div className="text-xs text-gray-500">
+                                                            <div className="text-sm font-medium text-foreground">{batch.name}</div>
+                                                            <div className="text-xs text-muted-foreground">
                                                                 Batch: {batch.batch_number} · {batch.quantity} {batch.unit} · ₹{batch.cost_price}/unit
                                                             </div>
-                                                            <div className="text-xs text-gray-400">
+                                                            <div className="text-xs text-muted-foreground">
                                                                 Purchase value: ₹{batch.total_value.toLocaleString()}
                                                             </div>
                                                         </div>
@@ -631,7 +631,7 @@ export default function ShopAccountingPage() {
                     {/* Draft Batches Summary Table */}
                     <div className="overflow-x-auto border rounded-xl shadow-sm bg-white">
                         <table className="w-full text-sm text-left">
-                                <thead className="bg-amber-50/40 text-gray-600 font-medium text-[11px] uppercase tracking-wider">
+                                <thead className="bg-amber-50/40 text-muted-foreground font-medium text-[11px] uppercase tracking-wider">
                                     <tr>
                                         <th className="px-6 py-3 border-b border-amber-50">Draft Category</th>
                                         <th className="px-6 py-3 border-b border-amber-50">Date</th>
@@ -641,13 +641,13 @@ export default function ShopAccountingPage() {
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
                                     {draftBatches.length === 0 ? (
-                                        <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400 text-sm italic">No pending draft batches for allocation.</td></tr>
+                                        <tr><td colSpan={4} className="px-6 py-8 text-center text-muted-foreground text-sm italic">No pending draft batches for allocation.</td></tr>
                                     ) : (
                                         draftBatches.map(batch => (
                                             <tr key={batch.id} className="hover:bg-amber-50/10 transition-colors">
                                                 <td className="px-6 py-3">
                                                     <div className="flex flex-col">
-                                                        <span className="font-bold text-gray-900">{batch.name}</span>
+                                                        <span className="font-bold text-foreground">{batch.name}</span>
                                                         <span className="text-[10px] text-amber-600 font-bold uppercase">{batch.category}</span>
                                                     </div>
                                                 </td>
@@ -682,7 +682,7 @@ export default function ShopAccountingPage() {
                 <CardContent className="pt-0 px-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-600 font-medium text-[11px] uppercase tracking-wider">
+                            <thead className="bg-gray-50 text-muted-foreground font-medium text-[11px] uppercase tracking-wider">
                                 <tr>
                                     <th className="px-6 py-3 border-b border-gray-200">Date</th>
                                     <th className="px-6 py-3 border-b border-gray-200">Type</th>
@@ -694,7 +694,7 @@ export default function ShopAccountingPage() {
                             <tbody className="divide-y divide-gray-100 bg-white">
                                 {expenses.filter(e => e.category !== "batch_activation").length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-400 text-sm">No expenses recorded yet.</td>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground text-sm">No expenses recorded yet.</td>
                                     </tr>
                                 ) : (
                                     expenses.filter(e => e.category !== "batch_activation").map((exp) => {

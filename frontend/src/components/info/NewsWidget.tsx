@@ -63,7 +63,7 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
             case 'alert': return <AlertCircle className="h-3.5 w-3.5 text-red-600" />;
             case 'market': return <TrendingUp className="h-3.5 w-3.5 text-blue-600" />;
             case 'tip': return <Sprout className="h-3.5 w-3.5 text-green-600" />;
-            default: return <Newspaper className="h-3.5 w-3.5 text-gray-600" />;
+            default: return <Newspaper className="h-3.5 w-3.5 text-muted-foreground" />;
         }
     };
 

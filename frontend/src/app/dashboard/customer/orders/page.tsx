@@ -29,11 +29,11 @@ export default function OrdersPage() {
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-800 text-center mb-8">Your Order History</h1>
+            <h1 className="text-3xl font-bold text-foreground text-center mb-8">Your Order History</h1>
 
             {orders.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
-                    <p className="text-gray-500">You haven't placed any orders yet.</p>
+                    <p className="text-muted-foreground">You haven't placed any orders yet.</p>
                 </div>
             ) : (
                 <Accordion type="single" collapsible className="w-full space-y-4">
@@ -46,16 +46,16 @@ export default function OrdersPage() {
                                             <Package className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <div className="font-bold text-gray-800">Order #{order.id}</div>
-                                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                                            <div className="font-bold text-foreground">Order #{order.id}</div>
+                                            <div className="text-xs text-muted-foreground flex items-center gap-1">
                                                 <Clock className="w-3 h-3" /> {new Date(order.created_at).toLocaleDateString()}
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <div className="text-right">
-                                            <div className="text-sm text-gray-500">Total</div>
-                                            <div className="font-bold text-gray-900">₹{order.total_amount.toFixed(2)}</div>
+                                            <div className="text-sm text-muted-foreground">Total</div>
+                                            <div className="font-bold text-foreground">₹{order.total_amount.toFixed(2)}</div>
                                         </div>
                                         <Badge className={`uppercase ${order.status === 'confirmed' ? 'bg-green-500' : 'bg-yellow-500'}`}>
                                             {order.status}
@@ -64,14 +64,14 @@ export default function OrdersPage() {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="px-6 py-4 bg-gray-50 border-t">
-                                <h4 className="font-semibold mb-3 text-sm text-gray-600">Items Ordered</h4>
+                                <h4 className="font-semibold mb-3 text-sm text-muted-foreground">Items Ordered</h4>
                                 <ul className="space-y-2">
                                     {order.items.map((item, idx) => (
                                         <li key={idx} className="flex justify-between items-center text-sm p-2 bg-white rounded border">
-                                            <div className="font-medium text-gray-800">
-                                                {item.product_name} <span className="text-gray-500 font-normal">x {item.quantity}</span>
+                                            <div className="font-medium text-foreground">
+                                                {item.product_name} <span className="text-muted-foreground font-normal">x {item.quantity}</span>
                                             </div>
-                                            <div className="text-gray-600">₹{item.price} / unit</div>
+                                            <div className="text-muted-foreground">₹{item.price} / unit</div>
                                         </li>
                                     ))}
                                 </ul>

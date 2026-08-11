@@ -74,7 +74,7 @@ export default function InventoryTab() {
                 <Card className="md:col-span-2 shadow-sm">
                     <CardHeader className="pb-0">
                         <CardTitle className="text-lg flex items-center gap-2">
-                            <PackageOpen className="w-5 h-5 text-gray-500" />
+                            <PackageOpen className="w-5 h-5 text-muted-foreground" />
                             Demand vs Current Inventory
                         </CardTitle>
                         <CardDescription>Projected wholesale demand against available stock</CardDescription>

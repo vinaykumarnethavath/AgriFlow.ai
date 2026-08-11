@@ -60,17 +60,17 @@ export default function ProductDetailsPage() {
                 </div>
                 <div>
                     <div className="flex justify-between items-start">
-                        <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+                        <h1 className="text-3xl font-bold text-foreground">{product.name}</h1>
                         <Badge className="text-sm px-3 py-1 capitalize">{product.category}</Badge>
                     </div>
-                    <p className="text-gray-500 mt-2">{product.brand || 'Unknown Brand'}</p>
+                    <p className="text-muted-foreground mt-2">{product.brand || 'Unknown Brand'}</p>
 
                     <div className="flex items-baseline gap-2 mt-4">
                         <span className="text-4xl font-bold text-green-700">₹{product.price}</span>
-                        <span className="text-lg text-gray-500">per {product.unit}</span>
+                        <span className="text-lg text-muted-foreground">per {product.unit}</span>
                     </div>
 
-                    <p className="mt-4 text-gray-600 leading-relaxed">{product.description}</p>
+                    <p className="mt-4 text-muted-foreground leading-relaxed">{product.description}</p>
 
                     <div className="flex items-center gap-4 mt-8">
                         <div className="flex items-center border rounded-md">
@@ -82,7 +82,7 @@ export default function ProductDetailsPage() {
                             <ShoppingCart className="w-5 h-5 mr-2" /> Add to Cart
                         </Button>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">Available Stock: {product.quantity} {product.unit}</p>
+                    <p className="text-xs text-muted-foreground mt-2">Available Stock: {product.quantity} {product.unit}</p>
                 </div>
             </div>
 
@@ -154,16 +154,16 @@ export default function ProductDetailsPage() {
                     <CardHeader><CardTitle>Product Specifications</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <span className="text-gray-500 block">Unit</span>
+                            <span className="text-muted-foreground block">Unit</span>
                             <span className="font-medium">{product.unit}</span>
                         </div>
                         <div>
-                            <span className="text-gray-500 block">Batch ID</span>
+                            <span className="text-muted-foreground block">Batch ID</span>
                             <span className="font-mono">{product.batch_number}</span>
                         </div>
                         {product.expiry_date && (
                             <div>
-                                <span className="text-gray-500 block">Expiry Date</span>
+                                <span className="text-muted-foreground block">Expiry Date</span>
                                 <span className="font-medium text-red-600">{new Date(product.expiry_date).toLocaleDateString()}</span>
                             </div>
                         )}

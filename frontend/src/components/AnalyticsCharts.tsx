@@ -16,7 +16,7 @@ export default function AnalyticsCharts({ yieldData }: AnalyticsProps) {
                 <CardHeader>
                     <CardTitle>Crop Yield Analysis</CardTitle>
                 </CardHeader>
-                <CardContent className="h-[300px] flex items-center justify-center text-gray-500">
+                <CardContent className="h-[300px] flex items-center justify-center text-muted-foreground">
                     No harvest data available.
                 </CardContent>
             </Card>

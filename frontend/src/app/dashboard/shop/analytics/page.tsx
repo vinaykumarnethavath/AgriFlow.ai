@@ -151,7 +151,7 @@ export default function ShopAnalyticsPage() {
                             <button
                                 key={opt.value}
                                 onClick={() => handlePeriodChange(opt.value)}
-                                className={`px-4 py-2 text-xs font-bold transition-colors ${period === opt.value ? "bg-green-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                                className={`px-4 py-2 text-xs font-bold transition-colors ${period === opt.value ? "bg-green-600 text-white" : "text-muted-foreground hover:bg-gray-50"}`}
                             >
                                 {opt.label}
                             </button>
@@ -174,7 +174,7 @@ export default function ShopAnalyticsPage() {
                             <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
                             <div className="bg-green-100 p-2 rounded-lg"><DollarSign className="h-5 w-5 text-green-600" /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900">₹{(revenue?.total_revenue ?? 0).toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-foreground">₹{(revenue?.total_revenue ?? 0).toLocaleString()}</h3>
                     </CardContent>
                 </Card>
                 <Card className="hover:shadow-md transition-shadow border-blue-100">
@@ -183,7 +183,7 @@ export default function ShopAnalyticsPage() {
                             <p className="text-sm font-medium text-muted-foreground">Product Cost</p>
                             <div className="bg-blue-100 p-2 rounded-lg"><Package className="h-5 w-5 text-blue-600" /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900">₹{(revenue?.total_cost ?? 0).toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-foreground">₹{(revenue?.total_cost ?? 0).toLocaleString()}</h3>
                     </CardContent>
                 </Card>
                 <Card className={`hover:shadow-md transition-shadow ${(revenue?.profit ?? 0) >= 0 ? "border-emerald-200 bg-emerald-50/30" : "border-red-200 bg-red-50/30"}`}>
@@ -208,7 +208,7 @@ export default function ShopAnalyticsPage() {
                              <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
                              <div className="bg-purple-100 p-2 rounded-lg"><ShoppingCart className="h-5 w-5 text-purple-600" /></div>
                          </div>
-                         <h3 className="text-2xl font-bold text-gray-900">{revenue?.total_orders ?? 0}</h3>
+                         <h3 className="text-2xl font-bold text-foreground">{revenue?.total_orders ?? 0}</h3>
                          <div className="flex gap-3 mt-1 text-[11px] text-muted-foreground font-medium">
                              <span className="text-emerald-600">✓ {revenue?.completed_orders ?? 0} done</span>
                              <span className="text-amber-500">⏳ {revenue?.pending_orders ?? 0} pending</span>
@@ -219,7 +219,7 @@ export default function ShopAnalyticsPage() {
 
             {/* ── Category Boxes (replaces Revenue by Category pie) ── */}
             <div>
-                <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Sales by Category</h2>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Sales by Category</h2>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {CATEGORIES.map(({ key, label, icon: Icon, color, iconColor, badgeColor }) => {
                         const cat = catMap[key] || { revenue: 0, qty: 0, profit: 0 };
@@ -230,9 +230,9 @@ export default function ShopAnalyticsPage() {
                                         <Icon className={`h-5 w-5 ${iconColor}`} />
                                         <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${badgeColor}`}>{label}</span>
                                     </div>
-                                    <p className="text-xl font-bold text-gray-900">₹{cat.revenue.toLocaleString()}</p>
+                                    <p className="text-xl font-bold text-foreground">₹{cat.revenue.toLocaleString()}</p>
                                     <div className="flex justify-between items-center mt-1">
-                                        <p className="text-[11px] text-gray-500">{cat.qty} sold</p>
+                                        <p className="text-[11px] text-muted-foreground">{cat.qty} sold</p>
                                         <p className={`text-[11px] font-bold ${cat.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                                             Profit: ₹{cat.profit.toLocaleString()}
                                         </p>
@@ -254,7 +254,7 @@ export default function ShopAnalyticsPage() {
                                 <button
                                     key={opt.value}
                                     onClick={() => handlePeriodChange(opt.value)}
-                                    className={`px-2.5 py-1 text-xs font-medium transition-colors ${period === opt.value ? "bg-green-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                                    className={`px-2.5 py-1 text-xs font-medium transition-colors ${period === opt.value ? "bg-green-600 text-white" : "bg-white text-muted-foreground hover:bg-gray-50"}`}
                                 >
                                     {opt.label}
                                 </button>
@@ -263,9 +263,9 @@ export default function ShopAnalyticsPage() {
                     </CardHeader>
                     <CardContent className="h-[200px]">
                         {chartLoading ? (
-                            <div className="flex items-center justify-center h-full text-gray-400 text-sm">Loading…</div>
+                            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">Loading…</div>
                         ) : salesTrend.length === 0 ? (
-                            <div className="flex items-center justify-center h-full text-gray-400 text-sm">No data for this period</div>
+                            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No data for this period</div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <ReChartsLine data={salesTrend}>
@@ -295,7 +295,7 @@ export default function ShopAnalyticsPage() {
                                     { label: "Net Profit", value: revenue.profit, color: revenue.profit >= 0 ? "bg-emerald-600" : "bg-red-500", cls: revenue.profit >= 0 ? "text-emerald-700 font-bold" : "text-red-700 font-bold" },
                                 ].map((row) => (
                                     <div key={row.label} className="flex items-center gap-4">
-                                        <div className="w-32 text-sm text-gray-600 flex-shrink-0">{row.label}</div>
+                                        <div className="w-32 text-sm text-muted-foreground flex-shrink-0">{row.label}</div>
                                         <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
                                             <div
                                                 className={`${row.color} h-3 rounded-full transition-all duration-700`}
@@ -322,18 +322,18 @@ export default function ShopAnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         {channelData.length === 0 ? (
-                            <p className="text-sm text-gray-500">No channel data available.</p>
+                            <p className="text-sm text-muted-foreground">No channel data available.</p>
                         ) : (
                             <div className="space-y-4">
                                 {channelData.map(ch => (
                                     <div key={ch.channel} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
                                         <div>
                                             <p className="text-sm font-semibold capitalize bg-opacity-10 text-slate-700">{ch.channel || 'Cash'}</p>
-                                            <p className="text-xs text-gray-500">{ch.orders} orders</p>
+                                            <p className="text-xs text-muted-foreground">{ch.orders} orders</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-bold text-gray-900">₹{ch.revenue.toLocaleString()}</p>
-                                            <p className="text-[10px] text-gray-400">Avg: ₹{ch.average_order_value.toLocaleString()}</p>
+                                            <p className="text-sm font-bold text-foreground">₹{ch.revenue.toLocaleString()}</p>
+                                            <p className="text-[10px] text-muted-foreground">Avg: ₹{ch.average_order_value.toLocaleString()}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -349,7 +349,7 @@ export default function ShopAnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         {orderHealthData.length === 0 ? (
-                            <p className="text-sm text-gray-500">No order health data available.</p>
+                            <p className="text-sm text-muted-foreground">No order health data available.</p>
                         ) : (
                             <div className="grid grid-cols-2 gap-4">
                                 {orderHealthData.map(h => {
@@ -386,7 +386,7 @@ export default function ShopAnalyticsPage() {
                 <CardContent className="px-0 pt-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-500 font-medium text-[11px] uppercase tracking-wider">
+                            <thead className="bg-gray-50 text-muted-foreground font-medium text-[11px] uppercase tracking-wider">
                                 <tr>
                                     <th className="px-6 py-3 border-b border-gray-200">Product & Batch</th>
                                     <th className="px-6 py-3 border-b border-gray-200">Category</th>
@@ -399,7 +399,7 @@ export default function ShopAnalyticsPage() {
                             <tbody className="divide-y divide-gray-100 bg-white">
                                 {topProducts.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-10 text-center text-gray-400 text-sm">No product sales recorded for this period.</td>
+                                        <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground text-sm">No product sales recorded for this period.</td>
                                     </tr>
                                 ) : (
                                     topProducts.map((product, idx) => {

@@ -18,7 +18,7 @@ export const TraceabilityTimeline: React.FC<TimelineProps> = ({ events }) => {
         if (action.includes("Harvest")) return <Sprout className="h-5 w-5 text-green-600" />;
         if (action.includes("Process")) return <Factory className="h-5 w-5 text-purple-600" />;
         if (action.includes("Ship")) return <Truck className="h-5 w-5 text-blue-600" />;
-        return <CheckCircle className="h-5 w-5 text-gray-600" />;
+        return <CheckCircle className="h-5 w-5 text-muted-foreground" />;
     };
 
     return (
@@ -38,7 +38,7 @@ export const TraceabilityTimeline: React.FC<TimelineProps> = ({ events }) => {
                             </div>
                         </div>
                     ))}
-                    {events.length === 0 && <p className="ml-6 text-gray-500">No events recorded yet.</p>}
+                    {events.length === 0 && <p className="ml-6 text-muted-foreground">No events recorded yet.</p>}
                 </div>
             </CardContent>
         </Card>

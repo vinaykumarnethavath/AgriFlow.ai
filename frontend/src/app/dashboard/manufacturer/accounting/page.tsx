@@ -26,11 +26,11 @@ const EXPENSE_CATEGORIES = [
     { value: "maintenance", label: "🔧 Maintenance & Repairs", color: "bg-orange-100 text-orange-700" },
     { value: "packaging", label: "📦 Packaging Materials", color: "bg-pink-100 text-pink-700" },
     { value: "transport", label: "🚛 Transport / Logistics", color: "bg-cyan-100 text-cyan-700" },
-    { value: "other", label: "📋 Other", color: "bg-gray-100 text-gray-700" },
+    { value: "other", label: "📋 Other", color: "bg-gray-100 text-foreground" },
 ];
 
 const getCategoryInfo = (cat: string) =>
-    EXPENSE_CATEGORIES.find(c => c.value === cat) || { value: cat, label: cat, color: "bg-gray-100 text-gray-700" };
+    EXPENSE_CATEGORIES.find(c => c.value === cat) || { value: cat, label: cat, color: "bg-gray-100 text-foreground" };
 
 export default function MillAccountingPage() {
     const [period, setPeriod] = useState("30d");
@@ -120,7 +120,7 @@ export default function MillAccountingPage() {
                         <div className="flex border rounded-lg overflow-hidden">
                             {PERIOD_OPTIONS.map(opt => (
                                 <button key={opt.value} onClick={() => setPeriod(opt.value)}
-                                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${period === opt.value ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}>
+                                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${period === opt.value ? "bg-blue-600 text-white" : "bg-white text-muted-foreground hover:bg-gray-50"}`}>
                                     {opt.label}
                                 </button>
                             ))}
@@ -199,7 +199,7 @@ export default function MillAccountingPage() {
                             <IndianRupee className={`h-5 w-5 ${profitColor}`} />
                         </div>
                         <p className={`text-5xl font-extrabold ${profitColor}`}>₹{Math.abs(summary?.net_profit || 0).toLocaleString()}</p>
-                        <div className="mt-3 flex items-center gap-6 text-xs text-gray-500 flex-wrap">
+                        <div className="mt-3 flex items-center gap-6 text-xs text-muted-foreground flex-wrap">
                             <span>Revenue <strong className="text-purple-700">₹{(summary?.total_revenue || 0).toLocaleString()}</strong></span>
                             <span>− Costs <strong className="text-red-600">₹{((summary?.total_purchase_cost || 0) + (summary?.total_processing_cost || 0) + (summary?.total_expenses || 0)).toLocaleString()}</strong></span>
                             <span>= <strong className={profitColor}>₹{(summary?.net_profit || 0).toLocaleString()}</strong></span>
@@ -245,7 +245,7 @@ export default function MillAccountingPage() {
                     <CardContent className="border-t pt-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">Category</label>
                                 <select
                                     value={newExpense.category}
                                     onChange={e => setNewExpense(p => ({ ...p, category: e.target.value }))}
@@ -257,7 +257,7 @@ export default function MillAccountingPage() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Amount (₹)</label>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">Amount (₹)</label>
                                 <input type="number" min={0}
                                     value={newExpense.amount || ""}
                                     onChange={e => setNewExpense(p => ({ ...p, amount: parseFloat(e.target.value) || 0 }))}
@@ -266,7 +266,7 @@ export default function MillAccountingPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">Date</label>
                                 <input type="date"
                                     value={newExpense.expense_date}
                                     onChange={e => setNewExpense(p => ({ ...p, expense_date: e.target.value }))}
@@ -274,7 +274,7 @@ export default function MillAccountingPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Description (optional)</label>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">Description (optional)</label>
                                 <input type="text"
                                     value={newExpense.description}
                                     onChange={e => setNewExpense(p => ({ ...p, description: e.target.value }))}
@@ -298,16 +298,16 @@ export default function MillAccountingPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                         <Wallet className="w-4 h-4 text-blue-500" /> Expense Log
-                        <span className="ml-auto text-xs font-normal text-gray-400">{expenses.length} entries</span>
+                        <span className="ml-auto text-xs font-normal text-muted-foreground">{expenses.length} entries</span>
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                     {expenses.length === 0 ? (
-                        <div className="px-6 py-10 text-center text-gray-400 text-sm">No expenses recorded for this period.</div>
+                        <div className="px-6 py-10 text-center text-muted-foreground text-sm">No expenses recorded for this period.</div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-50 text-gray-700 font-medium border-b">
+                                <thead className="bg-gray-50 text-foreground font-medium border-b">
                                     <tr>
                                         <th className="px-6 py-3">Category</th>
                                         <th className="px-6 py-3">Description</th>
@@ -324,12 +324,12 @@ export default function MillAccountingPage() {
                                                 <td className="px-6 py-3">
                                                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${info.color}`}>{info.label}</span>
                                                 </td>
-                                                <td className="px-6 py-3 text-gray-600">{e.description || "—"}</td>
+                                                <td className="px-6 py-3 text-muted-foreground">{e.description || "—"}</td>
                                                 <td className="px-6 py-3 text-right font-bold text-red-600">₹{e.amount.toLocaleString()}</td>
-                                                <td className="px-6 py-3 text-gray-500">{new Date(e.expense_date).toLocaleDateString("en-IN")}</td>
+                                                <td className="px-6 py-3 text-muted-foreground">{new Date(e.expense_date).toLocaleDateString("en-IN")}</td>
                                                 <td className="px-6 py-3 text-right">
                                                     <button onClick={() => handleDeleteExpense(e.id)}
-                                                        className="text-gray-400 hover:text-red-500 transition-colors">
+                                                        className="text-muted-foreground hover:text-red-500 transition-colors">
                                                         <Trash2 className="h-4 w-4" />
                                                     </button>
                                                 </td>

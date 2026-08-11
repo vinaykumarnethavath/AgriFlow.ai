@@ -51,12 +51,12 @@ function MarketplaceContent() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Marketplace</h1>
-                    <p className="text-gray-500">Browse fresh produce and processed goods</p>
+                    <h1 className="text-3xl font-bold text-foreground">Marketplace</h1>
+                    <p className="text-muted-foreground">Browse fresh produce and processed goods</p>
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
                     <div className="relative w-full md:w-64">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search products..."
                             className="pl-8"
@@ -77,10 +77,10 @@ function MarketplaceContent() {
             </div>
 
             {loading ? (
-                <div className="text-center py-12 text-gray-500">Loading marketplace...</div>
+                <div className="text-center py-12 text-muted-foreground">Loading marketplace...</div>
             ) : products.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
-                    <p className="text-gray-500">No products found matching your criteria.</p>
+                    <p className="text-muted-foreground">No products found matching your criteria.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -102,14 +102,14 @@ function MarketplaceContent() {
                                         <CardTitle className="text-lg line-clamp-1">{product.name}</CardTitle>
                                         <Badge variant="secondary" className="capitalize text-xs">{product.category}</Badge>
                                     </div>
-                                    <p className="text-sm text-gray-500">{product.brand || 'Local Farmer'}</p>
+                                    <p className="text-sm text-muted-foreground">{product.brand || 'Local Farmer'}</p>
                                 </CardHeader>
                                 <CardContent className="flex-grow">
                                     <div className="flex items-baseline gap-1">
                                         <span className="text-2xl font-bold text-green-700">₹{product.price}</span>
-                                        <span className="text-sm text-gray-500">/{product.unit}</span>
+                                        <span className="text-sm text-muted-foreground">/{product.unit}</span>
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-2 line-clamp-2">{product.description}</p>
+                                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{product.description}</p>
                                 </CardContent>
                                 <CardFooter className="pt-0">
                                     <Button className="w-full bg-green-600 hover:bg-green-700" onClick={(e) => handleAddToCart(e, product.id)}>
@@ -127,7 +127,7 @@ function MarketplaceContent() {
 
 export default function MarketplacePage() {
     return (
-        <React.Suspense fallback={<div className="text-center py-12 text-gray-500">Loading marketplace...</div>}>
+        <React.Suspense fallback={<div className="text-center py-12 text-muted-foreground">Loading marketplace...</div>}>
             <MarketplaceContent />
         </React.Suspense>
     );

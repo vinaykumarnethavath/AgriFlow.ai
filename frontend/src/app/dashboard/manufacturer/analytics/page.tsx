@@ -94,13 +94,13 @@ export default function MillAnalyticsPage() {
             {/* Header */}
             <div className="flex justify-between items-center flex-wrap gap-3">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Mill Analytics</h1>
-                    <p className="text-gray-500 text-sm">Full financial overview — {PERIOD_LABELS[period]}</p>
+                    <h1 className="text-3xl font-bold text-foreground">Mill Analytics</h1>
+                    <p className="text-muted-foreground text-sm">Full financial overview — {PERIOD_LABELS[period]}</p>
                 </div>
                 <div className="flex items-center border rounded-lg overflow-hidden shadow-sm">
                     {PERIOD_OPTIONS.map(opt => (
                         <button key={opt.value} onClick={() => handlePeriod(opt.value)}
-                            className={`px-4 py-2 text-sm font-medium transition-colors ${period === opt.value ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}>
+                            className={`px-4 py-2 text-sm font-medium transition-colors ${period === opt.value ? "bg-blue-600 text-white" : "bg-white text-muted-foreground hover:bg-gray-50"}`}>
                             {opt.label}
                         </button>
                     ))}
@@ -115,7 +115,7 @@ export default function MillAnalyticsPage() {
                             <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
                             <div className="bg-purple-100 p-2 rounded-lg"><TrendingUp className="h-5 w-5 text-purple-600" /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900">₹{(data?.total_revenue || 0).toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-foreground">₹{(data?.total_revenue || 0).toLocaleString()}</h3>
                         <p className="text-xs text-muted-foreground mt-1">{data?.total_sales_count || 0} sales · avg ₹{(data?.avg_sale_value || 0).toLocaleString()}</p>
                     </CardContent>
                 </Card>
@@ -125,7 +125,7 @@ export default function MillAnalyticsPage() {
                             <p className="text-sm font-medium text-muted-foreground">Total Costs</p>
                             <div className="bg-orange-100 p-2 rounded-lg"><Truck className="h-5 w-5 text-orange-600" /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900">₹{totalCosts.toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-foreground">₹{totalCosts.toLocaleString()}</h3>
                         <p className="text-xs text-muted-foreground mt-1">Purchase + Processing + Overhead</p>
                     </CardContent>
                 </Card>
@@ -147,7 +147,7 @@ export default function MillAnalyticsPage() {
                             <p className="text-sm font-medium text-muted-foreground">Avg Efficiency</p>
                             <div className="bg-cyan-100 p-2 rounded-lg"><Factory className="h-5 w-5 text-cyan-600" /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900">{data?.avg_efficiency || 0}%</h3>
+                        <h3 className="text-2xl font-bold text-foreground">{data?.avg_efficiency || 0}%</h3>
                         <p className="text-xs text-muted-foreground mt-1">Production efficiency</p>
                     </CardContent>
                 </Card>
@@ -165,7 +165,7 @@ export default function MillAnalyticsPage() {
                     <CardContent className="space-y-5">
                         <div>
                             <div className="flex justify-between text-sm mb-1">
-                                <span className="font-medium text-gray-700">Total Revenue</span>
+                                <span className="font-medium text-foreground">Total Revenue</span>
                                 <span className="font-bold text-purple-700">₹{(data?.total_revenue || 0).toLocaleString()}</span>
                             </div>
                             <div className="w-full bg-purple-100 rounded-full h-3">
@@ -176,14 +176,14 @@ export default function MillAnalyticsPage() {
                         {progressBars.map(bar => (
                             <div key={bar.label}>
                                 <div className="flex justify-between text-sm mb-1">
-                                    <span className="text-gray-600">{bar.label}</span>
+                                    <span className="text-muted-foreground">{bar.label}</span>
                                     <span className="font-medium">₹{bar.value.toLocaleString()}</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-2.5">
                                     <div className={`${bar.color} h-2.5 rounded-full transition-all duration-500`}
                                         style={{ width: `${Math.min(bar.pct, 100)}%` }} />
                                 </div>
-                                <p className="text-xs text-gray-400 text-right mt-0.5">{bar.pct.toFixed(1)}% of revenue</p>
+                                <p className="text-xs text-muted-foreground text-right mt-0.5">{bar.pct.toFixed(1)}% of revenue</p>
                             </div>
                         ))}
 
@@ -218,7 +218,7 @@ export default function MillAnalyticsPage() {
                                 <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full" />
                             </div>
                         ) : trend.length === 0 ? (
-                            <div className="flex items-center justify-center h-full text-gray-400 text-sm">No data for this period</div>
+                            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No data for this period</div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={trend}>
@@ -245,10 +245,10 @@ export default function MillAnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         {(data?.top_crops?.length ?? 0) === 0 ? (
-                            <p className="text-sm text-gray-400 py-4 text-center">No purchase data for this period.</p>
+                            <p className="text-sm text-muted-foreground py-4 text-center">No purchase data for this period.</p>
                         ) : (
                             <div className="space-y-1">
-                                <div className="grid grid-cols-4 text-xs font-medium text-gray-500 px-3 pb-2 border-b">
+                                <div className="grid grid-cols-4 text-xs font-medium text-muted-foreground px-3 pb-2 border-b">
                                     <span className="col-span-2">Crop</span>
                                     <span className="text-center">Qty (kg)</span>
                                     <span className="text-right">Total Cost</span>
@@ -256,10 +256,10 @@ export default function MillAnalyticsPage() {
                                 {data!.top_crops.map((crop, i) => (
                                     <div key={crop.crop_name} className="grid grid-cols-4 items-center px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm">
                                         <div className="col-span-2 flex items-center gap-2">
-                                            <span className="text-xs text-gray-400 font-mono w-4">{i + 1}</span>
-                                            <span className="font-medium text-gray-800">{crop.crop_name}</span>
+                                            <span className="text-xs text-muted-foreground font-mono w-4">{i + 1}</span>
+                                            <span className="font-medium text-foreground">{crop.crop_name}</span>
                                         </div>
-                                        <span className="text-center text-gray-600">{crop.total_qty.toLocaleString()}</span>
+                                        <span className="text-center text-muted-foreground">{crop.total_qty.toLocaleString()}</span>
                                         <span className="text-right font-semibold text-orange-600">₹{crop.total_cost.toLocaleString()}</span>
                                     </div>
                                 ))}
@@ -277,10 +277,10 @@ export default function MillAnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         {(data?.top_products?.length ?? 0) === 0 ? (
-                            <p className="text-sm text-gray-400 py-4 text-center">No sales data for this period.</p>
+                            <p className="text-sm text-muted-foreground py-4 text-center">No sales data for this period.</p>
                         ) : (
                             <div className="space-y-1">
-                                <div className="grid grid-cols-4 text-xs font-medium text-gray-500 px-3 pb-2 border-b">
+                                <div className="grid grid-cols-4 text-xs font-medium text-muted-foreground px-3 pb-2 border-b">
                                     <span className="col-span-2">Product</span>
                                     <span className="text-center">Units Sold</span>
                                     <span className="text-right">Revenue</span>
@@ -288,10 +288,10 @@ export default function MillAnalyticsPage() {
                                 {data!.top_products.map((prod, i) => (
                                     <div key={prod.product_id} className="grid grid-cols-4 items-center px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm">
                                         <div className="col-span-2 flex items-center gap-2">
-                                            <span className="text-xs text-gray-400 font-mono w-4">{i + 1}</span>
-                                            <span className="font-medium text-gray-800">{prod.product_name}</span>
+                                            <span className="text-xs text-muted-foreground font-mono w-4">{i + 1}</span>
+                                            <span className="font-medium text-foreground">{prod.product_name}</span>
                                         </div>
-                                        <span className="text-center text-gray-600">{prod.units_sold.toLocaleString()}</span>
+                                        <span className="text-center text-muted-foreground">{prod.units_sold.toLocaleString()}</span>
                                         <span className="text-right font-semibold text-purple-600">₹{prod.revenue.toLocaleString()}</span>
                                     </div>
                                 ))}

@@ -386,7 +386,7 @@ export default function BlockchainExplorerPage() {
                 <div className="lg:col-span-2 space-y-6">
                     {/* Search & Filter */}
                     <div className="relative">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                             type="text"
                             placeholder="Search block contents, hashes, certifications, verifiers..."
@@ -400,7 +400,7 @@ export default function BlockchainExplorerPage() {
                     <div className="space-y-4">
                         {filteredBlocks.length === 0 ? (
                             <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800">
-                                <AlertTriangle className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                                <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                                 <p className="text-gray-500 dark:text-zinc-400 font-medium">No blocks found matching "{searchQuery}"</p>
                             </div>
                         ) : (
@@ -451,9 +451,9 @@ export default function BlockchainExplorerPage() {
                                                     Hash: {block.hash.substring(0, 16)}...
                                                 </span>
                                                 {isExpanded ? (
-                                                    <ChevronUp className="h-5 w-5 text-gray-400" />
+                                                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
                                                 ) : (
-                                                    <ChevronDown className="h-5 w-5 text-gray-400" />
+                                                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
                                                 )}
                                             </div>
                                         </div>
@@ -525,7 +525,7 @@ export default function BlockchainExplorerPage() {
                         </CardHeader>
                         <CardContent className="space-y-4 text-sm">
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-gray-500">Target Product</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Target Product</label>
                                 {myProducts.length > 0 ? (
                                     <select
                                         value={certProductId}
@@ -545,7 +545,7 @@ export default function BlockchainExplorerPage() {
                                             onChange={(e) => setCertProductId(e.target.value)}
                                             className="text-xs"
                                         />
-                                        <span className="text-[10px] text-gray-400 block">
+                                        <span className="text-[10px] text-muted-foreground block">
                                             No active products found for your account. Register a crop first or input a valid Product ID manually.
                                         </span>
                                     </div>
@@ -553,7 +553,7 @@ export default function BlockchainExplorerPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-gray-500">Certification Type</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Certification Type</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <Button
                                         type="button"
@@ -561,7 +561,7 @@ export default function BlockchainExplorerPage() {
                                         className={`h-9 text-xs transition-all ${
                                             certType === "organic" 
                                                 ? "bg-emerald-600 hover:bg-emerald-700 text-white font-bold" 
-                                                : "bg-gray-100 dark:bg-zinc-800 text-gray-700 hover:bg-gray-200 hover:text-gray-900"
+                                                : "bg-gray-100 dark:bg-zinc-800 text-foreground hover:bg-gray-200 hover:text-foreground"
                                         }`}
                                     >
                                         Organic Crop
@@ -572,7 +572,7 @@ export default function BlockchainExplorerPage() {
                                         className={`h-9 text-xs transition-all ${
                                             certType === "fair-trade" 
                                                 ? "bg-amber-600 hover:bg-amber-700 text-white font-bold" 
-                                                : "bg-gray-100 dark:bg-zinc-800 text-gray-700 hover:bg-gray-200 hover:text-gray-900"
+                                                : "bg-gray-100 dark:bg-zinc-800 text-foreground hover:bg-gray-200 hover:text-foreground"
                                         }`}
                                     >
                                         Fair Trade Audit
@@ -581,7 +581,7 @@ export default function BlockchainExplorerPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-gray-500">Authorized Verifier</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Authorized Verifier</label>
                                 <Input
                                     type="text"
                                     value={verifierName}
@@ -591,7 +591,7 @@ export default function BlockchainExplorerPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-gray-500">Audit Reports & Metrics</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Audit Reports & Metrics</label>
                                 <textarea
                                     rows={4}
                                     value={certDetails}
@@ -623,7 +623,7 @@ export default function BlockchainExplorerPage() {
                         </CardHeader>
                         <CardContent className="space-y-4 text-sm">
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-gray-500">Block Index to Hack</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Block Index to Hack</label>
                                 <Input
                                     type="number"
                                     placeholder="e.g. 1"
@@ -634,7 +634,7 @@ export default function BlockchainExplorerPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-gray-500">Modified Payload</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Modified Payload</label>
                                 <textarea
                                     rows={3}
                                     value={tamperPayload}

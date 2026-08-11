@@ -70,7 +70,7 @@ export default function NewsPage() {
                                              item.category === 'technology' ? t('news.technology') :
                                              item.category}
                                         </Badge>
-                                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                                             <Calendar className="h-3 w-3" /> {item.date}
                                         </span>
                                     </div>

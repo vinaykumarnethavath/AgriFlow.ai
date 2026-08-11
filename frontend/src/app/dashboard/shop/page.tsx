@@ -153,15 +153,15 @@ export default function ShopDashboard() {
                     )}
                     <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-bold text-gray-800">{profile?.shop_name || t('shop.shopDashboard')}</h1>
+                        <h1 className="text-2xl font-bold text-foreground">{profile?.shop_name || t('shop.shopDashboard')}</h1>
                         <span className="text-xs bg-sky-200 text-sky-800 px-2 py-0.5 rounded-md font-mono">ID: {profile?.shop_id || profile?.id || "—"}</span>
                     </div>
-                    <p className="text-sm text-gray-600 flex items-center gap-1">
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <User className="w-4 h-4 text-sky-600" />
-                        Owner: <span className="font-semibold text-gray-800">{profile?.owner_name || user?.full_name}</span>
+                        Owner: <span className="font-semibold text-foreground">{profile?.owner_name || user?.full_name}</span>
                         {profile?.father_name && (
-                            <span className="ml-2 bg-white/80 px-2 py-0.5 rounded border border-gray-100 text-gray-500 text-xs font-medium">
-                                {relationMap[profile?.relation_type || ""] || profile?.relation_type || "S/o"}: <span className="text-gray-700">{profile.father_name}</span>
+                            <span className="ml-2 bg-white/80 px-2 py-0.5 rounded border border-gray-100 text-muted-foreground text-xs font-medium">
+                                {relationMap[profile?.relation_type || ""] || profile?.relation_type || "S/o"}: <span className="text-foreground">{profile.father_name}</span>
                             </span>
                         )}
                     </p>
@@ -230,7 +230,7 @@ export default function ShopDashboard() {
                                     className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                                         period === opt.value
                                             ? "bg-green-600 text-white"
-                                            : "bg-white text-gray-600 hover:bg-gray-50"
+                                            : "bg-white text-muted-foreground hover:bg-gray-50"
                                     }`}
                                 >
                                     {opt.label}
@@ -240,7 +240,7 @@ export default function ShopDashboard() {
                     </CardHeader>
                     <CardContent className="h-[280px] pt-4">
                         {chartLoading ? (
-                            <div className="flex items-center justify-center h-full text-gray-400">Loading chart...</div>
+                            <div className="flex items-center justify-center h-full text-muted-foreground">Loading chart...</div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={salesTrend}>
@@ -305,7 +305,7 @@ export default function ShopDashboard() {
                 <CardContent>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-700 font-medium">
+                            <thead className="bg-gray-50 text-foreground font-medium">
                                 <tr>
                                     <th className="px-4 py-3">Date</th>
                                     <th className="px-4 py-3">Order ID</th>
@@ -320,31 +320,31 @@ export default function ShopDashboard() {
                             <tbody className="divide-y divide-gray-100">
                                 {recentOrders.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="px-4 py-8 text-center text-gray-500">No recent orders found.</td>
+                                        <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No recent orders found.</td>
                                     </tr>
                                 ) : (
                                     recentOrders.map((order) => (
                                         <tr key={order.id} className="hover:bg-gray-50 border-b">
-                                            <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(order.created_at)}</td>
-                                            <td className="px-4 py-3 font-mono text-xs text-gray-400">#Order-{String(order.id).padStart(4, '0')}</td>
+                                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDate(order.created_at)}</td>
+                                            <td className="px-4 py-3 font-mono text-xs text-muted-foreground">#Order-{String(order.id).padStart(4, '0')}</td>
                                             <td className="px-4 py-3 font-medium whitespace-nowrap">{order.farmer_name || "Walk-in"}</td>
-                                            <td className="px-4 py-3 text-gray-600 max-w-xs">
+                                            <td className="px-4 py-3 text-muted-foreground max-w-xs">
                                                 <div className="flex flex-wrap gap-1">
                                                     {(order.items?.length || 0) > 0 ? (
                                                         order.items?.map((item: any, idx: number) => (
-                                                            <span key={idx} className="inline-flex items-center bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-xs font-medium border border-gray-200/50">
-                                                                {item.product_name} <span className="text-gray-400 ml-1 font-bold">x{item.quantity}</span>
+                                                            <span key={idx} className="inline-flex items-center bg-gray-100 text-foreground px-1.5 py-0.5 rounded text-xs font-medium border border-gray-200/50">
+                                                                {item.product_name} <span className="text-muted-foreground ml-1 font-bold">x{item.quantity}</span>
                                                             </span>
                                                         ))
                                                     ) : (
-                                                        <span className="text-gray-400 italic text-xs">No items</span>
+                                                        <span className="text-muted-foreground italic text-xs">No items</span>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                                                     order.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-foreground'
                                                 }`}>
                                                     {order.status}
                                                 </span>
@@ -354,8 +354,8 @@ export default function ShopDashboard() {
                                                     {order.payment_mode === "razorpay" ? `Razorpay${order.payment_id?.startsWith("pay_mock_") ? ` (${order.payment_id.split("_")[1]})` : ""}` : order.payment_mode || "—"}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 font-mono text-xs text-gray-400">TXN-{String(order.id).padStart(6, '0')}</td>
-                                            <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.final_amount}</td>
+                                            <td className="px-4 py-3 font-mono text-xs text-muted-foreground">TXN-{String(order.id).padStart(6, '0')}</td>
+                                            <td className="px-4 py-3 text-right font-bold text-foreground">₹{order.final_amount}</td>
                                         </tr>
                                     ))
                                 )}

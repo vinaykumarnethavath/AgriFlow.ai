@@ -102,7 +102,7 @@ export default function WeatherBoard() {
     const getWeatherIcon = (condition: string) => {
         switch (condition?.toLowerCase()) {
             case 'sunny': return <Sun className="h-8 w-8 text-yellow-500" />;
-            case 'cloudy': return <Cloud className="h-8 w-8 text-gray-400" />;
+            case 'cloudy': return <Cloud className="h-8 w-8 text-muted-foreground" />;
             case 'rainy': return <CloudRain className="h-8 w-8 text-blue-500" />;
             case 'stormy': return <Zap className="h-8 w-8 text-purple-500" />;
             case 'partly cloudy': return <Cloud className="h-8 w-8 text-yellow-300" />;

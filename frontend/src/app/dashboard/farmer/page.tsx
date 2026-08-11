@@ -603,36 +603,36 @@ export default function FarmerDashboard() {
                             <h3 className="text-lg font-bold text-green-900 border-l-4 border-green-500 pl-2">Address Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">House / Flat No.</label>
-                                    <input ref={houseNoRef} className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="#123" />
+                                    <label className="text-sm font-bold text-foreground">House / Flat No.</label>
+                                    <input ref={houseNoRef} className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" placeholder="#123" />
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
-                                    <label className="text-sm font-bold text-gray-700">Street Name</label>
-                                    <input ref={streetRef} className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="Main Street" />
+                                    <label className="text-sm font-bold text-foreground">Street Name</label>
+                                    <input ref={streetRef} className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" placeholder="Main Street" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Village</label>
-                                    <input ref={villageRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="Village Name" />
+                                    <label className="text-sm font-bold text-foreground">Village</label>
+                                    <input ref={villageRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" placeholder="Village Name" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Mandal</label>
-                                    <input ref={mandalRef} className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="Mandal" />
+                                    <label className="text-sm font-bold text-foreground">Mandal</label>
+                                    <input ref={mandalRef} className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" placeholder="Mandal" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">District</label>
-                                    <input ref={districtRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="District" />
+                                    <label className="text-sm font-bold text-foreground">District</label>
+                                    <input ref={districtRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" placeholder="District" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">State</label>
-                                    <input ref={stateRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="State" />
+                                    <label className="text-sm font-bold text-foreground">State</label>
+                                    <input ref={stateRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" placeholder="State" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Country</label>
-                                    <input ref={countryRef} defaultValue="India" className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" />
+                                    <label className="text-sm font-bold text-foreground">Country</label>
+                                    <input ref={countryRef} defaultValue="India" className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Pincode</label>
-                                    <input ref={pincodeRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="500001" />
+                                    <label className="text-sm font-bold text-foreground">Pincode</label>
+                                    <input ref={pincodeRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" placeholder="500001" />
                                 </div>
                             </div>
                         </div>
@@ -648,16 +648,16 @@ export default function FarmerDashboard() {
                             {landRecords.map((lr, index) => (
                                 <div key={index} className="grid grid-cols-12 gap-4 items-end bg-gray-50 p-4 rounded-xl border border-gray-100">
                                     <div className="col-span-6 space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Serial No. / Khasra No.</label>
+                                        <label className="text-xs font-bold text-muted-foreground">Serial No. / Khasra No.</label>
                                         <input
                                             value={lr.serial_number}
                                             onChange={(e) => handleLandChange(index, "serial_number", e.target.value)}
-                                            className="w-full border-2 border-white rounded-lg p-2 focus:border-green-500 outline-none text-black text-sm"
+                                            className="w-full border-2 border-white rounded-lg p-2 focus:border-green-500 outline-none text-foreground text-sm"
                                             placeholder="e.g. 102/4"
                                         />
                                     </div>
                                     <div className="col-span-4 space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Area (Acres.Guntas)</label>
+                                        <label className="text-xs font-bold text-muted-foreground">Area (Acres.Guntas)</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -678,9 +678,9 @@ export default function FarmerDashboard() {
                                                 const normalized = normalizeLandArea(parseFloat(e.target.value));
                                                 handleLandChange(index, "area", normalized);
                                             }}
-                                            className="w-full border-2 border-white rounded-lg p-2 focus:border-green-500 outline-none text-black text-sm"
+                                            className="w-full border-2 border-white rounded-lg p-2 focus:border-green-500 outline-none text-foreground text-sm"
                                         />
-                                        <p className="text-[10px] text-gray-400 italic">Max .39 guntas per acre</p>
+                                        <p className="text-[10px] text-muted-foreground italic">Max .39 guntas per acre</p>
                                     </div>
                                     <div className="col-span-2 pb-1">
                                         <Button type="button" onClick={() => handleRemoveLand(index)} variant="ghost" className="text-red-500 hover:bg-red-50 w-full">
@@ -696,16 +696,16 @@ export default function FarmerDashboard() {
                             <h3 className="text-lg font-bold text-green-900 border-l-4 border-green-500 pl-2 border-b pb-2">Bank Account Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Bank Name</label>
-                                    <input ref={bankRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="State Bank of India" />
+                                    <label className="text-sm font-bold text-foreground">Bank Name</label>
+                                    <input ref={bankRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" placeholder="State Bank of India" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Account Number</label>
-                                    <input ref={accRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="000000000000" />
+                                    <label className="text-sm font-bold text-foreground">Account Number</label>
+                                    <input ref={accRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" placeholder="000000000000" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">IFSC Code</label>
-                                    <input ref={ifscRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-black" placeholder="SBIN0001234" />
+                                    <label className="text-sm font-bold text-foreground">IFSC Code</label>
+                                    <input ref={ifscRef} required className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-green-500 outline-none text-foreground" placeholder="SBIN0001234" />
                                 </div>
                             </div>
                         </div>
@@ -850,7 +850,7 @@ export default function FarmerDashboard() {
                             />
                             <button
                                 onClick={() => setShowPhotoModal(false)}
-                                className="absolute -top-3 -right-3 bg-white text-black rounded-full w-8 h-8 flex items-center justify-center shadow-lg font-bold hover:bg-gray-100"
+                                className="absolute -top-3 -right-3 bg-white text-foreground rounded-full w-8 h-8 flex items-center justify-center shadow-lg font-bold hover:bg-gray-100"
                             >
                                 ×
                             </button>
@@ -883,7 +883,7 @@ export default function FarmerDashboard() {
                     </Button>
                 </Link>
                 <Link href="/dashboard/farmer/crops">
-                    <Button size="sm" variant="outline" className="border-gray-200 text-gray-700 bg-white rounded-full hover:bg-gray-50">
+                    <Button size="sm" variant="outline" className="border-gray-200 text-foreground bg-white rounded-full hover:bg-gray-50">
                         <Wallet className="h-4 w-4 mr-1" /> {t('farmer.addExpense')}
                     </Button>
                 </Link>
@@ -1086,8 +1086,8 @@ export default function FarmerDashboard() {
                 </div>
 
                 {activeCrops.length === 0 ? (
-                    <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-8 text-center text-gray-500">
-                        <Sprout className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                    <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-8 text-center text-muted-foreground">
+                        <Sprout className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                         <p className="font-medium">{crops.length === 0 ? t('farmer.noCrops') : 'No active crops currently growing.'}</p>
                         <p className="text-sm mt-1">Start tracking your farming by adding a new crop.</p>
                         <Button onClick={() => setIsAddCropOpen(true)} className="mt-4 bg-green-600 hover:bg-green-700 text-white">
@@ -1122,12 +1122,12 @@ export default function FarmerDashboard() {
                                         </div>
                                         <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-gray-100">
                                             <div>
-                                                <p className="text-xs text-gray-400">{t('farmer.totalCost')}</p>
-                                                <p className="font-bold text-gray-800">₹{(crop.total_cost || 0).toLocaleString()}</p>
+                                                <p className="text-xs text-muted-foreground">{t('farmer.totalCost')}</p>
+                                                <p className="font-bold text-foreground">₹{(crop.total_cost || 0).toLocaleString()}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs text-gray-400">{t('farmer.revenue')}</p>
-                                                <p className="font-bold text-gray-800">₹{(crop.total_revenue || 0).toLocaleString()}</p>
+                                                <p className="text-xs text-muted-foreground">{t('farmer.revenue')}</p>
+                                                <p className="font-bold text-foreground">₹{(crop.total_revenue || 0).toLocaleString()}</p>
                                             </div>
                                         </div>
                                         <div className="mt-4 flex items-center justify-between gap-2">
@@ -1241,20 +1241,20 @@ export default function FarmerDashboard() {
                 <form onSubmit={handleCreateCrop} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">{t('crops.cropDetails')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('crops.cropDetails')}</label>
                             <input
                                 required
                                 placeholder="e.g. Wheat, Rice, Cotton"
-                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-foreground"
                                 value={newCrop.name}
                                 onChange={(e) => setNewCrop({ ...newCrop, name: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">{t('crops.variety')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('crops.variety')}</label>
                             <input
                                 placeholder="e.g. Basmati, HYV, Local"
-                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-foreground"
                                 value={newCrop.variety}
                                 onChange={(e) => setNewCrop({ ...newCrop, variety: e.target.value })}
                             />
@@ -1262,9 +1262,9 @@ export default function FarmerDashboard() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">{t('crops.season')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('crops.season')}</label>
                             <select
-                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800 bg-white"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-foreground bg-white"
                                 value={newCrop.season}
                                 onChange={(e) => setNewCrop({ ...newCrop, season: e.target.value })}
                             >
@@ -1274,46 +1274,46 @@ export default function FarmerDashboard() {
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">{t('crops.areaLabel')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('crops.areaLabel')}</label>
                             <input
                                 type="number"
                                 step="0.01"
                                 required
                                 placeholder="0.00"
-                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-foreground"
                                 value={newCrop.area}
                                 onChange={(e) => handleAreaChangeEvent(e.target.value, (val) => setNewCrop({ ...newCrop, area: val }))}
                                 onBlur={(e) => handleAreaBlurEvent(e.target.value, (val) => setNewCrop({ ...newCrop, area: val }))}
                             />
-                            <p className="text-[10px] text-gray-500 italic">Max .39 guntas per acre (e.g. 1.39 → 2.00)</p>
+                            <p className="text-[10px] text-muted-foreground italic">Max .39 guntas per acre (e.g. 1.39 → 2.00)</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">{t('expenses.date')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('expenses.date')}</label>
                             <input
                                 type="date"
                                 required
-                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-foreground"
                                 value={newCrop.sowing_date}
                                 onChange={(e) => setNewCrop({ ...newCrop, sowing_date: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-800">{t('farmer.harvest')}</label>
+                            <label className="text-sm font-medium text-foreground">{t('farmer.harvest')}</label>
                             <input
                                 type="date"
-                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-foreground"
                                 value={newCrop.expected_harvest_date}
                                 onChange={(e) => setNewCrop({ ...newCrop, expected_harvest_date: e.target.value })}
                             />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-800">{t('expenses.notes')}</label>
+                        <label className="text-sm font-medium text-foreground">{t('expenses.notes')}</label>
                         <textarea
                             placeholder="Any specific details..."
-                            className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
+                            className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 text-foreground"
                             value={newCrop.notes}
                             onChange={(e) => setNewCrop({ ...newCrop, notes: e.target.value })}
                         />
@@ -1345,29 +1345,29 @@ export default function FarmerDashboard() {
                         {landRecords.map((record, index) => (
                             <div key={index} className="flex gap-4 items-end bg-gray-50 p-3 rounded-lg border">
                                 <div className="flex-1 space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Khasra / Survey No.</label>
+                                    <label className="text-sm font-bold text-foreground">Khasra / Survey No.</label>
                                     <input
                                         type="text"
                                         required
-                                        className="w-full border-2 rounded-xl p-2.5 outline-none focus:border-green-500 text-black"
+                                        className="w-full border-2 rounded-xl p-2.5 outline-none focus:border-green-500 text-foreground"
                                         value={record.serial_number}
                                         onChange={(e) => handleLandChange(index, "serial_number", e.target.value)}
                                         placeholder="e.g. 124/A"
                                     />
                                 </div>
                                 <div className="w-1/3 space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Acres.Guntas</label>
+                                    <label className="text-sm font-bold text-foreground">Acres.Guntas</label>
                                     <input
                                         type="number"
                                         step="0.01"
                                         required
-                                        className="w-full border-2 rounded-xl p-2.5 outline-none focus:border-green-500 text-black"
+                                        className="w-full border-2 rounded-xl p-2.5 outline-none focus:border-green-500 text-foreground"
                                         value={record.area || ""}
                                         onChange={(e) => handleAreaChangeEvent(e.target.value, (val) => handleLandChange(index, "area", parseFloat(val) || 0))}
                                         onBlur={(e) => handleAreaBlurEvent(e.target.value, (val) => handleLandChange(index, "area", parseFloat(val) || 0))}
                                         placeholder="0.00"
                                     />
-                                    <p className="text-[10px] text-gray-400 italic">Max .39 per acre</p>
+                                    <p className="text-[10px] text-muted-foreground italic">Max .39 per acre</p>
                                 </div>
                                 <Button
                                     type="button"
@@ -1383,7 +1383,7 @@ export default function FarmerDashboard() {
                             type="button"
                             variant="outline"
                             onClick={handleAddLand}
-                            className="w-full border-dashed border-2 border-gray-300 text-gray-600 hover:border-green-500 hover:text-green-600 shadow-none"
+                            className="w-full border-dashed border-2 border-gray-300 text-muted-foreground hover:border-green-500 hover:text-green-600 shadow-none"
                         >
                             <Plus className="w-4 h-4 mr-2" /> Add Another Plot
                         </Button>
@@ -1406,15 +1406,15 @@ export default function FarmerDashboard() {
                         <form onSubmit={handleSubmitProfile} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
                             <div className="grid grid-cols-2 gap-4 border-b pb-4 border-gray-100">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">Full Name</label>
+                                    <label className="text-xs font-bold text-muted-foreground">Full Name</label>
                                     <input ref={fullNameRef} defaultValue={profile.full_name || user?.full_name} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">Farmer ID</label>
+                                    <label className="text-xs font-bold text-muted-foreground">Farmer ID</label>
                                     <input ref={farmerIdRef} defaultValue={profile.farmer_id} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">Relation Type</label>
+                                    <label className="text-xs font-bold text-muted-foreground">Relation Type</label>
                                     <select
                                         value={relationType}
                                         onChange={(e) => setRelationType(e.target.value)}
@@ -1426,7 +1426,7 @@ export default function FarmerDashboard() {
                                     </select>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">{relationType === "W/O" ? "Husband Name" : "Father Name"}</label>
+                                    <label className="text-xs font-bold text-muted-foreground">{relationType === "W/O" ? "Husband Name" : "Father Name"}</label>
                                     <input ref={fatherRef} defaultValue={profile.father_husband_name} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
                                 </div>
                             </div>
@@ -1436,35 +1436,35 @@ export default function FarmerDashboard() {
                                 <h4 className="text-sm font-bold text-green-700 flex items-center gap-1">📍 Address Details</h4>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">House No.</label>
+                                        <label className="text-xs font-bold text-muted-foreground">House No.</label>
                                         <input ref={houseNoRef} defaultValue={profile.house_no} className="w-full border rounded-lg p-2 text-sm" placeholder="#123" />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Street</label>
+                                        <label className="text-xs font-bold text-muted-foreground">Street</label>
                                         <input ref={streetRef} defaultValue={profile.street} className="w-full border rounded-lg p-2 text-sm" placeholder="Main Street" />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-3 gap-3">
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Village</label>
+                                        <label className="text-xs font-bold text-muted-foreground">Village</label>
                                         <input ref={villageRef} defaultValue={profile.village} required className="w-full border rounded-lg p-2 text-sm" />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Mandal</label>
+                                        <label className="text-xs font-bold text-muted-foreground">Mandal</label>
                                         <input ref={mandalRef} defaultValue={profile.mandal} className="w-full border rounded-lg p-2 text-sm" />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Pincode</label>
+                                        <label className="text-xs font-bold text-muted-foreground">Pincode</label>
                                         <input ref={pincodeRef} defaultValue={profile.pincode} className="w-full border rounded-lg p-2 text-sm" />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">District</label>
+                                        <label className="text-xs font-bold text-muted-foreground">District</label>
                                         <input ref={districtRef} defaultValue={profile.district} required className="w-full border rounded-lg p-2 text-sm" />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">State</label>
+                                        <label className="text-xs font-bold text-muted-foreground">State</label>
                                         <input ref={stateRef} defaultValue={profile.state} required className="w-full border rounded-lg p-2 text-sm" />
                                     </div>
                                 </div>
@@ -1475,27 +1475,27 @@ export default function FarmerDashboard() {
                                 <h4 className="text-sm font-bold text-green-700 flex items-center gap-1">🏦 Bank Details</h4>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Bank Name</label>
+                                        <label className="text-xs font-bold text-muted-foreground">Bank Name</label>
                                         <input ref={bankRef} defaultValue={profile.bank_name} className="w-full border rounded-lg p-2 text-sm" placeholder="SBI" />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">IFSC Code</label>
+                                        <label className="text-xs font-bold text-muted-foreground">IFSC Code</label>
                                         <input ref={ifscRef} defaultValue={profile.ifsc_code} className="w-full border rounded-lg p-2 text-sm" placeholder="SBIN0000" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">Account Number</label>
+                                    <label className="text-xs font-bold text-muted-foreground">Account Number</label>
                                     <input ref={accRef} defaultValue={profile.account_number} className="w-full border rounded-lg p-2 text-sm" placeholder="Account Number" />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">Aadhaar</label>
+                                    <label className="text-xs font-bold text-muted-foreground">Aadhaar</label>
                                     <input ref={aadhaarRef} defaultValue={profile.aadhaar_last_4} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" placeholder="Aadhaar" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">Profile Picture</label>
+                                    <label className="text-xs font-bold text-muted-foreground">Profile Picture</label>
                                     <input type="file" accept="image/*" onChange={handleFileUpload}
                                         className="w-full border rounded-lg p-2 text-sm file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700"
                                     />

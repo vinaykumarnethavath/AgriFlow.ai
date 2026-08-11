@@ -125,7 +125,7 @@ export default function ExpensesPage() {
                             <tbody>
                                 {filteredExpenses.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="p-8 text-center text-gray-500">{t('expenses.noExpenses')}</td>
+                                        <td colSpan={5} className="p-8 text-center text-muted-foreground">{t('expenses.noExpenses')}</td>
                                     </tr>
                                 ) : (
                                     filteredExpenses.map(expense => (
@@ -172,7 +172,7 @@ export default function ExpensesPage() {
                                                     </div>
                                                 )}
                                                 {expense.notes && (
-                                                    <div className="text-xs text-gray-400 mt-1 italic max-w-xs truncate">
+                                                    <div className="text-xs text-muted-foreground mt-1 italic max-w-xs truncate">
                                                         <T>{expense.notes}</T>
                                                     </div>
                                                 )}

@@ -183,8 +183,8 @@ export default function PurchasesPage() {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Raw Material Purchases</h1>
-                    <p className="text-gray-500">Record and track crops bought from farmers</p>
+                    <h1 className="text-3xl font-bold text-foreground">Raw Material Purchases</h1>
+                    <p className="text-muted-foreground">Record and track crops bought from farmers</p>
                 </div>
                 <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
                     <Plus className="w-4 h-4 mr-2" /> New Purchase
@@ -195,29 +195,29 @@ export default function PurchasesPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="border-l-4 border-l-blue-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Total Spent</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">₹{totalSpent.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Total Spent</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">₹{totalSpent.toLocaleString()}</p>
                         <div className="flex items-center text-xs text-blue-500 mt-1"><TrendingDown className="w-3 h-3 mr-1" /> Purchase cost</div>
                     </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-orange-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">No. of Purchases</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">{filteredPurchases.length}</p>
+                        <p className="text-xs text-muted-foreground font-medium">No. of Purchases</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{filteredPurchases.length}</p>
                         <p className="text-xs text-orange-500 mt-1">Transactions</p>
                     </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-green-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Total Qty Bought</p>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">{totalQty.toLocaleString()} kg</p>
+                        <p className="text-xs text-muted-foreground font-medium">Total Qty Bought</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{totalQty.toLocaleString()} kg</p>
                         <p className="text-xs text-green-500 mt-1">Raw material</p>
                     </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-purple-500">
                     <CardContent className="p-4">
-                        <p className="text-xs text-gray-500 font-medium">Top Crop</p>
-                        <p className="text-xl font-bold text-gray-800 mt-1 truncate">{topCrop}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Top Crop</p>
+                        <p className="text-xl font-bold text-foreground mt-1 truncate">{topCrop}</p>
                         <p className="text-xs text-purple-500 mt-1">Avg ₹{avgPrice.toFixed(0)}/unit</p>
                     </CardContent>
                 </Card>
@@ -228,7 +228,7 @@ export default function PurchasesPage() {
                 <div className="flex border rounded-lg overflow-hidden">
                     {PERIOD_OPTIONS.map(opt => (
                         <button key={opt.value} onClick={() => setPeriod(opt.value)}
-                            className={`px-3 py-1.5 text-xs font-medium transition-colors ${period === opt.value ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}>
+                            className={`px-3 py-1.5 text-xs font-medium transition-colors ${period === opt.value ? "bg-blue-600 text-white" : "bg-white text-muted-foreground hover:bg-gray-50"}`}>
                             {opt.label}
                         </button>
                     ))}
@@ -238,7 +238,7 @@ export default function PurchasesPage() {
                     placeholder="Search crop or farmer…"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="border rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 w-52"
+                    className="border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400 w-52"
                 />
             </div>
 
@@ -247,13 +247,13 @@ export default function PurchasesPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <History className="w-5 h-5" /> Purchase History
-                        <span className="ml-auto text-xs font-normal text-gray-400">{filteredPurchases.length} records</span>
+                        <span className="ml-auto text-xs font-normal text-muted-foreground">{filteredPurchases.length} records</span>
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-700 font-medium border-b">
+                            <thead className="bg-gray-50 text-foreground font-medium border-b">
                                 <tr>
                                     <th className="px-6 py-4">Batch ID</th>
                                     <th className="px-6 py-4">Farmer</th>
@@ -269,28 +269,28 @@ export default function PurchasesPage() {
                             <tbody className="divide-y divide-gray-100">
                                 {filteredPurchases.length === 0 ? (
                                     <tr>
-                                        <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">
                                             No purchases found.
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredPurchases.map((p) => (
                                         <tr key={p.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.batch_id}</td>
-                                            <td className="px-6 py-4 font-medium text-gray-800">{p.farmer_name}</td>
+                                            <td className="px-6 py-4 font-mono text-xs text-muted-foreground">{p.batch_id}</td>
+                                            <td className="px-6 py-4 font-medium text-foreground">{p.farmer_name}</td>
                                             <td className="px-6 py-4 font-medium">{p.crop_name}</td>
                                             <td className="px-6 py-4">
                                                 {p.quality_grade ? (
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${QUALITY_COLORS[p.quality_grade] || "bg-gray-100 text-gray-600"}`}>
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${QUALITY_COLORS[p.quality_grade] || "bg-gray-100 text-muted-foreground"}`}>
                                                         Grade {p.quality_grade}
                                                     </span>
                                                 ) : "—"}
                                             </td>
                                             <td className="px-6 py-4 text-right">{p.quantity} {p.unit}</td>
                                             <td className="px-6 py-4 text-right">₹{p.price_per_unit.toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-right text-gray-500">₹{(p.transport_cost || 0).toLocaleString()}</td>
+                                            <td className="px-6 py-4 text-right text-muted-foreground">₹{(p.transport_cost || 0).toLocaleString()}</td>
                                             <td className="px-6 py-4 text-right font-bold text-orange-700">₹{p.total_cost.toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-gray-500">{new Date(p.date).toLocaleDateString("en-IN")}</td>
+                                            <td className="px-6 py-4 text-muted-foreground">{new Date(p.date).toLocaleDateString("en-IN")}</td>
                                         </tr>
                                     ))
                                 )}
@@ -364,7 +364,7 @@ export default function PurchasesPage() {
                     </div>
 
                     <div className="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
-                        <span className="font-semibold text-gray-700">Total Purchase Cost:</span>
+                        <span className="font-semibold text-foreground">Total Purchase Cost:</span>
                         <span className="text-xl font-bold text-blue-700">₹{calculateTotal().toLocaleString()}</span>
                     </div>
 
