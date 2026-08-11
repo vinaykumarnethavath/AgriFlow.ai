@@ -48,7 +48,7 @@ export async function executeVoiceAction(
     action: VoiceActionResponse,
     options: {
         router: any;
-        setLocale?: (locale: string) => void;
+        setLocale?: (locale: any) => void;
     }
 ): Promise<VoiceExecutionResult> {
     const { router, setLocale } = options;
