@@ -72,32 +72,110 @@ DATABASE_KEYWORDS = [
     "sale", "income", "loss", "quantity", "price",
 ]
 
+# Keywords that strongly signal MIXED mode — the user wants AI advice
+# combined with their personal farm/business data
+MIXED_SIGNAL_KEYWORDS = [
+    "what should i", "which crop", "can i plant", "can i plan",
+    "can i grow", "can i sow", "remaining land", "available land",
+    "unused land", "empty land", "free land", "left land",
+    "what could be", "potential profit", "expected profit",
+    "best crop for my", "suitable crop", "what to grow",
+    "what to plant", "what to sow", "advise me", "advice for my",
+    "improve my", "optimize my", "increase my", "reduce my",
+    "how can i improve", "how to increase", "how to reduce",
+    "based on my", "for my farm", "for my land", "on my land",
+    "predict", "forecast for my", "plan for", "planning",
+    "next season", "upcoming season", "what if",
+]
+
+# Common crop names for data-awareness checks
+KNOWN_CROP_NAMES = [
+    "rice", "paddy", "wheat", "cotton", "maize", "corn", "sugarcane",
+    "groundnut", "peanut", "soybean", "soya", "mustard", "sunflower",
+    "jowar", "sorghum", "bajra", "millet", "ragi", "finger millet",
+    "chickpea", "chana", "toor", "pigeon pea", "moong", "urad",
+    "lentil", "masoor", "barley", "oats", "tobacco", "jute",
+    "turmeric", "chili", "chilli", "onion", "tomato", "potato",
+    "brinjal", "eggplant", "okra", "bhindi", "capsicum", "pepper",
+    "banana", "mango", "papaya", "guava", "coconut", "areca",
+    "tea", "coffee", "rubber", "cashew", "cardamom",
+]
+
+
+def extract_crop_names_from_question(question: str) -> list[str]:
+    """Extract any specific crop names mentioned in the user's question."""
+    q = question.lower()
+    found = []
+    for crop in KNOWN_CROP_NAMES:
+        # Word-boundary check to avoid partial matches (e.g., 'rice' in 'price')
+        pattern = r'\b' + re.escape(crop) + r'\b'
+        if re.search(pattern, q):
+            found.append(crop)
+    return found
+
+
+def user_has_relevant_crop(crop_names: list[str], db_context: dict) -> bool:
+    """Check whether the user's DB data contains any of the mentioned crops."""
+    if not crop_names or not db_context:
+        return False
+    user_crops = db_context.get("crops", [])
+    user_crop_names = {c.get("name", "").lower() for c in user_crops}
+    for mentioned in crop_names:
+        for user_crop in user_crop_names:
+            if mentioned in user_crop or user_crop in mentioned:
+                return True
+    return False
+
 
 def classify_question(question: str) -> str:
-    """Classify user question into: personal, database, external, or mixed."""
+    """Classify user question into: personal, database, external, or mixed.
+
+    Classification priority:
+      1. personal  — sensitive profile/account data
+      2. mixed     — user's data + AI advice/recommendations needed together
+      3. database  — pure data lookups about user's own records
+      4. external  — general agricultural knowledge
+    """
     q = question.lower().strip()
 
-    # Check personal first (highest priority)
+    # --- 1. Check personal first (highest priority) ---
     personal_score = sum(1 for kw in PERSONAL_KEYWORDS if kw in q)
     if personal_score >= 1:
         return "personal"
 
+    # --- 2. Score each category ---
     db_score = sum(1 for kw in DATABASE_KEYWORDS if kw in q)
     ext_score = sum(1 for kw in EXTERNAL_KEYWORDS if kw in q)
+    mixed_score = sum(1 for kw in MIXED_SIGNAL_KEYWORDS if kw in q)
 
-    # Database takes priority when both match — user is asking about their data
+    # Indirect DB references ("my", "i have", etc.)
+    indirect_db = any(word in q for word in
+                      ["my", "i have", "i spent", "i sold", "i bought"])
+
+    # --- 3. Mixed takes priority when mixed-signal keywords are present ---
+    # If the question has mixed-signal keywords, it means the user wants
+    # AI reasoning combined with their personal data.
+    if mixed_score >= 1:
+        # Even if it also has DB keywords, mixed-signal keywords indicate
+        # the user wants AI advice on top of their data.
+        return "mixed"
+
+    # When both DB and external keywords match, treat as mixed —
+    # the user is asking about their data AND wants general advice
     if db_score > 0 and ext_score > 0:
-        return "database" if db_score >= ext_score else "mixed"
+        return "mixed"
+
+    # --- 4. Pure database ---
     if db_score > 0:
         return "database"
+    if indirect_db:
+        return "database"
+
+    # --- 5. Pure external ---
     if ext_score > 0:
         return "external"
 
-    # If the question mentions the user's data indirectly, treat as database
-    if any(word in q for word in ["my", "i have", "i spent", "i sold", "i bought", "show", "list"]):
-        return "database"
-
-    # Default to external for general questions
+    # --- 6. Default to external for general questions ---
     return "external"
 
 
@@ -389,8 +467,19 @@ def sanitize_context(context: dict) -> dict:
     return sanitized
 
 
-async def call_groq(question: str, context: Optional[dict] = None, role: str = "farmer", strict_data_only: bool = False) -> str:
-    """Call Groq LLM with sanitised context. Returns the LLM text answer."""
+async def call_groq(
+    question: str,
+    context: Optional[dict] = None,
+    role: str = "farmer",
+    strict_data_only: bool = False,
+    mixed_mode: bool = False,
+) -> str:
+    """Call Groq LLM with sanitised context. Returns the LLM text answer.
+
+    Args:
+        strict_data_only: When True, the LLM must ONLY use DB data (no advice).
+        mixed_mode:       When True, the LLM should blend DB data WITH AI advice.
+    """
     api_key = os.getenv("GROQ_API_KEY", "")
     if not api_key or api_key == "your-groq-api-key-here":
         return "⚠️ Groq API key not configured. Please add your GROQ_API_KEY to the .env file."
@@ -405,7 +494,24 @@ async def call_groq(question: str, context: Optional[dict] = None, role: str = "
         f"IMPORTANT: The current user's role is '{role}'. Only reference data relevant to this role. "
         "Never mention or reference data from other roles. Each user's data is strictly isolated."
     )
-    if strict_data_only:
+
+    if mixed_mode:
+        system_prompt += (
+            "\n\nMIXED MODE — IMPORTANT INSTRUCTIONS:"
+            "\nYou have access to the user's REAL farm/business data from their database AND "
+            "your own agricultural knowledge. You MUST use BOTH to answer."
+            "\n1. First, reference the user's actual data (crops, areas, expenses, land, etc.) "
+            "using the EXACT numbers from the JSON provided."
+            "\n2. Then, supplement with your AI knowledge — recommendations, predictions, "
+            "best practices, expected profits, suitable crops, fertilizer advice, etc."
+            "\n3. Clearly distinguish between facts from data vs. AI recommendations. "
+            "For example: 'Based on your data, you have X acres of remaining land. "
+            "I would recommend growing Y because...'"
+            "\n4. If the data shows the user does NOT have a particular crop or record, "
+            "say so, then still provide general AI advice about it."
+            "\n5. Be practical and actionable. The farmer wants concrete advice."
+        )
+    elif strict_data_only:
         system_prompt += (
             "\n\nCRITICAL RULES FOR DATA QUESTIONS:"
             "\n1. ONLY use the EXACT numbers from the provided JSON data. NEVER estimate, guess, or round numbers."
@@ -421,21 +527,32 @@ async def call_groq(question: str, context: Optional[dict] = None, role: str = "
 
     if context:
         safe_context = sanitize_context(context)
-        context_text = (
-            "Here is the user's COMPLETE data from the database. "
-            "Use ONLY these exact numbers to answer the question:\n"
-            f"```json\n{json.dumps(safe_context, indent=2)}\n```"
-        )
-        messages.append({"role": "user", "content": context_text})
-        messages.append({"role": "assistant", "content": "I have your complete data loaded. I will answer using only the exact numbers from your records."})
+        if mixed_mode:
+            context_text = (
+                "Here is the user's REAL data from their database. "
+                "Use these facts as the foundation, then ADD your AI expertise:\n"
+                f"```json\n{json.dumps(safe_context, indent=2)}\n```"
+            )
+            messages.append({"role": "user", "content": context_text})
+            messages.append({"role": "assistant", "content": "I have your farm data loaded. I will combine your real data with my agricultural knowledge to give you the best answer."})
+        else:
+            context_text = (
+                "Here is the user's COMPLETE data from the database. "
+                "Use ONLY these exact numbers to answer the question:\n"
+                f"```json\n{json.dumps(safe_context, indent=2)}\n```"
+            )
+            messages.append({"role": "user", "content": context_text})
+            messages.append({"role": "assistant", "content": "I have your complete data loaded. I will answer using only the exact numbers from your records."})
 
     messages.append({"role": "user", "content": question})
 
     try:
+        # Use slightly higher temperature for mixed mode to allow creative advice
+        temp = 0.4 if mixed_mode else 0.2
         response = await client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
-            temperature=0.2,  # Low temperature for factual accuracy
+            temperature=temp,
             max_tokens=1024,
         )
         return response.choices[0].message.content or "I couldn't generate a response."
@@ -454,15 +571,24 @@ async def handle_chat(user: User, question: str, session: AsyncSession) -> dict:
     Main entry point. Classifies the question, queries DB if needed,
     calls Groq if needed, and returns a structured response.
 
+    Data-awareness logic:
+      - For mixed/database classifications, we fetch DB data first.
+      - If a specific crop is mentioned but the user does NOT have it,
+        we downgrade to 'external' (pure AI advice).
+      - If both DB data and AI advice are needed, we use 'mixed' mode.
+
     Returns:
         {
             "answer": str,
             "source": "db_only" | "external" | "mixed",
-            "data_points": dict | None   # optional raw data from DB
+            "data_points": dict | None
         }
     """
     classification = classify_question(question)
     role = user.role if isinstance(user.role, str) else user.role.value
+
+    print(f"[RAG] Question: {question!r}")
+    print(f"[RAG] Initial classification: {classification}")
 
     # ----- PERSONAL: answer from DB only, never call API -----
     if classification == "personal":
@@ -559,8 +685,40 @@ async def handle_chat(user: User, question: str, session: AsyncSession) -> dict:
         }
 
     # ----- MIXED: combine DB context with AI reasoning -----
+    # Fetch DB data first so we can check data-awareness
     db_context = await query_database_context(user, question, session)
-    answer = await call_groq(question, context=db_context if db_context else None, role=role)
+
+    # Data-awareness: if the user asks about a specific crop they DON'T have,
+    # downgrade to pure external (AI-only) since their data isn't relevant.
+    mentioned_crops = extract_crop_names_from_question(question)
+    if mentioned_crops and db_context:
+        has_crop = user_has_relevant_crop(mentioned_crops, db_context)
+        if not has_crop:
+            print(f"[RAG] User asked about {mentioned_crops} but doesn't have them → downgrading to external")
+            answer = await call_groq(question, role=role)
+            return {
+                "answer": answer,
+                "source": "external",
+                "data_points": None,
+            }
+
+    # If no DB data at all, fall back to pure external
+    if not db_context:
+        print(f"[RAG] No DB context found → downgrading to external")
+        answer = await call_groq(question, role=role)
+        return {
+            "answer": answer,
+            "source": "external",
+            "data_points": None,
+        }
+
+    # Full mixed mode: pass DB context + mixed_mode prompt to LLM
+    answer = await call_groq(
+        question,
+        context=db_context,
+        role=role,
+        mixed_mode=True,
+    )
 
     return {
         "answer": answer,
