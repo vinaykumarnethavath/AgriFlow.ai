@@ -938,17 +938,17 @@ export default function InventoryPage() {
                         <div className="space-y-2">
                             <Label>Batch Overhead (From Accounting)</Label>
                             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5 font-medium">
-                                <div className="flex justify-between text-[11px] text-slate-500">
+                                <div className="flex justify-between text-[11px] text-muted-foreground">
                                     <span>Transport:</span>
-                                    <span className="text-slate-700 font-bold">₹{(editingProduct?.apportioned_transport || 0).toFixed(2)}</span>
+                                    <span className="text-foreground font-bold">₹{(editingProduct?.apportioned_transport || 0).toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-[11px] text-slate-500">
+                                <div className="flex justify-between text-[11px] text-muted-foreground">
                                     <span>Labour:</span>
-                                    <span className="text-slate-700 font-bold">₹{(editingProduct?.apportioned_labour || 0).toFixed(2)}</span>
+                                    <span className="text-foreground font-bold">₹{(editingProduct?.apportioned_labour || 0).toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-[11px] text-slate-500">
+                                <div className="flex justify-between text-[11px] text-muted-foreground">
                                     <span>Other:</span>
-                                    <span className="text-slate-700 font-bold">₹{(editingProduct?.apportioned_other || 0).toFixed(2)}</span>
+                                    <span className="text-foreground font-bold">₹{(editingProduct?.apportioned_other || 0).toFixed(2)}</span>
                                 </div>
                                 <div className="pt-1.5 border-t border-slate-200 flex justify-between text-xs text-indigo-700 font-bold">
                                     <span>Total Batch Overhead:</span>
@@ -980,7 +980,7 @@ export default function InventoryPage() {
                         <div className="p-3 bg-blue-50/50 rounded-lg text-sm border border-blue-100 space-y-2">
                             <div className="flex justify-between">
                                 <span className="text-blue-800 font-medium text-xs">Landed Cost (Base + Overhead):</span>
-                                <span className="text-slate-700 font-bold text-xs">₹{profitStats?.landedCost.toFixed(2)}</span>
+                                <span className="text-foreground font-bold text-xs">₹{profitStats?.landedCost.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between pt-1 border-t border-blue-100/50">
                                 <span className="text-blue-800 font-bold">Est. Profit per Unit:</span>

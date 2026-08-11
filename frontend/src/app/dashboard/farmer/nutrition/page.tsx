@@ -72,11 +72,11 @@ export default function PrecisionNutritionPage() {
         <div className="max-w-6xl mx-auto space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
                         <FlaskConical className="h-8 w-8 text-blue-500" />
                         {t("sidebar.nutrition", "Precision Nutrition")}
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-muted-foreground mt-1">
                         Get AI-driven fertilizer recommendations based on your soil test report.
                     </p>
                 </div>
@@ -111,7 +111,7 @@ export default function PrecisionNutritionPage() {
                             </div>
                             
                             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
-                                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Crop Details</h3>
+                                <h3 className="text-sm font-semibold text-muted-foreground">Crop Details</h3>
                                 <div className="space-y-2">
                                     <Label>Crop Type</Label>
                                     <Input required name="crop_type" value={formData.crop_type} onChange={handleChange} placeholder="e.g. Rice (Paddy)" />
@@ -147,8 +147,8 @@ export default function PrecisionNutritionPage() {
                             <div className="h-16 w-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-4">
                                 <Sprout className="h-8 w-8" />
                             </div>
-                            <h3 className="text-xl font-medium text-slate-900 dark:text-slate-100">Ready to Analyze</h3>
-                            <p className="text-slate-500 mt-2 max-w-md">
+                            <h3 className="text-xl font-medium text-foreground">Ready to Analyze</h3>
+                            <p className="text-muted-foreground mt-2 max-w-md">
                                 Enter your soil test parameters on the left to receive a highly personalized fertilizer schedule and soil amendment plan.
                             </p>
                         </div>
@@ -157,7 +157,7 @@ export default function PrecisionNutritionPage() {
                     {loading && (
                         <div className="h-full flex flex-col items-center justify-center p-12 space-y-4">
                             <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-                            <p className="text-slate-500 animate-pulse">AgriFlow AI is analyzing your soil data...</p>
+                            <p className="text-muted-foreground animate-pulse">AgriFlow AI is analyzing your soil data...</p>
                         </div>
                     )}
 
@@ -169,14 +169,14 @@ export default function PrecisionNutritionPage() {
                                     <Info className="h-5 w-5" />
                                     Soil Health: {result.status}
                                 </h3>
-                                <p className="text-slate-700 dark:text-slate-300">
+                                <p className="text-muted-foreground">
                                     {result.soil_health_summary}
                                 </p>
                             </div>
 
                             {/* Recommendations List */}
                             <div>
-                                <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-slate-100">Recommended Fertilizers</h3>
+                                <h3 className="text-xl font-bold mb-4 text-foreground">Recommended Fertilizers</h3>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     {result.recommendations.map((rec, i) => (
                                         <div key={i} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
@@ -184,19 +184,19 @@ export default function PrecisionNutritionPage() {
                                                 <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
                                                     {i + 1}
                                                 </div>
-                                                <h4 className="text-lg font-semibold text-slate-900 dark:text-white">{rec.name}</h4>
+                                                <h4 className="text-lg font-semibold text-foreground">{rec.name}</h4>
                                             </div>
                                             <div className="space-y-2 text-sm">
                                                 <div className="flex justify-between">
-                                                    <span className="text-slate-500">Quantity:</span>
+                                                    <span className="text-muted-foreground">Quantity:</span>
                                                     <span className="font-medium">{rec.quantity}</span>
                                                 </div>
                                                 <div className="flex justify-between">
-                                                    <span className="text-slate-500">Timing:</span>
+                                                    <span className="text-muted-foreground">Timing:</span>
                                                     <span className="font-medium text-right max-w-[60%]">{rec.timing}</span>
                                                 </div>
                                                 <div className="flex justify-between">
-                                                    <span className="text-slate-500">Method:</span>
+                                                    <span className="text-muted-foreground">Method:</span>
                                                     <span className="font-medium text-right max-w-[60%]">{rec.application_method}</span>
                                                 </div>
                                             </div>
@@ -208,10 +208,10 @@ export default function PrecisionNutritionPage() {
                             {/* Tips */}
                             {result.additional_tips && result.additional_tips.length > 0 && (
                                 <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">
-                                    <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">Pro Tips for {formData.crop_type}</h3>
+                                    <h3 className="text-lg font-semibold mb-4 text-foreground">Pro Tips for {formData.crop_type}</h3>
                                     <ul className="space-y-3">
                                         {result.additional_tips.map((tip, i) => (
-                                            <li key={i} className="flex items-start gap-3 text-slate-700 dark:text-slate-300">
+                                            <li key={i} className="flex items-start gap-3 text-muted-foreground">
                                                 <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
                                                 <span>{tip}</span>
                                             </li>

@@ -76,7 +76,7 @@ export default function MarketPricesPage() {
                     <input
                         type="text"
                         placeholder={t('marketPrices.searchCommodity')}
-                        className="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                        className="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
@@ -84,7 +84,7 @@ export default function MarketPricesPage() {
                 <div className="flex items-center gap-2">
                     <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
                     <select
-                        className="border rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer focus:ring-2 focus:ring-green-500 outline-none"
+                        className="border rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 cursor-pointer focus:ring-2 focus:ring-green-500 outline-none"
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value as any)}
                     >
@@ -110,7 +110,7 @@ export default function MarketPricesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {filteredPrices.map((crop, idx) => (
                         <Card key={idx} className="hover:shadow-lg transition-shadow overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-between pb-3 bg-gray-50/80 border-b">
+                            <CardHeader className="flex flex-row items-center justify-between pb-3 bg-gray-50/80 dark:bg-zinc-800/80 border-b">
                                 <div className="flex items-center gap-3">
                                     <CardTitle className="text-xl font-bold text-foreground">{crop.crop_name}</CardTitle>
                                     {crop.msp_comparison === 'above' && (
@@ -152,7 +152,7 @@ export default function MarketPricesPage() {
                                         <div className="relative">
                                             <button
                                                 onClick={() => scrollMarkets(crop.crop_name, 'left')}
-                                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 shadow-md rounded-full p-1 border border-gray-200 hover:bg-gray-50 -ml-2"
+                                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 dark:bg-zinc-800/95 shadow-md rounded-full p-1 border border-gray-200 hover:bg-gray-50 dark:bg-zinc-800 -ml-2"
                                             >
                                                 <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
                                             </button>
@@ -179,7 +179,7 @@ export default function MarketPricesPage() {
                                             </div>
                                             <button
                                                 onClick={() => scrollMarkets(crop.crop_name, 'right')}
-                                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 shadow-md rounded-full p-1 border border-gray-200 hover:bg-gray-50 -mr-2"
+                                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 dark:bg-zinc-800/95 shadow-md rounded-full p-1 border border-gray-200 hover:bg-gray-50 dark:bg-zinc-800 -mr-2"
                                             >
                                                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                                             </button>

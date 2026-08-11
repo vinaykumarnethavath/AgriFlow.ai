@@ -331,7 +331,7 @@ export default function ShopAccountingPage() {
                 <div className="space-y-6">
                     <Card className="border-slate-200 shadow-sm">
                         <CardHeader className="pb-3 border-b bg-slate-50/50 rounded-t-lg">
-                            <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-700">
+                            <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
                                 <Banknote className="w-5 h-5 text-emerald-600" /> Business Expense Breakdown
                             </CardTitle>
                         </CardHeader>
@@ -355,42 +355,42 @@ export default function ShopAccountingPage() {
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
                                 {/* Rent */}
                                 <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
-                                    <span className="font-semibold text-slate-600 mb-2 truncate">Rent</span>
+                                    <span className="font-semibold text-muted-foreground mb-2 truncate">Rent</span>
                                     <div className="mt-auto">
                                         <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-purple-100 text-purple-800 border-purple-200">₹{(rentTotal || 0).toLocaleString()}</span>
                                     </div>
                                 </div>
                                 {/* Staff Wages */}
                                 <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
-                                    <span className="font-semibold text-slate-600 mb-2 truncate">Staff Wages</span>
+                                    <span className="font-semibold text-muted-foreground mb-2 truncate">Staff Wages</span>
                                     <div className="mt-auto">
                                         <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-indigo-100 text-indigo-800 border-indigo-200">₹{(wagesTotal || 0).toLocaleString()}</span>
                                     </div>
                                 </div>
                                 {/* Transport (Batch) */}
                                 <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-cyan-300 transition-colors">
-                                    <span className="font-semibold text-slate-600 mb-2 truncate">Transport (Batch)</span>
+                                    <span className="font-semibold text-muted-foreground mb-2 truncate">Transport (Batch)</span>
                                     <div className="mt-auto">
                                         <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-cyan-100 text-cyan-800 border-cyan-200">₹{(transportTotal || 0).toLocaleString()}</span>
                                     </div>
                                 </div>
                                 {/* Batch Labour */}
                                 <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-orange-300 transition-colors">
-                                    <span className="font-semibold text-slate-600 mb-2 truncate">Batch Labour</span>
+                                    <span className="font-semibold text-muted-foreground mb-2 truncate">Batch Labour</span>
                                     <div className="mt-auto">
                                         <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-orange-100 text-orange-800 border-orange-200">₹{(labourTotal || 0).toLocaleString()}</span>
                                     </div>
                                 </div>
                                 {/* Other Batch Costs */}
                                 <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-pink-300 transition-colors">
-                                    <span className="font-semibold text-slate-600 mb-2 truncate">Other Batch Costs</span>
+                                    <span className="font-semibold text-muted-foreground mb-2 truncate">Other Batch Costs</span>
                                     <div className="mt-auto">
                                         <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-pink-100 text-pink-800 border-pink-200">₹{(otherBatchTotal || 0).toLocaleString()}</span>
                                     </div>
                                 </div>
                                 {/* Utilities */}
                                 <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
-                                    <span className="font-semibold text-slate-600 mb-2 truncate">Utilities</span>
+                                    <span className="font-semibold text-muted-foreground mb-2 truncate">Utilities</span>
                                     <div className="mt-auto">
                                         <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-yellow-100 text-yellow-800 border-yellow-200">₹{(utilitiesTotal || 0).toLocaleString()}</span>
                                     </div>
@@ -398,7 +398,7 @@ export default function ShopAccountingPage() {
 
                                 {/* Misc. Other */}
                                 <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
-                                    <span className="font-semibold text-slate-600 mb-2 truncate">Misc. Other</span>
+                                    <span className="font-semibold text-muted-foreground mb-2 truncate">Misc. Other</span>
                                     <div className="mt-auto">
                                         <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-gray-100 text-foreground border-gray-200">₹{(otherTotal || 0).toLocaleString()}</span>
                                     </div>
@@ -464,7 +464,7 @@ export default function ShopAccountingPage() {
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-4 py-3 text-slate-600 font-medium whitespace-nowrap">{batch.quantity} <span className="text-[10px]">{batch.unit}</span></td>
+                                                    <td className="px-4 py-3 text-muted-foreground font-medium whitespace-nowrap">{batch.quantity} <span className="text-[10px]">{batch.unit}</span></td>
                                                     <td className="px-4 py-3">
                                                         {transport > 0 ? <span className="text-xs font-semibold text-cyan-700 bg-cyan-50 px-1.5 py-0.5 rounded">₹{transport.toFixed(0)}</span> : <span className="text-slate-300">—</span>}
                                                     </td>
@@ -651,11 +651,11 @@ export default function ShopAccountingPage() {
                                                         <span className="text-[10px] text-amber-600 font-bold uppercase">{batch.category}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-3 text-slate-500">
+                                                <td className="px-6 py-3 text-muted-foreground">
                                                     {new Date(batch.created_at).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
                                                 </td>
                                                 <td className="px-6 py-3">
-                                                    <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+                                                    <span className="text-[11px] font-mono bg-slate-100 text-foreground px-2 py-0.5 rounded border border-slate-200">
                                                         {batch.batch_number}
                                                     </span>
                                                 </td>
@@ -675,8 +675,8 @@ export default function ShopAccountingPage() {
             {/* Separate Card for Recorded Business Expenses */}
             <Card className="border-slate-200 shadow-sm bg-white mt-6">
                 <CardHeader className="pb-3 border-b border-gray-100">
-                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-800">
-                        <Receipt className="w-5 h-5 text-slate-600" /> Recorded Business Expenses
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+                        <Receipt className="w-5 h-5 text-muted-foreground" /> Recorded Business Expenses
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 px-0">
@@ -720,7 +720,7 @@ export default function ShopAccountingPage() {
 
                                         return (
                                             <tr key={exp.id} className={`hover:bg-gray-50/50 transition-colors ${isAutoEntry ? 'bg-blue-50/20' : ''}`}>
-                                                <td className="px-6 py-3 text-slate-600 whitespace-nowrap text-[11px] font-medium">{new Date(exp.expense_date).toLocaleDateString("en-IN")}</td>
+                                                <td className="px-6 py-3 text-muted-foreground whitespace-nowrap text-[11px] font-medium">{new Date(exp.expense_date).toLocaleDateString("en-IN")}</td>
 
                                                 {/* TYPE column — badge only */}
                                                 <td className="px-6 py-3">
@@ -733,7 +733,7 @@ export default function ShopAccountingPage() {
                                                     )}
                                                 </td>
 
-                                                <td className="px-6 py-3 font-semibold text-slate-800 whitespace-nowrap">₹{exp.amount.toLocaleString()}</td>
+                                                <td className="px-6 py-3 font-semibold text-foreground whitespace-nowrap">₹{exp.amount.toLocaleString()}</td>
 
                                                 {/* BATCH DETAILS column */}
                                                 <td className="px-6 py-3">
@@ -741,16 +741,16 @@ export default function ShopAccountingPage() {
                                                     {activationProduct && (
                                                         <Link href="/dashboard/shop/inventory" className="flex flex-col gap-0.5 py-1 px-2 border border-emerald-100 bg-emerald-50/20 hover:bg-emerald-50/50 rounded-lg transition-colors block w-max mt-1">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="text-xs font-bold text-slate-800">{activationProduct.name}</span>
+                                                                <span className="text-xs font-bold text-foreground">{activationProduct.name}</span>
                                                                 <span className="text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1 rounded border border-emerald-100">
                                                                     {activationProduct.batch_number}
                                                                 </span>
                                                                 <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">ACTIVATED</span>
                                                             </div>
-                                                            <div className="flex gap-2 text-[10px] text-slate-500 font-medium mt-0.5">
-                                                                <span>Qty: <span className="text-slate-700 font-bold">{activationProduct.quantity} {activationProduct.unit}</span></span>
+                                                            <div className="flex gap-2 text-[10px] text-muted-foreground font-medium mt-0.5">
+                                                                <span>Qty: <span className="text-foreground font-bold">{activationProduct.quantity} {activationProduct.unit}</span></span>
                                                                 <span className="text-slate-300">|</span>
-                                                                <span>Cost/unit: <span className="text-slate-700 font-bold">₹{activationProduct.cost_price}</span></span>
+                                                                <span>Cost/unit: <span className="text-foreground font-bold">₹{activationProduct.cost_price}</span></span>
                                                                 <span className="text-slate-300">|</span>
                                                                 <span>Product Cost: <span className="text-blue-700 font-bold">₹{((activationProduct.cost_price || 0) * (activationProduct.quantity || 0)).toFixed(2)}</span></span>
                                                             </div>
@@ -770,17 +770,17 @@ export default function ShopAccountingPage() {
                                                     {purchaseProduct && !activationProduct && (
                                                         <Link href="/dashboard/shop/inventory" className="flex flex-col gap-0.5 py-1 px-2 border border-slate-200 bg-slate-50/30 hover:bg-slate-50/80 rounded-lg transition-colors block w-max mt-1">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="text-xs font-bold text-slate-800">{purchaseProduct.name}</span>
-                                                                <span className="text-[9px] font-mono font-bold text-slate-600 bg-slate-50 px-1 rounded border border-slate-200">
+                                                                <span className="text-xs font-bold text-foreground">{purchaseProduct.name}</span>
+                                                                <span className="text-[9px] font-mono font-bold text-muted-foreground bg-slate-50 px-1 rounded border border-slate-200">
                                                                     {purchaseProduct.batch_number}
                                                                 </span>
                                                             </div>
-                                                            <div className="flex gap-2 text-[10px] text-slate-500 font-medium mt-0.5">
-                                                                <span>Qty: <span className="text-slate-700 font-bold">{purchaseProduct.quantity} {purchaseProduct.unit}</span></span>
+                                                            <div className="flex gap-2 text-[10px] text-muted-foreground font-medium mt-0.5">
+                                                                <span>Qty: <span className="text-foreground font-bold">{purchaseProduct.quantity} {purchaseProduct.unit}</span></span>
                                                                 <span className="text-slate-300">|</span>
-                                                                <span>Cost/unit: <span className="text-slate-700 font-bold">₹{purchaseProduct.cost_price}</span></span>
+                                                                <span>Cost/unit: <span className="text-foreground font-bold">₹{purchaseProduct.cost_price}</span></span>
                                                                 <span className="text-slate-300">|</span>
-                                                                <span>Product Cost: <span className="text-slate-700 font-bold">₹{((purchaseProduct.cost_price || 0) * (purchaseProduct.quantity || 0)).toFixed(2)}</span></span>
+                                                                <span>Product Cost: <span className="text-foreground font-bold">₹{((purchaseProduct.cost_price || 0) * (purchaseProduct.quantity || 0)).toFixed(2)}</span></span>
                                                             </div>
                                                         </Link>
                                                     )}
@@ -797,13 +797,13 @@ export default function ShopAccountingPage() {
                                                                     return (
                                                                         <Link href="/dashboard/shop/inventory" key={bp.id} className="flex flex-col gap-0.5 py-1 px-2 border border-blue-100 bg-blue-50/20 hover:bg-blue-50/60 rounded-lg transition-colors block w-max min-w-[200px]">
                                                                             <div className="flex items-center gap-2">
-                                                                                <span className="text-xs font-semibold text-slate-800">{bp.name}</span>
+                                                                                <span className="text-xs font-semibold text-foreground">{bp.name}</span>
                                                                                 <span className="text-[9px] font-mono font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-100">
                                                                                     {bp.batch_number}
                                                                                 </span>
                                                                             </div>
-                                                                            <div className="flex gap-2 text-[10px] text-slate-500 font-medium mt-0.5">
-                                                                                <span>Qty: <span className="text-slate-700 font-bold">{bp.quantity} {bp.unit}</span></span>
+                                                                            <div className="flex gap-2 text-[10px] text-muted-foreground font-medium mt-0.5">
+                                                                                <span>Qty: <span className="text-foreground font-bold">{bp.quantity} {bp.unit}</span></span>
                                                                                 <span className="text-slate-300">|</span>
                                                                                 <span>Allocated Cost: <span className="text-blue-700 font-bold">₹{allocatedCostPerUnit.toFixed(2)}/unit</span></span>
                                                                             </div>
@@ -816,7 +816,7 @@ export default function ShopAccountingPage() {
 
                                                     {/* General expenses or unmatched ids */}
                                                     {!activationProduct && !purchaseProduct && linkedBatchProducts.length === 0 && (
-                                                        <span className="text-slate-500 text-[11px]">
+                                                        <span className="text-muted-foreground text-[11px]">
                                                             {(isAutoEntry || ["batch_transport","batch_labour","batch_other"].includes(exp.category)) && exp.description ? (
                                                                 <span className="italic whitespace-normal max-w-[250px] block border-l-2 border-slate-200 pl-2">{exp.description}</span>
                                                             ) : (

@@ -475,7 +475,7 @@ export default function CommunityPage() {
                             ) : channels.length === 0 ? (
                                 <div className="p-8 text-center text-slate-400">
                                     <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-30 text-green-700" />
-                                    <p className="font-semibold text-slate-700 dark:text-slate-300 text-sm mb-1">
+                                    <p className="font-semibold text-muted-foreground text-sm mb-1">
                                         {t("community.noChatsTitle", "No Active Chats")}
                                     </p>
                                     <p className="text-xs leading-relaxed">
@@ -504,7 +504,7 @@ export default function CommunityPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-baseline mb-1">
-                                                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm truncate">
+                                                    <h3 className="font-semibold text-foreground text-sm truncate">
                                                         {ch.name}
                                                     </h3>
                                                     {ch.last_message_time && (
@@ -513,7 +513,7 @@ export default function CommunityPage() {
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                                <p className="text-xs text-muted-foreground truncate">
                                                     {ch.last_message || t("community.noMessages", "No messages yet")}
                                                 </p>
                                                 {ch.location_tag && (
@@ -567,12 +567,12 @@ export default function CommunityPage() {
                                                         {farmer.full_name.substring(0, 2).toUpperCase()}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate flex items-center gap-1">
+                                                        <h4 className="font-semibold text-foreground text-xs truncate flex items-center gap-1">
                                                             {farmer.full_name}
                                                             {farmer.role === 'expert' && <span title="Verified Expert"><CheckCircle2 className="h-3 w-3 text-blue-500" /></span>}
                                                         </h4>
                                                         {(farmer.district || farmer.state) && (
-                                                            <p className="text-[10px] text-slate-500 flex items-center gap-0.5 truncate">
+                                                            <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 truncate">
                                                                 <MapPin className="h-2 w-2 text-slate-400" />
                                                                 {farmer.district && `${farmer.district}, `}{farmer.state}
                                                             </p>
@@ -617,12 +617,12 @@ export default function CommunityPage() {
                                                         {farmer.full_name.substring(0, 2).toUpperCase()}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate flex items-center gap-1">
+                                                        <h4 className="font-semibold text-foreground text-xs truncate flex items-center gap-1">
                                                             {farmer.full_name}
                                                             <span title="Verified Expert"><CheckCircle2 className="h-3 w-3 text-blue-500" /></span>
                                                         </h4>
                                                         {(farmer.district || farmer.state) && (
-                                                            <p className="text-[10px] text-slate-500 flex items-center gap-0.5 truncate">
+                                                            <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 truncate">
                                                                 <MapPin className="h-2 w-2 text-slate-400" />
                                                                 {farmer.district && `${farmer.district}, `}{farmer.state}
                                                             </p>
@@ -668,11 +668,11 @@ export default function CommunityPage() {
                                                         <Users className="h-4 w-4" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate">
+                                                        <h4 className="font-semibold text-foreground text-xs truncate">
                                                             {group.name}
                                                         </h4>
                                                         {group.location_tag && (
-                                                            <p className="text-[10px] text-slate-500 flex items-center gap-0.5 truncate">
+                                                            <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 truncate">
                                                                 <MapPin className="h-2 w-2 text-slate-400" />
                                                                 {group.location_tag}
                                                             </p>
@@ -727,7 +727,7 @@ export default function CommunityPage() {
                                         )}
                                     </div>
                                     <div>
-                                        <h2 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight">
+                                        <h2 className="font-semibold text-foreground text-sm leading-tight">
                                             {activeChannel.name}
                                         </h2>
                                         <div className="flex items-center gap-2 mt-0.5">
@@ -757,7 +757,7 @@ export default function CommunityPage() {
                                 ) : messages.length === 0 ? (
                                     <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 p-8">
                                         <MessageSquare className="h-10 w-10 mb-2 opacity-35 text-green-700 animate-bounce" />
-                                        <p className="font-semibold text-slate-700 dark:text-slate-300 text-sm">
+                                        <p className="font-semibold text-muted-foreground text-sm">
                                             {t("community.noMessagesYet", "No messages here yet")}
                                         </p>
                                         <p className="text-xs mt-1 max-w-xs">
@@ -788,7 +788,7 @@ export default function CommunityPage() {
                                                 <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"}`}>
                                                     {/* Sender Name (for group chats) */}
                                                     {!isCurrentUser && activeChannel.channel_type === "group" && (
-                                                        <span className="text-[10px] font-medium text-slate-500 ml-2 mb-0.5 flex items-center gap-1">
+                                                        <span className="text-[10px] font-medium text-muted-foreground ml-2 mb-0.5 flex items-center gap-1">
                                                             {msg.sender_name}
                                                             {msg.sender_role === 'expert' && (
                                                                 <span className="inline-flex items-center text-blue-600 dark:text-blue-400" title="Verified Expert">
@@ -804,7 +804,7 @@ export default function CommunityPage() {
                                                         className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm transition-all ${
                                                             isCurrentUser
                                                                 ? "bg-gradient-to-r from-green-700 to-green-600 text-white rounded-tr-none"
-                                                                : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-800/80 rounded-tl-none"
+                                                                : "bg-white dark:bg-slate-900 text-foreground border border-slate-100 dark:border-slate-800/80 rounded-tl-none"
                                                         }`}
                                                     >
                                                         {/* Media rendering */}
@@ -859,28 +859,28 @@ export default function CommunityPage() {
                                     <button
                                         type="button"
                                         onClick={() => handleQuickReply(t("community.shortcutPest", "Here is a pest control tip that worked for me: "))}
-                                        className="text-[10px] bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 hover:dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
+                                        className="text-[10px] bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 hover:dark:bg-slate-900 text-muted-foreground px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
                                     >
                                         🌾 {t("community.pestTip", "Pest Tip")}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => handleQuickReply(t("community.shortcutCropPlan", "Here is my crop plan for this season: "))}
-                                        className="text-[10px] bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 hover:dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
+                                        className="text-[10px] bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 hover:dark:bg-slate-900 text-muted-foreground px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
                                     >
                                         🚜 {t("community.cropPlanTip", "Crop Plan")}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => handleQuickReply(t("community.shortcutMarket", "What are the latest market prices for crops in your mandi?"))}
-                                        className="text-[10px] bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 hover:dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
+                                        className="text-[10px] bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 hover:dark:bg-slate-900 text-muted-foreground px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
                                     >
                                         📈 {t("community.marketPricesTip", "Mandi Prices")}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => handleQuickReply(t("community.shortcutWeather", "How is the weather conditions at your farm today?"))}
-                                        className="text-[10px] bg-slate-50 dark:bg-slate-955 hover:bg-slate-100 hover:dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
+                                        className="text-[10px] bg-slate-50 dark:bg-slate-955 hover:bg-slate-100 hover:dark:bg-slate-900 text-muted-foreground px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
                                     >
                                         🌦️ {t("community.weatherTip", "Weather Status")}
                                     </button>
@@ -926,7 +926,7 @@ export default function CommunityPage() {
                                         id="btn-chat-upload"
                                         disabled={uploading || isRecording}
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="border-slate-200 dark:border-slate-800 text-slate-500 hover:text-green-700 dark:hover:text-green-500 h-10 w-10 shrink-0 rounded-xl"
+                                        className="border-slate-200 dark:border-slate-800 text-muted-foreground hover:text-green-700 dark:hover:text-green-500 h-10 w-10 shrink-0 rounded-xl"
                                     >
                                         {uploading ? (
                                             <Loader2 className="h-4 w-4 animate-spin text-green-600" />
@@ -943,7 +943,7 @@ export default function CommunityPage() {
                                         id="btn-chat-record"
                                         disabled={uploading}
                                         onClick={isRecording ? stopRecording : startRecording}
-                                        className={`shrink-0 h-10 w-10 rounded-xl ${isRecording ? 'animate-pulse bg-rose-100 text-rose-600 border-rose-200' : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:text-rose-600 dark:hover:text-rose-500'}`}
+                                        className={`shrink-0 h-10 w-10 rounded-xl ${isRecording ? 'animate-pulse bg-rose-100 text-rose-600 border-rose-200' : 'border-slate-200 dark:border-slate-800 text-muted-foreground hover:text-rose-600 dark:hover:text-rose-500'}`}
                                     >
                                         {isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4.5 w-4.5" />}
                                     </Button>
@@ -984,7 +984,7 @@ export default function CommunityPage() {
                             <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-base mb-1.5">
                                 {t("community.noChatActive", "Join the Conversation")}
                             </h3>
-                            <p className="text-xs leading-relaxed max-w-sm text-slate-500 dark:text-slate-400">
+                            <p className="text-xs leading-relaxed max-w-sm text-muted-foreground">
                                 {t(
                                     "community.welcomeMessage",
                                     "Select an active group or direct message chat from the sidebar, or discover other local farmers to start a direct message."

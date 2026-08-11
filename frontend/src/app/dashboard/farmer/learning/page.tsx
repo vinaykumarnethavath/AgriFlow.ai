@@ -44,7 +44,7 @@ export default function LearningHubPage() {
         return (
             <div className="h-[80vh] flex flex-col items-center justify-center">
                 <Loader2 className="h-10 w-10 text-green-500 animate-spin" />
-                <p className="mt-4 text-slate-500 font-medium">Loading educational content...</p>
+                <p className="mt-4 text-muted-foreground font-medium">Loading educational content...</p>
             </div>
         );
     }
@@ -65,11 +65,11 @@ export default function LearningHubPage() {
         <div className="max-w-7xl mx-auto space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
                         <BookOpen className="h-8 w-8 text-rose-500" />
                         {t("sidebar.learning", "Agri Learning Hub")}
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
+                    <p className="text-muted-foreground mt-1 max-w-2xl">
                         Curated video guides on Smart Farming, crop techniques, and modern machinery to help you maximize your yield.
                     </p>
                 </div>
@@ -160,10 +160,10 @@ export default function LearningHubPage() {
                                     {video.category}
                                 </span>
                             </div>
-                            <h3 className="font-bold text-slate-900 dark:text-slate-100 line-clamp-2 leading-tight mb-2 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                            <h3 className="font-bold text-foreground line-clamp-2 leading-tight mb-2 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
                                 {video.title}
                             </h3>
-                            <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400 mt-4">
+                            <div className="flex items-center justify-between text-sm text-muted-foreground mt-4">
                                 <span className="font-medium">{video.channel}</span>
                             </div>
                         </div>
@@ -172,7 +172,7 @@ export default function LearningHubPage() {
             </div>
 
             {filteredVideos.length === 0 && (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                     No videos found for this category.
                 </div>
             )}

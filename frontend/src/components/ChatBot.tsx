@@ -487,11 +487,11 @@ export const ChatBot = () => {
                                                     "text-xs font-medium truncate",
                                                     session.id === activeSessionId
                                                         ? "text-green-700 dark:text-green-300"
-                                                        : "text-slate-700 dark:text-slate-300"
+                                                        : "text-muted-foreground"
                                                 )}>
                                                     {session.title}
                                                 </p>
-                                                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                                <p className="text-[10px] text-slate-400 dark:text-muted-foreground mt-0.5">
                                                     {formatDate(session.updatedAt)}
                                                     {" · "}
                                                     {session.messages.filter(m => m.sender === "user").length} msgs
@@ -545,9 +545,9 @@ export const ChatBot = () => {
                     <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Privacy Legend */}
                         <div className="bg-slate-50 dark:bg-slate-800/50 p-1.5 flex justify-center gap-4 text-[10px] border-b border-slate-100 dark:border-slate-800 shrink-0">
-                            <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400"><span className="w-2 h-2 rounded-full bg-green-500"></span> Your Data</span>
-                            <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400"><span className="w-2 h-2 rounded-full bg-purple-500"></span> AI Only</span>
-                            <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Mixed</span>
+                            <span className="flex items-center gap-1 text-muted-foreground"><span className="w-2 h-2 rounded-full bg-green-500"></span> Your Data</span>
+                            <span className="flex items-center gap-1 text-muted-foreground"><span className="w-2 h-2 rounded-full bg-purple-500"></span> AI Only</span>
+                            <span className="flex items-center gap-1 text-muted-foreground"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Mixed</span>
                         </div>
 
                         {/* Message List */}
@@ -596,7 +596,7 @@ export const ChatBot = () => {
                                                         className="absolute -bottom-2 -left-2 w-6 h-6 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-md flex items-center justify-center opacity-0 group-hover/msg:opacity-100 hover:bg-green-50 dark:hover:bg-green-900/30 hover:border-green-300 dark:hover:border-green-600 transition-all scale-90 group-hover/msg:scale-100"
                                                         title="Rewrite this message"
                                                     >
-                                                        <Edit2 className="w-3 h-3 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400" />
+                                                        <Edit2 className="w-3 h-3 text-muted-foreground hover:text-green-600 dark:hover:text-green-400" />
                                                     </button>
                                                 )}
                                             </div>

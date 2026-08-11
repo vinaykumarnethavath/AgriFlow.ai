@@ -470,7 +470,7 @@ export default function MarketPage() {
                                     className={`p-4 rounded-xl border cursor-pointer transition-all ${
                                         selectedOrder?.id === order.id
                                             ? "border-green-400 bg-green-50 shadow-md"
-                                            : "border-gray-200 bg-white hover:border-green-200 hover:shadow-sm"
+                                            : "border-gray-200 bg-white dark:bg-zinc-900 hover:border-green-200 hover:shadow-sm"
                                     }`}
                                 >
                                     <div className="flex justify-between items-start">
@@ -512,7 +512,7 @@ export default function MarketPage() {
                                 </div>
                             ) : (
                                 <Card className="flex-1 border-gray-200">
-                                    <CardHeader className="border-b bg-gray-50/50 pb-4">
+                                    <CardHeader className="border-b bg-gray-50/50 dark:bg-zinc-800/50 pb-4">
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <CardTitle className="text-xl">Order #{selectedOrder.id}</CardTitle>
@@ -571,7 +571,7 @@ export default function MarketPage() {
                                         {/* Transaction Details */}
                                         <div className="border-t pt-4">
                                             <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider mb-3">Transaction Details</h3>
-                                            <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
+                                            <div className="bg-gray-50 dark:bg-zinc-800 rounded-xl p-4 space-y-2.5">
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-muted-foreground">Subtotal</span>
                                                     <span className="font-medium text-foreground">₹{selectedOrder.total_amount.toLocaleString()}</span>
@@ -759,20 +759,20 @@ export default function MarketPage() {
                                             cart.reduce((acc, item) => ({ ...acc, [item.product.user_id]: true }), {} as Record<number, boolean>)
                                         ).length} shop(s)</p>
                                     </div>
-                                        <div className="mb-4 bg-white/10 rounded-lg p-3">
+                                        <div className="mb-4 bg-white/10 dark:bg-zinc-800/50 rounded-lg p-3">
                                             <p className="text-green-100 text-sm mb-2 font-medium">Payment Mode</p>
                                             <div className="flex gap-2">
                                                 <Button
                                                     variant={paymentMode === "razorpay" ? "default" : "outline"}
                                                     onClick={() => setPaymentMode("razorpay")}
-                                                    className={`flex-1 ${paymentMode === "razorpay" ? "bg-white text-green-700 hover:bg-gray-100" : "bg-transparent text-white border-green-400 hover:bg-green-700 hover:text-white"}`}
+                                                    className={`flex-1 ${paymentMode === "razorpay" ? "bg-white dark:bg-zinc-900 text-green-700 hover:bg-gray-100" : "bg-transparent text-white border-green-400 hover:bg-green-700 hover:text-white"}`}
                                                 >
                                                     <CreditCard className="w-4 h-4 mr-2" /> Pay Online
                                                 </Button>
                                                 <Button
                                                     variant={paymentMode === "cash" ? "default" : "outline"}
                                                     onClick={() => setPaymentMode("cash")}
-                                                    className={`flex-1 ${paymentMode === "cash" ? "bg-white text-green-700 hover:bg-gray-100" : "bg-transparent text-white border-green-400 hover:bg-green-700 hover:text-white"}`}
+                                                    className={`flex-1 ${paymentMode === "cash" ? "bg-white dark:bg-zinc-900 text-green-700 hover:bg-gray-100" : "bg-transparent text-white border-green-400 hover:bg-green-700 hover:text-white"}`}
                                                 >
                                                     Cash on Delivery
                                                 </Button>
@@ -781,7 +781,7 @@ export default function MarketPage() {
                                         <Button
                                             onClick={placeOrder}
                                             disabled={placingOrder}
-                                            className="w-full bg-white text-green-700 hover:bg-green-50 font-bold px-8 py-6 text-lg"
+                                            className="w-full bg-white dark:bg-zinc-900 text-green-700 hover:bg-green-50 font-bold px-8 py-6 text-lg"
                                         >
                                             {placingOrder ? "Processing..." : "Request Order"}
                                         </Button>
@@ -840,7 +840,7 @@ export default function MarketPage() {
                         placeholder="Search by name, brand (e.g., DAP, Urea, IFFCO)..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none text-foreground bg-white"
+                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none text-foreground bg-white dark:bg-zinc-900"
                     />
                 </div>
                 {/* Shop Filter */}
@@ -848,7 +848,7 @@ export default function MarketPage() {
                     <select
                         value={selectedShop ?? "all"}
                         onChange={(e) => setSelectedShop(e.target.value === "all" ? null : parseInt(e.target.value))}
-                        className="appearance-none pl-10 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none text-foreground bg-white min-w-[200px]"
+                        className="appearance-none pl-10 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none text-foreground bg-white dark:bg-zinc-900 min-w-[200px]"
                     >
                         <option value="all">All Shops</option>
                         {shops.map(shop => (
@@ -902,7 +902,7 @@ export default function MarketPage() {
                             >
                                 {/* Product Image */}
                                 <div 
-                                    className="w-full h-44 bg-gray-50 overflow-hidden relative cursor-pointer"
+                                    className="w-full h-44 bg-gray-50 dark:bg-zinc-800 overflow-hidden relative cursor-pointer"
                                     onClick={() => {
                                         const imgUrl = product.image_url || product.product_image_url;
                                         if (imgUrl) setSelectedImage(imgUrl);
@@ -1024,7 +1024,7 @@ export default function MarketPage() {
                                 </div>
                                 <Button
                                     onClick={() => setShowCart(true)}
-                                    className="bg-white text-green-700 hover:bg-green-50 font-bold"
+                                    className="bg-white dark:bg-zinc-900 text-green-700 hover:bg-green-50 font-bold"
                                 >
                                     View Cart →
                                 </Button>

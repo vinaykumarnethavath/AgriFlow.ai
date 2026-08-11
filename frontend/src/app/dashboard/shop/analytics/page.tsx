@@ -45,7 +45,7 @@ const CATEGORIES = [
     { key: "seeds", label: "Seeds", icon: Sprout, color: "border-green-200 bg-green-50/40", iconColor: "text-green-600", badgeColor: "bg-green-100 text-green-700" },
     { key: "fertilizer", label: "Fertilizer", icon: Leaf, color: "border-lime-200 bg-lime-50/40", iconColor: "text-lime-600", badgeColor: "bg-lime-100 text-lime-700" },
     { key: "pesticides", label: "Pesticides", icon: FlaskConical, color: "border-orange-200 bg-orange-50/40", iconColor: "text-orange-600", badgeColor: "bg-orange-100 text-orange-700" },
-    { key: "machinery", label: "Machinery", icon: Wrench, color: "border-slate-200 bg-slate-50/40", iconColor: "text-slate-600", badgeColor: "bg-slate-100 text-slate-700" },
+    { key: "machinery", label: "Machinery", icon: Wrench, color: "border-slate-200 bg-slate-50/40", iconColor: "text-muted-foreground", badgeColor: "bg-slate-100 text-foreground" },
 ];
 
 export default function ShopAnalyticsPage() {
@@ -328,7 +328,7 @@ export default function ShopAnalyticsPage() {
                                 {channelData.map(ch => (
                                     <div key={ch.channel} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
                                         <div>
-                                            <p className="text-sm font-semibold capitalize bg-opacity-10 text-slate-700">{ch.channel || 'Cash'}</p>
+                                            <p className="text-sm font-semibold capitalize bg-opacity-10 text-foreground">{ch.channel || 'Cash'}</p>
                                             <p className="text-xs text-muted-foreground">{ch.orders} orders</p>
                                         </div>
                                         <div className="text-right">
@@ -359,7 +359,7 @@ export default function ShopAnalyticsPage() {
                                         "pending": "text-amber-700 bg-amber-50",
                                         "cancelled": "text-red-700 bg-red-50"
                                     };
-                                    const colorCls = colors[h.status.toLowerCase()] || "text-slate-700 bg-slate-50";
+                                    const colorCls = colors[h.status.toLowerCase()] || "text-foreground bg-slate-50";
                                     return (
                                         <div key={h.status} className={`p-4 rounded-xl flex flex-col justify-between ${colorCls} border border-opacity-50`}>
                                             <p className="text-xs uppercase font-semibold opacity-70 mb-2">{h.status}</p>
@@ -380,7 +380,7 @@ export default function ShopAnalyticsPage() {
             <Card>
                 <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                        <Receipt className="h-5 w-5 text-slate-500" /> Sold Products — Batch-wise Ledger
+                        <Receipt className="h-5 w-5 text-muted-foreground" /> Sold Products — Batch-wise Ledger
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="px-0 pt-0">
@@ -413,7 +413,7 @@ export default function ShopAnalyticsPage() {
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-semibold flex items-center justify-center text-xs flex-shrink-0">{idx + 1}</div>
                                                         <div>
-                                                            <p className="font-semibold text-slate-800">{product.product_name}</p>
+                                                            <p className="font-semibold text-foreground">{product.product_name}</p>
                                                             {product.batch_number ? (
                                                                 <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 inline-block mt-0.5">
                                                                     Batch: {product.batch_number}
@@ -426,19 +426,19 @@ export default function ShopAnalyticsPage() {
                                                 </td>
                                                 {/* Category */}
                                                 <td className="px-6 py-3">
-                                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-muted-foreground border border-slate-200">
                                                         {product.category}
                                                     </span>
                                                 </td>
                                                 {/* Sold qty */}
                                                 <td className="px-6 py-3">
-                                                    <span className="font-bold text-slate-800 text-lg">{product.units_sold}</span>
+                                                    <span className="font-bold text-foreground text-lg">{product.units_sold}</span>
                                                     <span className="text-xs text-slate-400 ml-1">units</span>
                                                 </td>
                                                 {/* Cost per unit */}
                                                 <td className="px-6 py-3">
                                                     <div className="flex flex-col">
-                                                        <span className="font-medium text-slate-700">₹{costPrice.toFixed(2)}</span>
+                                                        <span className="font-medium text-foreground">₹{costPrice.toFixed(2)}</span>
                                                         {overhead > 0 && (
                                                             <span className="text-[10px] text-orange-600 font-medium">+₹{(overhead / Math.max(product.units_sold, 1)).toFixed(2)} overhead</span>
                                                         )}
@@ -446,7 +446,7 @@ export default function ShopAnalyticsPage() {
                                                     </div>
                                                 </td>
                                                 {/* Revenue */}
-                                                <td className="px-6 py-3 font-semibold text-slate-800">
+                                                <td className="px-6 py-3 font-semibold text-foreground">
                                                     ₹{product.revenue.toLocaleString()}
                                                 </td>
                                                 {/* Profit */}

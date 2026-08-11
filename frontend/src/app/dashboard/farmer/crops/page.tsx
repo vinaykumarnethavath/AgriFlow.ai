@@ -377,7 +377,7 @@ export default function CropsListPage() {
                                             >
                                                 {t('crops.editHarvest')}
                                             </Button>
-                                            <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-muted-foreground group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                                            <div className="h-8 w-8 rounded-full bg-gray-50 dark:bg-zinc-800 flex items-center justify-center text-muted-foreground group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
                                                 <ArrowRight className="h-4 w-4" />
                                             </div>
                                         </div>
@@ -397,7 +397,7 @@ export default function CropsListPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {crops.length === 0 ? (
-                        <div className="col-span-3 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-12 text-center">
+                        <div className="col-span-3 bg-gray-50 dark:bg-zinc-800 border-2 border-dashed border-gray-200 rounded-xl p-12 text-center">
                             <Sprout className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                             <h3 className="text-xl font-bold text-foreground mb-2">{t('farmer.noCrops')}</h3>
                             <p className="text-muted-foreground mb-4">{t('crops.addFirstCropDesc')}</p>
@@ -494,7 +494,7 @@ export default function CropsListPage() {
                                                     {t('farmer.addExpense')}
                                                 </Button>
                                             </div>
-                                            <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-muted-foreground group-hover:bg-green-50 group-hover:text-green-600 transition-colors">
+                                            <div className="h-8 w-8 rounded-full bg-gray-50 dark:bg-zinc-800 flex items-center justify-center text-muted-foreground group-hover:bg-green-50 group-hover:text-green-600 transition-colors">
                                                 <ArrowRight className="h-4 w-4" />
                                             </div>
                                         </div>
@@ -614,7 +614,7 @@ export default function CropsListPage() {
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-foreground">{t('crops.season')}</label>
                             <select
-                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                                className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-zinc-900"
                                 value={newCrop.season}
                                 onChange={(e) => setNewCrop({ ...newCrop, season: e.target.value })}
                             >

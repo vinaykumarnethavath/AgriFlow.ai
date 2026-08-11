@@ -98,14 +98,14 @@ export default function ProductDetailsPage() {
 
                         {/* Timeline Item 1: Origin */}
                         <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-green-500 text-slate-500 group-[.is-active]:text-green-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-green-500 text-muted-foreground group-[.is-active]:text-green-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
                                 <MapPin className="w-5 h-5" />
                             </div>
                             <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded border border-slate-200 shadow">
                                 <div className="flex items-center justify-between space-x-2 mb-1">
-                                    <div className="font-bold text-slate-900">Origin / Farm</div>
+                                    <div className="font-bold text-foreground">Origin / Farm</div>
                                 </div>
-                                <div className="text-slate-500 text-sm">
+                                <div className="text-muted-foreground text-sm">
                                     <div className="flex items-center gap-1"><User className="w-3 h-3" /> {traceability.farmer_name || product.brand || 'Local Farm'}</div>
                                     <div className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {traceability.location || 'Maharashtra, India'}</div>
                                 </div>
@@ -115,15 +115,15 @@ export default function ProductDetailsPage() {
                         {/* Timeline Item 2: Processing (if manufactured) */}
                         {product.category === 'processed' && (
                             <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-blue-500 text-slate-500 group-[.is-active]:text-blue-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-blue-500 text-muted-foreground group-[.is-active]:text-blue-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
                                     <CheckCircle className="w-5 h-5" />
                                 </div>
                                 <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded border border-slate-200 shadow">
                                     <div className="flex items-center justify-between space-x-2 mb-1">
-                                        <div className="font-bold text-slate-900">Processing</div>
+                                        <div className="font-bold text-foreground">Processing</div>
                                         <time className="font-caveat font-medium text-indigo-500 text-xs">Batch: {product.batch_number}</time>
                                     </div>
-                                    <div className="text-slate-500 text-sm">
+                                    <div className="text-muted-foreground text-sm">
                                         Processed at certified facility. Quality Checked.
                                     </div>
                                 </div>
@@ -132,15 +132,15 @@ export default function ProductDetailsPage() {
 
                         {/* Timeline Item 3: Marketplace */}
                         <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-purple-500 text-slate-500 group-[.is-active]:text-purple-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-purple-500 text-muted-foreground group-[.is-active]:text-purple-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
                                 <ShoppingCart className="w-5 h-5" />
                             </div>
                             <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded border border-slate-200 shadow">
                                 <div className="flex items-center justify-between space-x-2 mb-1">
-                                    <div className="font-bold text-slate-900">Ready for Sale</div>
+                                    <div className="font-bold text-foreground">Ready for Sale</div>
                                     <time className="font-caveat font-medium text-indigo-500 text-xs">{new Date().toLocaleDateString()}</time>
                                 </div>
-                                <div className="text-slate-500 text-sm">
+                                <div className="text-muted-foreground text-sm">
                                     Available on AgriChain Marketplace.
                                 </div>
                             </div>
