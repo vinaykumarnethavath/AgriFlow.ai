@@ -81,10 +81,10 @@ const normalizeLandArea = (value: number): number => {
 
 // Helper: Add land areas in base-40
 const addLandArea = (a: number, b: number): number => {
-    let aAcres = Math.floor(a);
-    let aGuntas = Math.round((a - aAcres) * 100);
-    let bAcres = Math.floor(b);
-    let bGuntas = Math.round((b - bAcres) * 100);
+    const aAcres = Math.floor(a);
+    const aGuntas = Math.round((a - aAcres) * 100);
+    const bAcres = Math.floor(b);
+    const bGuntas = Math.round((b - bAcres) * 100);
     let resAcres = aAcres + bAcres;
     let resGuntas = aGuntas + bGuntas;
     if (resGuntas >= 40) {
@@ -96,10 +96,10 @@ const addLandArea = (a: number, b: number): number => {
 
 // Helper: Subtract land areas in base-40
 const subtractLandArea = (total: number, minus: number): number => {
-    let tAcres = Math.floor(total);
-    let tGuntas = Math.round((total - tAcres) * 100);
-    let mAcres = Math.floor(minus);
-    let mGuntas = Math.round((minus - mAcres) * 100);
+    const tAcres = Math.floor(total);
+    const tGuntas = Math.round((total - tAcres) * 100);
+    const mAcres = Math.floor(minus);
+    const mGuntas = Math.round((minus - mAcres) * 100);
     let resAcres = tAcres - mAcres;
     let resGuntas = tGuntas - mGuntas;
     if (resGuntas < 0) {

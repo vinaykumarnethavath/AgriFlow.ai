@@ -50,7 +50,7 @@ export default function ManufacturerDashboard() {
 
     useEffect(() => {
         fetchAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, []);
 
     const fetchAll = async () => {

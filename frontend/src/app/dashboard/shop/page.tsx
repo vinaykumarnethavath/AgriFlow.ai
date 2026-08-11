@@ -116,7 +116,7 @@ export default function ShopDashboard() {
         }, 15000);
 
         return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, [period]);
 
     const handlePeriodChange = async (p: string) => {
