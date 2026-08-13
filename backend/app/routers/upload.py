@@ -27,7 +27,9 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         if public_base_url:
             base = public_base_url
         else:
-            base = str(request.base_url).rstrip("/")
+            scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
+            host = request.headers.get("x-forwarded-host", request.headers.get("host", request.url.netloc))
+            base = f"{scheme}://{host}"
 
         return {"url": f"{base}/static/{unique_filename}"}
     except Exception as e:
