@@ -85,7 +85,7 @@ export default function PrecisionNutritionPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Input Form */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                    <div className="bg-transparent rounded-2xl p-6 border border-gray-200 dark:border-slate-800">
                         <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
                             <Droplets className="h-5 w-5 text-green-500" />
                             Soil Parameters

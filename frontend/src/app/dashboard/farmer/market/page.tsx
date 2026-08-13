@@ -840,7 +840,7 @@ export default function MarketPage() {
                         placeholder="Search by name, brand (e.g., DAP, Urea, IFFCO)..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none text-foreground bg-white dark:bg-zinc-900"
+                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl focus:border-green-500 outline-none text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-900 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                     />
                 </div>
                 {/* Shop Filter */}
@@ -848,7 +848,7 @@ export default function MarketPage() {
                     <select
                         value={selectedShop ?? "all"}
                         onChange={(e) => setSelectedShop(e.target.value === "all" ? null : parseInt(e.target.value))}
-                        className="appearance-none pl-10 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none text-foreground bg-white dark:bg-zinc-900 min-w-[200px]"
+                        className="appearance-none pl-10 pr-10 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl focus:border-green-500 outline-none text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-900 min-w-[200px]"
                     >
                         <option value="all">All Shops</option>
                         {shops.map(shop => (

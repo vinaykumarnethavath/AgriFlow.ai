@@ -76,7 +76,7 @@ export default function MarketPricesPage() {
                     <input
                         type="text"
                         placeholder={t('marketPrices.searchCommodity')}
-                        className="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                        className="w-full pl-10 pr-4 py-2.5 border dark:border-zinc-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-900 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
@@ -84,7 +84,7 @@ export default function MarketPricesPage() {
                 <div className="flex items-center gap-2">
                     <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
                     <select
-                        className="border rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 cursor-pointer focus:ring-2 focus:ring-green-500 outline-none"
+                        className="border dark:border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-900 cursor-pointer focus:ring-2 focus:ring-green-500 outline-none"
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value as any)}
                     >
