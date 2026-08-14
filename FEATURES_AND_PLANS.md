@@ -280,5 +280,5 @@ AgriFlow AI is committed to continuous evolution. Our roadmap focuses on communi
 #### **D. Emerging Technologies**
 1. **Blockchain Ledger**: Immutable end-to-end traceability for **Organic Certification** and fair-trade verification.
 2. **IoT Integration**: Direct data fetching from soil moisture sensors and farm weather stations for real-time dashboard updates.
-fronted modification:
-instead of always asking about role we keep like we give option such that when they click for the first time if they select do not ask again then we save that role and we remove that option  if the user selects do not rememeber then roles should be always shown when ever user try to login 
+#### **E. Frontend Enhancements**
+1. **Persistent Role Selection**: Provide an option to "Remember Role" during the first login. If selected, bypass the role selection screen on future logins. If "Do not remember" is chosen, the role selection screen will always be shown when the user tries to log in.
