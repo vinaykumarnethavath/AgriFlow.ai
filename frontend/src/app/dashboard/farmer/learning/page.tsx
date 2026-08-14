@@ -103,57 +103,59 @@ export default function LearningHubPage() {
         .slice(0, 4);
 
     return (
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-8 pb-10">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-                        <div className="h-10 w-10 bg-gradient-to-br from-rose-500 to-orange-500 rounded-xl flex items-center justify-center">
-                            <BookOpen className="h-5 w-5 text-white" />
-                        </div>
-                        {t("sidebar.learning", "Agri Learning Hub")}
-                    </h1>
-                    <p className="text-muted-foreground mt-1 max-w-2xl">
-                        Curated video guides personalized for your farm — crop tips, fertilizer advice, market insights, and expert talks.
-                    </p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl p-6 rounded-[2rem] border border-white/40 dark:border-zinc-800/50 shadow-sm">
+                <div className="flex gap-5 items-center">
+                    <div className="h-14 w-14 bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/30 transform hover:scale-105 transition-all">
+                        <BookOpen className="h-7 w-7 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-orange-600 dark:from-rose-400 dark:to-orange-400 tracking-tight">
+                            {t("sidebar.learning", "Agri Learning Hub")}
+                        </h1>
+                        <p className="text-muted-foreground mt-1.5 text-sm font-medium">
+                            Curated video guides personalized for your farm — crop tips, fertilizer advice, and expert talks.
+                        </p>
+                    </div>
                 </div>
                 <button
                     onClick={() => fetchVideos(true)}
                     disabled={refreshing}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-3 text-sm font-semibold bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl hover:shadow-lg hover:-translate-y-0.5 transition-all text-gray-700 dark:text-gray-200 disabled:opacity-50"
                 >
-                    <RefreshCcw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                    <RefreshCcw className={`h-4 w-4 ${refreshing ? "animate-spin text-orange-500" : ""}`} />
                     {refreshing ? "Refreshing..." : "Get Fresh Videos"}
                 </button>
             </div>
 
             {/* Personalization Banner */}
             {data.personalized_for.length > 0 && (
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl px-5 py-3 flex items-center gap-3">
-                    <div className="h-8 w-8 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 backdrop-blur-md rounded-3xl px-6 py-4 flex items-center gap-4 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                    <div className="h-10 w-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
+                        <Sparkles className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                            Personalized for your crops:{" "}
+                        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200 flex items-center flex-wrap gap-2">
+                            Personalized for your crops: 
                             {data.personalized_for.map((crop, i) => (
-                                <span key={crop}>
-                                    <span className="font-bold">{crop}</span>
-                                    {i < data.personalized_for.length - 1 ? ", " : ""}
+                                <span key={crop} className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-lg text-xs tracking-wide">
+                                    {crop}
                                 </span>
                             ))}
                         </p>
-                        <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                        <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1.5 font-medium">
                             Videos are selected in your regional language based on your location
                         </p>
                     </div>
                 </div>
             )}
 
-            {/* Video Player (if a video is selected) */}
+            {/* Video Player */}
             {selectedVideo && (
-                <div className="bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 relative animate-in fade-in zoom-in-95 duration-300">
-                    <div className="aspect-video w-full">
+                <div className="bg-zinc-950/90 backdrop-blur-2xl rounded-3xl overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] border border-white/10 relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="aspect-video w-full bg-black">
                         <iframe
                             width="100%"
                             height="100%"
@@ -165,32 +167,37 @@ export default function LearningHubPage() {
                             className="w-full h-full"
                         ></iframe>
                     </div>
-                    <div className="p-4 bg-slate-900 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <div className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-t from-zinc-950 to-transparent">
                         <div className="flex-1 min-w-0">
-                            <h2 className="text-white text-lg font-bold line-clamp-1">{selectedVideo.title}</h2>
-                            <div className="flex items-center gap-3 mt-1">
-                                <span className="text-slate-400 text-sm">{selectedVideo.channel}</span>
+                            <h2 className="text-white text-xl font-bold line-clamp-1">{selectedVideo.title}</h2>
+                            <div className="flex items-center gap-4 mt-2">
+                                <span className="text-zinc-400 text-sm font-medium flex items-center gap-2">
+                                    <div className="h-5 w-5 rounded-full bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center">
+                                        <Video className="h-3 w-3 text-white" />
+                                    </div>
+                                    {selectedVideo.channel}
+                                </span>
                                 {selectedVideo.view_count && (
-                                    <span className="text-slate-500 text-xs flex items-center gap-1">
-                                        <Eye className="h-3 w-3" /> {selectedVideo.view_count} views
+                                    <span className="text-zinc-500 text-xs font-semibold px-2 py-1 bg-zinc-900 rounded-lg flex items-center gap-1.5 border border-zinc-800">
+                                        <Eye className="h-3.5 w-3.5" /> {selectedVideo.view_count} views
                                     </span>
                                 )}
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                             <a
                                 href={`https://www.youtube.com/watch?v=${selectedVideo.id}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-1.5"
+                                className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all shadow-lg shadow-red-600/20 text-sm font-bold flex items-center gap-2"
                             >
-                                <ExternalLink className="h-3.5 w-3.5" /> YouTube
+                                <ExternalLink className="h-4 w-4" /> Open in YouTube
                             </a>
                             <button
                                 onClick={() => setSelectedVideo(null)}
-                                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-1.5"
+                                className="px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-colors text-sm font-bold flex items-center gap-2 border border-zinc-700"
                             >
-                                <X className="h-3.5 w-3.5" /> Close
+                                <X className="h-4 w-4" /> Close
                             </button>
                         </div>
                     </div>
@@ -198,33 +205,36 @@ export default function LearningHubPage() {
             )}
 
             {/* Search Bar */}
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                    type="text"
-                    placeholder="Search videos by title, channel..."
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-900 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                    <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                        <X className="h-4 w-4" />
-                    </button>
-                )}
+            <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-rose-500 to-orange-500 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition-opacity" />
+                <div className="relative flex items-center">
+                    <Search className="absolute left-4 h-5 w-5 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Search videos by title, channel..."
+                        className="w-full pl-12 pr-10 py-4 border-none rounded-2xl text-base text-gray-900 dark:text-gray-100 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-sm placeholder:text-gray-400 focus:ring-2 focus:ring-rose-500 outline-none transition-all"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery("")}
+                            className="absolute right-4 p-1 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Category Tabs */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2.5">
                 <button
                     onClick={() => setActiveCategory("All")}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 ${
                         activeCategory === "All"
-                            ? "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-md shadow-rose-500/20"
-                            : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700"
+                            ? "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-500/30 scale-105"
+                            : "bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md text-gray-600 dark:text-gray-300 border border-white/40 dark:border-zinc-700/50 hover:bg-white dark:hover:bg-zinc-700 hover:shadow-md hover:-translate-y-0.5"
                     }`}
                 >
                     All Topics
@@ -233,53 +243,58 @@ export default function LearningHubPage() {
                     <button
                         key={cat}
                         onClick={() => setActiveCategory(cat)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
+                        className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
                             activeCategory === cat
-                                ? "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-md shadow-rose-500/20"
-                                : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700"
+                                ? "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-500/30 scale-105"
+                                : "bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md text-gray-600 dark:text-gray-300 border border-white/40 dark:border-zinc-700/50 hover:bg-white dark:hover:bg-zinc-700 hover:shadow-md hover:-translate-y-0.5"
                         }`}
                     >
-                        {data.category_emojis[cat] && <span>{data.category_emojis[cat]}</span>}
+                        {data.category_emojis[cat] && <span className="text-lg">{data.category_emojis[cat]}</span>}
                         {cat}
                     </button>
                 ))}
             </div>
 
-            {/* "For You" Hero Section (only on "All" tab and if we have crop-specific videos) */}
+            {/* "For You" Hero Section */}
             {activeCategory === "All" && forYouVideos.length > 0 && !searchQuery && (
-                <div>
-                    <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4">
-                        <Sparkles className="h-5 w-5 text-amber-500" />
+                <div className="animate-in fade-in duration-700">
+                    <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600 flex items-center gap-3 mb-6">
+                        <Sparkles className="h-6 w-6 text-amber-500" />
                         Recommended For You
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {forYouVideos.map(video => (
                             <div
                                 key={`fy-${video.id}`}
-                                className="group relative rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all"
+                                className="group relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 border border-black/5 dark:border-white/5"
                                 onClick={() => setSelectedVideo(video)}
                             >
-                                <div className="aspect-video overflow-hidden bg-gray-100 dark:bg-zinc-800">
+                                <div className="aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-zinc-800 relative">
                                     <img
                                         src={video.thumbnail}
                                         alt={video.title}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <PlayCircle className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                                        <div className="h-14 w-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">
+                                            <PlayCircle className="h-8 w-8 text-white fill-white/20" />
+                                        </div>
                                     </div>
                                     {video.duration && (
-                                        <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs font-medium px-2 py-0.5 rounded">
+                                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-lg border border-white/10">
                                             {video.duration}
                                         </div>
                                     )}
                                 </div>
-                                <div className="absolute bottom-0 left-0 right-0 p-3">
-                                    <h3 className="text-white text-sm font-bold line-clamp-2 drop-shadow-lg leading-tight">
+                                <div className="absolute bottom-0 left-0 right-0 p-5">
+                                    <h3 className="text-white text-base font-bold line-clamp-2 drop-shadow-md leading-tight group-hover:text-amber-400 transition-colors">
                                         {video.title}
                                     </h3>
-                                    <p className="text-white/70 text-xs mt-1">{video.channel}</p>
+                                    <p className="text-white/80 text-xs font-medium mt-2 flex items-center gap-1.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                        {video.channel}
+                                    </p>
                                 </div>
                             </div>
                         ))}
@@ -289,11 +304,11 @@ export default function LearningHubPage() {
 
             {/* Video Grid */}
             {filteredVideos.length === 0 ? (
-                <div className="text-center py-16">
-                    <div className="h-16 w-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Video className="h-8 w-8 text-gray-400" />
+                <div className="text-center py-20 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl rounded-3xl border border-dashed border-gray-300 dark:border-zinc-700">
+                    <div className="h-20 w-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-800 dark:to-zinc-900 rounded-[2rem] flex items-center justify-center mx-auto mb-5 shadow-inner">
+                        <Video className="h-10 w-10 text-gray-400" />
                     </div>
-                    <p className="text-muted-foreground font-medium">
+                    <p className="text-xl font-bold text-gray-700 dark:text-gray-300">
                         {searchQuery
                             ? `No videos found matching "${searchQuery}"`
                             : "No videos found for this category."}
@@ -301,70 +316,71 @@ export default function LearningHubPage() {
                     {searchQuery && (
                         <button
                             onClick={() => setSearchQuery("")}
-                            className="mt-3 text-sm text-rose-600 hover:text-rose-700 font-medium"
+                            className="mt-4 px-6 py-2.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-xl font-bold hover:bg-rose-200 dark:hover:bg-rose-900/50 transition-colors"
                         >
                             Clear search
                         </button>
                     )}
                 </div>
             ) : (
-                <div>
+                <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">
                     {activeCategory === "All" && forYouVideos.length > 0 && !searchQuery && (
-                        <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4 mt-2">
-                            <Leaf className="h-5 w-5 text-green-500" />
+                        <h2 className="text-2xl font-black text-foreground flex items-center gap-3 mb-6 mt-8">
+                            <Leaf className="h-6 w-6 text-emerald-500" />
                             All Videos
                         </h2>
                     )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {filteredVideos.map((video) => (
                             <div
                                 key={video.id}
-                                className="group bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-zinc-800 hover:shadow-xl hover:border-rose-200 dark:hover:border-rose-800 transition-all cursor-pointer"
+                                className="group bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl border border-white/50 dark:border-zinc-800/50 hover:border-rose-300 dark:hover:border-rose-800/50 transition-all duration-500 cursor-pointer transform hover:-translate-y-1"
                                 onClick={() => setSelectedVideo(video)}
                             >
-                                <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-zinc-800">
+                                <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-zinc-800 m-2 rounded-[1.5rem]">
                                     <img
                                         src={video.thumbnail}
                                         alt={video.title}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                     />
-                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                        <PlayCircle className="h-14 w-14 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/40 transition-colors duration-500 flex items-center justify-center">
+                                        <div className="h-16 w-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">
+                                            <PlayCircle className="h-10 w-10 text-white fill-white/20" />
+                                        </div>
                                     </div>
                                     {video.duration && (
-                                        <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs font-medium px-2 py-0.5 rounded">
+                                        <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-lg border border-white/10">
                                             {video.duration}
                                         </div>
                                     )}
                                 </div>
-                                <div className="p-4">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-2 py-0.5 rounded-full">
-                                            {video.emoji && <span>{video.emoji}</span>}
-                                            <Tag className="h-2.5 w-2.5" />
+                                <div className="p-5 pt-3">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-3 py-1 rounded-full border border-rose-100 dark:border-rose-900/50">
+                                            {video.emoji && <span className="text-xs">{video.emoji}</span>}
+                                            <Tag className="h-3 w-3" />
                                             {video.category}
                                         </span>
-                                        {video.view_count && (
-                                            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                                                <Eye className="h-2.5 w-2.5" />
-                                                {video.view_count}
-                                            </span>
-                                        )}
                                     </div>
-                                    <h3 className="font-bold text-foreground line-clamp-2 leading-tight mb-2 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                                    <h3 className="font-extrabold text-lg text-foreground line-clamp-2 leading-snug mb-2 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
                                         {video.title}
                                     </h3>
                                     {video.description && (
-                                        <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                                        <p className="text-sm text-muted-foreground/80 line-clamp-2 mb-4 font-medium">
                                             {video.description}
                                         </p>
                                     )}
-                                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                        <span className="font-medium truncate">{video.channel}</span>
-                                        {video.duration && (
-                                            <span className="flex items-center gap-1 text-xs flex-shrink-0">
-                                                <Clock className="h-3 w-3" />
-                                                {video.duration}
+                                    <div className="flex items-center justify-between text-sm mt-auto pt-4 border-t border-gray-100 dark:border-zinc-800">
+                                        <div className="flex items-center gap-2 max-w-[60%]">
+                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                                                <span className="text-[10px] text-white font-bold">{video.channel.charAt(0)}</span>
+                                            </div>
+                                            <span className="font-bold text-gray-700 dark:text-gray-300 truncate">{video.channel}</span>
+                                        </div>
+                                        {video.view_count && (
+                                            <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded-lg">
+                                                <Eye className="h-3.5 w-3.5" />
+                                                {video.view_count}
                                             </span>
                                         )}
                                     </div>
@@ -377,12 +393,17 @@ export default function LearningHubPage() {
 
             {/* No crops CTA */}
             {data.personalized_for.length === 0 && (
-                <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-5 text-center">
-                    <Leaf className="h-8 w-8 text-amber-500 mx-auto mb-2" />
-                    <h3 className="font-bold text-amber-800 dark:text-amber-200">Get Personalized Recommendations</h3>
-                    <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                        Add your crops in the "My Crops" section to receive video recommendations tailored to your farming needs.
-                    </p>
+                <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 backdrop-blur-xl rounded-[2rem] p-8 text-center relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-orange-500/5 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-700" />
+                    <div className="relative">
+                        <div className="h-16 w-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/20">
+                            <Leaf className="h-8 w-8 text-white" />
+                        </div>
+                        <h3 className="text-xl font-black text-amber-900 dark:text-amber-100 mb-2">Get Personalized Recommendations</h3>
+                        <p className="text-amber-700/80 dark:text-amber-300/80 font-medium max-w-md mx-auto">
+                            Add your crops in the "My Crops" section to receive video recommendations tailored specifically to your farming needs and region.
+                        </p>
+                    </div>
                 </div>
             )}
         </div>
