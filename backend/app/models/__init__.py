@@ -28,3 +28,7 @@ from .shop_accounting import ShopAccountingExpense, ShopAccountingExpenseCreate,
 from .geocode_cache import GeocodeCache
 from .chat import ChatChannel, ChannelMember, ChatMessage
 from .blockchain import BlockchainBlock
+from .plot_nutrition import (
+    PlotSoilData, PlotSoilDataCreate, PlotSoilDataRead,
+    FertilizerApplication, FertilizerApplicationCreate, FertilizerApplicationRead
+)

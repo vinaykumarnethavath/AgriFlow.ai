@@ -1237,5 +1237,135 @@ export const tamperBlockchain = async (blockIndex: number, tamperedPayload: stri
     return response.data;
 };
 
-export default api;
+// --- Plot Nutrition ---
 
+export interface PlotSoilData {
+    id: number;
+    land_record_id: number;
+    user_id: number;
+    nitrogen: number;
+    phosphorus: number;
+    potassium: number;
+    ph_level: number;
+    organic_carbon: number | null;
+    crop_id: number | null;
+    last_tested: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PlotOverview {
+    land_record_id: number;
+    serial_number: string;
+    area: number;
+    soil_data: PlotSoilData | null;
+    crop_name: string | null;
+    crop_status: string | null;
+    crop_id: number | null;
+}
+
+export interface ActiveCrop {
+    id: number;
+    name: string;
+    area: number;
+    season: string | null;
+    variety: string | null;
+    sowing_date: string | null;
+    expected_harvest_date: string | null;
+    crop_type: string;
+    status: string;
+}
+
+export interface PlotFertilizerRec {
+    name: string;
+    quantity: string;
+    timing: string;
+    application_method: string;
+}
+
+export interface PlotNutritionRecommendation {
+    status: string;
+    soil_health_summary: string;
+    recommendations: PlotFertilizerRec[];
+    additional_tips: string[];
+}
+
+export interface FertilizerApplicationData {
+    id: number;
+    plot_soil_data_id: number;
+    user_id: number;
+    fertilizer_name: string;
+    quantity: number;
+    unit: string;
+    application_date: string;
+    application_method: string | null;
+    crop_id: number | null;
+    notes: string | null;
+    created_at: string;
+}
+
+export interface ImpactAnalysis {
+    overall_status: string;
+    nutrient_balance: Record<string, string>;
+    estimated_levels: Record<string, number>;
+    analysis_summary: string;
+    adjusted_recommendations: PlotFertilizerRec[];
+    risk_alerts: string[];
+}
+
+export const getPlots = async (): Promise<PlotOverview[]> => {
+    const response = await api.get<PlotOverview[]>("/plot-nutrition/plots");
+    return response.data;
+};
+
+export const getActiveCrops = async (): Promise<ActiveCrop[]> => {
+    const response = await api.get<ActiveCrop[]>("/plot-nutrition/active-crops");
+    return response.data;
+};
+
+export const savePlotSoilData = async (landRecordId: number, data: {
+    nitrogen: number;
+    phosphorus: number;
+    potassium: number;
+    ph_level: number;
+    organic_carbon?: number | null;
+    notes?: string | null;
+}): Promise<PlotSoilData> => {
+    const response = await api.post<PlotSoilData>(`/plot-nutrition/plots/${landRecordId}/soil`, data);
+    return response.data;
+};
+
+export const linkCropToPlot = async (plotSoilId: number, cropId: number): Promise<PlotSoilData> => {
+    const response = await api.put<PlotSoilData>(`/plot-nutrition/plots/${plotSoilId}/link-crop`, { crop_id: cropId });
+    return response.data;
+};
+
+export const getPlotRecommendation = async (plotSoilId: number): Promise<PlotNutritionRecommendation> => {
+    const response = await api.post<PlotNutritionRecommendation>(`/plot-nutrition/plots/${plotSoilId}/recommend`);
+    return response.data;
+};
+
+export const applyFertilizer = async (plotSoilId: number, data: {
+    fertilizer_name: string;
+    quantity: number;
+    unit: string;
+    application_date: string;
+    application_method?: string;
+    notes?: string;
+}): Promise<FertilizerApplicationData> => {
+    const response = await api.post<FertilizerApplicationData>(`/plot-nutrition/plots/${plotSoilId}/apply-fertilizer`, data);
+    return response.data;
+};
+
+export const getFertilizerHistory = async (plotSoilId: number): Promise<FertilizerApplicationData[]> => {
+    const response = await api.get<FertilizerApplicationData[]>(`/plot-nutrition/plots/${plotSoilId}/fertilizer-history`);
+    return response.data;
+};
+
+export const analyzeFertilizerImpact = async (plotSoilId: number): Promise<ImpactAnalysis> => {
+    const response = await api.post<ImpactAnalysis>(`/plot-nutrition/plots/${plotSoilId}/analyze-impact`);
+    return response.data;
+};
+
+export default api;
