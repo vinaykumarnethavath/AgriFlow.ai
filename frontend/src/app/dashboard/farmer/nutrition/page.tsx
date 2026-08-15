@@ -37,7 +37,7 @@ function nutrientStatusIcon(status: string) {
     if (status === "deficient") return <TrendingDown className="h-4 w-4 text-amber-500" />;
     if (status === "acidic") return <TrendingDown className="h-4 w-4 text-amber-500" />;
     if (status === "alkaline") return <TrendingUp className="h-4 w-4 text-red-500" />;
-    return <Minus className="h-4 w-4 text-muted-foreground" />;
+    return <Minus className="h-4 w-4 text-slate-700 dark:text-slate-300" />;
 }
 
 function nutrientLabel(key: string) {
@@ -215,7 +215,7 @@ export default function PrecisionNutritionPage() {
                         </div>
                         {t("sidebar.nutrition", "Precision Nutrition")}
                     </h1>
-                    <p className="text-muted-foreground mt-1">
+                    <p className="text-slate-700 dark:text-slate-300 mt-1">
                         Plot-wise soil analysis, crop-specific fertilizer recommendations & impact tracking
                     </p>
                 </div>
@@ -238,18 +238,18 @@ export default function PrecisionNutritionPage() {
             {loadingPlots && (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-                    <p className="text-muted-foreground">Loading your plots...</p>
+                    <p className="text-slate-700 dark:text-slate-300">Loading your plots...</p>
                 </div>
             )}
 
             {/* Empty State */}
             {!loadingPlots && plots.length === 0 && !error && (
-                <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
+                <div className="flex flex-col items-center justify-center py-20 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 text-center">
                     <div className="h-16 w-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-4">
                         <MapPin className="h-8 w-8" />
                     </div>
                     <h3 className="text-xl font-medium text-foreground">No Land Plots Found</h3>
-                    <p className="text-muted-foreground mt-2 max-w-md">
+                    <p className="text-slate-700 dark:text-slate-300 mt-2 max-w-md">
                         Please set up your farmer profile with land records first. Go to your <strong>Profile</strong> page to add land records, then come back here.
                     </p>
                 </div>
@@ -277,7 +277,7 @@ export default function PrecisionNutritionPage() {
                     <TabsContent value="plots" className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-foreground">Your Land Plots ({plots.length})</h2>
-                            <p className="text-sm text-muted-foreground">Select a plot to manage its nutrition</p>
+                            <p className="text-sm text-slate-700 dark:text-slate-300">Select a plot to manage its nutrition</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {plots.map((plot) => {
@@ -290,7 +290,7 @@ export default function PrecisionNutritionPage() {
                                         onClick={() => setSelectedPlot(plot)}
                                         className={`text-left p-5 rounded-2xl border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${isSelected
                                             ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 shadow-md shadow-blue-100 dark:shadow-blue-900/20"
-                                            : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700"
+                                            : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700"
                                             }`}
                                     >
                                         {/* Plot Header */}
@@ -301,7 +301,7 @@ export default function PrecisionNutritionPage() {
                                                 </div>
                                                 <div>
                                                     <h3 className="font-semibold text-foreground text-sm">Plot {plot.serial_number}</h3>
-                                                    <p className="text-xs text-muted-foreground">{plot.area} acres</p>
+                                                    <p className="text-xs text-slate-700 dark:text-slate-300">{plot.area} acres</p>
                                                 </div>
                                             </div>
                                             {isSelected && (
@@ -315,13 +315,13 @@ export default function PrecisionNutritionPage() {
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-2 text-xs">
                                                 <Beaker className={`h-3.5 w-3.5 ${hasSoil ? "text-emerald-500" : "text-slate-400"}`} />
-                                                <span className={hasSoil ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+                                                <span className={hasSoil ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300"}>
                                                     {hasSoil ? "Soil data available" : "No soil data yet"}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 text-xs">
                                                 <Sprout className={`h-3.5 w-3.5 ${hasCrop ? "text-green-500" : "text-slate-400"}`} />
-                                                <span className={hasCrop ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                                                <span className={hasCrop ? "text-green-600 dark:text-green-400" : "text-slate-700 dark:text-slate-300"}>
                                                     {hasCrop ? `${plot.crop_name} (${plot.crop_status})` : "No crop linked"}
                                                 </span>
                                             </div>
@@ -331,15 +331,15 @@ export default function PrecisionNutritionPage() {
                                         {hasSoil && (
                                             <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-2 text-center">
                                                 <div>
-                                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">N</p>
+                                                    <p className="text-[10px] text-slate-700 dark:text-slate-300 uppercase tracking-wider">N</p>
                                                     <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{plot.soil_data!.nitrogen}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">P</p>
+                                                    <p className="text-[10px] text-slate-700 dark:text-slate-300 uppercase tracking-wider">P</p>
                                                     <p className="text-sm font-bold text-orange-600 dark:text-orange-400">{plot.soil_data!.phosphorus}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">K</p>
+                                                    <p className="text-[10px] text-slate-700 dark:text-slate-300 uppercase tracking-wider">K</p>
                                                     <p className="text-sm font-bold text-purple-600 dark:text-purple-400">{plot.soil_data!.potassium}</p>
                                                 </div>
                                             </div>
@@ -352,7 +352,7 @@ export default function PrecisionNutritionPage() {
                         {selectedPlot && (
                             <div className="flex items-center gap-2 pt-2">
                                 <Info className="h-4 w-4 text-blue-500" />
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-sm text-slate-700 dark:text-slate-300">
                                     Plot <strong>{selectedPlot.serial_number}</strong> selected. Switch to the <strong>Nutrition Manager</strong> tab to add soil data and get recommendations.
                                 </p>
                             </div>
@@ -370,7 +370,7 @@ export default function PrecisionNutritionPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-foreground">Plot {selectedPlot.serial_number}</h3>
-                                        <p className="text-sm text-muted-foreground">{selectedPlot.area} acres • {selectedPlot.crop_name ? `Growing ${selectedPlot.crop_name}` : "No crop linked"}</p>
+                                        <p className="text-sm text-slate-700 dark:text-slate-300">{selectedPlot.area} acres • {selectedPlot.crop_name ? `Growing ${selectedPlot.crop_name}` : "No crop linked"}</p>
                                     </div>
                                 </div>
 
@@ -378,7 +378,7 @@ export default function PrecisionNutritionPage() {
                                     {/* Left: Soil Data + Crop Link */}
                                     <div className="lg:col-span-5 space-y-6">
                                         {/* Soil Data Form */}
-                                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+                                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-300 dark:border-slate-600">
                                             <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
                                                 <Droplets className="h-5 w-5 text-blue-500" />
                                                 Soil Test Parameters
@@ -386,28 +386,28 @@ export default function PrecisionNutritionPage() {
                                             <form onSubmit={handleSaveSoil} className="space-y-4">
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Nitrogen (N) kg/ha</Label>
+                                                        <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">Nitrogen (N) kg/ha</Label>
                                                         <Input required type="number" step="0.01" value={soilForm.nitrogen} onChange={e => setSoilForm({ ...soilForm, nitrogen: e.target.value })} placeholder="e.g. 150" />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Phosphorus (P) kg/ha</Label>
+                                                        <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">Phosphorus (P) kg/ha</Label>
                                                         <Input required type="number" step="0.01" value={soilForm.phosphorus} onChange={e => setSoilForm({ ...soilForm, phosphorus: e.target.value })} placeholder="e.g. 50" />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Potassium (K) kg/ha</Label>
+                                                        <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">Potassium (K) kg/ha</Label>
                                                         <Input required type="number" step="0.01" value={soilForm.potassium} onChange={e => setSoilForm({ ...soilForm, potassium: e.target.value })} placeholder="e.g. 200" />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">pH Level</Label>
+                                                        <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">pH Level</Label>
                                                         <Input required type="number" step="0.1" value={soilForm.ph_level} onChange={e => setSoilForm({ ...soilForm, ph_level: e.target.value })} placeholder="e.g. 6.5" />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Organic Carbon % (optional)</Label>
+                                                    <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">Organic Carbon % (optional)</Label>
                                                     <Input type="number" step="0.01" value={soilForm.organic_carbon} onChange={e => setSoilForm({ ...soilForm, organic_carbon: e.target.value })} placeholder="e.g. 0.5" />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Notes (optional)</Label>
+                                                    <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">Notes (optional)</Label>
                                                     <Input value={soilForm.notes} onChange={e => setSoilForm({ ...soilForm, notes: e.target.value })} placeholder="Any observation..." />
                                                 </div>
                                                 <Button type="submit" disabled={savingSoil} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
@@ -418,13 +418,13 @@ export default function PrecisionNutritionPage() {
                                         </div>
 
                                         {/* Link Crop */}
-                                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+                                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-300 dark:border-slate-600">
                                             <h3 className="text-base font-semibold flex items-center gap-2 mb-3">
                                                 <Leaf className="h-5 w-5 text-green-500" />
                                                 Link Active Crop
                                             </h3>
                                             {activeCrops.length === 0 ? (
-                                                <p className="text-sm text-muted-foreground">No actively growing crops found. Add a crop with status &quot;Growing&quot; first.</p>
+                                                <p className="text-sm text-slate-700 dark:text-slate-300">No actively growing crops found. Add a crop with status &quot;Growing&quot; first.</p>
                                             ) : (
                                                 <div className="space-y-3">
                                                     <select
@@ -476,12 +476,12 @@ export default function PrecisionNutritionPage() {
                                     {/* Right: Recommendation Results */}
                                     <div className="lg:col-span-7">
                                         {!recommendation && !loadingRec && (
-                                            <div className="h-full flex flex-col items-center justify-center p-12 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
+                                            <div className="h-full flex flex-col items-center justify-center p-12 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 text-center">
                                                 <div className="h-16 w-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-4">
                                                     <Target className="h-8 w-8" />
                                                 </div>
                                                 <h3 className="text-xl font-medium text-foreground">Ready to Analyze</h3>
-                                                <p className="text-muted-foreground mt-2 max-w-md">
+                                                <p className="text-slate-700 dark:text-slate-300 mt-2 max-w-md">
                                                     Save your soil test data, link a crop, then hit &quot;Get AI Recommendation&quot; for personalized fertilizer advice for this plot.
                                                 </p>
                                             </div>
@@ -490,7 +490,7 @@ export default function PrecisionNutritionPage() {
                                         {loadingRec && (
                                             <div className="h-full flex flex-col items-center justify-center p-12 space-y-4">
                                                 <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-                                                <p className="text-muted-foreground animate-pulse">AgriFlow AI is analyzing plot {selectedPlot.serial_number}...</p>
+                                                <p className="text-slate-700 dark:text-slate-300 animate-pulse">AgriFlow AI is analyzing plot {selectedPlot.serial_number}...</p>
                                             </div>
                                         )}
 
@@ -502,7 +502,7 @@ export default function PrecisionNutritionPage() {
                                                         <Info className="h-5 w-5" />
                                                         Soil Health: {recommendation.status}
                                                     </h3>
-                                                    <p className="text-sm text-muted-foreground">{recommendation.soil_health_summary}</p>
+                                                    <p className="text-sm text-slate-700 dark:text-slate-300">{recommendation.soil_health_summary}</p>
                                                 </div>
 
                                                 {/* Fertilizer Cards */}
@@ -516,9 +516,9 @@ export default function PrecisionNutritionPage() {
                                                                     <h4 className="font-semibold text-foreground">{rec.name}</h4>
                                                                 </div>
                                                                 <div className="space-y-1.5 text-xs">
-                                                                    <div className="flex justify-between"><span className="text-muted-foreground">Quantity:</span><span className="font-medium">{rec.quantity}</span></div>
-                                                                    <div className="flex justify-between"><span className="text-muted-foreground">Timing:</span><span className="font-medium text-right max-w-[60%]">{rec.timing}</span></div>
-                                                                    <div className="flex justify-between"><span className="text-muted-foreground">Method:</span><span className="font-medium text-right max-w-[60%]">{rec.application_method}</span></div>
+                                                                    <div className="flex justify-between"><span className="text-slate-700 dark:text-slate-300">Quantity:</span><span className="font-medium">{rec.quantity}</span></div>
+                                                                    <div className="flex justify-between"><span className="text-slate-700 dark:text-slate-300">Timing:</span><span className="font-medium text-right max-w-[60%]">{rec.timing}</span></div>
+                                                                    <div className="flex justify-between"><span className="text-slate-700 dark:text-slate-300">Method:</span><span className="font-medium text-right max-w-[60%]">{rec.application_method}</span></div>
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -531,7 +531,7 @@ export default function PrecisionNutritionPage() {
                                                         <h3 className="text-base font-semibold mb-3 text-foreground">Pro Tips for This Plot</h3>
                                                         <ul className="space-y-2">
                                                             {recommendation.additional_tips.map((tip, i) => (
-                                                                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                                                <li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
                                                                     <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
                                                                     <span>{tip}</span>
                                                                 </li>
@@ -547,9 +547,9 @@ export default function PrecisionNutritionPage() {
                         )}
                         {!selectedPlot && (
                             <div className="flex flex-col items-center justify-center py-16 text-center">
-                                <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
+                                <MapPin className="h-12 w-12 text-slate-700 dark:text-slate-300 mb-4" />
                                 <h3 className="text-lg font-medium text-foreground">No Plot Selected</h3>
-                                <p className="text-muted-foreground mt-1">Go to the <strong>My Plots</strong> tab and select a plot first.</p>
+                                <p className="text-slate-700 dark:text-slate-300 mt-1">Go to the <strong>My Plots</strong> tab and select a plot first.</p>
                             </div>
                         )}
                     </TabsContent>
@@ -565,7 +565,7 @@ export default function PrecisionNutritionPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-foreground">Fertilizer Impact — Plot {selectedPlot.serial_number}</h3>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-sm text-slate-700 dark:text-slate-300">
                                             {selectedPlot.crop_name ? `Crop: ${selectedPlot.crop_name}` : "No crop linked"} • {selectedPlot.area} acres
                                         </p>
                                     </div>
@@ -575,14 +575,14 @@ export default function PrecisionNutritionPage() {
                                     {/* Left: Log Fertilizer + History */}
                                     <div className="lg:col-span-5 space-y-6">
                                         {/* Log Fertilizer Form */}
-                                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+                                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-300 dark:border-slate-600">
                                             <h3 className="text-base font-semibold flex items-center gap-2 mb-4">
                                                 <Plus className="h-5 w-5 text-purple-500" />
                                                 Log Fertilizer Application
                                             </h3>
                                             <form onSubmit={handleApplyFertilizer} className="space-y-3">
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Fertilizer Name</Label>
+                                                    <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">Fertilizer Name</Label>
                                                     <select
                                                         required
                                                         value={fertForm.fertilizer_name}
@@ -605,11 +605,11 @@ export default function PrecisionNutritionPage() {
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Quantity</Label>
+                                                        <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">Quantity</Label>
                                                         <Input required type="number" step="0.1" value={fertForm.quantity} onChange={e => setFertForm({ ...fertForm, quantity: e.target.value })} placeholder="e.g. 50" />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs">Unit</Label>
+                                                        <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">Unit</Label>
                                                         <select
                                                             value={fertForm.unit}
                                                             onChange={e => setFertForm({ ...fertForm, unit: e.target.value })}
@@ -623,11 +623,11 @@ export default function PrecisionNutritionPage() {
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Application Date</Label>
+                                                    <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">Application Date</Label>
                                                     <Input required type="date" value={fertForm.application_date} onChange={e => setFertForm({ ...fertForm, application_date: e.target.value })} />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs">Method (optional)</Label>
+                                                    <Label className="text-sm font-medium text-slate-800 dark:text-slate-200">Method (optional)</Label>
                                                     <select
                                                         value={fertForm.application_method}
                                                         onChange={e => setFertForm({ ...fertForm, application_method: e.target.value })}
@@ -649,7 +649,7 @@ export default function PrecisionNutritionPage() {
                                         </div>
 
                                         {/* Fertilizer History */}
-                                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+                                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-300 dark:border-slate-600">
                                             <h3 className="text-base font-semibold flex items-center gap-2 mb-3">
                                                 <Calendar className="h-5 w-5 text-purple-500" />
                                                 Application History
@@ -658,9 +658,9 @@ export default function PrecisionNutritionPage() {
                                                 )}
                                             </h3>
                                             {loadingFertHistory ? (
-                                                <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                                                <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-slate-700 dark:text-slate-300" /></div>
                                             ) : fertHistory.length === 0 ? (
-                                                <p className="text-sm text-muted-foreground text-center py-4">No fertilizer applications logged yet.</p>
+                                                <p className="text-sm text-slate-700 dark:text-slate-300 text-center py-4">No fertilizer applications logged yet.</p>
                                             ) : (
                                                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                                                     {fertHistory.map((app) => (
@@ -670,7 +670,7 @@ export default function PrecisionNutritionPage() {
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="text-sm font-medium text-foreground truncate">{app.fertilizer_name}</p>
-                                                                <p className="text-xs text-muted-foreground">
+                                                                <p className="text-xs text-slate-700 dark:text-slate-300">
                                                                     {app.quantity} {app.unit} • {new Date(app.application_date).toLocaleDateString()}
                                                                     {app.application_method && ` • ${app.application_method}`}
                                                                 </p>
@@ -703,12 +703,12 @@ export default function PrecisionNutritionPage() {
                                     {/* Right: Impact Analysis Results */}
                                     <div className="lg:col-span-7">
                                         {!impactResult && !loadingImpact && (
-                                            <div className="h-full flex flex-col items-center justify-center p-12 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
+                                            <div className="h-full flex flex-col items-center justify-center p-12 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 text-center">
                                                 <div className="h-16 w-16 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center mb-4">
                                                     <BarChart3 className="h-8 w-8" />
                                                 </div>
                                                 <h3 className="text-xl font-medium text-foreground">Impact Analysis</h3>
-                                                <p className="text-muted-foreground mt-2 max-w-md">
+                                                <p className="text-slate-700 dark:text-slate-300 mt-2 max-w-md">
                                                     Log your fertilizer applications, then click &quot;Analyze Fertilizer Impact&quot; to see how they&apos;re affecting your crop&apos;s nutrition.
                                                 </p>
                                             </div>
@@ -717,7 +717,7 @@ export default function PrecisionNutritionPage() {
                                         {loadingImpact && (
                                             <div className="h-full flex flex-col items-center justify-center p-12 space-y-4">
                                                 <Loader2 className="h-10 w-10 text-purple-500 animate-spin" />
-                                                <p className="text-muted-foreground animate-pulse">Analyzing fertilizer impact on plot {selectedPlot.serial_number}...</p>
+                                                <p className="text-slate-700 dark:text-slate-300 animate-pulse">Analyzing fertilizer impact on plot {selectedPlot.serial_number}...</p>
                                             </div>
                                         )}
 
@@ -729,7 +729,7 @@ export default function PrecisionNutritionPage() {
                                                         <Target className="h-5 w-5" />
                                                         Overall: {impactResult.overall_status}
                                                     </h3>
-                                                    <p className="text-sm text-muted-foreground">{impactResult.analysis_summary}</p>
+                                                    <p className="text-sm text-slate-700 dark:text-slate-300">{impactResult.analysis_summary}</p>
                                                 </div>
 
                                                 {/* Nutrient Balance Grid */}
@@ -740,11 +740,11 @@ export default function PrecisionNutritionPage() {
                                                             <div key={key} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                                                                 {nutrientStatusIcon(status)}
                                                                 <div>
-                                                                    <p className="text-xs text-muted-foreground">{nutrientLabel(key)}</p>
+                                                                    <p className="text-xs text-slate-700 dark:text-slate-300">{nutrientLabel(key)}</p>
                                                                     <p className="text-sm font-semibold capitalize text-foreground">{status}</p>
                                                                 </div>
                                                                 {impactResult.estimated_levels[key] !== undefined && (
-                                                                    <span className="ml-auto text-sm font-mono text-muted-foreground">
+                                                                    <span className="ml-auto text-sm font-mono text-slate-700 dark:text-slate-300">
                                                                         {impactResult.estimated_levels[key]}{key === "ph" ? "" : " kg/ha"}
                                                                     </span>
                                                                 )}
@@ -765,9 +765,9 @@ export default function PrecisionNutritionPage() {
                                                                         <h4 className="font-semibold text-sm text-foreground">{rec.name}</h4>
                                                                     </div>
                                                                     <div className="space-y-1 text-xs">
-                                                                        <div className="flex justify-between"><span className="text-muted-foreground">Quantity:</span><span className="font-medium">{rec.quantity}</span></div>
-                                                                        <div className="flex justify-between"><span className="text-muted-foreground">Timing:</span><span className="font-medium text-right max-w-[60%]">{rec.timing}</span></div>
-                                                                        <div className="flex justify-between"><span className="text-muted-foreground">Method:</span><span className="font-medium text-right max-w-[60%]">{rec.application_method}</span></div>
+                                                                        <div className="flex justify-between"><span className="text-slate-700 dark:text-slate-300">Quantity:</span><span className="font-medium">{rec.quantity}</span></div>
+                                                                        <div className="flex justify-between"><span className="text-slate-700 dark:text-slate-300">Timing:</span><span className="font-medium text-right max-w-[60%]">{rec.timing}</span></div>
+                                                                        <div className="flex justify-between"><span className="text-slate-700 dark:text-slate-300">Method:</span><span className="font-medium text-right max-w-[60%]">{rec.application_method}</span></div>
                                                                     </div>
                                                                 </div>
                                                             ))}
