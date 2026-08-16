@@ -371,8 +371,8 @@ export default function InventoryPage() {
     };
 
     const filteredProducts = products.filter(p => {
-        // Hide completely sold out active batches from Inventory view
-        if (p.quantity <= 0 && p.status === 'active') return false;
+        // Hide completely sold out active batches from Inventory view unless "All" is selected
+        if (statusFilter !== 'all' && p.quantity <= 0 && p.status === 'active') return false;
 
         const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -476,7 +476,12 @@ export default function InventoryPage() {
                 ] as const).map(tab => (
                     <button
                         key={tab.value}
-                        onClick={() => setStatusFilter(tab.value)}
+                        onClick={() => {
+                            setStatusFilter(tab.value);
+                            if (tab.value === 'all') {
+                                setActiveCategory("");
+                            }
+                        }}
                         className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                             statusFilter === tab.value
                                 ? tab.value === 'draft' ? "bg-amber-500 text-white border-amber-500"
