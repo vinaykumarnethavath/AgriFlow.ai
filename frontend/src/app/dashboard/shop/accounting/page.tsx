@@ -336,37 +336,37 @@ export default function ShopAccountingPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-5 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-gray-100">
-                                <div className="flex items-center gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pb-4 border-b border-gray-100 items-stretch">
+                                <div className="lg:col-span-4 flex items-center gap-4">
                                     <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100"><Wallet className="w-6 h-6" /></div>
                                     <div>
                                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Total Expenses</p>
                                         <p className="text-3xl font-black text-emerald-700 leading-tight">₹{(summary.total_business_expenses || 0).toLocaleString()}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4 md:border-l border-gray-100 md:pl-6">
+                                <div className="lg:col-span-4 flex items-center gap-4 lg:border-l border-gray-100 lg:pl-6">
                                     <div className="p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100"><Package className="w-6 h-6" /></div>
                                     <div>
                                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Purchase Cost</p>
                                         <p className="text-3xl font-black text-blue-700 leading-tight">₹{(purchaseTotal || 0).toLocaleString()}</p>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
                                 {/* Rent */}
-                                <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
+                                <div className="lg:col-span-2 flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors h-full justify-between">
                                     <span className="font-semibold text-muted-foreground mb-2 truncate">Rent</span>
                                     <div className="mt-auto">
                                         <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-purple-100 text-purple-800 border-purple-200">₹{(rentTotal || 0).toLocaleString()}</span>
                                     </div>
                                 </div>
                                 {/* Staff Wages */}
-                                <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors">
+                                <div className="lg:col-span-2 flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-emerald-300 transition-colors h-full justify-between">
                                     <span className="font-semibold text-muted-foreground mb-2 truncate">Staff Wages</span>
                                     <div className="mt-auto">
                                         <span className="px-2.5 py-1 rounded-md text-xs font-bold border bg-indigo-100 text-indigo-800 border-indigo-200">₹{(wagesTotal || 0).toLocaleString()}</span>
                                     </div>
                                 </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
                                 {/* Transport (Batch) */}
                                 <div className="flex flex-col border border-slate-200 bg-white shadow-sm rounded-xl p-3 hover:border-cyan-300 transition-colors">
                                     <span className="font-semibold text-muted-foreground mb-2 truncate">Transport (Batch)</span>
