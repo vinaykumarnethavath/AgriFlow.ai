@@ -24,7 +24,7 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         const requestUrl = String(error.config?.url || '');
-        const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/forgot-password') || requestUrl.includes('/auth/verify-otp') || requestUrl.includes('/auth/reset-password');
+        const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register') || requestUrl.includes('/auth/send-register-otp') || requestUrl.includes('/auth/forgot-password') || requestUrl.includes('/auth/verify-otp') || requestUrl.includes('/auth/reset-password');
         if (error.response?.status === 401 && typeof window !== 'undefined' && !isAuthRequest) {
             // Token expired or invalid
             console.warn("Authentication error, redirecting to login");
