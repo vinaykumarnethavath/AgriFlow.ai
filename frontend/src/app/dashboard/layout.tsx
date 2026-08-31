@@ -17,9 +17,6 @@ export default function DashboardLayout({
         <div className="flex bg-background min-h-screen transition-colors duration-300">
             <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
             <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'} p-8 overflow-y-auto relative bg-background`}>
-                <div className="absolute top-4 right-4 z-10">
-                    <ThemeToggle />
-                </div>
                 {children}
             </div>
             <ChatBot />

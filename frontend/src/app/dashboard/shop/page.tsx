@@ -138,29 +138,29 @@ export default function ShopDashboard() {
 
     return (
         <div className="space-y-6">
-            <div className="bg-gradient-to-r from-sky-50 via-indigo-50 to-violet-50 border border-sky-100 rounded-xl p-5 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-gradient-to-r from-sky-50 via-indigo-50 to-violet-50 dark:from-sky-950/40 dark:via-indigo-950/40 dark:to-violet-950/40 border border-sky-100 dark:border-sky-900/30 rounded-xl p-5 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     {profile?.profile_picture_url ? (
                         <img 
                             src={profile.profile_picture_url} 
                             alt={profile.shop_name || "Shop Logo"} 
-                            className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm"
+                            className="w-16 h-16 rounded-full object-cover border-2 border-white dark:border-zinc-800 shadow-sm"
                         />
                     ) : (
-                        <div className="w-16 h-16 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm">
+                        <div className="w-16 h-16 rounded-full bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold text-2xl border-2 border-white dark:border-zinc-800 shadow-sm">
                             {(profile?.shop_name || user?.full_name || "S").charAt(0).toUpperCase()}
                         </div>
                     )}
                     <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <h1 className="text-2xl font-bold text-foreground">{profile?.shop_name || t('shop.shopDashboard')}</h1>
-                        <span className="text-xs bg-sky-200 text-sky-800 px-2 py-0.5 rounded-md font-mono">ID: {profile?.shop_id || profile?.id || "—"}</span>
+                        <span className="text-xs bg-sky-200 dark:bg-sky-900/60 text-sky-800 dark:text-sky-300 px-2 py-0.5 rounded-md font-mono">ID: {profile?.shop_id || profile?.id || "—"}</span>
                     </div>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <User className="w-4 h-4 text-sky-600" />
+                        <User className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                         Owner: <span className="font-semibold text-foreground">{profile?.owner_name || user?.full_name}</span>
                         {profile?.father_name && (
-                            <span className="ml-2 bg-white/80 px-2 py-0.5 rounded border border-gray-100 text-muted-foreground text-xs font-medium">
+                            <span className="ml-2 bg-white/80 dark:bg-zinc-800/80 px-2 py-0.5 rounded border border-gray-100 dark:border-zinc-700 text-muted-foreground text-xs font-medium">
                                 {relationMap[profile?.relation_type || ""] || profile?.relation_type || "S/o"}: <span className="text-foreground">{profile.father_name}</span>
                             </span>
                         )}
@@ -230,7 +230,7 @@ export default function ShopDashboard() {
                                     className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                                         period === opt.value
                                             ? "bg-green-600 text-white"
-                                            : "bg-white text-muted-foreground hover:bg-gray-50"
+                                            : "bg-white dark:bg-zinc-800 text-muted-foreground hover:bg-gray-50 dark:hover:bg-zinc-700"
                                     }`}
                                 >
                                     {opt.label}
@@ -274,23 +274,23 @@ export default function ShopDashboard() {
 
                 {/* Monthly Expenses and Net Profit Cards (Taking 1 span) */}
                 <div className="flex flex-col gap-6 lg:col-span-1">
-                    <Card className="border-amber-200 bg-amber-50/60 flex-1 flex flex-col justify-center">
+                    <Card className="border-amber-200 dark:border-amber-900/30 bg-amber-50/60 dark:bg-amber-900/10 flex-1 flex flex-col justify-center">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-amber-700">Monthly Expenses</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-amber-600" />
+                            <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-400">Monthly Expenses</CardTitle>
+                            <TrendingUp className="h-4 w-4 text-amber-600 dark:text-amber-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold text-amber-800 mb-1">₹{(revenueSummary?.total_expenses || 0).toLocaleString()}</div>
+                            <div className="text-3xl font-bold text-amber-800 dark:text-amber-300 mb-1">₹{(revenueSummary?.total_expenses || 0).toLocaleString()}</div>
                         </CardContent>
                     </Card>
 
-                    <Card className="border-emerald-200 bg-emerald-50/60 flex-1 flex flex-col justify-center">
+                    <Card className="border-emerald-200 dark:border-emerald-900/30 bg-emerald-50/60 dark:bg-emerald-900/10 flex-1 flex flex-col justify-center">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-emerald-700">Net Profit</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-emerald-600" />
+                            <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Net Profit</CardTitle>
+                            <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold text-emerald-800 mb-1">₹{(revenueSummary?.profit || 0).toLocaleString()}</div>
+                            <div className="text-3xl font-bold text-emerald-800 dark:text-emerald-300 mb-1">₹{(revenueSummary?.profit || 0).toLocaleString()}</div>
                         </CardContent>
                     </Card>
                 </div>
@@ -305,7 +305,7 @@ export default function ShopDashboard() {
                 <CardContent>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-foreground font-medium">
+                            <thead className="bg-gray-50 dark:bg-zinc-800/50 text-foreground font-medium">
                                 <tr>
                                     <th className="px-4 py-3">Date</th>
                                     <th className="px-4 py-3">Order ID</th>
@@ -317,14 +317,14 @@ export default function ShopDashboard() {
                                     <th className="px-4 py-3 text-right">Amount</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/50">
                                 {recentOrders.length === 0 ? (
                                     <tr>
                                         <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No recent orders found.</td>
                                     </tr>
                                 ) : (
                                     recentOrders.map((order) => (
-                                        <tr key={order.id} className="hover:bg-gray-50 border-b">
+                                        <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 border-b dark:border-zinc-800/50">
                                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDate(order.created_at)}</td>
                                             <td className="px-4 py-3 font-mono text-xs text-muted-foreground">#Order-{String(order.id).padStart(4, '0')}</td>
                                             <td className="px-4 py-3 font-medium whitespace-nowrap">{order.farmer_name || "Walk-in"}</td>
@@ -332,7 +332,7 @@ export default function ShopDashboard() {
                                                 <div className="flex flex-wrap gap-1">
                                                     {(order.items?.length || 0) > 0 ? (
                                                         order.items?.map((item: any, idx: number) => (
-                                                            <span key={idx} className="inline-flex items-center bg-gray-100 text-foreground px-1.5 py-0.5 rounded text-xs font-medium border border-gray-200/50">
+                                                            <span key={idx} className="inline-flex items-center bg-gray-100 dark:bg-zinc-800 text-foreground px-1.5 py-0.5 rounded text-xs font-medium border border-gray-200/50 dark:border-zinc-700">
                                                                 {item.product_name} <span className="text-muted-foreground ml-1 font-bold">x{item.quantity}</span>
                                                             </span>
                                                         ))
@@ -343,14 +343,14 @@ export default function ShopDashboard() {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                                    order.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-foreground'
+                                                    order.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                                                    order.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' : 'bg-gray-100 dark:bg-zinc-800 text-foreground'
                                                 }`}>
                                                     {order.status}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <span className="capitalize text-xs font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
+                                                <span className="capitalize text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full border border-blue-100 dark:border-blue-900/50">
                                                     {order.payment_mode === "razorpay" ? `Razorpay${order.payment_id?.startsWith("pay_mock_") ? ` (${order.payment_id.split("_")[1]})` : ""}` : order.payment_mode || "—"}
                                                 </span>
                                             </td>

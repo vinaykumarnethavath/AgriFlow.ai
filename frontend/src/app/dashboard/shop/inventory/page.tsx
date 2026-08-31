@@ -546,7 +546,7 @@ export default function InventoryPage() {
                                             return (
                                                 <React.Fragment key={group.id}>
                                                     {/* ── Group Parent Row ── */}
-                                                    <tr className="hover:bg-gray-50 transition-colors cursor-pointer group" onClick={() => toggleGroup(group.id)}>
+                                                    <tr className="hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer group" onClick={() => toggleGroup(group.id)}>
                                                         <td className="px-6 py-4">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="text-muted-foreground group-hover:text-green-600 transition-colors">
@@ -619,7 +619,7 @@ export default function InventoryPage() {
                                                         const profitPerUnit = Number(product.price || 0) - landedCost;
                                                         const isDraft = product.status === 'draft';
                                                         return (
-                                                            <tr key={product.id} className={`hover:bg-emerald-50 transition-colors border-l-4 ${isDraft ? 'bg-amber-50/40 border-l-amber-400' : 'bg-emerald-50/30 border-l-emerald-400'}`}>
+                                                            <tr key={product.id} className={`hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors border-l-4 ${isDraft ? 'bg-amber-50/40 dark:bg-amber-900/10 border-l-amber-400' : 'bg-emerald-50/30 dark:bg-emerald-900/10 border-l-emerald-400'}`}>
                                                                 {/* Product Info: Batch + Mfg Date */}
                                                                 <td className="px-6 py-3 pl-14">
                                                                     <div className="flex items-center gap-2">
