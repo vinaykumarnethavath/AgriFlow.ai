@@ -1060,46 +1060,7 @@ export default function PrecisionNutritionPage() {
                                             )}
                                         </div>
 
-                                        {/* 2. Link Crop Card */}
-                                        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                                            <h3 className="text-base font-bold flex items-center gap-2 text-foreground">
-                                                <Leaf className="h-5 w-5 text-green-500" />
-                                                Active Crop on Plot {selectedPlot.serial_number}
-                                            </h3>
 
-                                            {activeCrops.length === 0 ? (
-                                                <p className="text-xs text-slate-500">
-                                                    No crops currently growing. Add a crop in your Crop Manager to link here.
-                                                </p>
-                                            ) : (
-                                                <div className="space-y-3">
-                                                    <select
-                                                        value={selectedCropId}
-                                                        onChange={e => setSelectedCropId(e.target.value)}
-                                                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                                                    >
-                                                        <option value="">Select a crop for this plot...</option>
-                                                        {activeCrops.map(c => (
-                                                            <option key={c.id} value={c.id}>
-                                                                {c.name} ({c.crop_type || "Crop"}) — {c.area} acres ({c.season || "Active"})
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                    <Button
-                                                        onClick={handleLinkCrop}
-                                                        disabled={!selectedCropId || !selectedPlot.soil_data || linkingCrop}
-                                                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs"
-                                                    >
-                                                        {linkingCrop ? (
-                                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                                        ) : (
-                                                            <Sprout className="h-4 w-4 mr-2" />
-                                                        )}
-                                                        {selectedPlot.crop_id ? "Update Linked Crop" : "Link Crop to Plot"}
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
                                     </div>
 
                                     {/* ── Right Column: AI Recommendations (Auto-Generated) ── */}
