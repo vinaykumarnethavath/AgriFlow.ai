@@ -405,34 +405,27 @@ export default function LearningHubPage() {
                                     )}
                                 </div>
                                 <div className="p-5 pt-3">
-                                    <div className="flex items-center gap-2 mb-3">
+                                    <div className="flex items-center justify-between gap-2 mb-2">
                                         <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-3 py-1 rounded-full border border-rose-100 dark:border-rose-900/50">
                                             {video.emoji && <span className="text-xs">{video.emoji}</span>}
                                             <Tag className="h-3 w-3" />
                                             {video.category}
                                         </span>
-                                    </div>
-                                    <h3 className="font-extrabold text-lg text-foreground line-clamp-2 leading-snug mb-2 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
-                                        {video.title}
-                                    </h3>
-                                    {video.description && (
-                                        <p className="text-sm text-muted-foreground/80 line-clamp-2 mb-4 font-medium">
-                                            {video.description}
-                                        </p>
-                                    )}
-                                    <div className="flex items-center justify-between text-sm mt-auto pt-4 border-t border-gray-100 dark:border-zinc-800">
-                                        <div className="flex items-center gap-2 max-w-[60%]">
-                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-                                                <span className="text-[10px] text-white font-bold">{video.channel.charAt(0)}</span>
-                                            </div>
-                                            <span className="font-bold text-gray-700 dark:text-gray-300 truncate">{video.channel}</span>
-                                        </div>
                                         {video.view_count && (
-                                            <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded-lg">
-                                                <Eye className="h-3.5 w-3.5" />
+                                            <span className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">
+                                                <Eye className="h-3 w-3" />
                                                 {video.view_count}
                                             </span>
                                         )}
+                                    </div>
+                                    <h3 className="font-bold text-base text-foreground line-clamp-2 leading-snug mb-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                                        {video.title}
+                                    </h3>
+                                    <div className="flex items-center gap-2 text-sm mt-auto pt-2.5 border-t border-gray-100 dark:border-zinc-800">
+                                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                                            <span className="text-[10px] text-white font-bold">{video.channel.charAt(0)}</span>
+                                        </div>
+                                        <span className="font-semibold text-xs text-gray-600 dark:text-gray-400 truncate">{video.channel}</span>
                                     </div>
                                 </div>
                             </div>

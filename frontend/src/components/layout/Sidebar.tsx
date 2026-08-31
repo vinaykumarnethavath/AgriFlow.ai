@@ -160,19 +160,21 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
 
             <div className={cn("pt-3 border-t border-green-800 mt-2 w-full flex flex-col gap-3", !isOpen && "items-center")}>
                 {isOpen && (
-                    <div className="px-1">
-                        <LanguageSelector />
+                    <div className="px-1 flex items-center gap-2">
+                        <div className="flex-1">
+                            <LanguageSelector />
+                        </div>
+                        <div className="shrink-0">
+                            <ThemeToggle />
+                        </div>
                     </div>
                 )}
 
                 {isOpen ? (
-                    <div className="px-2 flex items-center justify-between">
+                    <div className="px-2 mt-1">
                         <div className="overflow-hidden">
                             <p className="font-semibold truncate">{user?.full_name}</p>
                             <p className="text-xs text-green-300 capitalize truncate">{user?.role === 'manufacturer' ? t("auth.manufacturer") : user?.role === 'farmer' ? t("auth.farmer") : user?.role === 'shop' ? t("auth.shopOwner") : user?.role === 'customer' ? t("auth.customer") : user?.role}</p>
-                        </div>
-                        <div className="shrink-0">
-                            <ThemeToggle />
                         </div>
                     </div>
                 ) : (
