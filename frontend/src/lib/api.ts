@@ -1332,6 +1332,44 @@ export const tamperBlockchain = async (blockIndex: number, tamperedPayload: stri
 
 // --- Plot Nutrition ---
 
+export interface LiveSoilStatus {
+    baseline: {
+        nitrogen: number;
+        phosphorus: number;
+        potassium: number;
+        ph_level: number;
+        organic_carbon?: number | null;
+        last_tested?: string | null;
+    };
+    adjusted: {
+        nitrogen: number;
+        phosphorus: number;
+        potassium: number;
+        ph_level: number;
+    };
+    deltas: {
+        nitrogen: number;
+        phosphorus: number;
+        potassium: number;
+        ph_level: number;
+    };
+    added_nutrients: {
+        nitrogen: number;
+        phosphorus: number;
+        potassium: number;
+    };
+    crop_absorbed: {
+        nitrogen: number;
+        phosphorus: number;
+        potassium: number;
+        crop_name: string;
+        absorption_note: string;
+    };
+    total_applications: number;
+    nutrient_balance: Record<string, string>;
+    last_applied?: string | null;
+}
+
 export interface PlotSoilData {
     id: number;
     land_record_id: number;
@@ -1356,6 +1394,7 @@ export interface PlotOverview {
     crop_name: string | null;
     crop_status: string | null;
     crop_id: number | null;
+    live_adjusted?: LiveSoilStatus | null;
 }
 
 export interface ActiveCrop {
@@ -1412,6 +1451,11 @@ export const getPlots = async (): Promise<PlotOverview[]> => {
     return response.data;
 };
 
+export const getPlotLiveStatus = async (plotSoilId: number): Promise<LiveSoilStatus> => {
+    const response = await api.get<LiveSoilStatus>(`/plot-nutrition/plots/${plotSoilId}/live-status`);
+    return response.data;
+};
+
 export const getActiveCrops = async (): Promise<ActiveCrop[]> => {
     const response = await api.get<ActiveCrop[]>("/plot-nutrition/active-crops");
     return response.data;
@@ -1462,3 +1506,4 @@ export const analyzeFertilizerImpact = async (plotSoilId: number): Promise<Impac
 };
 
 export default api;
+
