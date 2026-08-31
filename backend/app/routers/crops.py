@@ -8,7 +8,9 @@ from ..models import (
     Crop, CropCreate, CropRead, User, CropUpdate,
     CropExpense, CropExpenseCreate, CropExpenseRead
 )
+from ..models.plot_nutrition import PlotSoilData, FertilizerApplication
 from ..deps import get_current_user
+from ..services.crop_service import recalculate_crop_financials
 
 router = APIRouter(prefix="/crops", tags=["crops"])
 
@@ -139,6 +141,26 @@ async def add_crop_expense(
     # Update Crop Financials
     await recalculate_crop_financials(crop_id, session)
     
+    # Auto-sync to Fertilizer Impact Tracker if it's a Fertilizer
+    if db_expense.category.lower() == "fertilizer":
+        # Check if crop is linked to a plot
+        soil_stmt = select(PlotSoilData).where(PlotSoilData.crop_id == crop_id)
+        soil_res = await session.exec(soil_stmt)
+        soil = soil_res.first()
+        if soil:
+            fert_app = FertilizerApplication(
+                plot_soil_data_id=soil.id,
+                fertilizer_name=db_expense.type,
+                quantity=db_expense.quantity,
+                unit=db_expense.unit,
+                application_date=db_expense.date,
+                application_method="Broadcasting", # Default
+                crop_id=crop_id,
+                user_id=current_user.id
+            )
+            session.add(fert_app)
+            await session.commit()
+    
     return db_expense
 
 @router.get("/{crop_id}/expenses", response_model=List[CropExpenseRead])
@@ -178,7 +200,7 @@ async def delete_crop_expense(
     await session.commit()
     
     # Update Crop Financials
-    await calculate_crop_financials(crop, session)
+    await recalculate_crop_financials(crop.id, session)
     
     return {"ok": True}
 

@@ -594,6 +594,10 @@ async def get_plots(
         live_adjusted_data = None
         if soil:
             fert_stmt = select(FertilizerApplication).where(FertilizerApplication.plot_soil_data_id == soil.id)
+            if soil.crop_id:
+                fert_stmt = fert_stmt.where(FertilizerApplication.crop_id == soil.crop_id)
+            else:
+                fert_stmt = fert_stmt.where(FertilizerApplication.crop_id == None)
             fert_res = await session.exec(fert_stmt)
             apps = fert_res.all()
             live_status = compute_live_soil_dynamics(soil, lr.area, crop_obj, apps)
@@ -636,6 +640,10 @@ async def get_plot_live_status(
         crop = await session.get(Crop, soil.crop_id)
 
     fert_stmt = select(FertilizerApplication).where(FertilizerApplication.plot_soil_data_id == soil.id)
+    if soil.crop_id:
+        fert_stmt = fert_stmt.where(FertilizerApplication.crop_id == soil.crop_id)
+    else:
+        fert_stmt = fert_stmt.where(FertilizerApplication.crop_id == None)
     fert_res = await session.exec(fert_stmt)
     apps = fert_res.all()
 
@@ -729,6 +737,30 @@ async def link_crop_to_plot(
     crop = await session.get(Crop, req.crop_id)
     if not crop or crop.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Crop not found")
+
+    if soil.crop_id and soil.crop_id != req.crop_id:
+        # Calculate final live adjusted values for old crop
+        old_crop = await session.get(Crop, soil.crop_id)
+        
+        fert_stmt = select(FertilizerApplication).where(
+            FertilizerApplication.plot_soil_data_id == soil.id,
+            FertilizerApplication.crop_id == soil.crop_id
+        )
+        fert_res = await session.exec(fert_stmt)
+        old_apps = fert_res.all()
+
+        if old_apps:
+            lr = await session.get(LandRecord, soil.land_record_id)
+            area = lr.area if lr else 1.0
+            
+            dynamics = compute_live_soil_dynamics(soil, area, old_crop, old_apps)
+            adj = dynamics["adjusted"]
+            
+            soil.nitrogen = adj["nitrogen"]
+            soil.phosphorus = adj["phosphorus"]
+            soil.potassium = adj["potassium"]
+            soil.ph_level = adj["ph_level"]
+            soil.last_tested = datetime.utcnow()
 
     soil.crop_id = req.crop_id
     soil.updated_at = datetime.utcnow()
@@ -882,11 +914,12 @@ async def get_fertilizer_history(
     if not soil or soil.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Plot soil data not found")
 
-    stmt = (
-        select(FertilizerApplication)
-        .where(FertilizerApplication.plot_soil_data_id == plot_soil_id)
-        .order_by(FertilizerApplication.application_date.desc())
-    )
+    stmt = select(FertilizerApplication).where(FertilizerApplication.plot_soil_data_id == plot_soil_id)
+    if soil.crop_id:
+        stmt = stmt.where(FertilizerApplication.crop_id == soil.crop_id)
+    else:
+        stmt = stmt.where(FertilizerApplication.crop_id == None)
+    stmt = stmt.order_by(FertilizerApplication.application_date.desc())
     result = await session.exec(stmt)
     return result.all()
 
@@ -979,11 +1012,12 @@ async def analyze_fertilizer_impact(
             sowing_date = crop.sowing_date.strftime("%Y-%m-%d") if crop.sowing_date else "Not specified"
 
     # Get fertilizer history
-    stmt = (
-        select(FertilizerApplication)
-        .where(FertilizerApplication.plot_soil_data_id == plot_soil_id)
-        .order_by(FertilizerApplication.application_date.asc())
-    )
+    stmt = select(FertilizerApplication).where(FertilizerApplication.plot_soil_data_id == plot_soil_id)
+    if soil.crop_id:
+        stmt = stmt.where(FertilizerApplication.crop_id == soil.crop_id)
+    else:
+        stmt = stmt.where(FertilizerApplication.crop_id == None)
+    stmt = stmt.order_by(FertilizerApplication.application_date.asc())
     result = await session.exec(stmt)
     applications = result.all()
 
