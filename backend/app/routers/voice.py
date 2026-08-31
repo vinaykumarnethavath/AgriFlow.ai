@@ -175,50 +175,57 @@ async def process_voice(
         f"Parse this voice command into a JSON action."
     )
 
-    try:
-        response = await client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_message},
-            ],
-            temperature=0.1,
-            max_tokens=512,
-            response_format={"type": "json_object"},
-        )
+    candidate_models = [
+        os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+    ]
+    models = list(dict.fromkeys(candidate_models))
 
-        raw = response.choices[0].message.content or "{}"
-        
-        # Parse the JSON response
+    for model_name in models:
         try:
-            parsed = json.loads(raw)
-        except json.JSONDecodeError:
-            # Try to extract JSON from markdown if LLM wrapped it
-            import re
-            json_match = re.search(r'\{.*\}', raw, re.DOTALL)
-            if json_match:
-                parsed = json.loads(json_match.group())
-            else:
-                parsed = {
-                    "action": "show_answer",
-                    "params": {},
-                    "response_text": "Sorry, I didn't understand that. Could you try again?",
-                    "navigate_to": None,
-                }
+            response = await client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_message},
+                ],
+                temperature=0.1,
+                max_tokens=512,
+                response_format={"type": "json_object"},
+            )
 
-        return VoiceAction(
-            action=parsed.get("action", "show_answer"),
-            params=parsed.get("params", {}),
-            response_text=parsed.get("response_text", "Done."),
-            navigate_to=parsed.get("navigate_to"),
-        )
+            raw = response.choices[0].message.content or "{}"
+            if "<think>" in raw and "</think>" in raw:
+                raw = raw.split("</think>")[-1].strip()
+            
+            # Parse the JSON response
+            try:
+                parsed = json.loads(raw)
+            except json.JSONDecodeError:
+                # Try to extract JSON from markdown if LLM wrapped it
+                import re
+                json_match = re.search(r'\{[\s\S]*\}', raw)
+                if json_match:
+                    parsed = json.loads(json_match.group())
+                else:
+                    continue
 
-    except Exception as e:
-        print(f"[Voice] Groq API error: {e}")
-        traceback.print_exc()
-        return VoiceAction(
-            action="show_answer",
-            params={},
-            response_text="Sorry, the AI service is temporarily unavailable. Please try again.",
-            navigate_to=None,
-        )
+            return VoiceAction(
+                action=parsed.get("action", "show_answer"),
+                params=parsed.get("params", {}),
+                response_text=parsed.get("response_text", "Done."),
+                navigate_to=parsed.get("navigate_to"),
+            )
+
+        except Exception as e:
+            print(f"[Voice] Groq API error with {model_name}: {e}")
+            continue
+
+    return VoiceAction(
+        action="show_answer",
+        params={},
+        response_text="Sorry, the AI service is temporarily unavailable. Please try again.",
+        navigate_to=None,
+    )
+

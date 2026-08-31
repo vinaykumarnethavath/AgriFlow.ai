@@ -546,20 +546,35 @@ async def call_groq(
 
     messages.append({"role": "user", "content": question})
 
-    try:
-        # Use slightly higher temperature for mixed mode to allow creative advice
-        temp = 0.4 if mixed_mode else 0.2
-        response = await client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=messages,
-            temperature=temp,
-            max_tokens=1024,
-        )
-        return response.choices[0].message.content or "I couldn't generate a response."
-    except Exception as e:
-        print(f"[RAG] Groq API error: {e}")
-        traceback.print_exc()
-        return f"⚠️ AI service temporarily unavailable. Error: {str(e)}"
+    candidate_models = [
+        os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+    ]
+    models = list(dict.fromkeys(candidate_models))
+
+    # Use slightly higher temperature for mixed mode to allow creative advice
+    temp = 0.4 if mixed_mode else 0.2
+
+    for model_name in models:
+        try:
+            response = await client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=temp,
+                max_tokens=1024,
+            )
+            content = response.choices[0].message.content or ""
+            if "<think>" in content and "</think>" in content:
+                content = content.split("</think>")[-1].strip()
+            if content:
+                return content
+        except Exception as e:
+            print(f"[RAG] Groq API error with {model_name}: {e}")
+            continue
+
+    return "⚠️ AI service temporarily unavailable. Please try again shortly."
+
 
 
 # ---------------------------------------------------------------------------

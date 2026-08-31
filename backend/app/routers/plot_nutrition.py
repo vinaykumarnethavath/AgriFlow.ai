@@ -73,7 +73,7 @@ def _get_groq_client() -> Optional[AsyncGroq]:
     api_key = os.getenv("GROQ_API_KEY", "")
     if not api_key or api_key == "your-groq-api-key-here":
         return None
-    return AsyncGroq(api_key=api_key)
+    return AsyncGroq(api_key=api_key, timeout=20.0)
 
 
 async def _call_groq(prompt: str, system_msg: str = "You are a helpful agronomist that returns only valid JSON.") -> dict:
@@ -81,25 +81,196 @@ async def _call_groq(prompt: str, system_msg: str = "You are a helpful agronomis
     if client is None:
         return {}
 
-    response = await client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "system", "content": system_msg},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.2,
-        max_tokens=1500,
+    candidate_models = [
+        os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+    ]
+    # Remove duplicates while preserving order
+    models = list(dict.fromkeys(candidate_models))
+
+    for model_name in models:
+        try:
+            response = await client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.2,
+                max_tokens=1500,
+            )
+            raw_text = response.choices[0].message.content or ""
+            json_text = raw_text.strip()
+            # Remove reasoning / think tokens if model is a thinking model
+            if "<think>" in json_text and "</think>" in json_text:
+                json_text = json_text.split("</think>")[-1].strip()
+            if json_text.startswith("```json"):
+                json_text = json_text[7:]
+            if json_text.startswith("```"):
+                json_text = json_text[3:]
+            if json_text.endswith("```"):
+                json_text = json_text[:-3]
+            json_text = json_text.strip()
+
+            try:
+                return json.loads(json_text)
+            except json.JSONDecodeError:
+                import re
+                match = re.search(r'\{[\s\S]*\}', json_text)
+                if match:
+                    return json.loads(match.group(0))
+        except Exception as e:
+            print(f"[PlotNutrition] Groq attempt failed with {model_name}: {e}")
+            continue
+
+    return {}
+
+
+def _generate_fallback_recommendation(soil: PlotSoilData, area: float, crop_name: str) -> NutritionRecommendation:
+    status = "Good"
+    recs = []
+    tips = [
+        f"For {crop_name}, maintain balanced soil moisture before and after fertilizer application.",
+        "Add well-decomposed organic compost or farmyard manure (FYM) to improve soil organic carbon.",
+        "Retest soil after crop harvest or 45-60 days to track nutrient replenishment.",
+    ]
+
+    # Nitrogen check (optimal: 140 - 280 kg/ha)
+    if soil.nitrogen < 140:
+        status = "Needs Improvement"
+        urea_qty = max(10, round(45 * area))
+        recs.append(FertilizerRec(
+            name="Urea (46% N)",
+            quantity=f"{urea_qty} kg for {area} acres",
+            timing="Split: 50% basal at sowing, 50% at vegetative stage (30-40 DAS)",
+            application_method="Broadcasting followed by light irrigation"
+        ))
+    elif soil.nitrogen > 300:
+        tips.append("Soil nitrogen is elevated. Avoid excess urea to prevent vegetative overgrowth and pest susceptibility.")
+
+    # Phosphorus check (optimal: 35 - 75 kg/ha)
+    if soil.phosphorus < 40:
+        status = "Needs Improvement" if status == "Good" else "Poor"
+        dap_qty = max(10, round(30 * area))
+        recs.append(FertilizerRec(
+            name="DAP (18-46-0) or SSP",
+            quantity=f"{dap_qty} kg for {area} acres",
+            timing="Basal application at or before sowing",
+            application_method="Band placement 4-5 cm below seed depth"
+        ))
+
+    # Potassium check (optimal: 150 - 300 kg/ha)
+    if soil.potassium < 150:
+        mop_qty = max(5, round(20 * area))
+        recs.append(FertilizerRec(
+            name="MOP (Muriate of Potash - 60% K2O)",
+            quantity=f"{mop_qty} kg for {area} acres",
+            timing="Basal dose or split at flowering stage",
+            application_method="Broadcasting"
+        ))
+
+    # pH check
+    if soil.ph_level < 6.0:
+        status = "Poor"
+        recs.append(FertilizerRec(
+            name="Agricultural Lime (CaCO3)",
+            quantity=f"{round(100 * area)} kg for {area} acres",
+            timing="2-3 weeks prior to sowing",
+            application_method="Broadcast and mix well into topsoil"
+        ))
+        tips.append("Soil is acidic (pH < 6.0), which restricts phosphorus uptake. Liming will normalize pH.")
+    elif soil.ph_level > 8.0:
+        status = "Needs Improvement" if status == "Good" else status
+        recs.append(FertilizerRec(
+            name="Gypsum (CaSO4·2H2O)",
+            quantity=f"{round(80 * area)} kg for {area} acres",
+            timing="Before land preparation",
+            application_method="Broadcast and incorporate with irrigation"
+        ))
+        tips.append("Soil is alkaline (pH > 8.0). Gypsum application and zinc foliar spray are recommended.")
+
+    if not recs:
+        recs.append(FertilizerRec(
+            name="Balanced NPK (19:19:19)",
+            quantity=f"{round(15 * area)} kg for {area} acres",
+            timing="Maintenance dose during vegetative growth",
+            application_method="Foliar spray or fertigation"
+        ))
+
+    summary = (
+        f"Plot ({area} acres) growing {crop_name}: Soil pH is {soil.ph_level} with NPK levels "
+        f"({soil.nitrogen}, {soil.phosphorus}, {soil.potassium}) kg/ha. "
+        f"{'Nutrient levels are generally optimal with maintenance recommended.' if status == 'Good' else 'Targeted nutrient supplementation is required for optimal crop performance.'}"
     )
-    raw_text = response.choices[0].message.content or ""
-    json_text = raw_text.strip()
-    if json_text.startswith("```json"):
-        json_text = json_text[7:]
-    if json_text.startswith("```"):
-        json_text = json_text[3:]
-    if json_text.endswith("```"):
-        json_text = json_text[:-3]
-    json_text = json_text.strip()
-    return json.loads(json_text)
+
+    return NutritionRecommendation(
+        status=status,
+        soil_health_summary=summary,
+        recommendations=recs,
+        additional_tips=tips[:4]
+    )
+
+
+def _generate_fallback_impact(soil: PlotSoilData, area: float, crop_name: str, applications: list) -> ImpactAnalysis:
+    n_added = sum(a.quantity * 0.46 for a in applications if "urea" in a.fertilizer_name.lower() or "dap" in a.fertilizer_name.lower())
+    p_added = sum(a.quantity * 0.46 for a in applications if "dap" in a.fertilizer_name.lower() or "ssp" in a.fertilizer_name.lower() or "npk" in a.fertilizer_name.lower())
+    k_added = sum(a.quantity * 0.60 for a in applications if "mop" in a.fertilizer_name.lower() or "potash" in a.fertilizer_name.lower())
+
+    area_factor = max(area, 0.5)
+    est_n = round(soil.nitrogen + (n_added / area_factor) * 0.7, 1)
+    est_p = round(soil.phosphorus + (p_added / area_factor) * 0.5, 1)
+    est_k = round(soil.potassium + (k_added / area_factor) * 0.6, 1)
+
+    balance = {
+        "nitrogen": "optimal" if est_n >= 140 else "deficient",
+        "phosphorus": "optimal" if est_p >= 40 else "deficient",
+        "potassium": "optimal" if est_k >= 150 else "deficient",
+        "ph": "optimal" if 6.2 <= soil.ph_level <= 7.8 else ("acidic" if soil.ph_level < 6.2 else "alkaline"),
+    }
+
+    adjusted_recs = []
+    if balance["phosphorus"] == "deficient":
+        adjusted_recs.append(FertilizerRec(
+            name="SSP (Single Super Phosphate)",
+            quantity=f"{round(25 * area)} kg",
+            timing="Next 10-15 days",
+            application_method="Band placement"
+        ))
+    if balance["nitrogen"] == "deficient":
+        adjusted_recs.append(FertilizerRec(
+            name="Urea (Top Dressing)",
+            quantity=f"{round(20 * area)} kg",
+            timing="Next vegetative irrigation",
+            application_method="Broadcasting"
+        ))
+    if not adjusted_recs:
+        adjusted_recs.append(FertilizerRec(
+            name="Micronutrient Foliar Spray",
+            quantity=f"{round(1.5 * area)} L in water",
+            timing="During peak vegetative stage",
+            application_method="Foliar spray"
+        ))
+
+    overall_status = "Optimal" if all(v == "optimal" for v in balance.values()) else "Needs Adjustment"
+
+    return ImpactAnalysis(
+        overall_status=overall_status,
+        nutrient_balance=balance,
+        estimated_levels={
+            "nitrogen": est_n,
+            "phosphorus": est_p,
+            "potassium": est_k,
+            "ph": soil.ph_level,
+        },
+        analysis_summary=f"After {len(applications)} recorded application(s) on {area} acres of {crop_name}, estimated soil NPK levels have shifted to N={est_n}, P={est_p}, K={est_k} kg/ha. Soil pH remains at {soil.ph_level}.",
+        adjusted_recommendations=adjusted_recs,
+        risk_alerts=[
+            "Ensure adequate soil moisture before subsequent fertilizer doses to prevent salt injury.",
+            "Schedule follow-up soil test after crop season for precise nutrient depletion assessment.",
+        ],
+    )
+
 
 
 # ---------------------------------------------------------------------------
@@ -364,26 +535,14 @@ async def get_plot_recommendation(
 
     try:
         result = await _call_groq(prompt)
-        if not result:
-            # Mock fallback
-            return NutritionRecommendation(
-                status="Needs Improvement",
-                soil_health_summary=f"Plot ({area} acres) growing {crop_name}: Soil pH ({soil.ph_level}) and NPK levels ({soil.nitrogen}, {soil.phosphorus}, {soil.potassium}) suggest nitrogen deficiency for optimal {crop_name} growth.",
-                recommendations=[
-                    FertilizerRec(name="Urea", quantity=f"{round(40 * area)} kg for {area} acres", timing="Basal dose at sowing", application_method="Broadcasting"),
-                    FertilizerRec(name="DAP", quantity=f"{round(25 * area)} kg for {area} acres", timing="30 days after sowing", application_method="Band placement"),
-                    FertilizerRec(name="MOP", quantity=f"{round(15 * area)} kg for {area} acres", timing="At sowing", application_method="Broadcasting"),
-                ],
-                additional_tips=[
-                    f"For {crop_name}, ensure split application of nitrogen for better uptake.",
-                    "Add organic compost to improve soil structure and water retention.",
-                    "Test soil again after 45 days to track nutrient changes.",
-                ],
-            )
-        return NutritionRecommendation(**result)
+        if result and "recommendations" in result and "soil_health_summary" in result:
+            return NutritionRecommendation(**result)
     except Exception as e:
-        print(f"[PlotNutrition] Recommend error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to generate recommendation.")
+        print(f"[PlotNutrition] AI recommendation error: {e}")
+
+    # Seamless fallback to dynamic agronomic rule engine
+    return _generate_fallback_recommendation(soil, area, crop_name)
+
 
 
 # ---------------------------------------------------------------------------
@@ -568,32 +727,11 @@ async def analyze_fertilizer_impact(
 
     try:
         result_data = await _call_groq(prompt)
-        if not result_data:
-            # Mock fallback
-            return ImpactAnalysis(
-                overall_status="Needs Adjustment",
-                nutrient_balance={
-                    "nitrogen": "optimal",
-                    "phosphorus": "deficient",
-                    "potassium": "optimal",
-                    "ph": "optimal",
-                },
-                estimated_levels={
-                    "nitrogen": round(soil.nitrogen + sum(a.quantity * 0.46 for a in applications if "urea" in a.fertilizer_name.lower()) / max(area, 0.5), 1),
-                    "phosphorus": round(soil.phosphorus + sum(a.quantity * 0.18 for a in applications if "dap" in a.fertilizer_name.lower()) / max(area, 0.5), 1),
-                    "potassium": round(soil.potassium + sum(a.quantity * 0.60 for a in applications if "mop" in a.fertilizer_name.lower()) / max(area, 0.5), 1),
-                    "ph": soil.ph_level,
-                },
-                analysis_summary=f"After {len(applications)} fertilizer application(s) on {area} acres of {crop_name}, nitrogen levels appear adequate. Phosphorus may need additional supplementation. Continue monitoring soil pH.",
-                adjusted_recommendations=[
-                    FertilizerRec(name="SSP", quantity=f"{round(20 * area)} kg", timing="Next 15 days", application_method="Band placement"),
-                ],
-                risk_alerts=[
-                    "Monitor for nitrogen excess symptoms if Urea was applied in high quantity.",
-                    "Retest soil pH after 30 days to check for acidification.",
-                ],
-            )
-        return ImpactAnalysis(**result_data)
+        if result_data and "nutrient_balance" in result_data and "estimated_levels" in result_data:
+            return ImpactAnalysis(**result_data)
     except Exception as e:
-        print(f"[PlotNutrition] Impact analysis error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to analyze fertilizer impact.")
+        print(f"[PlotNutrition] Impact analysis AI error: {e}")
+
+    # Fallback calculated impact analysis
+    return _generate_fallback_impact(soil, area, crop_name, applications)
+
