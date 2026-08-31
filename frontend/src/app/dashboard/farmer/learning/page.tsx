@@ -111,10 +111,10 @@ export default function LearningHubPage() {
                         <BookOpen className="h-7 w-7 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-orange-600 dark:from-rose-400 dark:to-orange-400 tracking-tight">
+                        <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-orange-600 dark:from-rose-400 dark:to-orange-400 tracking-tight">
                             {t("sidebar.learning", "Agri Learning Hub")}
                         </h1>
-                        <p className="text-muted-foreground mt-1.5 text-sm font-medium">
+                        <p className="text-muted-foreground mt-1.5 text-xs font-medium">
                             Curated video guides personalized for your farm — crop tips, fertilizer advice, and expert talks.
                         </p>
                     </div>
@@ -129,28 +129,7 @@ export default function LearningHubPage() {
                 </button>
             </div>
 
-            {/* Personalization Banner */}
-            {data.personalized_for.length > 0 && (
-                <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 backdrop-blur-md rounded-3xl px-6 py-4 flex items-center gap-4 relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                    <div className="h-10 w-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
-                        <Sparkles className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200 flex items-center flex-wrap gap-2">
-                            Personalized for your crops: 
-                            {data.personalized_for.map((crop, i) => (
-                                <span key={crop} className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-lg text-xs tracking-wide">
-                                    {crop}
-                                </span>
-                            ))}
-                        </p>
-                        <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1.5 font-medium">
-                            Videos are selected in your regional language based on your location
-                        </p>
-                    </div>
-                </div>
-            )}
+
 
             {/* Video Player */}
             {selectedVideo && (
@@ -205,51 +184,51 @@ export default function LearningHubPage() {
             )}
 
             {/* Search Bar */}
-            <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-rose-500 to-orange-500 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition-opacity" />
-                <div className="relative flex items-center">
-                    <Search className="absolute left-4 h-5 w-5 text-gray-400" />
+            <div className="flex max-w-xl mx-auto w-full">
+                <div className="relative flex items-center w-full">
                     <input
                         type="text"
-                        placeholder="Search videos by title, channel..."
-                        className="w-full pl-12 pr-10 py-4 border-none rounded-2xl text-base text-gray-900 dark:text-gray-100 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-sm placeholder:text-gray-400 focus:ring-2 focus:ring-rose-500 outline-none transition-all"
+                        placeholder="Search"
+                        className="w-full pl-5 pr-10 py-2 bg-[#121212] border border-[#303030] rounded-l-full text-base text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-[#1c62b9]"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                     {searchQuery && (
                         <button
                             onClick={() => setSearchQuery("")}
-                            className="absolute right-4 p-1 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-500 hover:text-gray-700 transition-colors"
+                            className="absolute right-3 p-1.5 rounded-full hover:bg-[#303030] text-gray-400 transition-colors"
                         >
-                            <X className="h-4 w-4" />
+                            <X className="h-5 w-5" />
                         </button>
                     )}
                 </div>
+                <button className="px-5 py-2 bg-[#222222] border border-l-0 border-[#303030] rounded-r-full hover:bg-[#303030] transition-colors flex items-center justify-center group">
+                    <Search className="h-5 w-5 text-gray-100 group-hover:text-white" />
+                </button>
             </div>
 
             {/* Category Tabs */}
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex overflow-x-auto scrollbar-hide gap-3 pb-2 pt-4">
                 <button
                     onClick={() => setActiveCategory("All")}
-                    className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 ${
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         activeCategory === "All"
-                            ? "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-500/30 scale-105"
-                            : "bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md text-gray-600 dark:text-gray-300 border border-white/40 dark:border-zinc-700/50 hover:bg-white dark:hover:bg-zinc-700 hover:shadow-md hover:-translate-y-0.5"
+                            ? "bg-gray-100 text-black"
+                            : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f]"
                     }`}
                 >
-                    All Topics
+                    All
                 </button>
                 {data.categories.map(cat => (
                     <button
                         key={cat}
                         onClick={() => setActiveCategory(cat)}
-                        className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
+                        className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                             activeCategory === cat
-                                ? "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-500/30 scale-105"
-                                : "bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md text-gray-600 dark:text-gray-300 border border-white/40 dark:border-zinc-700/50 hover:bg-white dark:hover:bg-zinc-700 hover:shadow-md hover:-translate-y-0.5"
+                                ? "bg-gray-100 text-black"
+                                : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f]"
                         }`}
                     >
-                        {data.category_emojis[cat] && <span className="text-lg">{data.category_emojis[cat]}</span>}
                         {cat}
                     </button>
                 ))}
