@@ -36,6 +36,19 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
   - Instant weather forecasts, mandi market prices, and agriculture news endpoints for real-time operational awareness.
 - **Immutable Blockchain Ledger**
   - Cryptographically secured supply chain traceability using SHA-256 hash chaining and proof-of-work mining to guarantee organic certifications and fair-trade verifications.
+- **Soil Moisture & Meteorological Intelligence (Open-Meteo Integration)**
+  - High-resolution volumetric soil water content telemetry across 5 root depth layers (0–1cm surface topsoil, 1–3cm shallow seedling roots, 3–9cm active crop feeding zone, 9–27cm deep taproot zone, and 27–81cm deep subsoil reserve).
+  - Direct 7-day agricultural forecasts with rainfall sum (mm), high/low daily temperatures, weather icons, and soil moisture estimates.
+  - Automatic geolocation detection with farmer profile geocoding fallback.
+  - Reference crop evapotranspiration (ET₀ mm) water loss calculations and 10m wind speed metrics.
+  - Smart Farmer Advisory engine with automated recommendations for irrigation planning, heatwave defense, frost protection, fungal risk management, and spray suitability.
+  - Historical ERA5-Land reanalysis archive querying for comparing seasonal trends.
+- **Interactive Geo-Analysis Mapping**
+  - SSR-safe Leaflet mapping integration with OpenStreetMap tiles, click-to-analyze coordinates, and on-field GPS resolution.
+- **Enhanced Authentication & Single-Page Flow**
+  - Interactive password show/hide toggle (`PasswordInput`) across all auth and profile forms.
+  - Single-page, zero-scroll responsive layout for login and registration.
+  - Selector-based dark mode tokens (`@custom-variant dark`) ensuring crystal-clear readability and contrast in outdoor and high-sunlight conditions.
 
 
 
@@ -56,6 +69,8 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 │        (Next.js + React + TypeScript + TailwindCSS)           │
 │  - Role-based screens & Dashboards                            │
 │  - Chatbot Assistant (RAG)                                    │
+│  - Soil Moisture & Weather Dashboard (Open-Meteo)            │
+│  - Leaflet Geo-Analysis Mapping                              │
 │  - public/trace/[id] (QR Traceability Journey Verification)   │
 │  - dashboard/blockchain (Ledger Explorer & Integrity Audit)  │
 └──────────────────────────────────────────────────────────────┘
@@ -73,6 +88,7 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 ┌────────────────┐┌──────────────┐┌──────────────┐┌──────────────┐
 │ AI / RAG Layer ││   Payments   ││  Blockchain  ││   External   │
 │ (rag_service)  ││  (Razorpay)  ││ (Ledger PoW) ││   Insights   │
+│ (Vision AI)    ││              ││              ││ (Open-Meteo) │
 └────────────────┘└──────────────┘└──────────────┘└──────────────┘
          │               │               │               │
          ▼               ▼               ▼               ▼
@@ -98,7 +114,9 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 - Next.js (`next`)
 - React
 - TypeScript
-- TailwindCSS
+- TailwindCSS (Tailwind v4 with `@custom-variant dark`)
+- Leaflet & `@types/leaflet`
+- Lucide React
 - Axios
 - Zod
 - Radix UI primitives
@@ -110,11 +128,11 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 - SQLModel
 - SQLAlchemy (async)
 - Alembic
-- JWT/Auth libs: `python-jose`, `pyjwt`, `passlib`
+- JWT/Auth libs: `python-jose`, `pyjwt`, `passlib`, `bcrypt`
 - Async DB drivers: `aiosqlite`, `asyncpg`
-- Integrations: Razorpay
+- Integrations: Razorpay, Open-Meteo (Forecast, Geocoding & Historical ERA5-Land)
 - Env management: `python-dotenv`, `pydantic-settings`
-- AI: Groq SDK
+- AI: Groq SDK (Llama 3.2 Vision & LPU Inference)
 
 ### Database
 
@@ -157,7 +175,7 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
    ```
 6. Start the FastAPI server:
    ```bash
-   uvicorn app.main:app --reload
+   uvicorn app.main:app --reload --port 8000
    ```
 
 ### Frontend Setup

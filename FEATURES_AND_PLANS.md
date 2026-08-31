@@ -15,12 +15,15 @@ graph TD
     S <--> |Bulk Orders| M[Manufacturer/Mill]
     M <--> |Buy Raw Produce| F
     C[Customer] <--> |Buy Finished Products| S
-    F --- AI[AI Assistant]
+    F --- AI[AI Assistant & Open-Meteo Telemetry]
     S --- AI
     M --- AI
     C --- AI
     AI <--> DB[(PostgreSQL)]
-    AI <--> LLM[Groq LLM]
+    AI <--> LLM[Groq LLM & Vision]
+    F --- BC[Blockchain Ledger]
+    M --- BC
+    C --- BC
 ```
 
 ---
@@ -32,7 +35,9 @@ AgriFlow AI provides a flexible and secure authentication system designed to acc
 #### **A. Multi-Credential Authentication**
 1. **Dual Login Methods**: Users can register and log in using either a verified **Email Address** or a **Phone Number**.
 2. **OTP Verification**: Integrated **Phone OTP (SMS)** and **Email OTP** verification systems to ensure account security and owner validation.
-3. **Encrypted Security**: Industry-standard **Password Hashing** and **JWT (JSON Web Token)** based session management.
+3. **Encrypted Security**: Industry-standard **Password Hashing** (Bcrypt / Passlib) and **JWT (JSON Web Token)** based session management.
+4. **Interactive Password Visibility**: Embedded show/hide toggle (`PasswordInput`) across all authentication, registration, and profile password forms.
+5. **Zero-Scroll Single Page Flow**: Optimized layout with zero extra vertical scroll on standard mobile and desktop viewports.
 
 #### **B. Multi-Role Account Logic (The "Same-Credential" Feature)**
 1. **Credential Versatility**: A single individual can maintain multiple professional profiles (e.g., a **Farmer** who also owns a **Fertilizer Shop**) using the same Email or Phone Number.
@@ -59,7 +64,7 @@ The farmer's experience is designed to be a complete farm management system, org
 3. **Quick Insights Section**:
     - **Active Crops Feed**: Real-time list of only currently growing crops.
     - **Filtered Market Prices**: Live prices shown *specifically* for the crops the farmer is currently growing.
-    - **Instant Weather**: Current conditions at the farm's GPS location.
+    - **Instant Weather & Soil**: Current conditions and root moisture at the farm's GPS location.
     - **Agri-News Summary**: Curated headlines relevant to the farmer's region and crops.
 
 #### **B. Crop Management Page (Detailed Field Logs)**
@@ -86,9 +91,13 @@ The farmer's experience is designed to be a complete farm management system, org
 
 #### **D. Market & Intelligence Hub**
 1. **Comprehensive Market Page**: View live market prices for *all* agricultural commodities within a specific geographic range.
-2. **Advanced Weather Page**:
-    - **Environmental Monitoring**: Detailed Temperature, Precipitation (Rain), and Humidity updates.
-    - **AI Advisory**: Real-time **recommendations** given to the farmer (e.g., "High humidity detected, monitor for fungal infections") based on the 7-day forecast.
+2. **Advanced Weather & Soil Moisture Intelligence (Open-Meteo Integration)**:
+    - **Multi-Depth Soil Moisture Monitoring**: Live volumetric telemetry across 5 root depth layers (0–1cm surface topsoil, 1–3cm shallow seedling roots, 3–9cm active crop feeding zone, 9–27cm deep taproot zone, and 27–81cm deep subsoil reserve).
+    - **Automatic Geolocation**: Detects farm GPS location with fallback to registered village/district profile geocoding.
+    - **7-Day Agricultural Forecast**: Daily high/low temperatures, precipitation volume (mm), weather condition indicators, and soil moisture predictions.
+    - **Atmospheric Conditions**: Real-time relative humidity, 10m wind speed, and reference crop evapotranspiration (ET₀ mm).
+    - **Smart Farmer Advisory Engine**: Automated action recommendations for irrigation planning, heatwave protection, frost defense, fungal risk prevention, and spray suitability.
+    - **Historical ERA5-Land Archive**: Retrospective climate research querying past satellite reanalysis datasets.
 3. **Dedicated News Page**: Full-screen experience for in-depth agricultural news, policy updates, and government schemes.
 
 ---
@@ -148,21 +157,16 @@ The Manufacturer role is designed for industrial processing units (e.g., Rice Mi
 
 #### **A. Dashboard & KPIs**
 1. **Industrial Health**: Month-wise Revenue, Purchase Costs, Processing Expenses, and Net Profit.
-2. **Stock Summary**: Instant view of Raw Material vs. Finished Goods value.
-3. **Production Metrics**: Total batches run and Average Processing Efficiency (Output/Input ratio).
-4. **Trends**: Visual sales trends using Recharts to track B2B demand.
+2. **Operations Pipeline**: Quick stats on Pending Inward Harvests, Active Milling Runs, and Packaged Stocks.
 
-#### **B. Raw Material Procurement**
-1. **Direct from Farmer**: Record bulk purchases of crops (Wheat, Paddy, etc.) with Farmer Name/ID tracking.
-2. **Quality Grading**: Assign Grade A/B/C to incoming raw materials to track supply quality.
-3. **Logistics**: Integrated transport cost recording for every purchase batch.
-4. **Online Payments**: Razorpay integration for paying farmers directly from the dashboard.
+#### **B. Raw Harvest Procurement**
+1. **Intake Logging**: Record incoming raw produce directly from farmers or market mandis with moisture levels, grading, and weighbridge slips.
+2. **Direct Farmer Payouts**: Record settlement transactions, payment modes, and invoice receipts.
 
-#### **C. Production & Processing**
-1. **Batch Transformation**: Convert raw material batches into branded finished goods (e.g., Raw Wheat → "Premium Atta").
-2. **Efficiency Tracking**: Automatic calculation of Yield vs. Waste percentages for every production run.
-3. **Costing**: Total unit cost calculation (Raw Price + Processing Power + Labour) to ensure profitable pricing.
-4. **Batch Traceability**: Every finished product is linked to its specific production batch ID.
+#### **C. Processing & Milling Engine**
+1. **Conversion Runs**: Transform raw intake (e.g. Paddy) into finished products (e.g. Premium Basmati Rice, Broken Rice, Husk/Bran).
+2. **Wastage & Recovery Analytics**: Automatic computation of recovery efficiency percentage and byproduct yield.
+3. **Cost Factor Allocation**: Apportion electricity, machine depreciation, labor, and packaging to compute per-unit production cost.
 
 #### **D. Wholesale Sales & Orders**
 1. **B2B Fulfillment**: Sell branded products to retail shops or large distributors.
@@ -247,6 +251,7 @@ The Agri Assistant is a role-aware AI companion that provides hyper-localized ad
 6. **Security Architecture**: Protected **JWT-based session management** with role-specific access controls.
 7. **Asset Management**: Integrated **Media Upload System** for profile logos and product documentation.
 8. **Geofencing**: Automated **50km radius restriction** logic for local agricultural commerce.
+9. **Meteorological Telemetry**: Direct integration with **Open-Meteo High-Resolution APIs** for 5-depth volumetric soil moisture and agricultural weather.
 
 ---
 
@@ -255,9 +260,9 @@ The Agri Assistant is a role-aware AI companion that provides hyper-localized ad
 AgriFlow AI is committed to continuous evolution. Our roadmap focuses on community empowerment, precision agriculture, and cross-role intelligence.
 
 #### **A. Advanced AI & Multilingual Support**
-1. **AI Crop Health**: Deep-learning based **disease diagnosis** via mobile photos, providing instant treatment and pesticide recommendations.
-2. **Multilingual Expansion**: Native support for **Regional Indian Languages** (Hindi, Telugu, Marathi, etc.) using AI-driven real-time translation for all dashboards.
-3. **Voice Interface**: Voice-to-action features for farmers to log expenses or check prices without typing.
+1. **AI Crop Health**: Deep-learning based **disease diagnosis** via mobile photos, providing instant treatment and pesticide recommendations *(Implemented with Groq Llama 3.2 Vision)*.
+2. **Multilingual Expansion**: Native support for **Regional Indian Languages** (Hindi, Telugu, Tamil, Kannada, Marathi, Gujarati, Punjabi, Bengali) *(Implemented across full UI)*.
+3. **Voice Interface**: Voice-to-action features for farmers to log expenses or check prices without typing *(Implemented with real-time audio wave feedback)*.
 
 #### **B. Farmer-to-Farmer Community Hub**
 1. **P2P & Group Chat**: A dedicated community section for farmers to form local groups or communicate individually.
@@ -266,8 +271,8 @@ AgriFlow AI is committed to continuous evolution. Our roadmap focuses on communi
 
 #### **C. Smart Recommendation Systems (Role-Specific)**
 1. **For Farmers**: 
-    - **Precision Nutrition**: Fertilizer advice based on **Soil Testing Reports**, current crop type, and historical yield data.
-    - **Agri-YouTube Integration**: Curated video guides on "Smart Farming," new crop techniques, and modern machinery.
+    - **Precision Nutrition**: Fertilizer advice based on **Soil Testing Reports**, current crop type, and historical yield data *(Implemented in Plot Nutrition module)*.
+    - **Agri-YouTube Integration**: Curated video guides on "Smart Farming," new crop techniques, and modern machinery *(Implemented in Learning Hub)*.
 2. **For Shops**: 
     - **Predictive Stocking**: Recommendations on which fertilizers/seeds to stock based on **historical regional demand** and current crop cycles.
     - **New Product Alerts**: Discover new varieties of high-yield seeds and advanced pesticides through a wholesale discovery engine.
@@ -278,7 +283,8 @@ AgriFlow AI is committed to continuous evolution. Our roadmap focuses on communi
     - **Smart Buying**: Price-trend analysis to advise customers on the **best time to buy** specific commodities to get the lowest price.
 
 #### **D. Emerging Technologies**
-1. **Blockchain Ledger**: Immutable end-to-end traceability for **Organic Certification** and fair-trade verification.
-2. **IoT Integration**: Direct data fetching from soil moisture sensors and farm weather stations for real-time dashboard updates.
+1. **Blockchain Ledger**: Immutable end-to-end traceability for **Organic Certification** and fair-trade verification *(Implemented with SHA-256 Hash Chaining & PoW explorer)*.
+2. **IoT Integration**: Direct data fetching from soil moisture sensors and farm weather stations for real-time dashboard updates *(Implemented with Open-Meteo multi-depth telemetry)*.
+
 #### **E. Frontend Enhancements**
 1. **Persistent Role Selection**: Provide an option to "Remember Role" during the first login. If selected, bypass the role selection screen on future logins. If "Do not remember" is chosen, the role selection screen will always be shown when the user tries to log in.

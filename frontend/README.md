@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AgriFlow AI — Frontend Web Client 🌾
 
-## Getting Started
+The modern, responsive web application for AgriFlow AI built with **Next.js 16 (Turbopack)**, **React 19**, **TypeScript**, and **Tailwind CSS v4**.
 
-First, run the development server:
+---
 
+## 🛠️ Key Capabilities
+
+- **Role-Based Workspaces**:
+  - 🚜 **Farmer**: Crop lifecycle management, expenses & harvest recording, plot nutrition, AI disease diagnosis, voice navigation, and direct soil moisture & weather telemetry.
+  - 🏪 **Input Retailer / Shop**: Batch inventory tracking, GPS-fenced 50km store catalog, expense-weighted cost apportionment, POS walk-in sales.
+  - 🏭 **Processor / Mill**: Raw produce intake, conversion & wastage logging, branded retail QR packaging.
+  - 🛒 **Customer**: Farm-to-fork store, digital checkout (Razorpay / COD), public blockchain verification portal (`/trace/[id]`).
+- **Soil Moisture & Weather Intelligence**:
+  - Multi-depth root moisture gauges (0–1cm, 1–3cm, 3–9cm, 9–27cm, 27–81cm).
+  - 7-day agricultural forecasts, ET₀ evapotranspiration water loss, and automated farmer advisory tips.
+  - Interactive Leaflet map with auto-geolocation.
+- **Multilingual Support**:
+  - Live localization switcher across 9 languages (English, Telugu, Hindi, Tamil, Kannada, Punjabi, Marathi, Gujarati, Bengali).
+- **Accessibility & Design**:
+  - Glassmorphic, high-contrast dark/light mode theme with selector-based dark mode (`@custom-variant dark`).
+  - Compact single-page login and registration forms with show/hide password toggles.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Install Dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Configuration
+Create a `.env.local` file in this directory:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Start Development Server
+```bash
+npm run dev
+```
+Open **`http://localhost:3000`** in your browser.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 📂 Project Structure
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+frontend/src/
+├── app/                      # Next.js App Router (pages & layouts)
+│   ├── dashboard/            # Role-specific workspaces (farmer, shop, manufacturer, customer)
+│   │   ├── farmer/           # Crops, nutrition, market, weather, learning, profile
+│   │   ├── shop/             # Inventory, accounting, orders, profile
+│   │   ├── manufacturer/     # Intake, processing, batches, orders
+│   │   └── customer/         # Store, cart, orders
+│   ├── login/                # Authentication & role selection
+│   ├── register/             # Unified single-page registration
+│   ├── trace/[id]/           # Consumer blockchain QR journey explorer
+│   └── globals.css           # Tailwind v4 theme tokens & dark-mode variant
+├── components/               # Modular UI & Feature Components
+│   ├── layout/               # Header, Sidebar, Bottom Navigation
+│   ├── weather/              # SoilWeatherDashboard, SoilMap
+│   ├── ui/                   # Reusable UI primitives (Button, Card, PasswordInput, etc.)
+│   ├── voice/                # Hands-free voice assistant chip & microphone feedback
+│   └── LanguageSelector.tsx  # Multilingual dropdown
+├── context/                  # React Contexts (Language, Auth, Theme)
+├── lib/                      # API client (Axios), payment SDK, and utility helpers
+└── locales/                  # Translation JSON dictionary bundles
+```

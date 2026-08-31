@@ -850,7 +850,7 @@ export default function FarmerDashboard() {
                             />
                             <button
                                 onClick={() => setShowPhotoModal(false)}
-                                className="absolute -top-3 -right-3 bg-white text-foreground rounded-full w-8 h-8 flex items-center justify-center shadow-lg font-bold hover:bg-gray-100"
+                                className="absolute -top-3 -right-3 bg-white text-black rounded-full w-8 h-8 flex items-center justify-center shadow-lg font-bold hover:bg-gray-100 text-lg leading-none"
                             >
                                 ×
                             </button>
@@ -883,8 +883,8 @@ export default function FarmerDashboard() {
                     </Button>
                 </Link>
                 <Link href="/dashboard/farmer/crops">
-                    <Button size="sm" variant="outline" className="border-gray-200 text-foreground bg-white rounded-full hover:bg-gray-50">
-                        <Wallet className="h-4 w-4 mr-1" /> {t('farmer.addExpense')}
+                    <Button size="sm" variant="outline" className="border-gray-300 text-black dark:text-black bg-white hover:bg-gray-100 rounded-full font-bold shadow-sm">
+                        <Wallet className="h-4 w-4 mr-1 text-black" /> {t('farmer.addExpense')}
                     </Button>
                 </Link>
             </div>
