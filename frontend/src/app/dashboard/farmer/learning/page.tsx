@@ -16,6 +16,9 @@ import {
     X,
     ExternalLink,
     Leaf,
+    Mic,
+    Heart,
+    History,
 } from "lucide-react";
 import api from "@/lib/api";
 
@@ -47,6 +50,8 @@ export default function LearningHubPage() {
     const [activeCategory, setActiveCategory] = useState<string>("All");
     const [selectedVideo, setSelectedVideo] = useState<YouTubeVideo | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [watchHistory, setWatchHistory] = useState<YouTubeVideo[]>([]);
+    const [likedVideos, setLikedVideos] = useState<YouTubeVideo[]>([]);
 
     const fetchVideos = async (refresh = false) => {
         try {
@@ -64,7 +69,30 @@ export default function LearningHubPage() {
 
     useEffect(() => {
         fetchVideos();
+        const savedHistory = localStorage.getItem("agri_watch_history");
+        if (savedHistory) setWatchHistory(JSON.parse(savedHistory));
+        const savedLikes = localStorage.getItem("agri_liked_videos");
+        if (savedLikes) setLikedVideos(JSON.parse(savedLikes));
     }, []);
+
+    const handleVideoSelect = (video: YouTubeVideo) => {
+        setSelectedVideo(video);
+        const newHistory = [video, ...watchHistory.filter(v => v.id !== video.id)].slice(0, 50);
+        setWatchHistory(newHistory);
+        localStorage.setItem("agri_watch_history", JSON.stringify(newHistory));
+    };
+
+    const toggleLike = (video: YouTubeVideo) => {
+        const isLiked = likedVideos.some(v => v.id === video.id);
+        let newLikes;
+        if (isLiked) {
+            newLikes = likedVideos.filter(v => v.id !== video.id);
+        } else {
+            newLikes = [video, ...likedVideos];
+        }
+        setLikedVideos(newLikes);
+        localStorage.setItem("agri_liked_videos", JSON.stringify(newLikes));
+    };
 
     if (loading) {
         return (
@@ -88,8 +116,12 @@ export default function LearningHubPage() {
         );
     }
 
-    const filteredVideos = data.videos.filter(v => {
-        const matchesCategory = activeCategory === "All" || v.category === activeCategory;
+    let sourceVideos = data.videos;
+    if (activeCategory === "History") sourceVideos = watchHistory;
+    if (activeCategory === "Liked") sourceVideos = likedVideos;
+
+    const filteredVideos = sourceVideos.filter(v => {
+        const matchesCategory = ["All", "History", "Liked"].includes(activeCategory) || v.category === activeCategory;
         const matchesSearch = !searchQuery ||
             v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             v.channel.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -164,6 +196,17 @@ export default function LearningHubPage() {
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => toggleLike(selectedVideo)}
+                                className={`h-[42px] w-[42px] flex items-center justify-center rounded-xl transition-all border ${
+                                    likedVideos.some(v => v.id === selectedVideo.id)
+                                        ? "bg-rose-500/20 border-rose-500/50 text-rose-500"
+                                        : "bg-zinc-800 border-zinc-700 text-gray-300 hover:bg-zinc-700"
+                                }`}
+                                title="Save/Like Video"
+                            >
+                                <Heart className={`h-5 w-5 ${likedVideos.some(v => v.id === selectedVideo.id) ? "fill-rose-500 text-rose-500" : ""}`} />
+                            </button>
                             <a
                                 href={`https://www.youtube.com/watch?v=${selectedVideo.id}`}
                                 target="_blank"
@@ -184,26 +227,34 @@ export default function LearningHubPage() {
             )}
 
             {/* Search Bar */}
-            <div className="flex max-w-xl mx-auto w-full">
-                <div className="relative flex items-center w-full">
-                    <input
-                        type="text"
-                        placeholder="Search"
-                        className="w-full pl-5 pr-10 py-2 bg-[#121212] border border-[#303030] rounded-l-full text-base text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-[#1c62b9]"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                    />
-                    {searchQuery && (
-                        <button
-                            onClick={() => setSearchQuery("")}
-                            className="absolute right-3 p-1.5 rounded-full hover:bg-[#303030] text-gray-400 transition-colors"
-                        >
-                            <X className="h-5 w-5" />
-                        </button>
-                    )}
+            <div className="flex max-w-3xl mx-auto w-full items-center gap-3">
+                <div className="flex w-full">
+                    <div className="relative flex items-center w-full">
+                        <input
+                            type="text"
+                            placeholder="Search"
+                            className="w-full pl-5 pr-10 py-2 bg-[#121212] border border-[#303030] rounded-l-full text-base text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-[#1c62b9]"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-3 p-1.5 rounded-full hover:bg-[#303030] text-gray-400 transition-colors"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        )}
+                    </div>
+                    <button className="px-5 py-2 bg-[#222222] border border-l-0 border-[#303030] rounded-r-full hover:bg-[#303030] transition-colors flex items-center justify-center group">
+                        <Search className="h-5 w-5 text-gray-100 group-hover:text-white" />
+                    </button>
                 </div>
-                <button className="px-5 py-2 bg-[#222222] border border-l-0 border-[#303030] rounded-r-full hover:bg-[#303030] transition-colors flex items-center justify-center group">
-                    <Search className="h-5 w-5 text-gray-100 group-hover:text-white" />
+                <button
+                    className="h-10 w-10 shrink-0 bg-[#181818] hover:bg-[#303030] rounded-full flex items-center justify-center transition-colors shadow-sm"
+                    title="Search with voice"
+                >
+                    <Mic className="h-5 w-5 text-gray-100" />
                 </button>
             </div>
 
@@ -218,6 +269,26 @@ export default function LearningHubPage() {
                     }`}
                 >
                     All
+                </button>
+                <button
+                    onClick={() => setActiveCategory("Liked")}
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                        activeCategory === "Liked"
+                            ? "bg-gray-100 text-black"
+                            : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f]"
+                    }`}
+                >
+                    <Heart className="h-4 w-4" /> Liked
+                </button>
+                <button
+                    onClick={() => setActiveCategory("History")}
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                        activeCategory === "History"
+                            ? "bg-gray-100 text-black"
+                            : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f]"
+                    }`}
+                >
+                    <History className="h-4 w-4" /> History
                 </button>
                 {data.categories.map(cat => (
                     <button
@@ -246,7 +317,7 @@ export default function LearningHubPage() {
                             <div
                                 key={`fy-${video.id}`}
                                 className="group relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 border border-black/5 dark:border-white/5"
-                                onClick={() => setSelectedVideo(video)}
+                                onClick={() => handleVideoSelect(video)}
                             >
                                 <div className="aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-zinc-800 relative">
                                     <img
@@ -314,7 +385,7 @@ export default function LearningHubPage() {
                             <div
                                 key={video.id}
                                 className="group bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl border border-white/50 dark:border-zinc-800/50 hover:border-rose-300 dark:hover:border-rose-800/50 transition-all duration-500 cursor-pointer transform hover:-translate-y-1"
-                                onClick={() => setSelectedVideo(video)}
+                                onClick={() => handleVideoSelect(video)}
                             >
                                 <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-zinc-800 m-2 rounded-[1.5rem]">
                                     <img
