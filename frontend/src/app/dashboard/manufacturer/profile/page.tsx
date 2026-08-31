@@ -5,6 +5,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Save, CheckCircle2, ImagePlus, Lock, Bell, Wallet, Settings2, Shield, ShieldOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/ui/password-input";
 
 interface MillProfileData {
     mill_name?: string;
@@ -321,15 +322,15 @@ export default function MillProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Current Password</label>
-                                    <input type="password" name="current_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                    <PasswordInput name="current_password" required />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Password</label>
-                                    <input type="password" name="new_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                    <PasswordInput name="new_password" required />
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
                                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Confirm New Password</label>
-                                    <input type="password" name="confirm_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                    <PasswordInput name="confirm_password" required />
                                 </div>
                             </div>
                             <button type="submit" className="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700">Update Password</button>

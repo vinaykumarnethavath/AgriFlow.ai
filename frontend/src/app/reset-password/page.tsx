@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { KeyRound } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
 
 type ResetMethod = "email" | "phone";
 
@@ -60,27 +61,31 @@ function ResetPasswordContent() {
         setLoading(true);
 
         try {
-            const payload = credentials.method === "email"
-                ? {
+            let payload: any = {};
+            if (credentials.method === "email") {
+                payload = {
                     email: credentials.email,
+                    otp: credentials.otp,
                     role: credentials.role,
-                    otp_code: credentials.otp,
-                    new_password: newPassword,
-                }
-                : {
-                    phone_number: credentials.phone_number,
-                    role: credentials.role,
-                    otp_code: credentials.otp,
                     new_password: newPassword,
                 };
+            } else {
+                payload = {
+                    phone_number: credentials.phone_number,
+                    otp: credentials.otp,
+                    role: credentials.role,
+                    new_password: newPassword,
+                };
+            }
 
             await api.post("/auth/reset-password", payload);
             setSuccess(true);
             setTimeout(() => {
                 router.push("/login");
-            }, 3000);
+            }, 2000);
         } catch (err: any) {
             setError(err.response?.data?.detail || "Password reset failed. Please try again.");
+        } finally {
             setLoading(false);
         }
     };
@@ -88,24 +93,26 @@ function ResetPasswordContent() {
     if (success) {
         return (
             <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden p-8 text-center space-y-4">
-                <div className="flex justify-center">
-                    <div className="h-16 w-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                        <KeyRound className="h-8 w-8 text-green-600" />
+                <div className="flex justify-center mb-2">
+                    <div className="h-12 w-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                        <KeyRound className="h-6 w-6 text-green-600" />
                     </div>
                 </div>
                 <h1 className="text-2xl font-bold text-foreground">Password Reset!</h1>
                 <p className="text-muted-foreground font-medium pb-4">Your password has been reset successfully. We are redirecting you to the login page now...</p>
-                <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-green-600 animate-[progress_3s_linear]" style={{ width: '100%' }} />
-                </div>
             </div>
         );
     }
 
     return (
         <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
-            <div className="p-6 text-center space-y-2 border-b border-border">
-                <div className="flex justify-center mt-2">
+            <div className="p-4 text-center border-b border-border">
+                <div className="flex justify-center mb-1">
+                    <div className="w-32 flex items-center justify-center">
+                        <img src="/logo.png?v=5" alt="AgriFlow Logo" className="w-full h-auto object-contain drop-shadow-md" />
+                    </div>
+                </div>
+                <div className="flex justify-center mb-2 mt-2">
                     <div className="h-12 w-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                         <KeyRound className="h-6 w-6 text-green-600" />
                     </div>
@@ -118,29 +125,27 @@ function ResetPasswordContent() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-1.5">
                         <label htmlFor="new_password" title="new password" className="text-sm font-semibold text-muted-foreground block">New Password</label>
-                        <input
+                        <PasswordInput
                             id="new_password"
                             name="new_password"
-                            type="password"
                             placeholder="••••••••"
                             ref={newPasswordRef}
                             onChange={handlePasswordChange}
                             required
-                            className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground"
+                            className="py-3 text-sm"
                         />
                     </div>
 
                     <div className="space-y-1.5">
                         <label htmlFor="confirm_password" title="confirm password" className="text-sm font-semibold text-muted-foreground block">Confirm New Password</label>
-                        <input
+                        <PasswordInput
                             id="confirm_password"
                             name="confirm_password"
-                            type="password"
                             placeholder="••••••••"
                             ref={confirmPasswordRef}
                             onChange={handlePasswordChange}
                             required
-                            className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition-all focus:ring-2 placeholder:text-muted-foreground text-foreground ${!passwordsMatch ? "border-red-500 focus:ring-red-500/10" : "border-input bg-background focus:border-green-500 focus:ring-green-500/10"}`}
+                            className={`py-3 text-sm ${!passwordsMatch ? "border-red-500 focus:ring-red-500/10" : ""}`}
                         />
                         {!passwordsMatch && (
                             <p className="text-xs text-red-500 font-bold">Passwords do not match</p>

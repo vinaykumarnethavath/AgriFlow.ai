@@ -10,6 +10,7 @@ import { UserRole } from "@/types";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLanguage } from "@/context/LanguageContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { PasswordInput } from "@/components/ui/password-input";
 
 type AuthMethod = "email" | "phone";
 
@@ -116,41 +117,41 @@ export default function LoginPage() {
                     <p className="text-sm text-muted-foreground">{t('auth.loginSubtitle')}</p>
                 </div>
 
-                <div className="p-6 space-y-4">
+                <div className="p-4 sm:p-5 space-y-2.5">
                     {/* Method Toggle */}
-                    <div className="flex rounded-lg border border-border overflow-hidden">
+                    <div className="flex rounded-lg border border-border overflow-hidden p-0.5 bg-muted/30">
                         <button
                             type="button"
                             onClick={() => { setAuthMethod("email"); setError(""); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "email" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-colors ${authMethod === "email" ? "bg-green-600 text-white shadow-xs" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
                         >
-                            <Mail className="h-4 w-4" /> Email
+                            <Mail className="h-3.5 w-3.5" /> Email
                         </button>
                         <button
                             type="button"
                             onClick={() => { setAuthMethod("phone"); setError(""); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "phone" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-colors ${authMethod === "phone" ? "bg-green-600 text-white shadow-xs" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
                         >
-                            <Phone className="h-4 w-4" /> {t('auth.phone')}
+                            <Phone className="h-3.5 w-3.5" /> {t('auth.phone')}
                         </button>
                     </div>
 
                     {/* ── EMAIL LOGIN ── */}
                     {authMethod === "email" && (
-                        <form onSubmit={handleEmailSubmit} className="space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-semibold text-muted-foreground block">{t('auth.email')}</label>
+                        <form onSubmit={handleEmailSubmit} className="space-y-2.5">
+                            <div className="space-y-0.5">
+                                <label className="text-xs sm:text-sm font-semibold text-muted-foreground block">{t('auth.email')}</label>
                                 <input type="email" placeholder="farmer@example.com" ref={emailRef} required autoComplete="email" className={inputCls} />
                             </div>
-                            <div className="space-y-1.5">
+                            <div className="space-y-0.5">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-sm font-semibold text-muted-foreground">{t('auth.password')}</label>
+                                    <label className="text-xs sm:text-sm font-semibold text-muted-foreground">{t('auth.password')}</label>
                                     <Link href="/forgot-password?method=email" className="text-xs text-green-600 hover:underline font-bold">{t('auth.forgotPassword')}</Link>
                                 </div>
-                                <input type="password" ref={passwordRef} required autoComplete="current-password" placeholder="••••••••" className={inputCls} />
+                                <PasswordInput ref={passwordRef} required autoComplete="current-password" placeholder="••••••••" />
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-sm font-semibold text-muted-foreground block">{t('auth.role')}</label>
+                            <div className="space-y-0.5">
+                                <label className="text-xs sm:text-sm font-semibold text-muted-foreground block">{t('auth.role')}</label>
                                 <div className="flex gap-1.5">
                                     {[
                                         { id: UserRole.FARMER, label: t('auth.farmer'), icon: Sprout },
@@ -161,19 +162,19 @@ export default function LoginPage() {
                                         <button
                                             key={role.id} type="button"
                                             onClick={() => setRoleState(role.id)}
-                                            className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border transition-colors ${roleState === role.id ? 'bg-green-100 border-green-500 text-green-700' : 'bg-background border-input text-muted-foreground hover:bg-muted'}`}
+                                            className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-lg border transition-colors ${roleState === role.id ? 'bg-green-100 border-green-500 text-green-700 font-bold dark:bg-green-950/60 dark:border-green-500 dark:text-green-300' : 'bg-background border-input text-muted-foreground hover:bg-muted'}`}
                                         >
-                                            <role.icon className="h-5 w-5 mb-0.5" />
+                                            <role.icon className="h-4 w-4 mb-0.5" />
                                             <span className="text-[10px] font-bold leading-none">{role.label}</span>
                                         </button>
                                     ))}
                                 </div>
                             </div>
-                            {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">{error}</div>}
-                            <button type="submit" disabled={loading} className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
-                                {loading ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('common.loading')}</span> : t('auth.login')}
+                            {error && <div className="p-1.5 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-xs font-medium">{error}</div>}
+                            <button type="submit" disabled={loading} className="w-full bg-green-600 text-white rounded-lg py-2 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none mt-0.5">
+                                {loading ? <span className="flex items-center justify-center gap-2"><div className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('common.loading')}</span> : t('auth.login')}
                             </button>
-                            <div className="text-center text-sm pt-2">
+                            <div className="text-center text-xs sm:text-sm pt-1">
                                 <span className="text-muted-foreground">{t('auth.dontHaveAccount')} </span>
                                 <Link href="/register" className="text-green-600 font-bold hover:underline">{t('auth.register')}</Link>
                             </div>
@@ -203,14 +204,12 @@ export default function LoginPage() {
                                     <label className="text-sm font-semibold text-muted-foreground">Password</label>
                                     <Link href="/forgot-password?method=phone" className="text-xs text-green-600 hover:underline font-bold">Forgot password?</Link>
                                 </div>
-                                <input
-                                    type="password"
+                                <PasswordInput
                                     placeholder="••••••••"
                                     value={phonePassword}
                                     onChange={e => setPhonePassword(e.target.value)}
                                     required
                                     autoComplete="current-password"
-                                    className={inputCls}
                                 />
                             </div>
                             <div className="space-y-1">

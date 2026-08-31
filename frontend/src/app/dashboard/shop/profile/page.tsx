@@ -5,6 +5,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Save, CheckCircle2, ImagePlus, X, ShieldCheck, Bell, Lock, Wallet, Settings2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/ui/password-input";
 
 interface ShopProfileData {
     shop_name?: string;
@@ -419,15 +420,15 @@ export default function ShopProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Current Password</label>
-                                    <input type="password" name="current_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                    <PasswordInput name="current_password" required />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Password</label>
-                                    <input type="password" name="new_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                    <PasswordInput name="new_password" required />
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
                                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Confirm New Password</label>
-                                    <input type="password" name="confirm_password" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                    <PasswordInput name="confirm_password" required />
                                 </div>
                             </div>
                             <p className="text-[11px] text-muted-foreground">Tip: Use at least 8 characters with a mix of letters, numbers and symbols.</p>
