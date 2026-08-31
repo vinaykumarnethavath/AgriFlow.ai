@@ -807,10 +807,108 @@ export interface WeatherData {
     humidity: number;
     wind_speed: number;
     rainfall_mm: number;
-    forecast: { day: string, temp: number, condition: string, rain_prob: number }[];
-    alerts: { type: 'warning' | 'caution', title: string, message: string }[];
+    soil_moisture?: number;
+    forecast: { day: string, date?: string, temp: number, temp_min?: number, condition: string, rain_prob: number, soil_moisture?: number }[];
+    alerts: { type: 'warning' | 'caution' | 'info' | 'success', title: string, message: string }[];
     advice: string[];
+    source?: string;
 }
+
+export interface SoilWeatherCurrent {
+    date?: string;
+    temperature_2m?: number;
+    relative_humidity_2m?: number;
+    precipitation?: number;
+    precipitation_sum?: number;
+    windspeed_10m?: number;
+    evapotranspiration?: number;
+    et0_fao_evapotranspiration?: number;
+    soil_moisture_0_to_1cm?: number;
+    soil_moisture_1_to_3cm?: number;
+    soil_moisture_3_to_9cm?: number;
+    soil_moisture_9_to_27cm?: number;
+    soil_moisture_27_to_81cm?: number;
+    soil_moisture_0_to_7cm?: number;
+    soil_moisture_7_to_28cm?: number;
+    soil_moisture_28_to_100cm?: number;
+    soil_moisture_100_to_255cm?: number;
+    soil_temperature_0cm?: number;
+    soil_temperature_6cm?: number;
+    soil_temperature_18cm?: number;
+    soil_temperature_54cm?: number;
+    soil_temperature_0_to_7cm?: number;
+    soil_temperature_7_to_28cm?: number;
+    soil_temperature_28_to_100cm?: number;
+    soil_temperature_100_to_255cm?: number;
+    temperature_2m_max?: number;
+    temperature_2m_min?: number;
+}
+
+export interface SoilWeatherDaily {
+    date: string;
+    temperature_2m_max?: number;
+    temperature_2m_min?: number;
+    temperature_2m?: number;
+    precipitation_sum?: number;
+    precipitation?: number;
+    soil_moisture_0_to_1cm?: number;
+    soil_moisture_0_to_7cm?: number;
+    evapotranspiration?: number;
+    et0_fao_evapotranspiration?: number;
+    windspeed_10m?: number;
+    relative_humidity_2m?: number;
+    [key: string]: any;
+}
+
+export interface FarmerRecommendation {
+    icon: string;
+    type: "warning" | "caution" | "success" | "info";
+    title: string;
+    text: string;
+}
+
+export interface SoilWeatherResponse {
+    latitude: number;
+    longitude: number;
+    elevation: number;
+    timezone: string;
+    date?: string;
+    current: SoilWeatherCurrent;
+    daily: SoilWeatherDaily[];
+    recommendations: FarmerRecommendation[];
+    source?: string;
+}
+
+export interface GeocodeResult {
+    name: string;
+    latitude: number;
+    longitude: number;
+    elevation: number;
+    admin1: string;
+    country: string;
+    display: string;
+    country_code: string;
+}
+
+export const getSoilWeatherForecast = async (lat: number, lon: number): Promise<SoilWeatherResponse> => {
+    const response = await api.get<SoilWeatherResponse>('/weather/forecast', { params: { lat, lon } });
+    return response.data;
+};
+
+export const getSoilWeatherHistorical = async (lat: number, lon: number, date: string): Promise<SoilWeatherResponse> => {
+    const response = await api.get<SoilWeatherResponse>('/weather/historical', { params: { lat, lon, date } });
+    return response.data;
+};
+
+export const searchGeocodeCities = async (name: string): Promise<GeocodeResult[]> => {
+    const response = await api.get<{ results: GeocodeResult[] }>('/weather/geocode', { params: { name } });
+    return response.data.results || [];
+};
+
+export const getWeather = async (lat?: number, lon?: number) => {
+    const response = await api.get<WeatherData>('/weather/', { params: lat && lon ? { lat, lon } : undefined });
+    return response.data;
+};
 
 export interface MarketLocation {
     market_name: string;
@@ -842,11 +940,6 @@ export interface NewsItem {
     url?: string;
     image_url?: string;
 }
-
-export const getWeather = async () => {
-    const response = await api.get<WeatherData>('/weather/');
-    return response.data;
-};
 
 export const getMarketPrices = async () => {
     const response = await api.get<MarketPrice[]>('/market/prices');

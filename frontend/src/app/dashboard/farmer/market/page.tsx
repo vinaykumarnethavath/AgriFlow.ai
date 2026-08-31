@@ -417,12 +417,12 @@ export default function MarketPage() {
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case "completed": return "bg-emerald-100 text-emerald-700";
-            case "confirmed": return "bg-blue-100 text-blue-700";
-            case "dispatched": return "bg-purple-100 text-purple-700";
-            case "pending": return "bg-amber-100 text-amber-700";
-            case "cancelled": return "bg-red-100 text-red-700";
-            default: return "bg-gray-100 text-foreground";
+            case "completed": return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
+            case "confirmed": return "bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800";
+            case "dispatched": return "bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800";
+            case "pending": return "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800";
+            case "cancelled": return "bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800";
+            default: return "bg-muted text-muted-foreground border border-border";
         }
     };
 
@@ -444,7 +444,7 @@ export default function MarketPage() {
                     <Button
                         variant="outline"
                         onClick={() => { setShowHistory(false); setSelectedOrder(null); }}
-                        className="flex items-center gap-2 border-gray-300 text-foreground"
+                        className="flex items-center gap-2 border-border text-foreground bg-card hover:bg-muted"
                     >
                         <ArrowLeft className="h-4 w-4" /> Back to Shopping
                     </Button>
@@ -452,9 +452,9 @@ export default function MarketPage() {
                 </div>
 
                 {orders.length === 0 ? (
-                    <Card className="border-dashed border-2">
+                    <Card className="border-dashed border-2 border-border bg-card">
                         <CardContent className="p-12 text-center">
-                            <History className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                            <History className="h-16 w-16 mx-auto text-muted-foreground/40 mb-4" />
                             <h3 className="text-xl font-bold text-muted-foreground">No orders yet</h3>
                             <p className="text-muted-foreground">Your order history will appear here</p>
                         </CardContent>
@@ -469,26 +469,26 @@ export default function MarketPage() {
                                     onClick={() => setSelectedOrder(order)}
                                     className={`p-4 rounded-xl border cursor-pointer transition-all ${
                                         selectedOrder?.id === order.id
-                                            ? "border-green-400 bg-green-50 shadow-md"
-                                            : "border-gray-200 bg-white dark:bg-zinc-900 hover:border-green-200 hover:shadow-sm"
+                                            ? "border-green-500 bg-green-50/80 dark:bg-green-950/40 shadow-md ring-1 ring-green-500/30"
+                                            : "border-border bg-card hover:border-green-300 dark:hover:border-green-700 hover:shadow-xs"
                                     }`}
                                 >
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <p className="font-bold text-foreground">Order #{order.id}</p>
+                                            <p className="font-bold text-card-foreground">Order #{order.id}</p>
                                             <p className="text-xs text-muted-foreground mt-0.5">
                                                 {new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                 {" · "}
                                                 {new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute:'2-digit' })}
                                             </p>
                                             {order.shop_name && (
-                                                <span className="text-[10px] text-blue-600 font-medium flex items-center gap-1 mt-1">
+                                                <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1 mt-1">
                                                     <Store className="h-3 w-3" />{order.shop_name}
                                                 </span>
                                             )}
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-bold text-green-700">₹{order.final_amount.toLocaleString()}</p>
+                                            <p className="font-bold text-green-700 dark:text-green-400">₹{order.final_amount.toLocaleString()}</p>
                                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${getStatusStyle(order.status)}`}>
                                                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                             </span>
@@ -506,16 +506,16 @@ export default function MarketPage() {
                         {/* Order Detail Panel (Right) */}
                         <div className="hidden md:flex flex-1 overflow-y-auto">
                             {!selectedOrder ? (
-                                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-gray-200 rounded-xl">
-                                    <History className="h-12 w-12 mb-3 opacity-50" />
+                                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-border bg-card/50 rounded-xl">
+                                    <History className="h-12 w-12 mb-3 opacity-40" />
                                     <p className="font-medium">Select an order to view details</p>
                                 </div>
                             ) : (
-                                <Card className="flex-1 border-gray-200">
-                                    <CardHeader className="border-b bg-gray-50/50 dark:bg-zinc-800/50 pb-4">
+                                <Card className="flex-1 border-border bg-card">
+                                    <CardHeader className="border-b border-border bg-muted/20 pb-4">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <CardTitle className="text-xl">Order #{selectedOrder.id}</CardTitle>
+                                                <CardTitle className="text-xl text-card-foreground">Order #{selectedOrder.id}</CardTitle>
                                                 <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                                                     <Clock className="h-3.5 w-3.5" />
                                                     {new Date(selectedOrder.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -523,7 +523,7 @@ export default function MarketPage() {
                                                     {new Date(selectedOrder.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute:'2-digit' })}
                                                 </p>
                                                 {selectedOrder.shop_name && (
-                                                    <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200 mt-2 inline-flex items-center gap-1">
+                                                    <span className="text-xs bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800 mt-2 inline-flex items-center gap-1 font-medium">
                                                         <Store className="h-3 w-3" />{selectedOrder.shop_name}
                                                     </span>
                                                 )}
@@ -540,9 +540,9 @@ export default function MarketPage() {
                                             <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider mb-3">Cart Items</h3>
                                             <div className="space-y-3">
                                                 {selectedOrder.items?.map((item, idx) => (
-                                                    <div key={idx} className="flex justify-between items-start py-2.5 border-b border-gray-50 last:border-0">
+                                                    <div key={idx} className="flex justify-between items-start py-2.5 border-b border-border last:border-0">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-12 h-12 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden border">
+                                                            <div className="w-12 h-12 rounded-lg bg-muted flex-shrink-0 overflow-hidden border border-border">
                                                                 {item.image_url || item.product_image_url ? (
                                                                     <img src={item.image_url || item.product_image_url} alt={item.product_name} className="w-full h-full object-cover" />
                                                                 ) : (
@@ -550,59 +550,59 @@ export default function MarketPage() {
                                                                 )}
                                                             </div>
                                                             <div>
-                                                                <p className="font-semibold text-foreground">{item.product_name}</p>
+                                                                <p className="font-semibold text-card-foreground">{item.product_name}</p>
                                                                 <p className="text-xs text-muted-foreground">
-                                                                    {item.brand || item.manufacturer ? <span className="text-emerald-700 font-medium">{item.brand || item.manufacturer}</span> : ''}
+                                                                    {item.brand || item.manufacturer ? <span className="text-emerald-700 dark:text-emerald-400 font-medium">{item.brand || item.manufacturer}</span> : ''}
                                                                     {item.brand || item.manufacturer ? ' · ' : ''}Qty: {item.quantity} × ₹{item.unit_price}
                                                                 </p>
                                                                 {item.main_composition && (
-                                                                    <span className="text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-100 font-medium mt-1 inline-block">
+                                                                    <span className="text-[10px] bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full border border-green-100 dark:border-green-900 font-medium mt-1 inline-block">
                                                                         🧪 {item.main_composition}
                                                                     </span>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <p className="font-semibold text-foreground">₹{item.subtotal.toLocaleString()}</p>
+                                                        <p className="font-semibold text-card-foreground">₹{item.subtotal.toLocaleString()}</p>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
                                         {/* Transaction Details */}
-                                        <div className="border-t pt-4">
+                                        <div className="border-t border-border pt-4">
                                             <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider mb-3">Transaction Details</h3>
-                                            <div className="bg-gray-50 dark:bg-zinc-800 rounded-xl p-4 space-y-2.5">
+                                            <div className="bg-muted/40 dark:bg-zinc-800/60 rounded-xl p-4 space-y-2.5 border border-border/60">
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-muted-foreground">Subtotal</span>
-                                                    <span className="font-medium text-foreground">₹{selectedOrder.total_amount.toLocaleString()}</span>
+                                                    <span className="font-medium text-card-foreground">₹{selectedOrder.total_amount.toLocaleString()}</span>
                                                 </div>
                                                 {selectedOrder.discount > 0 && (
                                                     <div className="flex justify-between text-sm">
                                                         <span className="text-muted-foreground">Discount</span>
-                                                        <span className="font-medium text-green-600">- ₹{selectedOrder.discount.toLocaleString()}</span>
+                                                        <span className="font-medium text-green-600 dark:text-green-400">- ₹{selectedOrder.discount.toLocaleString()}</span>
                                                     </div>
                                                 )}
-                                                <div className="flex justify-between text-sm border-t pt-2">
-                                                    <span className="font-bold text-foreground">Total</span>
-                                                    <span className="font-bold text-green-700 text-lg">₹{selectedOrder.final_amount.toLocaleString()}</span>
+                                                <div className="flex justify-between text-sm border-t border-border pt-2">
+                                                    <span className="font-bold text-card-foreground">Total</span>
+                                                    <span className="font-bold text-green-700 dark:text-green-400 text-lg">₹{selectedOrder.final_amount.toLocaleString()}</span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Payment Details */}
-                                        <div className="border-t pt-4">
+                                        <div className="border-t border-border pt-4">
                                             <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider mb-3">Payment</h3>
                                             <div className="flex items-center gap-3">
-                                                <div className="bg-blue-50 p-2 rounded-lg">
-                                                    <CreditCard className="h-5 w-5 text-blue-600" />
+                                                <div className="bg-blue-50 dark:bg-blue-950/60 p-2 rounded-lg border border-blue-100 dark:border-blue-900">
+                                                    <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                                 </div>
                                                 <div>
-                                                    <p className="font-medium text-foreground capitalize">{selectedOrder.payment_mode}</p>
+                                                    <p className="font-medium text-card-foreground capitalize">{selectedOrder.payment_mode}</p>
                                                     <p className="text-xs text-muted-foreground">
                                                         {selectedOrder.payment_status === "paid" ? (
-                                                            <span className="text-green-600 font-bold">✅ Payment Completed</span>
+                                                            <span className="text-green-600 dark:text-green-400 font-bold">✅ Payment Completed</span>
                                                         ) : (
-                                                            <span className="text-amber-600 font-medium">⏳ Payment Pending</span>
+                                                            <span className="text-amber-600 dark:text-amber-400 font-medium">⏳ Payment Pending</span>
                                                         )}
                                                     </p>
                                                 </div>
@@ -610,13 +610,13 @@ export default function MarketPage() {
                                         </div>
 
                                         {/* Actions */}
-                                        <div className="border-t pt-4 flex gap-3">
+                                        <div className="border-t border-border pt-4 flex gap-3">
                                             {selectedOrder.status === 'pending' && (
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() => handleCancelOrder(selectedOrder.id)}
-                                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                                    className="text-red-600 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/40"
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-1" /> Cancel Order
                                                 </Button>
@@ -625,13 +625,13 @@ export default function MarketPage() {
                                                 <Button
                                                     size="sm"
                                                     onClick={() => handlePayNow(selectedOrder)}
-                                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                                    className="bg-green-600 hover:bg-green-700 text-white shadow-xs"
                                                 >
                                                     <CreditCard className="h-4 w-4 mr-1" /> Pay Now — ₹{selectedOrder.final_amount.toLocaleString()}
                                                 </Button>
                                             )}
                                             {selectedOrder.payment_status === "paid" && (
-                                                <span className="text-sm text-green-700 font-bold bg-green-100 px-3 py-1.5 rounded-full border border-green-200">Paid ✅</span>
+                                                <span className="text-sm text-green-700 dark:text-green-400 font-bold bg-green-100 dark:bg-green-950/60 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-800">Paid ✅</span>
                                             )}
                                         </div>
                                     </CardContent>

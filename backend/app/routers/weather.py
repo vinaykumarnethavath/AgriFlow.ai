@@ -1,195 +1,442 @@
 import os
 import httpx
-from fastapi import APIRouter
-from typing import List, Dict, Any
+from fastapi import APIRouter, Query, HTTPException
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
-from dotenv import load_dotenv, find_dotenv
 
 router = APIRouter(prefix="/weather", tags=["weather"])
 
-def _get_openweather_api_key() -> str:
-    dotenv_path = find_dotenv(usecwd=True)
-    load_dotenv(dotenv_path=dotenv_path if dotenv_path else None, override=True)
-    return os.getenv("OPENWEATHER_API_KEY", "")
+# ─── Open-Meteo API Endpoints ──────────────────────────────────────────
+FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+HISTORICAL_URL = "https://archive-api.open-meteo.com/v1/archive"
+GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
 
-def _get_day_name(offset: int) -> str:
-    """Get day name based on offset from today."""
-    if offset == 0:
-        return "Today"
-    if offset == 1:
-        return "Tomorrow"
-    return (datetime.now() + timedelta(days=offset)).strftime("%a")
+# Hourly forecast variables for soil & weather
+HOURLY_FORECAST_VARS = ",".join([
+    "soil_moisture_0_to_1cm",
+    "soil_moisture_1_to_3cm",
+    "soil_moisture_3_to_9cm",
+    "soil_moisture_9_to_27cm",
+    "soil_moisture_27_to_81cm",
+    "soil_temperature_0cm",
+    "soil_temperature_6cm",
+    "soil_temperature_18cm",
+    "soil_temperature_54cm",
+    "temperature_2m",
+    "relative_humidity_2m",
+    "precipitation",
+    "windspeed_10m",
+    "evapotranspiration",
+])
 
-async def _fetch_openweather(lat: float, lon: float, api_key: str) -> dict:
-    """Fetch real weather from OpenWeatherMap API."""
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            # Current weather
-            current_resp = await client.get(
-                "https://api.openweathermap.org/data/2.5/weather",
-                params={"lat": lat, "lon": lon, "appid": api_key, "units": "metric"}
-            )
-            if current_resp.status_code != 200:
-                print(
-                    f"OpenWeather current weather error: {current_resp.status_code} {current_resp.text[:300]}",
-                    flush=True,
-                )
-                return None
-            current_data = current_resp.json()
-            
-            # 5-day forecast (free tier)
-            forecast_resp = await client.get(
-                "https://api.openweathermap.org/data/2.5/forecast",
-                params={"lat": lat, "lon": lon, "appid": api_key, "units": "metric"}
-            )
-            if forecast_resp.status_code != 200:
-                print(
-                    f"OpenWeather forecast error: {forecast_resp.status_code} {forecast_resp.text[:300]}",
-                    flush=True,
-                )
-                return None
-            forecast_data = forecast_resp.json()
-        
-        # Parse current
-        temp = current_data["main"]["temp"]
-        condition = current_data["weather"][0]["main"]
-        humidity = current_data["main"]["humidity"]
-        wind_speed = round(current_data["wind"]["speed"] * 3.6, 1)  # m/s to km/h
-        rain = current_data.get("rain", {}).get("1h", 0)
-        location = current_data.get("name", "Your Location")
-        
-        # Parse forecast (take one reading per day)
-        forecast = []
-        seen_days = set()
-        for entry in forecast_data.get("list", []):
-            dt = datetime.fromtimestamp(entry["dt"])
-            day_key = dt.strftime("%Y-%m-%d")
-            if day_key not in seen_days and len(forecast) < 7:
-                seen_days.add(day_key)
-                offset = (dt.date() - datetime.now().date()).days
-                forecast.append({
-                    "day": _get_day_name(max(0, offset)),
-                    "temp": round(entry["main"]["temp"], 1),
-                    "condition": entry["weather"][0]["main"],
-                    "rain_prob": int(entry.get("pop", 0) * 100)
-                })
-        
-        # Generate alerts
-        alerts = []
-        if rain > 5 or any(f.get("rain_prob", 0) > 60 for f in forecast[:2]):
-            alerts.append({
+# Hourly historical archive variables (ERA5-Land reanalysis dataset)
+HOURLY_HISTORICAL_VARS = ",".join([
+    "soil_moisture_0_to_7cm",
+    "soil_moisture_7_to_28cm",
+    "soil_moisture_28_to_100cm",
+    "soil_moisture_100_to_255cm",
+    "soil_temperature_0_to_7cm",
+    "soil_temperature_7_to_28cm",
+    "soil_temperature_28_to_100cm",
+    "soil_temperature_100_to_255cm",
+    "temperature_2m",
+    "relative_humidity_2m",
+    "precipitation",
+    "windspeed_10m",
+    "et0_fao_evapotranspiration",
+])
+
+DAILY_VARS = ",".join([
+    "temperature_2m_max",
+    "temperature_2m_min",
+    "precipitation_sum",
+    "et0_fao_evapotranspiration",
+])
+
+
+def _avg(values):
+    clean = [v for v in values if v is not None]
+    return round(sum(clean) / len(clean), 4) if clean else None
+
+
+def _sum(values):
+    clean = [v for v in values if v is not None]
+    return round(sum(clean), 2) if clean else None
+
+
+def _build_daily_summary(hourly_data):
+    """Collapses hourly arrays into daily averages/sums for 7-day forecast."""
+    times = hourly_data.get("time", [])
+    if not times:
+        return []
+
+    day_groups = {}
+    for i, t in enumerate(times):
+        day = t[:10]  # "YYYY-MM-DD"
+        day_groups.setdefault(day, []).append(i)
+
+    keys = [k for k in hourly_data if k != "time"]
+    summaries = []
+    for day, indices in sorted(day_groups.items()):
+        row = {"date": day}
+        for key in keys:
+            vals = [hourly_data[key][i] for i in indices if i < len(hourly_data[key])]
+            if "precipitation" in key or "evapotranspiration" in key:
+                row[key] = _sum(vals)
+            else:
+                row[key] = _avg(vals)
+        summaries.append(row)
+    return summaries
+
+
+def _generate_recommendations(current: dict) -> list:
+    """Generate smart farmer recommendations based on soil moisture and weather thresholds."""
+    tips = []
+
+    # Soil moisture recommendations
+    sm_surface = current.get("soil_moisture_0_to_1cm") if current.get("soil_moisture_0_to_1cm") is not None else current.get("soil_moisture_0_to_7cm")
+    if sm_surface is not None:
+        if sm_surface < 0.10:
+            tips.append({
+                "icon": "💧",
                 "type": "warning",
-                "title": "Heavy Rain Alert",
-                "message": "Heavy rainfall expected. Consider delaying irrigation and fertilizer application."
+                "title": "Critically Dry Soil Surface",
+                "text": "Surface soil moisture is critically low (<10%). Immediate irrigation is recommended to prevent seedling stunting and shallow root stress."
             })
-        if temp > 35:
-            alerts.append({
+        elif sm_surface < 0.15:
+            tips.append({
+                "icon": "💧",
                 "type": "caution",
-                "title": "Heatwave Alert",
-                "message": f"Temperature is {temp}°C. Ensure crops are well-watered and consider shade nets."
+                "title": "Low Soil Moisture",
+                "text": "Soil moisture is below optimal levels (10-15%). Plan an irrigation cycle in early morning or evening."
             })
-        if humidity < 30:
-            alerts.append({
-                "type": "caution",
-                "title": "Low Humidity Warning",
-                "message": "Very dry conditions. Monitor soil moisture and increase irrigation frequency."
+        elif sm_surface > 0.40:
+            tips.append({
+                "icon": "⚠️",
+                "type": "warning",
+                "title": "Waterlogged / Saturated Soil",
+                "text": "Soil moisture exceeds 40%. Ensure field drainage channels are open to prevent root hypoxia and fungal disease outbreaks."
             })
-        
-        # Generate farming advice
-        advice = []
-        if "Rain" in condition or "rain" in condition.lower():
-            advice.append("Avoid applying fertilizers today due to rain — nutrients may wash away.")
-        if temp > 30:
-            advice.append("Water crops early morning or late evening to reduce evaporation.")
-        if temp < 15:
-            advice.append("Protect sensitive crops from cold. Consider mulching or row covers.")
-        if humidity > 70:
-            advice.append("High humidity increases fungal disease risk. Monitor crops for leaf spots.")
-        if not advice:
-            advice.append("Weather conditions are favorable for most farming activities today.")
-        
-        return {
-            "location": location,
-            "temperature": round(temp, 1),
-            "condition": condition,
-            "humidity": humidity,
-            "wind_speed": wind_speed,
-            "rainfall_mm": round(rain, 1),
-            "forecast": forecast,
-            "alerts": alerts,
-            "advice": advice
-        }
-    except Exception as e:
-        print(f"OpenWeather API error: {e}")
-        return None
+        else:
+            tips.append({
+                "icon": "🌱",
+                "type": "success",
+                "title": "Optimal Soil Moisture",
+                "text": "Surface moisture is in the ideal range (15–40%). Good conditions for nutrient absorption, active growth, and transplanting."
+            })
 
-def _get_realistic_mock(lat: float, lon: float) -> dict:
-    """Return realistic static mock weather data (deterministic, not random)."""
-    # Use lat/lon to seed consistent data
-    import hashlib
-    seed = int(hashlib.md5(f"{lat:.2f},{lon:.2f},{datetime.now().strftime('%Y-%m-%d')}".encode()).hexdigest()[:8], 16)
-    
-    # Deterministic but varying by day and location
-    base_temp = 26.0 + (seed % 12)
-    humidity = 45 + (seed % 35)
-    wind = 5 + (seed % 15)
-    
-    conditions_list = ["Sunny", "Partly Cloudy", "Cloudy", "Sunny", "Partly Cloudy"]
-    condition = conditions_list[seed % len(conditions_list)]
-    
-    forecast = []
-    for i in range(7):
-        day_seed = seed + i * 7
-        forecast.append({
-            "day": _get_day_name(i),
-            "temp": round(base_temp + (day_seed % 8) - 3, 1),
-            "condition": conditions_list[day_seed % len(conditions_list)],
-            "rain_prob": (day_seed % 6) * 10
-        })
-    
-    alerts = []
-    if base_temp > 34:
-        alerts.append({
+    # Deep root soil moisture
+    sm_deep = current.get("soil_moisture_9_to_27cm") if current.get("soil_moisture_9_to_27cm") is not None else current.get("soil_moisture_28_to_100cm")
+    if sm_deep is not None and sm_deep < 0.12:
+        tips.append({
+            "icon": "🌾",
             "type": "caution",
-            "title": "High Temperature Advisory",
-            "message": "Temperatures are elevated. Ensure adequate irrigation for crops."
+            "title": "Subsoil Moisture Deficit",
+            "text": "Deep root zones (9–27cm) are depleted. Deep soaking irrigation is advised for mature crops and fruit trees."
         })
-    
-    advice = ["Weather conditions are favorable for farming activities today."]
-    if base_temp > 30:
-        advice.append("Water crops early morning or late evening to reduce evaporation.")
-    
-    return {
-        "location": "Local Farm",
-        "temperature": round(base_temp, 1),
-        "condition": condition,
-        "humidity": humidity,
-        "wind_speed": wind,
-        "rainfall_mm": 0,
-        "forecast": forecast,
-        "alerts": alerts,
-        "advice": advice
-    }
+
+    # Temperature checks
+    temp = current.get("temperature_2m")
+    if temp is not None:
+        if temp > 36:
+            tips.append({
+                "icon": "☀️",
+                "type": "warning",
+                "title": "Extreme Heat Advisory",
+                "text": f"Ambient temperature is high ({temp}°C). Provide light protective sprinkling or mulch to reduce soil temperature and transpiration shock."
+            })
+        elif temp < 8:
+            tips.append({
+                "icon": "❄️",
+                "type": "warning",
+                "title": "Cold / Frost Alert",
+                "text": f"Low temperature ({temp}°C) may trigger frost damage. Consider row covers, smoke cover, or light evening watering."
+            })
+
+    # Evapotranspiration
+    et = current.get("evapotranspiration") if current.get("evapotranspiration") is not None else current.get("et0_fao_evapotranspiration")
+    if et is not None and et > 5.0:
+        tips.append({
+            "icon": "🌤️",
+            "type": "info",
+            "title": "High Evapotranspiration Rate",
+            "text": f"High daily moisture loss ({et} mm). Increase irrigation replenishment volume to maintain root moisture balance."
+        })
+
+    # Precipitation
+    precip = current.get("precipitation") if current.get("precipitation") is not None else current.get("precipitation_sum")
+    if precip is not None and precip > 10:
+        tips.append({
+            "icon": "🌧️",
+            "type": "caution",
+            "title": "Significant Rainfall Expected",
+            "text": f"Expected rainfall ({precip} mm). Hold off on chemical pesticide or fertilizer spraying to prevent runoff wash-off."
+        })
+
+    # Wind speed
+    wind = current.get("windspeed_10m")
+    if wind is not None and wind > 25:
+        tips.append({
+            "icon": "💨",
+            "type": "warning",
+            "title": "High Wind Warning",
+            "text": f"Winds at {wind} km/h. Avoid pesticide spraying due to spray drift risk; inspect tall crops and fruit trellises."
+        })
+
+    # Humidity
+    humidity = current.get("relative_humidity_2m")
+    if humidity is not None and humidity > 85 and (temp is not None and temp > 22):
+        tips.append({
+            "icon": "🍄",
+            "type": "caution",
+            "title": "High Fungal Risk",
+            "text": "Warm, humid conditions favor blight, rust, and powdery mildew. Inspect undersides of leaves and prepare preventive bio-fungicides."
+        })
+
+    return tips
+
+
+@router.get("/geocode")
+async def geocode_city(name: str = Query(..., min_length=2)):
+    """Search global cities and return geocoded coordinates using Open-Meteo Geocoding API."""
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(
+                GEOCODE_URL,
+                params={"name": name, "count": 6, "language": "en", "format": "json"}
+            )
+            if resp.status_code != 200:
+                return {"results": []}
+            data = resp.json()
+            results = []
+            for r in data.get("results", []):
+                admin = r.get("admin1", "")
+                country = r.get("country", "")
+                parts = [p for p in [r.get("name"), admin, country] if p]
+                results.append({
+                    "name": r.get("name"),
+                    "latitude": r.get("latitude"),
+                    "longitude": r.get("longitude"),
+                    "elevation": r.get("elevation", 0),
+                    "admin1": admin,
+                    "country": country,
+                    "display": ", ".join(parts),
+                    "country_code": r.get("country_code", "")
+                })
+            return {"results": results}
+    except Exception as e:
+        print(f"Geocoding error: {e}")
+        return {"results": []}
+
+
+@router.get("/forecast")
+async def get_forecast(lat: float = 17.385, lon: float = 78.4867):
+    """
+    Fetch comprehensive live weather & multi-depth soil moisture data from Open-Meteo Forecast API.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                FORECAST_URL,
+                params={
+                    "latitude": lat,
+                    "longitude": lon,
+                    "hourly": HOURLY_FORECAST_VARS,
+                    "daily": DAILY_VARS,
+                    "timezone": "auto",
+                }
+            )
+            if resp.status_code != 200:
+                raise HTTPException(status_code=resp.status_code, detail=f"Open-Meteo error: {resp.text}")
+            raw = resp.json()
+
+        hourly = raw.get("hourly", {})
+        daily = _build_daily_summary(hourly)
+
+        # Merge daily max/min from daily section if available
+        raw_daily = raw.get("daily", {})
+        raw_daily_times = raw_daily.get("time", [])
+        for row in daily:
+            if row["date"] in raw_daily_times:
+                idx = raw_daily_times.index(row["date"])
+                if "temperature_2m_max" in raw_daily and idx < len(raw_daily["temperature_2m_max"]):
+                    row["temperature_2m_max"] = raw_daily["temperature_2m_max"][idx]
+                if "temperature_2m_min" in raw_daily and idx < len(raw_daily["temperature_2m_min"]):
+                    row["temperature_2m_min"] = raw_daily["temperature_2m_min"][idx]
+                if "precipitation_sum" in raw_daily and idx < len(raw_daily["precipitation_sum"]):
+                    row["precipitation_sum"] = raw_daily["precipitation_sum"][idx]
+
+        # Current snapshot (closest hourly index or today)
+        times = hourly.get("time", [])
+        current_idx = 0
+        now_iso = datetime.utcnow().strftime("%Y-%m-%dT%H:00")
+        for i, t in enumerate(times):
+            if t >= now_iso:
+                current_idx = i
+                break
+
+        current = {}
+        for k in hourly:
+            if k != "time" and hourly[k] and current_idx < len(hourly[k]):
+                current[k] = hourly[k][current_idx]
+
+        current["date"] = times[current_idx][:10] if times else datetime.utcnow().strftime("%Y-%m-%d")
+        if daily:
+            current["temperature_2m_max"] = daily[0].get("temperature_2m_max")
+            current["temperature_2m_min"] = daily[0].get("temperature_2m_min")
+            current["precipitation_sum"] = daily[0].get("precipitation_sum")
+
+        recommendations = _generate_recommendations(current)
+
+        return {
+            "latitude": raw.get("latitude", lat),
+            "longitude": raw.get("longitude", lon),
+            "elevation": raw.get("elevation", 0),
+            "timezone": raw.get("timezone", "UTC"),
+            "current": current,
+            "daily": daily,
+            "recommendations": recommendations,
+            "source": "open-meteo"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Weather forecast fetch error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch forecast: {str(e)}")
+
+
+@router.get("/historical")
+async def get_historical(lat: float, lon: float, date: str):
+    """
+    Fetch historical weather and soil moisture from ERA5-Land reanalysis dataset via Open-Meteo.
+    """
+    try:
+        # Validate date format YYYY-MM-DD
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                HISTORICAL_URL,
+                params={
+                    "latitude": lat,
+                    "longitude": lon,
+                    "start_date": date,
+                    "end_date": date,
+                    "hourly": HOURLY_HISTORICAL_VARS,
+                    "timezone": "auto",
+                }
+            )
+            if resp.status_code != 200:
+                raise HTTPException(status_code=resp.status_code, detail=f"Open-Meteo archive error: {resp.text}")
+            raw = resp.json()
+
+        hourly = raw.get("hourly", {})
+        daily = _build_daily_summary(hourly)
+        current = daily[0] if daily else {}
+        current["date"] = date
+
+        recommendations = _generate_recommendations(current)
+
+        return {
+            "latitude": raw.get("latitude", lat),
+            "longitude": raw.get("longitude", lon),
+            "elevation": raw.get("elevation", 0),
+            "timezone": raw.get("timezone", "UTC"),
+            "date": date,
+            "current": current,
+            "daily": daily,
+            "recommendations": recommendations,
+            "source": "open-meteo-era5"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Historical weather error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch historical data: {str(e)}")
+
 
 @router.get("/")
-async def get_weather(lat: float = 17.385, lon: float = 78.4867):
+async def get_weather_legacy(lat: float = 17.385, lon: float = 78.4867):
     """
-    Returns weather data. Uses OpenWeatherMap API if key is set,
-    otherwise returns realistic deterministic mock data.
-    Default coordinates: Hyderabad, India.
+    Backward-compatible legacy endpoint for dashboard widgets.
+    Uses Open-Meteo live forecast data.
     """
-    api_key = _get_openweather_api_key()
-    if api_key:
-        result = await _fetch_openweather(lat, lon, api_key)
-        if result:
-            result["source"] = "openweather"
-            return result
-    else:
-        print(
-            "OPENWEATHER_API_KEY not set (or not loaded). Returning mock weather.",
-            flush=True,
-        )
-    
-    mock = _get_realistic_mock(lat, lon)
-    mock["source"] = "mock"
-    return mock
+    try:
+        forecast_data = await get_forecast(lat=lat, lon=lon)
+        current = forecast_data.get("current", {})
+        daily = forecast_data.get("daily", [])
+        recommendations = forecast_data.get("recommendations", [])
+
+        temp = current.get("temperature_2m", 25.0)
+        humidity = current.get("relative_humidity_2m", 50)
+        wind = current.get("windspeed_10m", 10.0)
+        precip = current.get("precipitation", 0.0)
+
+        # Condition mapping
+        condition = "Sunny"
+        if precip and precip > 2:
+            condition = "Rainy"
+        elif precip and precip > 0.2:
+            condition = "Partly Cloudy"
+        elif humidity and humidity > 75:
+            condition = "Cloudy"
+
+        legacy_forecast = []
+        for i, d in enumerate(daily[:7]):
+            d_date = d.get("date", "")
+            try:
+                dt = datetime.strptime(d_date, "%Y-%m-%d")
+                day_name = "Today" if i == 0 else ("Tomorrow" if i == 1 else dt.strftime("%a"))
+            except Exception:
+                day_name = f"Day {i+1}"
+            
+            d_precip = d.get("precipitation_sum") or d.get("precipitation", 0)
+            d_cond = "Rainy" if d_precip > 2 else ("Cloudy" if (d.get("relative_humidity_2m") or 0) > 70 else "Sunny")
+            
+            legacy_forecast.append({
+                "day": day_name,
+                "date": d_date,
+                "temp": round(d.get("temperature_2m_max") or d.get("temperature_2m", 25), 1),
+                "temp_min": round(d.get("temperature_2m_min", 20), 1),
+                "condition": d_cond,
+                "rain_prob": int(min(100, (d_precip or 0) * 15)),
+                "soil_moisture": d.get("soil_moisture_0_to_1cm")
+            })
+
+        alerts = [
+            {"type": r.get("type", "info"), "title": r.get("title", ""), "message": r.get("text", "")}
+            for r in recommendations if r.get("type") in ["warning", "caution"]
+        ]
+        advice = [r.get("text", "") for r in recommendations if r.get("type") in ["success", "info"]]
+
+        return {
+            "location": f"{lat:.2f}°, {lon:.2f}°",
+            "temperature": round(temp, 1),
+            "condition": condition,
+            "humidity": round(humidity, 1) if humidity is not None else 50,
+            "wind_speed": round(wind, 1) if wind is not None else 10,
+            "rainfall_mm": round(precip, 1) if precip is not None else 0,
+            "soil_moisture": current.get("soil_moisture_0_to_1cm"),
+            "forecast": legacy_forecast,
+            "alerts": alerts,
+            "advice": advice if advice else ["Good agricultural conditions."],
+            "source": "open-meteo"
+        }
+    except Exception as e:
+        print(f"Legacy weather fallback: {e}")
+        return {
+            "location": "Local Farm",
+            "temperature": 26.5,
+            "condition": "Partly Cloudy",
+            "humidity": 55,
+            "wind_speed": 12.0,
+            "rainfall_mm": 0.0,
+            "soil_moisture": 0.22,
+            "forecast": [],
+            "alerts": [],
+            "advice": ["Optimal weather conditions for farming."],
+            "source": "fallback"
+        }
