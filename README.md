@@ -140,6 +140,24 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 
 ## Local Setup
 
+### Quick Start (Daily Run)
+If you have already set up the project and just want to run it, open two terminals and run:
+
+**Terminal 1 (Backend):**
+```bash
+cd backend
+venv\Scripts\activate
+uvicorn app.main:app --reload --port 8000
+```
+
+**Terminal 2 (Frontend):**
+```bash
+cd frontend
+npm run dev
+```
+
+---
+
 ### Prerequisites
 - Node.js 18+ and npm
 - Python 3.10+
