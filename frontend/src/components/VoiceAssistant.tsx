@@ -11,7 +11,7 @@ import {
 import { useLanguage, LANGUAGES } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useVoiceCommand, VoiceStatus } from "@/hooks/useVoiceCommand";
-import { processVoiceCommand, executeVoiceAction, VoiceExecutionResult } from "@/lib/voiceActionHandler";
+import { processVoiceCommand, executeVoiceAction, VoiceExecutionResult, VoiceMessage } from "@/lib/voiceActionHandler";
 import { LargeWaveform } from "@/components/voice/VoiceWaveform";
 import { VoiceCommandChips } from "@/components/voice/VoiceCommandChip";
 
@@ -61,6 +61,7 @@ export function VoiceAssistant() {
     const [isOpen, setIsOpen] = useState(false);
     const [result, setResult] = useState<VoiceExecutionResult | null>(null);
     const [isExecuting, setIsExecuting] = useState(false);
+    const [history, setHistory] = useState<VoiceMessage[]>([]);
     const [textInput, setTextInput] = useState("");
     const [showTextInput, setShowTextInput] = useState(false);
     const processedRef = useRef(false);
@@ -90,7 +91,7 @@ export function VoiceAssistant() {
 
         try {
             // 1. Send to backend AI for parsing
-            const action = await processVoiceCommand(text, pathname, locale);
+            const action = await processVoiceCommand(text, pathname, locale, history);
 
             // 2. Execute the parsed action
             const execResult = await executeVoiceAction(action, {
@@ -99,6 +100,13 @@ export function VoiceAssistant() {
             });
 
             setResult(execResult);
+
+            // Update conversation history
+            setHistory(prev => [
+                ...prev,
+                { role: "user", content: text },
+                { role: "assistant", content: execResult.message || action.response_text }
+            ]);
 
             // 3. Speak the response
             if (execResult.message) {
@@ -130,6 +138,7 @@ export function VoiceAssistant() {
         setResult(null);
         setTextInput("");
         setShowTextInput(false);
+        setHistory([]);
         processedRef.current = false;
     };
 
@@ -140,6 +149,7 @@ export function VoiceAssistant() {
         setResult(null);
         setTextInput("");
         setShowTextInput(false);
+        setHistory([]);
         voice.setStatus("idle");
         processedRef.current = false;
     };

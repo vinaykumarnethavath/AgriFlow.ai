@@ -10,7 +10,7 @@ Supports all 9 Indian languages + English.
 import os
 import json
 import traceback
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -25,10 +25,15 @@ router = APIRouter(prefix="/voice", tags=["voice"])
 
 # ── Request / Response Models ─────────────────────────────────────────────────
 
+class VoiceMessage(BaseModel):
+    role: str
+    content: str
+
 class VoiceRequest(BaseModel):
     transcript: str
     current_page: Optional[str] = "/dashboard/farmer"
     locale: Optional[str] = "en"
+    history: List[VoiceMessage] = []
 
 
 class VoiceAction(BaseModel):
@@ -95,16 +100,16 @@ Response: {"action": "navigate", "params": {}, "response_text": "Opening your cr
 ### 2. api_call — Create or modify data via API
 Available API calls:
 - add_crop: POST /crops/ — fields: name, area, season, variety, sowing_date, status
-- add_expense: POST /crops/{crop_id}/expenses — fields: category, type, quantity, unit, unit_cost, total_cost, date, payment_mode, stage
-- add_harvest: POST /crops/{crop_id}/harvests — fields: date, quantity, unit, quality, selling_price_per_unit, total_revenue, buyer_type, sold_to
+- add_expense: POST /crops/{crop_id}/expenses — fields: crop_name (if mentioned), category, type, quantity, unit, unit_cost, total_cost, date, payment_mode, stage
+- add_harvest: POST /crops/{crop_id}/harvests — fields: crop_name (if mentioned), date, quantity, unit, quality, selling_price_per_unit, total_revenue, buyer_type, sold_to
 - update_profile: PUT /farmer/profile — fields: village, mandal, district, state, pincode, house_no, street, father_husband_name, etc.
 
 Example:
 User says: "Add 2 acres of rice crop"
 Response: {"action": "api_call", "params": {"endpoint": "add_crop", "data": {"name": "Rice", "area": 2, "season": "Kharif", "status": "active"}}, "response_text": "Adding 2 acres of rice crop", "navigate_to": "/dashboard/farmer/crops"}
 
-User says: "Add expense 500 rupees for fertilizer"
-Response: {"action": "api_call", "params": {"endpoint": "add_expense", "data": {"category": "Input", "type": "Fertilizer", "total_cost": 500, "unit_cost": 500, "quantity": 1, "unit": "lot", "payment_mode": "cash", "stage": "Growth"}}, "response_text": "Adding fertilizer expense of 500 rupees", "navigate_to": null}
+User says: "Add expense 500 rupees for fertilizer in rice crop"
+Response: {"action": "api_call", "params": {"endpoint": "add_expense", "data": {"crop_name": "Rice", "category": "Input", "type": "Fertilizer", "total_cost": 500, "unit_cost": 500, "quantity": 1, "unit": "lot", "payment_mode": "cash", "stage": "Growth"}}, "response_text": "Adding fertilizer expense of 500 rupees for Rice crop", "navigate_to": null}
 
 User says: "Update my village to Rayaparthi"
 Response: {"action": "api_call", "params": {"endpoint": "update_profile", "data": {"village": "Rayaparthi"}}, "response_text": "Updating your village to Rayaparthi", "navigate_to": "/dashboard/farmer/profile"}
@@ -132,6 +137,13 @@ Available: en, hi, te, ta, kn, mr, bn, gu, pa
 Example:
 User says: "Change language to Telugu" or "తెలుగులో మార్చు"
 Response: {"action": "change_language", "params": {"locale": "te"}, "response_text": "భాష తెలుగుకు మారుస్తున్నాను", "navigate_to": null}
+
+## Conversational Context
+You will be provided with the Conversation History. 
+Use the history to resolve missing information for the current command. 
+If the user's current command is a follow-up (like just providing a number or name), combine it with the intent from the history.
+For example, if the history shows the user wanted to add an expense, and their current command is "500 rupees", return the full `api_call` action for `add_expense` with 500 rupees and all other details mentioned previously.
+If the user wants to perform an action (like add_crop or add_expense) but is MISSING required fields, DO NOT return an `api_call`. Instead, return a `show_answer` action to ASK them for the missing information (e.g., "How much was the expense?").
 
 ## Rules
 1. ALWAYS respond in valid JSON only — never add markdown or explanations
@@ -166,13 +178,22 @@ async def process_voice(
 
     role = current_user.role if isinstance(current_user.role, str) else current_user.role.value
 
+    # Build history context
+    history_context = ""
+    if request.history:
+        history_context = "Conversation History:\n"
+        for msg in request.history:
+            history_context += f"{msg.role.capitalize()}: {msg.content}\n"
+        history_context += "\n"
+
     # Build the user message with context
     user_message = (
         f"User role: {role}\n"
         f"Current page: {request.current_page}\n"
         f"Language: {request.locale}\n"
+        f"{history_context}"
         f"User said: \"{transcript}\"\n\n"
-        f"Parse this voice command into a JSON action."
+        f"Parse this voice command into a JSON action considering the conversation history."
     )
 
     candidate_models = [
@@ -210,6 +231,24 @@ async def process_voice(
                     parsed = json.loads(json_match.group())
                 else:
                     continue
+
+            # Intercept to resolve crop_id if crop_name is present
+            if parsed.get("action") == "api_call":
+                endpoint = parsed.get("params", {}).get("endpoint")
+                data = parsed.get("params", {}).get("data", {})
+                if endpoint in ["add_expense", "add_harvest"] and "crop_id" not in data:
+                    crop_name = data.get("crop_name") or data.get("name")
+                    if crop_name:
+                        from sqlmodel import select
+                        from ..models.crop import Crop
+                        statement = select(Crop).where(
+                            Crop.user_id == current_user.id,
+                            Crop.name.ilike(f"%{crop_name}%")
+                        )
+                        result = await session.execute(statement)
+                        crop = result.scalars().first()
+                        if crop:
+                            parsed["params"]["data"]["crop_id"] = crop.id
 
             return VoiceAction(
                 action=parsed.get("action", "show_answer"),

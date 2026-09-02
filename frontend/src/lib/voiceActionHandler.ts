@@ -27,17 +27,24 @@ export interface VoiceExecutionResult {
     data?: any;
 }
 
+export interface VoiceMessage {
+    role: "user" | "assistant";
+    content: string;
+}
+
 // ── Send transcript to backend for AI processing ─────────────────────────────
 
 export async function processVoiceCommand(
     transcript: string,
     currentPage: string,
-    locale: string
+    locale: string,
+    history: VoiceMessage[] = []
 ): Promise<VoiceActionResponse> {
     const response = await api.post<VoiceActionResponse>("/voice/process", {
         transcript,
         current_page: currentPage,
         locale,
+        history,
     });
     return response.data;
 }

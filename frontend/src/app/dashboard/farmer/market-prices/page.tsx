@@ -152,7 +152,7 @@ export default function MarketPricesPage() {
                                         <div className="relative">
                                             <button
                                                 onClick={() => scrollMarkets(crop.crop_name, 'left')}
-                                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 dark:bg-zinc-800/95 shadow-md rounded-full p-1 border border-gray-200 hover:bg-gray-50 dark:bg-zinc-800 -ml-2"
+                                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 dark:bg-zinc-800/95 shadow-md rounded-full p-1 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 -ml-2"
                                             >
                                                 <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
                                             </button>
@@ -164,12 +164,12 @@ export default function MarketPricesPage() {
                                                 {crop.markets.map((market: any, mIdx: number) => (
                                                     <div
                                                         key={mIdx}
-                                                        className="flex-shrink-0 bg-gradient-to-b from-white to-gray-50 border border-gray-150 rounded-xl px-4 py-3 min-w-[160px] hover:border-green-300 hover:shadow-sm transition-all cursor-pointer"
+                                                        className="flex-shrink-0 bg-gradient-to-b from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3 min-w-[160px] hover:border-green-300 dark:hover:border-green-700 hover:shadow-sm transition-all cursor-pointer"
                                                     >
                                                         <p className="text-xs font-bold text-foreground truncate">{market.market_name}</p>
                                                         <p className="text-lg font-bold text-foreground mt-1">₹{market.price.toLocaleString()}</p>
                                                         <div className="flex items-center justify-between mt-1.5">
-                                                            <span className="text-[10px] text-muted-foreground bg-gray-100 px-1.5 py-0.5 rounded">{market.distance_km} km</span>
+                                                            <span className="text-[10px] text-muted-foreground bg-gray-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded">{market.distance_km} km</span>
                                                             <span className={`text-[10px] font-bold flex items-center gap-0.5 ${market.trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
                                                                 {market.trend === 'up' ? '↑' : '↓'}₹{Math.abs(market.change)}
                                                             </span>
@@ -179,7 +179,7 @@ export default function MarketPricesPage() {
                                             </div>
                                             <button
                                                 onClick={() => scrollMarkets(crop.crop_name, 'right')}
-                                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 dark:bg-zinc-800/95 shadow-md rounded-full p-1 border border-gray-200 hover:bg-gray-50 dark:bg-zinc-800 -mr-2"
+                                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 dark:bg-zinc-800/95 shadow-md rounded-full p-1 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 -mr-2"
                                             >
                                                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                                             </button>
@@ -188,8 +188,8 @@ export default function MarketPricesPage() {
                                 )}
 
                                 {/* Decision Hint */}
-                                <div className="bg-blue-50 border border-blue-100 rounded-lg p-2.5">
-                                    <p className="text-xs text-blue-700 font-medium">
+                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-lg p-2.5">
+                                    <p className="text-xs text-blue-700 dark:text-blue-400 font-medium">
                                         💡 <T>{crop.trend === 'up' ? 'Prices increasing. Consider waiting for better rates.' : 'Prices declining. Check MSP before selling.'}</T>
                                     </p>
                                 </div>
