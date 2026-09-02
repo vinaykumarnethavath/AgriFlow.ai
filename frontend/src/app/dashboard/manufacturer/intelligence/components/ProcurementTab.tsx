@@ -74,9 +74,9 @@ export default function ProcurementTab() {
                                         <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={(val) => `₹${val}`} dx={-10} domain={['dataMin - 100', 'dataMax + 100']} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
+                                <XAxis dataKey="date" axisLine={false} tickLine={false} stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} tickFormatter={(val) => `₹${val}`} dx={-10} domain={['dataMin - 100', 'dataMax + 100']} />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                     formatter={(value) => [`₹${value}`, 'Predicted Price']}

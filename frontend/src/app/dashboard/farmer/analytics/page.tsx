@@ -121,9 +121,9 @@ export default function AnalyticsPage() {
                     <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={trends}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="crop" />
-                                <YAxis />
+                                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
+                                <XAxis dataKey="crop" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fill: 'currentColor' }} />
+                                <YAxis stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fill: 'currentColor' }} />
                                 <RechartsTooltip formatter={(value) => `₹${value}/q`} />
                                 <Legend />
                                 <Bar dataKey="price" name="Price (₹/quintal)" fill="#10b981" radius={[4, 4, 0, 0]} />

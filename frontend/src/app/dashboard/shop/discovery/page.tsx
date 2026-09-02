@@ -63,9 +63,9 @@ export default function DiscoveryPage() {
                     <CardContent className="h-[300px] w-full pt-4">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={cropCultivationData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f0f0f0" className="dark:opacity-20" />
-                                <XAxis type="number" tick={{ fontSize: 12 }} />
-                                <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={90} />
+                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" className="text-gray-200 dark:text-gray-700 dark:opacity-20" />
+                                <XAxis type="number" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} />
+                                <YAxis dataKey="name" type="category" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} width={90} />
                                 <Tooltip 
                                     formatter={(value) => [`${value} Acres`, "Total Area"]}
                                     cursor={{fill: 'transparent'}}
@@ -95,9 +95,9 @@ export default function DiscoveryPage() {
                     <CardContent className="h-[300px] w-full pt-4">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={regionalDemandData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" className="dark:opacity-20" />
-                                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                                <YAxis tick={{ fontSize: 12 }} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700 dark:opacity-20" />
+                                <XAxis dataKey="month" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} />
+                                <YAxis stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} />
                                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                                 <Line type="monotone" dataKey="urea" stroke="#3b82f6" name="Urea" strokeWidth={2} />
                                 <Line type="monotone" dataKey="dap" stroke="#10b981" name="DAP" strokeWidth={2} />

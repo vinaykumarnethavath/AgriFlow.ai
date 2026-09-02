@@ -244,16 +244,18 @@ export default function ShopDashboard() {
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={salesTrend}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
                                     <XAxis
                                         dataKey="date"
-                                        tick={{ fontSize: 11 }}
+                                        stroke="currentColor"
+                                        className="text-gray-600 dark:text-gray-400"
+                                        tick={{ fontSize: 11, fill: 'currentColor' }}
                                         tickFormatter={(val) => {
                                             const d = new Date(val);
                                             return `${d.getDate()}/${d.getMonth() + 1}`;
                                         }}
                                     />
-                                    <YAxis tick={{ fontSize: 11 }} />
+                                    <YAxis stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} />
                                     <Tooltip
                                         formatter={(value) => [`${Number(value)} Orders`, "Count"]}
                                         labelFormatter={(label) => formatDate(label as string)}

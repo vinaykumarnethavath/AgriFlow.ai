@@ -222,9 +222,9 @@ export default function MillAnalyticsPage() {
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={trend}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => { const dt = new Date(d); return `${dt.getDate()}/${dt.getMonth()+1}`; }} />
-                                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(Number(v)/1000).toFixed(0)}k`} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
+                                    <XAxis dataKey="date" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} tickFormatter={d => { const dt = new Date(d); return `${dt.getDate()}/${dt.getMonth()+1}`; }} />
+                                    <YAxis stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} tickFormatter={v => `₹${(Number(v)/1000).toFixed(0)}k`} />
                                     <Tooltip formatter={(v: any) => [`₹${Number(v).toLocaleString()}`, "Revenue"]} labelFormatter={l => `Date: ${l}`} />
                                     <Line type="monotone" dataKey="sales" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 5 }} />
                                 </LineChart>
@@ -312,9 +312,9 @@ export default function MillAnalyticsPage() {
                     <CardContent className="h-[250px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data!.top_crops} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                <XAxis dataKey="crop_name" tick={{ fontSize: 11 }} />
-                                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(Number(v)/1000).toFixed(0)}k`} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
+                                <XAxis dataKey="crop_name" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} />
+                                <YAxis stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} tickFormatter={v => `₹${(Number(v)/1000).toFixed(0)}k`} />
                                 <Tooltip formatter={(v: any) => [`₹${Number(v).toLocaleString()}`, "Total Cost"]} />
                                 <Bar dataKey="total_cost" fill="#fb923c" radius={[4, 4, 0, 0]} />
                             </BarChart>

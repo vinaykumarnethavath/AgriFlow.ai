@@ -211,9 +211,9 @@ export default function ManufacturerDashboard() {
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={salesTrend}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => { const dt = new Date(d); return `${dt.getDate()}/${dt.getMonth()+1}`; }} />
-                                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(Number(v)/1000).toFixed(0)}k`} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
+                                    <XAxis dataKey="date" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} tickFormatter={d => { const dt = new Date(d); return `${dt.getDate()}/${dt.getMonth()+1}`; }} />
+                                    <YAxis stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} tickFormatter={v => `₹${(Number(v)/1000).toFixed(0)}k`} />
                                     <Tooltip formatter={(v: any) => [`₹${Number(v).toLocaleString()}`, "Sales"]} labelFormatter={l => `Date: ${l}`} />
                                     <Line type="monotone" dataKey="sales" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2, fill: "#7c3aed" }} activeDot={{ r: 5 }} />
                                 </LineChart>

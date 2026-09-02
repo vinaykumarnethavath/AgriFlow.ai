@@ -269,9 +269,9 @@ export default function ShopAnalyticsPage() {
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <ReChartsLine data={salesTrend}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                    <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v) => { const d = new Date(v); return `${d.getDate()}/${d.getMonth() + 1}`; }} />
-                                    <YAxis tick={{ fontSize: 10 }} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
+                                    <XAxis dataKey="date" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 10, fill: 'currentColor' }} tickFormatter={(v) => { const d = new Date(v); return `${d.getDate()}/${d.getMonth() + 1}`; }} />
+                                    <YAxis stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 10, fill: 'currentColor' }} />
                                     <Tooltip formatter={(v) => [`${Number(v)} Orders`, "Count"]} labelFormatter={(l) => new Date(l).toLocaleDateString("en-IN")} />
                                     <Line type="monotone" dataKey="order_count" stroke="#10b981" strokeWidth={2.5} dot={{ r: 2, fill: "#10b981" }} activeDot={{ r: 5 }} />
                                 </ReChartsLine>

@@ -82,9 +82,9 @@ export default function InventoryTab() {
                     <CardContent className="h-72 pt-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={insights} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dx={-10} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
+                                <XAxis dataKey="date" axisLine={false} tickLine={false} stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} dx={-10} />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                     cursor={{ fill: 'transparent' }}

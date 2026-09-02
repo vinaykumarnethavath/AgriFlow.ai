@@ -89,8 +89,8 @@ export default function SmartBuyingDashboard() {
                             <div className="h-40 w-full mb-4 bg-gray-50/50 rounded-lg p-2 border border-gray-100">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={insight.priceHistory}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} dy={10} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
+                                        <XAxis dataKey="date" axisLine={false} tickLine={false} stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 10, fill: 'currentColor' }} dy={10} />
                                         <YAxis domain={['dataMin - 5', 'dataMax + 5']} hide />
                                         <Tooltip 
                                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
