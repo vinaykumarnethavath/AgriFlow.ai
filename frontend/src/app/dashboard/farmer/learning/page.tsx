@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import {
     Video,
@@ -42,8 +42,14 @@ interface LearningResponse {
     language: string;
 }
 
+interface SearchResponse {
+    videos: YouTubeVideo[];
+    query: string;
+    language: string;
+}
+
 export default function LearningHubPage() {
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [data, setData] = useState<LearningResponse | null>(null);
@@ -53,11 +59,24 @@ export default function LearningHubPage() {
     const [watchHistory, setWatchHistory] = useState<YouTubeVideo[]>([]);
     const [likedVideos, setLikedVideos] = useState<YouTubeVideo[]>([]);
 
+    // Smart search state
+    const [searchResults, setSearchResults] = useState<YouTubeVideo[] | null>(null);
+    const [searching, setSearching] = useState(false);
+    const [searchedQuery, setSearchedQuery] = useState("");
+
+    // View mode: "feed" | "liked" | "history"
+    const [viewMode, setViewMode] = useState<"feed" | "liked" | "history">("feed");
+
     const fetchVideos = async (refresh = false) => {
         try {
             if (refresh) setRefreshing(true);
             else setLoading(true);
-            const res = await api.get(`/learning/videos${refresh ? "?refresh=true" : ""}`);
+            const params = new URLSearchParams();
+            if (refresh) params.set("refresh", "true");
+            // Pass user's preferred language to backend
+            if (locale) params.set("lang", locale);
+            const queryStr = params.toString();
+            const res = await api.get(`/learning/videos${queryStr ? `?${queryStr}` : ""}`);
             setData(res.data);
         } catch (err) {
             console.error("Failed to load videos", err);
@@ -67,6 +86,35 @@ export default function LearningHubPage() {
         }
     };
 
+    // Smart search: call backend YouTube search endpoint
+    const handleSearch = useCallback(async () => {
+        const q = searchQuery.trim();
+        if (!q) {
+            setSearchResults(null);
+            setSearchedQuery("");
+            return;
+        }
+        try {
+            setSearching(true);
+            setViewMode("feed"); // switch to feed view when searching
+            const params = new URLSearchParams({ q });
+            if (locale) params.set("lang", locale);
+            const res = await api.get<SearchResponse>(`/learning/search?${params.toString()}`);
+            setSearchResults(res.data.videos);
+            setSearchedQuery(q);
+        } catch (err) {
+            console.error("Search failed", err);
+        } finally {
+            setSearching(false);
+        }
+    }, [searchQuery, locale]);
+
+    const clearSearch = () => {
+        setSearchQuery("");
+        setSearchResults(null);
+        setSearchedQuery("");
+    };
+
     useEffect(() => {
         fetchVideos();
         const savedHistory = localStorage.getItem("agri_watch_history");
@@ -74,6 +122,13 @@ export default function LearningHubPage() {
         const savedLikes = localStorage.getItem("agri_liked_videos");
         if (savedLikes) setLikedVideos(JSON.parse(savedLikes));
     }, []);
+
+    // Re-fetch when locale changes
+    useEffect(() => {
+        if (locale) {
+            fetchVideos();
+        }
+    }, [locale]);
 
     const handleVideoSelect = (video: YouTubeVideo) => {
         setSelectedVideo(video);
@@ -92,6 +147,12 @@ export default function LearningHubPage() {
         }
         setLikedVideos(newLikes);
         localStorage.setItem("agri_liked_videos", JSON.stringify(newLikes));
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") {
+            handleSearch();
+        }
     };
 
     if (loading) {
@@ -116,23 +177,39 @@ export default function LearningHubPage() {
         );
     }
 
-    let sourceVideos = data.videos;
-    if (activeCategory === "History") sourceVideos = watchHistory;
-    if (activeCategory === "Liked") sourceVideos = likedVideos;
+    // Determine which videos to show
+    let displayVideos: YouTubeVideo[] = [];
+    let sectionTitle = "";
 
-    const filteredVideos = sourceVideos.filter(v => {
-        const matchesCategory = ["All", "History", "Liked"].includes(activeCategory) || v.category === activeCategory;
-        const matchesSearch = !searchQuery ||
-            v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            v.channel.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            v.description.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
-    });
+    if (searchResults !== null) {
+        // Search results mode
+        displayVideos = searchResults;
+        sectionTitle = `Search Results for "${searchedQuery}"`;
+    } else if (viewMode === "liked") {
+        displayVideos = likedVideos;
+        sectionTitle = "Liked Videos";
+    } else if (viewMode === "history") {
+        displayVideos = watchHistory;
+        sectionTitle = "Watch History";
+    } else {
+        // Normal feed mode with category filtering
+        let sourceVideos = data.videos;
+        displayVideos = sourceVideos.filter(v => {
+            const matchesCategory = activeCategory === "All" || v.category === activeCategory;
+            const matchesLocalSearch = !searchQuery ||
+                v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                v.channel.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                v.description.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesCategory && matchesLocalSearch;
+        });
+    }
 
     // Pick "For You" — top 4 videos from crop-related categories
     const forYouVideos = data.videos
         .filter(v => ["My Crops", "Fertilizers & Nutrition", "Pest & Disease Control"].includes(v.category))
         .slice(0, 4);
+
+    const showForYou = viewMode === "feed" && activeCategory === "All" && !searchQuery && searchResults === null && forYouVideos.length > 0;
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-10">
@@ -226,28 +303,44 @@ export default function LearningHubPage() {
                 </div>
             )}
 
-            {/* Search Bar */}
-            <div className="flex max-w-3xl mx-auto w-full items-center gap-3">
-                <div className="flex w-full">
+            {/* Search Bar + Liked & History Buttons */}
+            <div className="flex max-w-4xl mx-auto w-full items-center gap-3">
+                <div className="flex flex-1">
                     <div className="relative flex items-center w-full">
                         <input
                             type="text"
-                            placeholder="Search"
+                            placeholder="Search for farming topics, crops, techniques..."
                             className="w-full pl-5 pr-10 py-2 bg-[#121212] border border-[#303030] rounded-l-full text-base text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-[#1c62b9]"
                             value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
+                            onChange={e => {
+                                setSearchQuery(e.target.value);
+                                // Clear search results when input is emptied
+                                if (!e.target.value.trim()) {
+                                    setSearchResults(null);
+                                    setSearchedQuery("");
+                                }
+                            }}
+                            onKeyDown={handleKeyDown}
                         />
                         {searchQuery && (
                             <button
-                                onClick={() => setSearchQuery("")}
+                                onClick={clearSearch}
                                 className="absolute right-3 p-1.5 rounded-full hover:bg-[#303030] text-gray-400 transition-colors"
                             >
                                 <X className="h-5 w-5" />
                             </button>
                         )}
                     </div>
-                    <button className="px-5 py-2 bg-[#222222] border border-l-0 border-[#303030] rounded-r-full hover:bg-[#303030] transition-colors flex items-center justify-center group">
-                        <Search className="h-5 w-5 text-gray-100 group-hover:text-white" />
+                    <button
+                        onClick={handleSearch}
+                        disabled={searching}
+                        className="px-5 py-2 bg-[#222222] border border-l-0 border-[#303030] rounded-r-full hover:bg-[#303030] transition-colors flex items-center justify-center group"
+                    >
+                        {searching ? (
+                            <Loader2 className="h-5 w-5 text-gray-100 animate-spin" />
+                        ) : (
+                            <Search className="h-5 w-5 text-gray-100 group-hover:text-white" />
+                        )}
                     </button>
                 </div>
                 <button
@@ -256,57 +349,102 @@ export default function LearningHubPage() {
                 >
                     <Mic className="h-5 w-5 text-gray-100" />
                 </button>
+
+                {/* Liked Button */}
+                <button
+                    onClick={() => {
+                        clearSearch();
+                        setViewMode(viewMode === "liked" ? "feed" : "liked");
+                    }}
+                    className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+                        viewMode === "liked"
+                            ? "bg-rose-500/20 text-rose-400 border border-rose-500/50 shadow-lg shadow-rose-500/10"
+                            : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f] border border-transparent"
+                    }`}
+                    title="Liked Videos"
+                >
+                    <Heart className={`h-4 w-4 ${viewMode === "liked" ? "fill-rose-400" : ""}`} />
+                    <span className="hidden sm:inline">Liked</span>
+                </button>
+
+                {/* History Button */}
+                <button
+                    onClick={() => {
+                        clearSearch();
+                        setViewMode(viewMode === "history" ? "feed" : "history");
+                    }}
+                    className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+                        viewMode === "history"
+                            ? "bg-blue-500/20 text-blue-400 border border-blue-500/50 shadow-lg shadow-blue-500/10"
+                            : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f] border border-transparent"
+                    }`}
+                    title="Watch History"
+                >
+                    <History className="h-4 w-4" />
+                    <span className="hidden sm:inline">History</span>
+                </button>
             </div>
 
-            {/* Category Tabs */}
-            <div className="flex overflow-x-auto scrollbar-hide gap-3 pb-2 pt-4">
-                <button
-                    onClick={() => setActiveCategory("All")}
-                    className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                        activeCategory === "All"
-                            ? "bg-gray-100 text-black"
-                            : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f]"
-                    }`}
-                >
-                    All
-                </button>
-                <button
-                    onClick={() => setActiveCategory("Liked")}
-                    className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                        activeCategory === "Liked"
-                            ? "bg-gray-100 text-black"
-                            : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f]"
-                    }`}
-                >
-                    <Heart className="h-4 w-4" /> Liked
-                </button>
-                <button
-                    onClick={() => setActiveCategory("History")}
-                    className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                        activeCategory === "History"
-                            ? "bg-gray-100 text-black"
-                            : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f]"
-                    }`}
-                >
-                    <History className="h-4 w-4" /> History
-                </button>
-                {data.categories.map(cat => (
+            {/* Category Tabs (only show when in feed mode and not searching) */}
+            {viewMode === "feed" && searchResults === null && (
+                <div className="flex overflow-x-auto scrollbar-hide gap-3 pb-2 pt-4">
                     <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
+                        onClick={() => setActiveCategory("All")}
                         className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            activeCategory === cat
+                            activeCategory === "All"
                                 ? "bg-gray-100 text-black"
                                 : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f]"
                         }`}
                     >
-                        {cat}
+                        All
                     </button>
-                ))}
-            </div>
+                    {data.categories.map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => setActiveCategory(cat)}
+                            className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                activeCategory === cat
+                                    ? "bg-gray-100 text-black"
+                                    : "bg-[#272727] text-gray-100 hover:bg-[#3f3f3f]"
+                            }`}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Section Header for Liked / History / Search Results */}
+            {(viewMode !== "feed" || searchResults !== null) && (
+                <div className="flex items-center justify-between pt-4">
+                    <h2 className="text-2xl font-black text-foreground flex items-center gap-3">
+                        {searchResults !== null && <Search className="h-6 w-6 text-orange-500" />}
+                        {viewMode === "liked" && <Heart className="h-6 w-6 text-rose-500 fill-rose-500" />}
+                        {viewMode === "history" && <History className="h-6 w-6 text-blue-500" />}
+                        {sectionTitle}
+                    </h2>
+                    <button
+                        onClick={() => {
+                            clearSearch();
+                            setViewMode("feed");
+                        }}
+                        className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-100 dark:bg-zinc-800 rounded-xl hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                    >
+                        <X className="h-4 w-4" /> Back to Feed
+                    </button>
+                </div>
+            )}
+
+            {/* Searching indicator */}
+            {searching && (
+                <div className="flex items-center justify-center py-12 gap-3">
+                    <Loader2 className="h-6 w-6 text-orange-500 animate-spin" />
+                    <span className="text-muted-foreground font-medium">Searching YouTube for &quot;{searchQuery}&quot;...</span>
+                </div>
+            )}
 
             {/* "For You" Hero Section */}
-            {activeCategory === "All" && forYouVideos.length > 0 && !searchQuery && (
+            {showForYou && (
                 <div className="animate-in fade-in duration-700">
                     <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600 flex items-center gap-3 mb-6">
                         <Sparkles className="h-6 w-6 text-amber-500" />
@@ -353,35 +491,41 @@ export default function LearningHubPage() {
             )}
 
             {/* Video Grid */}
-            {filteredVideos.length === 0 ? (
+            {!searching && displayVideos.length === 0 ? (
                 <div className="text-center py-20 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl rounded-3xl border border-dashed border-gray-300 dark:border-zinc-700">
                     <div className="h-20 w-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-800 dark:to-zinc-900 rounded-[2rem] flex items-center justify-center mx-auto mb-5 shadow-inner">
                         <Video className="h-10 w-10 text-gray-400" />
                     </div>
                     <p className="text-xl font-bold text-gray-700 dark:text-gray-300">
-                        {searchQuery
+                        {searchResults !== null
+                            ? `No videos found for "${searchedQuery}". Try different keywords.`
+                            : viewMode === "liked"
+                            ? "No liked videos yet. Like videos to save them here!"
+                            : viewMode === "history"
+                            ? "No watch history yet. Start watching to build your history!"
+                            : searchQuery
                             ? `No videos found matching "${searchQuery}"`
                             : "No videos found for this category."}
                     </p>
-                    {searchQuery && (
+                    {(searchResults !== null || searchQuery) && (
                         <button
-                            onClick={() => setSearchQuery("")}
+                            onClick={clearSearch}
                             className="mt-4 px-6 py-2.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-xl font-bold hover:bg-rose-200 dark:hover:bg-rose-900/50 transition-colors"
                         >
                             Clear search
                         </button>
                     )}
                 </div>
-            ) : (
+            ) : !searching && displayVideos.length > 0 ? (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">
-                    {activeCategory === "All" && forYouVideos.length > 0 && !searchQuery && (
+                    {showForYou && (
                         <h2 className="text-2xl font-black text-foreground flex items-center gap-3 mb-6 mt-8">
                             <Leaf className="h-6 w-6 text-emerald-500" />
                             All Videos
                         </h2>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredVideos.map((video) => (
+                        {displayVideos.map((video) => (
                             <div
                                 key={video.id}
                                 className="group bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl border border-white/50 dark:border-zinc-800/50 hover:border-rose-300 dark:hover:border-rose-800/50 transition-all duration-500 cursor-pointer transform hover:-translate-y-1"
@@ -432,10 +576,10 @@ export default function LearningHubPage() {
                         ))}
                     </div>
                 </div>
-            )}
+            ) : null}
 
             {/* No crops CTA */}
-            {data.personalized_for.length === 0 && (
+            {data.personalized_for.length === 0 && viewMode === "feed" && searchResults === null && (
                 <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 backdrop-blur-xl rounded-[2rem] p-8 text-center relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-orange-500/5 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-700" />
                     <div className="relative">
@@ -444,7 +588,7 @@ export default function LearningHubPage() {
                         </div>
                         <h3 className="text-xl font-black text-amber-900 dark:text-amber-100 mb-2">Get Personalized Recommendations</h3>
                         <p className="text-amber-700/80 dark:text-amber-300/80 font-medium max-w-md mx-auto">
-                            Add your crops in the "My Crops" section to receive video recommendations tailored specifically to your farming needs and region.
+                            Add your crops in the &quot;My Crops&quot; section to receive video recommendations tailored specifically to your farming needs and region.
                         </p>
                     </div>
                 </div>

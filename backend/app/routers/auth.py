@@ -34,6 +34,7 @@ async def forgot_password(request: ForgotPasswordRequest, session: AsyncSession 
     role_val = request.role.value if hasattr(request.role, "value") else str(request.role)
 
     if _otp_disabled():
+        print("[AUTH] DISABLE_OTP_VERIFICATION is active: skipped sending OTP email/SMS", flush=True)
         if request.email:
             email = request.email.lower().strip()
             statement = select(User).where(User.email == email, User.role == role_val)
@@ -72,7 +73,7 @@ async def forgot_password(request: ForgotPasswordRequest, session: AsyncSession 
         session.add(otp_entry)
         await session.commit()
 
-        print(f"\n[DEMO] Password reset OTP for {email} ({role_val}): {otp_code}\n")
+        print(f"\n[DEMO] Password reset OTP for {email} ({role_val}): {otp_code}\n", flush=True)
 
         email_sent = send_otp_email(email, otp_code)
         if not email_sent:

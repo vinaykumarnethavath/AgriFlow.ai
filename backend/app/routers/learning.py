@@ -22,6 +22,7 @@ from ..services.youtube_service import (
     build_learning_categories,
     get_language_for_state,
     clear_cache,
+    YOUTUBE_LANG_MAP,
 )
 
 logger = logging.getLogger(__name__)
@@ -141,6 +142,7 @@ def _build_fallback_response() -> LearningResponse:
 @router.get("/videos", response_model=LearningResponse)
 async def get_learning_videos(
     refresh: bool = Query(False, description="Force refresh cache"),
+    lang: Optional[str] = Query(None, description="User's preferred language code (e.g. te, hi, ta). Overrides state-based language."),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
@@ -191,7 +193,11 @@ async def get_learning_videos(
     except Exception as e:
         logger.warning(f"[learning] Could not fetch profile: {e}")
 
-    language = get_language_for_state(farmer_state)
+    # Prioritize user's explicit language preference over state-derived language
+    if lang and lang in YOUTUBE_LANG_MAP:
+        language = lang
+    else:
+        language = get_language_for_state(farmer_state)
 
     # 3. Build category queries
     category_defs = build_learning_categories(crop_names, season, language)
@@ -255,5 +261,71 @@ async def get_learning_videos(
         category_emojis=category_emojis,
         videos=unique_videos,
         personalized_for=crop_names,
+        language=language,
+    )
+
+
+# ─── Search Endpoint ──────────────────────────────────────────────────────────
+
+class SearchResponse(BaseModel):
+    videos: List[Video]
+    query: str
+    language: str
+
+
+@router.get("/search", response_model=SearchResponse)
+async def search_learning_videos(
+    q: str = Query(..., min_length=1, description="Search query"),
+    lang: Optional[str] = Query(None, description="User's preferred language code"),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Search YouTube for agriculture-related videos matching the user's query.
+    Results are filtered to the user's preferred language.
+    """
+    import os
+    api_key = os.getenv("YOUTUBE_API_KEY", "")
+    if not api_key:
+        return SearchResponse(videos=[], query=q, language=lang or "hi")
+
+    # Use user's preferred language, default to Hindi
+    language = lang if (lang and lang in YOUTUBE_LANG_MAP) else "hi"
+
+    # Language suffix for better regional results
+    lang_suffix = {
+        "te": "Telugu", "hi": "Hindi", "ta": "Tamil",
+        "kn": "Kannada", "ml": "Malayalam", "mr": "Marathi",
+        "gu": "Gujarati", "pa": "Punjabi", "bn": "Bengali",
+    }.get(language, "")
+    lang_tag = f" in {lang_suffix}" if lang_suffix else ""
+
+    # Build a search query with agriculture context + language
+    search_query = f"{q} agriculture farming India{lang_tag}"
+
+    videos = await search_youtube_videos(
+        query=search_query,
+        max_results=12,
+        language=language,
+        api_key=api_key,
+    )
+
+    result_videos = [
+        Video(
+            id=v["id"],
+            title=v["title"],
+            thumbnail=v["thumbnail"],
+            category="Search Results",
+            emoji="🔍",
+            duration=v.get("duration", ""),
+            channel=v.get("channel", ""),
+            description=v.get("description", ""),
+            view_count=v.get("view_count", ""),
+        )
+        for v in videos
+    ]
+
+    return SearchResponse(
+        videos=result_videos,
+        query=q,
         language=language,
     )

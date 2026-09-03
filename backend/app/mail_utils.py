@@ -43,26 +43,31 @@ def _send_email(to_email: str, subject: str, text: str, html: str) -> bool:
     resend_from = (getattr(mail_settings, "resend_from", "") or "").strip()
     if resend_api_key:
         if not resend_from:
-            raise RuntimeError("RESEND_FROM is required when RESEND_API_KEY is set")
-        print(f"DEBUG: Sending email via Resend to={to_email} from={resend_from}")
-        resp = httpx.post(
-            "https://api.resend.com/emails",
-            headers={
-                "Authorization": f"Bearer {resend_api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "from": resend_from,
-                "to": [to_email],
-                "subject": subject,
-                "text": text,
-                "html": html,
-            },
-            timeout=20.0,
-        )
-        if resp.status_code >= 400:
-            raise RuntimeError(f"Resend error: status={resp.status_code} body={resp.text}")
-        return True
+            print("WARNING: RESEND_FROM is not set, falling back to SMTP", flush=True)
+        else:
+            try:
+                print(f"DEBUG: Sending email via Resend to={to_email} from={resend_from}", flush=True)
+                resp = httpx.post(
+                    "https://api.resend.com/emails",
+                    headers={
+                        "Authorization": f"Bearer {resend_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "from": resend_from,
+                        "to": [to_email],
+                        "subject": subject,
+                        "text": text,
+                        "html": html,
+                    },
+                    timeout=20.0,
+                )
+                if resp.status_code >= 400:
+                    print(f"WARNING: Resend failed (status={resp.status_code}): {resp.text}. Falling back to Gmail SMTP...", flush=True)
+                else:
+                    return True
+            except Exception as resend_err:
+                print(f"WARNING: Resend error ({resend_err}). Falling back to Gmail SMTP...", flush=True)
 
     message = MIMEMultipart("alternative")
     message["Subject"] = subject
@@ -80,7 +85,17 @@ def _send_email(to_email: str, subject: str, text: str, html: str) -> bool:
     use_ssl = bool(getattr(mail_settings, "smtp_use_ssl", False))
     use_starttls = bool(getattr(mail_settings, "smtp_use_starttls", False))
 
-    print(f"DEBUG: SMTP connect host={host} port={port} ssl={use_ssl} starttls={use_starttls} timeout={timeout}")
+    # Auto-reconcile standard SMTP ports to prevent timeout misconfigurations:
+    # Port 465 is implicit SSL/TLS. Plain SMTP + STARTTLS on 465 will always time out.
+    # Port 587 is submission via explicit STARTTLS.
+    if port == 465:
+        use_ssl = True
+        use_starttls = False
+    elif port == 587:
+        use_ssl = False
+        use_starttls = True
+
+    print(f"DEBUG: SMTP connect host={host} port={port} ssl={use_ssl} starttls={use_starttls} timeout={timeout}", flush=True)
 
     context = ssl.create_default_context()
     if use_ssl:
@@ -124,10 +139,10 @@ def send_registration_otp_email(to_email: str, otp: str, role: str):
 
         _send_email(to_email=to_email, subject=subject, text=text, html=html)
 
-        print(f"OK: Registration OTP email sent to {to_email}")
+        print(f"OK: Registration OTP email sent to {to_email}", flush=True)
         return True
     except Exception as e:
-        print(f"ERROR: Failed to send registration OTP email: {e}")
+        print(f"ERROR: Failed to send registration OTP email: {e}", flush=True)
         import traceback
         traceback.print_exc()
         return False
@@ -160,10 +175,10 @@ def send_otp_email(to_email: str, otp: str):
 
         _send_email(to_email=to_email, subject=subject, text=text, html=html)
         
-        print(f"OK: OTP Email sent successfully to {to_email}")
+        print(f"OK: OTP Email sent successfully to {to_email}", flush=True)
         return True
     except Exception as e:
-        print(f"ERROR: Failed to send email: {e}")
+        print(f"ERROR: Failed to send email: {e}", flush=True)
         import traceback
         traceback.print_exc()
         return False
