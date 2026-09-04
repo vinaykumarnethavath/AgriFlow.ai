@@ -103,6 +103,7 @@ class MillProfileBase(SQLModel):
     relation_type: Optional[str] = "S/O"  # "S/O", "W/O", "D/O"
     owner_name: Optional[str] = None
     contact_number: Optional[str] = None
+    phone_number: Optional[str] = None
     
     # Personal ID Details
     aadhaar_number: Optional[str] = None
@@ -149,3 +150,4 @@ class MillProfileRead(MillProfileBase):
     id: int
     user_id: int
     full_name: Optional[str] = None
+    phone_number: Optional[str] = None

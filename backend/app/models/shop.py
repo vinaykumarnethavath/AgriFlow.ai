@@ -11,6 +11,7 @@ class ShopProfileBase(SQLModel):
     relation_type: Optional[str] = "S/O"  # "S/O", "W/O", "D/O"
     owner_name: Optional[str] = None  # Full name of the shop owner
     contact_number: Optional[str] = None
+    phone_number: Optional[str] = None
     
     # Personal ID Details
     aadhaar_number: Optional[str] = None
@@ -63,3 +64,4 @@ class ShopProfileRead(ShopProfileBase):
     id: int
     user_id: int
     full_name: Optional[str] = None
+    phone_number: Optional[str] = None

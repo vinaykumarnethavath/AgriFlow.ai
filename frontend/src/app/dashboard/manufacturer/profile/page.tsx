@@ -13,6 +13,7 @@ interface MillProfileData {
     license_number?: string;
     father_name?: string;
     contact_number?: string;
+    phone_number?: string;
     profile_picture_url?: string;
     // Personal ID
     aadhaar_number?: string;
@@ -102,7 +103,7 @@ export default function MillProfilePage() {
 
     const [form, setForm] = useState<MillProfileData>({
         mill_name: "", owner_name: "", license_number: "", father_name: "",
-        contact_number: "", profile_picture_url: "",
+        contact_number: "", phone_number: "", profile_picture_url: "",
         aadhaar_number: "", pan_number: "", hide_personal_details: false,
         house_no: "", street: "", village: "", mandal: "", district: "",
         state: "", pincode: "", country: "India", location_text: "",
@@ -118,12 +119,19 @@ export default function MillProfilePage() {
                 setForm({
                     ...data,
                     full_name: data.full_name || user?.full_name || "",
+                    contact_number: data.contact_number || data.phone_number || user?.phone_number || "",
+                    phone_number: data.phone_number || data.contact_number || user?.phone_number || "",
                 });
                 setProfileExists(true);
             } catch (err: any) {
                 if (err?.response?.status === 404) {
                     setProfileExists(false);
-                    setForm(prev => ({ ...prev, full_name: user?.full_name || "" }));
+                    setForm(prev => ({
+                        ...prev,
+                        full_name: user?.full_name || "",
+                        contact_number: user?.phone_number || "",
+                        phone_number: user?.phone_number || "",
+                    }));
                 }
             } finally {
                 setLoading(false);
@@ -134,7 +142,12 @@ export default function MillProfilePage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-        setForm(prev => ({ ...prev, [e.target.name]: value }));
+        const name = e.target.name;
+        setForm(prev => ({
+            ...prev,
+            [name]: value,
+            ...(name === 'contact_number' ? { phone_number: value as string } : {}),
+        }));
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

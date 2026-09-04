@@ -17,6 +17,8 @@ if DATABASE_URL.startswith("postgres://"):
 elif DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
+from sqlalchemy import text
+
 db_echo_env = os.getenv("DB_ECHO", "false")
 db_echo = db_echo_env.strip().lower() in {"1", "true", "yes"}
 
@@ -24,8 +26,28 @@ engine = create_async_engine(DATABASE_URL, echo=db_echo, future=True)
 
 async def init_db():
     async with engine.begin() as conn:
-        # await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
+        
+    # Safely migrate new columns on existing database tables (isolated transactions)
+    alter_statements = [
+        "ALTER TABLE farmerprofile ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
+        "ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
+        "ALTER TABLE shop_profiles ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
+        "ALTER TABLE shop_profiles ADD COLUMN IF NOT EXISTS contact_number VARCHAR",
+        "ALTER TABLE mill_profiles ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
+        "ALTER TABLE mill_profiles ADD COLUMN IF NOT EXISTS contact_number VARCHAR",
+    ]
+    for stmt in alter_statements:
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(text(stmt))
+        except Exception:
+            try:
+                sqlite_stmt = stmt.replace(" IF NOT EXISTS", "")
+                async with engine.begin() as conn:
+                    await conn.execute(text(sqlite_stmt))
+            except Exception:
+                pass
 
 async def get_session() -> AsyncSession:
     async_session = sessionmaker(

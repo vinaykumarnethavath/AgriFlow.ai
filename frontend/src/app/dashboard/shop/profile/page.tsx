@@ -14,6 +14,7 @@ interface ShopProfileData {
     father_name?: string;
     relation_type?: string;
     contact_number?: string;
+    phone_number?: string;
     id?: number;
     shop_id?: string;
     profile_picture_url?: string;
@@ -107,7 +108,7 @@ export default function ShopProfilePage() {
 
     const [form, setForm] = useState<ShopProfileData>({
         shop_name: "", owner_name: "", license_number: "", shop_id: "", father_name: "", relation_type: "S/O",
-        contact_number: "", profile_picture_url: "",
+        contact_number: "", phone_number: "", profile_picture_url: "",
         aadhaar_number: "", pan_number: "", hide_personal_details: false,
         house_no: "", street: "", village: "", mandal: "", district: "",
         state: "", pincode: "", country: "India", landmark: "",
@@ -124,12 +125,19 @@ export default function ShopProfilePage() {
                 setForm({
                     ...data,
                     full_name: data.full_name || user?.full_name || "",
+                    contact_number: data.contact_number || data.phone_number || user?.phone_number || "",
+                    phone_number: data.phone_number || data.contact_number || user?.phone_number || "",
                 });
                 setProfileExists(true);
             } catch (err: any) {
                 if (err?.response?.status === 404) {
                     setProfileExists(false);
-                    setForm(prev => ({ ...prev, full_name: user?.full_name || "" }));
+                    setForm(prev => ({
+                        ...prev,
+                        full_name: user?.full_name || "",
+                        contact_number: user?.phone_number || "",
+                        phone_number: user?.phone_number || "",
+                    }));
                 }
             } finally {
                 setLoading(false);
@@ -140,7 +148,12 @@ export default function ShopProfilePage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
-        setForm(prev => ({ ...prev, [e.target.name]: value }));
+        const name = e.target.name;
+        setForm(prev => ({
+            ...prev,
+            [name]: value,
+            ...(name === 'contact_number' ? { phone_number: value as string } : {}),
+        }));
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

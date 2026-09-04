@@ -22,6 +22,39 @@ def safe_display_name(user: User) -> str:
         return ""
     return full_name
 
+async def safely_assign_user_phone(session: AsyncSession, current_user: User, phone: Optional[str], profile_model):
+    if not phone:
+        return
+    clean_phone = phone.strip()
+    if not clean_phone or clean_phone == current_user.phone_number:
+        return
+    
+    existing_user = (await session.exec(
+        select(User).where(
+            User.phone_number == clean_phone,
+            User.role == current_user.role,
+            User.id != current_user.id
+        )
+    )).first()
+    if existing_user:
+        existing_prof = (await session.exec(
+            select(profile_model).where(profile_model.user_id == existing_user.id)
+        )).first()
+        if not existing_prof and (not existing_user.email or existing_user.email == current_user.email):
+            existing_user.phone_number = None
+            session.add(existing_user)
+            await session.flush()
+            current_user.phone_number = clean_phone
+            session.add(current_user)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Phone number {clean_phone} is already registered to another account."
+            )
+    else:
+        current_user.phone_number = clean_phone
+        session.add(current_user)
+
 # --- Mill Profile Endpoints ---
 
 @router.get("/manufacturer/profile", response_model=MillProfileRead)
@@ -41,6 +74,9 @@ async def get_mill_profile(
         
     profile_read = MillProfileRead.from_orm(profile)
     profile_read.full_name = safe_display_name(current_user)
+    phone = profile.phone_number or profile.contact_number or current_user.phone_number
+    profile_read.phone_number = phone
+    profile_read.contact_number = phone
     return profile_read
 
 @router.post("/manufacturer/profile", response_model=MillProfileRead)
@@ -56,12 +92,19 @@ async def create_or_update_mill_profile(
         current_user.full_name = profile_data.full_name
         session.add(current_user)
 
+    phone_val = profile_data.phone_number or profile_data.contact_number
+    await safely_assign_user_phone(session, current_user, phone_val, MillProfile)
+
     statement = select(MillProfile).where(MillProfile.user_id == current_user.id)
     result = await session.exec(statement)
     db_profile = result.first()
     
     exclude_fields = {"full_name"}
     update_data = profile_data.dict(exclude=exclude_fields)
+    # Ensure phone_number and contact_number stay in sync if either is passed
+    if phone_val:
+        update_data["phone_number"] = phone_val.strip()
+        update_data["contact_number"] = phone_val.strip()
     
     if db_profile:
         for key, value in update_data.items():
@@ -71,11 +114,18 @@ async def create_or_update_mill_profile(
         db_profile = MillProfile(**update_data, user_id=current_user.id)
         session.add(db_profile)
     
-    await session.commit()
+    try:
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to save profile: {str(e)}")
     await session.refresh(db_profile)
     
     profile_read = MillProfileRead.from_orm(db_profile)
     profile_read.full_name = safe_display_name(current_user)
+    phone = db_profile.phone_number or db_profile.contact_number or current_user.phone_number
+    profile_read.phone_number = phone
+    profile_read.contact_number = phone
     return profile_read
 
 # --- Shop Profile Endpoints ---
@@ -97,6 +147,9 @@ async def get_shop_profile(
         
     profile_read = ShopProfileRead.from_orm(profile)
     profile_read.full_name = safe_display_name(current_user)
+    phone = profile.phone_number or profile.contact_number or current_user.phone_number
+    profile_read.phone_number = phone
+    profile_read.contact_number = phone
     return profile_read
 
 @router.post("/shop/profile", response_model=ShopProfileRead)
@@ -112,12 +165,19 @@ async def create_or_update_shop_profile(
         current_user.full_name = profile_data.full_name
         session.add(current_user)
 
+    phone_val = profile_data.phone_number or profile_data.contact_number
+    await safely_assign_user_phone(session, current_user, phone_val, ShopProfile)
+
     statement = select(ShopProfile).where(ShopProfile.user_id == current_user.id)
     result = await session.exec(statement)
     db_profile = result.first()
     
     exclude_fields = {"full_name"}
     update_data = profile_data.dict(exclude=exclude_fields)
+    # Ensure phone_number and contact_number stay in sync if either is passed
+    if phone_val:
+        update_data["phone_number"] = phone_val.strip()
+        update_data["contact_number"] = phone_val.strip()
     
     if db_profile:
         for key, value in update_data.items():
@@ -127,11 +187,18 @@ async def create_or_update_shop_profile(
         db_profile = ShopProfile(**update_data, user_id=current_user.id)
         session.add(db_profile)
     
-    await session.commit()
+    try:
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to save profile: {str(e)}")
     await session.refresh(db_profile)
     
     profile_read = ShopProfileRead.from_orm(db_profile)
     profile_read.full_name = safe_display_name(current_user)
+    phone = db_profile.phone_number or db_profile.contact_number or current_user.phone_number
+    profile_read.phone_number = phone
+    profile_read.contact_number = phone
     return profile_read
 
 # --- Customer Profile Endpoints ---
@@ -153,6 +220,8 @@ async def get_customer_profile(
         
     profile_read = CustomerProfileRead.from_orm(profile)
     profile_read.full_name = safe_display_name(current_user)
+    if not profile_read.phone_number:
+        profile_read.phone_number = current_user.phone_number
     return profile_read
 
 @router.post("/customer/profile", response_model=CustomerProfileRead)
@@ -168,12 +237,16 @@ async def create_or_update_customer_profile(
         current_user.full_name = profile_data.full_name
         session.add(current_user)
 
+    await safely_assign_user_phone(session, current_user, profile_data.phone_number, CustomerProfile)
+
     statement = select(CustomerProfile).where(CustomerProfile.user_id == current_user.id)
     result = await session.exec(statement)
     db_profile = result.first()
     
     exclude_fields = {"full_name"}
     update_data = profile_data.dict(exclude=exclude_fields)
+    if profile_data.phone_number:
+        update_data["phone_number"] = profile_data.phone_number.strip()
     
     if db_profile:
         for key, value in update_data.items():
@@ -183,9 +256,15 @@ async def create_or_update_customer_profile(
         db_profile = CustomerProfile(**update_data, user_id=current_user.id)
         session.add(db_profile)
     
-    await session.commit()
+    try:
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to save profile: {str(e)}")
     await session.refresh(db_profile)
     
     profile_read = CustomerProfileRead.from_orm(db_profile)
     profile_read.full_name = safe_display_name(current_user)
+    if not profile_read.phone_number:
+        profile_read.phone_number = current_user.phone_number
     return profile_read

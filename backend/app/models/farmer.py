@@ -13,6 +13,7 @@ class LandRecord(LandRecordBase, table=True):
 class FarmerProfileBase(SQLModel):
     farmer_id: str = Field(unique=True, index=True)
     father_husband_name: str
+    phone_number: Optional[str] = None
     gender: Optional[str] = None  # "male" or "female"
     relation_type: Optional[str] = None  # "son_of" or "wife_of"
     
@@ -46,4 +47,5 @@ class FarmerProfileRead(FarmerProfileBase):
     id: int
     user_id: int
     full_name: Optional[str] = None
+    phone_number: Optional[str] = None
     land_records: List[LandRecordBase] = []

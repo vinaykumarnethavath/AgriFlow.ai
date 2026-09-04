@@ -27,6 +27,7 @@ interface LandRecord {
 interface FarmerProfile {
     farmer_id: string;
     father_husband_name: string;
+    phone_number?: string;
     gender?: string;
     relation_type?: string;
     house_no?: string;
@@ -47,6 +48,45 @@ interface FarmerProfile {
     full_name?: string;
 }
 
+// Helper: Format land area for display (always 2 decimals)
+const formatLandArea = (area: number) => {
+    return area.toFixed(2);
+};
+
+// Helper: Add two land areas using base-40 arithmetic
+const addLandArea = (a: number, b: number) => {
+    const aAcres = Math.floor(a);
+    const aGuntas = Math.round((a - aAcres) * 100);
+    const bAcres = Math.floor(b);
+    const bGuntas = Math.round((b - bAcres) * 100);
+
+    let totalGuntas = aGuntas + bGuntas;
+    let extraAcres = 0;
+    if (totalGuntas >= 40) {
+        extraAcres = Math.floor(totalGuntas / 40);
+        totalGuntas = totalGuntas % 40;
+    }
+
+    return (aAcres + bAcres + extraAcres) + (totalGuntas / 100);
+};
+
+// Helper: Subtract land area (a - b) using base-40 arithmetic
+const subtractLandArea = (a: number, b: number) => {
+    const aAcres = Math.floor(a);
+    const aGuntas = Math.round((a - aAcres) * 100);
+    const bAcres = Math.floor(b);
+    const bGuntas = Math.round((b - bAcres) * 100);
+
+    const aTotalGuntas = aAcres * 40 + aGuntas;
+    const bTotalGuntas = bAcres * 40 + bGuntas;
+
+    const diffGuntas = Math.max(0, aTotalGuntas - bTotalGuntas);
+    const resultAcres = Math.floor(diffGuntas / 40);
+    const resultGuntas = diffGuntas % 40;
+
+    return resultAcres + (resultGuntas / 100);
+};
+
 // Helper: Normalize area to base-40 (Acres.Guntas)
 const normalizeLandArea = (area: number) => {
     let acres = Math.floor(area);
@@ -58,47 +98,6 @@ const normalizeLandArea = (area: number) => {
     return acres + (guntas / 100);
 };
 
-// Helper: Add land areas in base-40
-const addLandArea = (a: number, b: number): number => {
-    const aAcres = Math.floor(a);
-    const aGuntas = Math.round((a - aAcres) * 100);
-    const bAcres = Math.floor(b);
-    const bGuntas = Math.round((b - bAcres) * 100);
-    let resAcres = aAcres + bAcres;
-    let resGuntas = aGuntas + bGuntas;
-    if (resGuntas >= 40) {
-        resAcres += Math.floor(resGuntas / 40);
-        resGuntas = resGuntas % 40;
-    }
-    return resAcres + (resGuntas / 100);
-};
-
-// Helper: Subtract land areas in base-40
-const subtractLandArea = (total: number, minus: number): number => {
-    const tAcres = Math.floor(total);
-    const tGuntas = Math.round((total - tAcres) * 100);
-    const mAcres = Math.floor(minus);
-    const mGuntas = Math.round((minus - mAcres) * 100);
-    let resAcres = tAcres - mAcres;
-    let resGuntas = tGuntas - mGuntas;
-    if (resGuntas < 0) {
-        resAcres -= 1;
-        resGuntas += 40;
-    }
-    return resAcres + (resGuntas / 100);
-};
-
-// Helper: Format area for display (Ac.Guntas)
-const formatLandArea = (area: number) => {
-    let acres = Math.floor(area);
-    let guntas = Math.round((area - acres) * 100);
-    if (guntas >= 40) {
-        acres += Math.floor(guntas / 40);
-        guntas = guntas % 40;
-    }
-    return `${acres}.${guntas.toString().padStart(2, '0')}`;
-};
-
 // Handle Area Normalization on Blur
 const handleAreaBlurEvent = (value: string, setter: (val: string) => void) => {
     const num = parseFloat(value);
@@ -107,25 +106,76 @@ const handleAreaBlurEvent = (value: string, setter: (val: string) => void) => {
     setter(normalized.toFixed(2));
 };
 
-// Handle Area Change with real-time capping (scroll/type: .39 max, then jumps to next acre)
+// Handle Area Change with real-time capping
 const handleAreaChangeEvent = (value: string, setter: (val: string) => void) => {
     if (value === '' || value === '0' || value === '0.') { setter(value); return; }
     const num = parseFloat(value);
     if (isNaN(num)) { setter(value); return; }
+    if (num < 0) { setter('0.00'); return; }
+    const acres = Math.floor(num);
+    const guntas = Math.round((num - acres) * 100);
+    if (guntas >= 40) {
+        const normalized = normalizeLandArea(num);
+        setter(normalized.toFixed(2));
+    } else {
+        setter(value);
+    }
+};
 
-    // Explicitly prevent negative areas
-    if (num < 0) {
-        setter('0.00');
+// Helper: Area step change handler with base-40 rollover
+const handleAreaStep = (
+    currentValue: string,
+    direction: "up" | "down",
+    setter: (val: string) => void
+) => {
+    const val = parseFloat(currentValue);
+    if (isNaN(val)) {
+        setter(direction === "up" ? "0.01" : "0.00");
+        return;
+    }
+
+    const acres = Math.floor(val);
+    const guntas = Math.round((val - acres) * 100);
+
+    if (direction === "up") {
+        if (guntas === 39) {
+            // Rollover to next acre
+            setter(`${acres + 1}.00`);
+        } else {
+            const next = guntas + 1;
+            setter(`${acres}.${next.toString().padStart(2, '0')}`);
+        }
+    } else {
+        if (guntas === 0) {
+            // Roll down to previous acre .39
+            if (acres > 0) {
+                setter(`${acres - 1}.39`);
+            } else {
+                setter("0.00");
+            }
+        } else {
+            const prev = guntas - 1;
+            setter(`${acres}.${prev.toString().padStart(2, '0')}`);
+        }
+    }
+};
+
+// Helper: Safe area change for onChange/onInput
+const handleAreaChange = (value: string, setter: (val: string) => void) => {
+    const num = parseFloat(value);
+    if (isNaN(num)) {
+        setter(value);
         return;
     }
 
     const acres = Math.floor(num);
     const guntas = Math.round((num - acres) * 100);
 
-    // Detect browser step-down from X.00, which results in (X-1).99
-    if (guntas > 39) {
+    if (guntas >= 40) {
+        // Did the user scroll down from X.00 -> X.99?
+        // If guntas is 99, they probably scrolled down from .00
         if (guntas >= 90) {
-            // Downward scroll from X.00 -> (X-1).99
+            // Downward scroll from (acres+1).00 -> acres.99 -> clamp to acres.39
             setter(`${acres}.39`);
         } else {
             // Upward scroll from X.39 -> X.40
@@ -152,6 +202,7 @@ export default function FarmerDashboard() {
 
     // Refs for the form
     const fullNameRef = useRef<HTMLInputElement>(null);
+    const phoneRef = useRef<HTMLInputElement>(null);
     const farmerIdRef = useRef<HTMLInputElement>(null);
     const fatherRef = useRef<HTMLInputElement>(null);
     const houseNoRef = useRef<HTMLInputElement>(null);
@@ -297,6 +348,11 @@ export default function FarmerDashboard() {
             const profileRes = await api.get("/farmer/profile");
             setProfile(profileRes.data);
             setShowForm(false);
+            if (profileRes.data.land_records && profileRes.data.land_records.length > 0) {
+                setLandRecords(profileRes.data.land_records);
+            }
+            if (profileRes.data.gender) setGender(profileRes.data.gender);
+            if (profileRes.data.relation_type) setRelationType(profileRes.data.relation_type);
 
             const cropsRes = await api.get("/crops/");
             setCrops(cropsRes.data);
@@ -359,39 +415,49 @@ export default function FarmerDashboard() {
     const handleSubmitProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         const data = {
-            full_name: fullNameRef.current?.value || user?.full_name || "",
+            full_name: fullNameRef.current?.value || profile?.full_name || user?.full_name || "",
+            phone_number: phoneRef.current?.value || profile?.phone_number || user?.phone_number || "",
             profile_picture_url: uploadedImageUrl || profile?.profile_picture_url || "",
-            farmer_id: farmerIdRef.current?.value || "",
-            father_husband_name: fatherRef.current?.value || "",
-            gender: gender,
-            relation_type: relationType,
-            house_no: houseNoRef.current?.value || "",
-            street: streetRef.current?.value || "",
-            village: villageRef.current?.value || "",
-            mandal: mandalRef.current?.value || "",
-            district: districtRef.current?.value || "",
-            state: stateRef.current?.value || "",
-            country: countryRef.current?.value || "India",
-            pincode: pincodeRef.current?.value || "",
-            total_area: landRecords.reduce((acc, curr) => addLandArea(acc, curr.area || 0), 0),
-            aadhaar_last_4: aadhaarRef.current?.value || "",
-            bank_name: bankRef.current?.value || "",
-            account_number: accRef.current?.value || "",
-            ifsc_code: ifscRef.current?.value || "",
+            farmer_id: farmerIdRef.current?.value || profile?.farmer_id || "",
+            father_husband_name: fatherRef.current?.value || profile?.father_husband_name || "",
+            gender: gender || profile?.gender || "male",
+            relation_type: relationType || profile?.relation_type || "son_of",
+            house_no: houseNoRef.current?.value ?? profile?.house_no ?? "",
+            street: streetRef.current?.value ?? profile?.street ?? "",
+            village: villageRef.current?.value ?? profile?.village ?? "",
+            mandal: mandalRef.current?.value ?? profile?.mandal ?? "",
+            district: districtRef.current?.value ?? profile?.district ?? "",
+            state: stateRef.current?.value ?? profile?.state ?? "",
+            country: countryRef.current?.value || profile?.country || "India",
+            pincode: pincodeRef.current?.value ?? profile?.pincode ?? "",
+            total_area: landRecords.some(lr => (lr.area || 0) > 0)
+                ? landRecords.reduce((acc, curr) => addLandArea(acc, curr.area || 0), 0)
+                : (profile?.total_area || 0),
+            aadhaar_last_4: aadhaarRef.current?.value || profile?.aadhaar_last_4 || "",
+            bank_name: bankRef.current?.value || profile?.bank_name || "",
+            account_number: accRef.current?.value || profile?.account_number || "",
+            ifsc_code: ifscRef.current?.value || profile?.ifsc_code || "",
         };
 
         try {
             await api.post("/farmer/profile", data);
 
-            // Sync land records using PUT to prevent duplication
+            // Sync land records using PUT only if creating initial profile
             const validLandRecords = landRecords.filter(lr => lr.serial_number && lr.area > 0);
-            if (validLandRecords.length > 0) {
+            if (validLandRecords.length > 0 && !profile) {
                 await api.put("/farmer/land-records", validLandRecords);
             }
 
+            setShowForm(false);
             fetchData();
         } catch (err: any) {
-            alert("Failed to save profile");
+            console.error("Save profile error:", err);
+            const msg = err.response?.data?.detail
+                ? (typeof err.response.data.detail === "string"
+                    ? err.response.data.detail
+                    : JSON.stringify(err.response.data.detail))
+                : "Failed to save profile";
+            alert(msg);
         }
     };
 
@@ -409,6 +475,7 @@ export default function FarmerDashboard() {
 
         const data = {
             full_name: profile.full_name || user?.full_name || "",
+            phone_number: profile.phone_number || user?.phone_number || "",
             profile_picture_url: profile.profile_picture_url || "",
             farmer_id: profile.farmer_id || "",
             father_husband_name: profile.father_husband_name || "",
@@ -546,6 +613,10 @@ export default function FarmerDashboard() {
                                     <input ref={fullNameRef} defaultValue={user?.full_name} required className="w-full border-2 border-border rounded-xl p-3 focus:border-green-500 outline-none text-foreground bg-background" placeholder="Your Name" />
                                 </div>
                                 <div className="space-y-2">
+                                    <label className="text-sm font-bold text-muted-foreground">Phone Number</label>
+                                    <input ref={phoneRef} type="tel" defaultValue={user?.phone_number} required className="w-full border-2 border-border rounded-xl p-3 focus:border-green-500 outline-none text-foreground bg-background" placeholder="e.g. 9876543210" />
+                                </div>
+                                <div className="space-y-2">
                                     <label className="text-sm font-bold text-muted-foreground">Profile Picture</label>
                                     <div className="flex gap-2 items-center">
                                         <input
@@ -640,24 +711,24 @@ export default function FarmerDashboard() {
                         {/* Land Records */}
                         <div className="space-y-4">
                             <div className="flex justify-between items-center border-b pb-2">
-                                <h3 className="text-lg font-bold text-green-900 border-l-4 border-green-500 pl-2">Land Records</h3>
-                                <Button type="button" onClick={handleAddLand} variant="outline" size="sm" className="text-green-600 border-green-200">
+                                <h3 className="text-lg font-bold text-green-800 dark:text-green-400 border-l-4 border-green-500 pl-2">Land Records</h3>
+                                <Button type="button" onClick={handleAddLand} variant="outline" size="sm" className="text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/40">
                                     <Plus className="h-4 w-4 mr-1" /> Add Land Piece
                                 </Button>
                             </div>
                             {landRecords.map((lr, index) => (
-                                <div key={index} className="grid grid-cols-12 gap-4 items-end bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <div key={index} className="grid grid-cols-12 gap-4 items-end bg-gray-50 dark:bg-zinc-900/80 p-4 rounded-xl border border-gray-200 dark:border-zinc-800">
                                     <div className="col-span-6 space-y-1">
-                                        <label className="text-xs font-bold text-muted-foreground">Serial No. / Khasra No.</label>
+                                        <label className="text-xs font-bold text-gray-700 dark:text-zinc-300">Serial No. / Khasra No.</label>
                                         <input
                                             value={lr.serial_number}
                                             onChange={(e) => handleLandChange(index, "serial_number", e.target.value)}
-                                            className="w-full border-2 border-white rounded-lg p-2 focus:border-green-500 outline-none text-foreground text-sm"
+                                            className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg p-2 focus:border-green-500 outline-none text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 text-sm"
                                             placeholder="e.g. 102/4"
                                         />
                                     </div>
                                     <div className="col-span-4 space-y-1">
-                                        <label className="text-xs font-bold text-muted-foreground">Area (Acres.Guntas)</label>
+                                        <label className="text-xs font-bold text-gray-700 dark:text-zinc-300">Area (Acres.Guntas)</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -678,12 +749,12 @@ export default function FarmerDashboard() {
                                                 const normalized = normalizeLandArea(parseFloat(e.target.value));
                                                 handleLandChange(index, "area", normalized);
                                             }}
-                                            className="w-full border-2 border-white rounded-lg p-2 focus:border-green-500 outline-none text-foreground text-sm"
+                                            className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg p-2 focus:border-green-500 outline-none text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 text-sm"
                                         />
-                                        <p className="text-[10px] text-muted-foreground italic">Max .39 guntas per acre</p>
+                                        <p className="text-[10px] text-gray-500 dark:text-zinc-400 italic">Max .39 guntas per acre</p>
                                     </div>
                                     <div className="col-span-2 pb-1">
-                                        <Button type="button" onClick={() => handleRemoveLand(index)} variant="ghost" className="text-red-500 hover:bg-red-50 w-full">
+                                        <Button type="button" onClick={() => handleRemoveLand(index)} variant="ghost" className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 w-full">
                                             <Trash2 className="h-5 w-5" />
                                         </Button>
                                     </div>
@@ -693,7 +764,7 @@ export default function FarmerDashboard() {
 
                         {/* Bank Details */}
                         <div className="space-y-4">
-                            <h3 className="text-lg font-bold text-green-900 border-l-4 border-green-500 pl-2 border-b pb-2">Bank Account Details</h3>
+                            <h3 className="text-lg font-bold text-green-800 dark:text-green-400 border-l-4 border-green-500 pl-2 border-b pb-2">Bank Account Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-foreground">Bank Name</label>
@@ -749,16 +820,28 @@ export default function FarmerDashboard() {
                                 {farmerDisplayName} 
                                 {relationName && <span className="font-normal text-white/80 font-sans text-xl"> {relationLabel} {relationName}</span>}
                             </h1>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-wrap">
                                 <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
                                     🆔 {profile?.farmer_id}
                                 </span>
+                                {(profile?.phone_number || user?.phone_number) && (
+                                    <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm flex items-center gap-1">
+                                        📞 {profile?.phone_number || user?.phone_number}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 items-end">
                         <Button
-                            onClick={() => setShowForm(true)}
+                            onClick={() => {
+                                if (profile?.relation_type) setRelationType(profile.relation_type);
+                                if (profile?.gender) setGender(profile.gender);
+                                if (profile?.land_records && profile.land_records.length > 0) {
+                                    setLandRecords(profile.land_records);
+                                }
+                                setShowForm(true);
+                            }}
                             variant="outline"
                             className="border-white/30 text-white hover:bg-white/20 bg-white/10 backdrop-blur-sm shadow-sm"
                         >
@@ -806,10 +889,11 @@ export default function FarmerDashboard() {
                             )}
                         </div>
 
-                        {/* Column 2: Address */}
+                        {/* Column 2: Address & Contact */}
                         <div className="bg-white/10 rounded-xl p-4">
-                            <p className="text-green-50 text-xs font-bold uppercase tracking-wider mb-3">📍 {t('farmer.address')}</p>
+                            <p className="text-green-50 text-xs font-bold uppercase tracking-wider mb-3">📍 {t('farmer.address')} & Contact</p>
                             <div className="space-y-1 text-xs text-white">
+                                {(profile?.phone_number || user?.phone_number) && <p><span className="text-white/60">Phone:</span> {profile?.phone_number || user?.phone_number}</p>}
                                 {profile?.house_no && <p><span className="text-white/60">{t('farmer.house')}:</span> {profile.house_no}</p>}
                                 {profile?.street && <p><span className="text-white/60">{t('farmer.street')}:</span> {profile.street}</p>}
                                 {profile?.village && <p><span className="text-white/60">{t('farmer.village')}:</span> {profile.village}</p>}
@@ -1410,6 +1494,10 @@ export default function FarmerDashboard() {
                                     <input ref={fullNameRef} defaultValue={profile.full_name || user?.full_name} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
                                 </div>
                                 <div className="space-y-1">
+                                    <label className="text-xs font-bold text-muted-foreground">Phone Number</label>
+                                    <input ref={phoneRef} type="tel" defaultValue={profile.phone_number || user?.phone_number} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" placeholder="e.g. 9876543210" />
+                                </div>
+                                <div className="space-y-1">
                                     <label className="text-xs font-bold text-muted-foreground">Farmer ID</label>
                                     <input ref={farmerIdRef} defaultValue={profile.farmer_id} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
                                 </div>
@@ -1425,7 +1513,7 @@ export default function FarmerDashboard() {
                                         <option value="D/O">Daughter of (D/o)</option>
                                     </select>
                                 </div>
-                                <div className="space-y-1">
+                                <div className="space-y-1 md:col-span-2">
                                     <label className="text-xs font-bold text-muted-foreground">{relationType === "W/O" ? "Husband Name" : "Father Name"}</label>
                                     <input ref={fatherRef} defaultValue={profile.father_husband_name} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
                                 </div>

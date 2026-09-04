@@ -72,6 +72,7 @@ class CustomerOrderItemRead(SQLModel):
 # --- Customer Profile ---
 class CustomerProfileBase(SQLModel):
     father_name: str
+    phone_number: Optional[str] = None
     relation_type: Optional[str] = "S/O"  # "S/O", "W/O", "D/O"
     id_number: str # Aadhaar/PAN
     
@@ -103,3 +104,4 @@ class CustomerProfileRead(CustomerProfileBase):
     id: int
     user_id: int
     full_name: Optional[str] = None
+    phone_number: Optional[str] = None

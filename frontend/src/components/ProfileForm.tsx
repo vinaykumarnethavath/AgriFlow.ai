@@ -23,6 +23,7 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
 
     // Form refs
     const nameRef = useRef<HTMLInputElement>(null);
+    const phoneRef = useRef<HTMLInputElement>(null);
     const fatherRef = useRef<HTMLInputElement>(null);
     const licenseRef = useRef<HTMLInputElement>(null);
     const idRef = useRef<HTMLInputElement>(null);
@@ -81,6 +82,8 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
             profile_picture_url: imageUrl,
             relation_type: relationType,
             father_name: fatherRef.current?.value,
+            phone_number: phoneRef.current?.value || "",
+            contact_number: phoneRef.current?.value || "",
             house_no: houseRef.current?.value,
             street: streetRef.current?.value,
             village: villageRef.current?.value,
@@ -149,33 +152,30 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
                 <button
                     type="button"
                     onClick={() => setIsHideMode(!isHideMode)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isHideMode ? 'bg-amber-500' : 'bg-green-500'}`}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg border bg-background hover:bg-muted transition"
                 >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isHideMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                    {isHideMode ? "Disable Masking" : "Enable Masking"}
                 </button>
             </div>
 
+            {/* General Information */}
             <Card>
                 <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row gap-8 items-start">
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="h-32 w-32 rounded-full border-4 border-muted bg-muted overflow-hidden relative">
+                    <div className="flex flex-col md:flex-row gap-6 items-start">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="h-32 w-32 rounded-2xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center overflow-hidden bg-muted/10 relative group">
                                 {imageUrl ? (
                                     <img src={imageUrl} alt="Profile" className="h-full w-full object-cover" />
                                 ) : (
-                                    <User className="h-full w-full p-6 text-muted-foreground" />
+                                    <User className="h-12 w-12 text-muted-foreground/40" />
                                 )}
-                                {uploading && (
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs">
-                                        {t('common.loading')}
-                                    </div>
-                                )}
+                                <label className="absolute inset-0 bg-black/40 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                                    <Upload className="h-6 w-6 mb-1" />
+                                    <span className="text-xs font-bold">{uploading ? "Uploading..." : "Upload"}</span>
+                                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" disabled={uploading} />
+                                </label>
                             </div>
-                            <label className="cursor-pointer inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-                                <Upload className="h-4 w-4" />
-                                {t('profile.uploadPhoto')}
-                                <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
-                            </label>
+                            <span className="text-xs text-muted-foreground">{t('profile.uploadPhoto')}</span>
                         </div>
 
                         <div className="flex-1 space-y-4 w-full">
@@ -184,14 +184,27 @@ export const ProfileForm = ({ role, initialData, onSaveSuccess }: ProfileFormPro
                                 {role === 'mill' ? t('manufacturer.manufacturerDashboard') : (role === 'shop' ? t('dashboard.shop') : (role === 'farmer' ? t('profile.farmerProfile') : t('profile.personalDetails')))}
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {(role === 'mill' || role === 'shop' || role === 'farmer') && (
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-muted-foreground">
-                                            {role === 'mill' ? 'Mill Name' : (role === 'shop' ? 'Shop Name' : t('profile.fullName'))}
-                                        </label>
-                                        <input ref={nameRef} defaultValue={role === 'farmer' ? initialData?.full_name : initialData?.[`${role}_name`]} required className="w-full border-2 rounded-xl p-2.5 bg-background text-foreground focus:border-primary outline-none" />
-                                    </div>
-                                )}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-muted-foreground">
+                                        {role === 'mill' ? 'Mill Name' : (role === 'shop' ? 'Shop Name' : t('profile.fullName'))}
+                                    </label>
+                                    <input 
+                                        ref={nameRef} 
+                                        defaultValue={role === 'farmer' || role === 'customer' ? (initialData?.full_name || "") : (initialData?.[`${role}_name`] || "")} 
+                                        required 
+                                        className="w-full border-2 rounded-xl p-2.5 bg-background text-foreground focus:border-primary outline-none" 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-muted-foreground">Phone Number</label>
+                                    <input
+                                        ref={phoneRef}
+                                        type="tel"
+                                        defaultValue={initialData?.phone_number || initialData?.contact_number || ""}
+                                        placeholder="e.g. +91 9876543210"
+                                        className="w-full border-2 rounded-xl p-2.5 bg-background text-foreground focus:border-primary outline-none"
+                                    />
+                                </div>
                                 {(role === 'mill' || role === 'shop') && (
                                     <div className="space-y-2">
                                         <label className="text-sm font-semibold text-muted-foreground">License Number</label>

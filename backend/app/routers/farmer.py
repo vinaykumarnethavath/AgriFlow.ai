@@ -44,6 +44,8 @@ async def get_farmer_profile(
     # Create the read model with current user's name
     profile_read = FarmerProfileRead.from_orm(profile)
     profile_read.full_name = safe_display_name(current_user)
+    if not profile_read.phone_number:
+        profile_read.phone_number = current_user.phone_number
     return profile_read
 
 @router.post("/profile", response_model=FarmerProfileRead)
@@ -61,14 +63,48 @@ async def create_or_update_profile(
         current_user.full_name = profile_data.full_name
         session.add(current_user)
 
+    if profile_data.phone_number:
+        clean_phone = profile_data.phone_number.strip()
+        if clean_phone and clean_phone != current_user.phone_number:
+            existing_phone_user = (await session.exec(
+                select(User).where(
+                    User.phone_number == clean_phone,
+                    User.role == current_user.role,
+                    User.id != current_user.id
+                )
+            )).first()
+            if existing_phone_user:
+                existing_prof = (await session.exec(
+                    select(FarmerProfile).where(FarmerProfile.user_id == existing_phone_user.id)
+                )).first()
+                if not existing_prof and (not existing_phone_user.email or existing_phone_user.email == current_user.email):
+                    existing_phone_user.phone_number = None
+                    session.add(existing_phone_user)
+                    await session.flush()
+                    current_user.phone_number = clean_phone
+                    session.add(current_user)
+                else:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Phone number {clean_phone} is already registered to another farmer account."
+                    )
+            else:
+                current_user.phone_number = clean_phone
+                session.add(current_user)
+
     statement = select(FarmerProfile).where(FarmerProfile.user_id == current_user.id).options(selectinload(FarmerProfile.land_records))
     result = await session.exec(statement)
     db_profile = result.first()
     
     exclude_fields = {"full_name"}
     update_data = profile_data.dict(exclude=exclude_fields)
+    if profile_data.phone_number:
+        update_data["phone_number"] = profile_data.phone_number.strip()
     
     if db_profile:
+        # Preserve total_area if not explicitly passed or 0
+        if (update_data.get("total_area") is None or update_data.get("total_area") == 0) and db_profile.total_area:
+            update_data["total_area"] = db_profile.total_area
         # Update existing
         for key, value in update_data.items():
             setattr(db_profile, key, value)
@@ -78,7 +114,11 @@ async def create_or_update_profile(
         db_profile = FarmerProfile(**update_data, user_id=current_user.id)
         session.add(db_profile)
     
-    await session.commit()
+    try:
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to save profile: {str(e)}")
     await session.refresh(db_profile)
     
     # Reload with relationships to avoid MissingGreenlet error
@@ -89,6 +129,8 @@ async def create_or_update_profile(
     
     profile_read = FarmerProfileRead.from_orm(db_profile)
     profile_read.full_name = safe_display_name(current_user)
+    if not profile_read.phone_number:
+        profile_read.phone_number = current_user.phone_number
     return profile_read
 
 @router.post("/land-records", response_model=LandRecord)
