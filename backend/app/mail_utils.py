@@ -22,6 +22,10 @@ class MailSettings(BaseSettings):
     resend_api_key: str = ""
     resend_from: str = ""
 
+    brevo_api_key: str = ""
+    brevo_sender_email: str = ""
+    brevo_sender_name: str = "AgriFlow"
+
     model_config = SettingsConfigDict(
         env_file=str(ENV_PATH) if ENV_PATH.exists() else ".env",
         env_file_encoding="utf-8",
@@ -32,43 +36,84 @@ mail_settings = MailSettings()
 
 # Debugging: Print loaded settings (masked)
 print(f"DEBUG: Mail account: {mail_settings.smtp_user}")
-if mail_settings.smtp_password == "your-app-password":
-    print("WARNING: Mail system is using DEFAULT password placeholder!")
+if mail_settings.brevo_api_key:
+    print("OK: Brevo HTTP API is configured.", flush=True)
+elif mail_settings.resend_api_key:
+    print("OK: Resend HTTP API is configured.", flush=True)
+elif mail_settings.smtp_password == "your-app-password":
+    print("WARNING: Mail system is using DEFAULT password placeholder! On deployed servers, add SMTP_USER/SMTP_PASSWORD or BREVO_API_KEY to environment variables.", flush=True)
 else:
-    print("OK: Mail system loaded custom password.")
+    print("OK: Mail system loaded custom SMTP password.", flush=True)
 
 
 def _send_email(to_email: str, subject: str, text: str, html: str) -> bool:
+    # 1. Try Brevo HTTP API (Port 443 - Never blocked on Railway/Render/Fly.io)
+    brevo_api_key = (getattr(mail_settings, "brevo_api_key", "") or "").strip()
+    if brevo_api_key:
+        sender_email = (getattr(mail_settings, "brevo_sender_email", "") or "").strip() or mail_settings.smtp_user
+        sender_name = getattr(mail_settings, "brevo_sender_name", "AgriFlow") or "AgriFlow"
+        try:
+            print(f"DEBUG: Sending email via Brevo HTTP API to={to_email} from={sender_email}", flush=True)
+            resp = httpx.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={
+                    "api-key": brevo_api_key,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                json={
+                    "sender": {"name": sender_name, "email": sender_email},
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "htmlContent": html,
+                    "textContent": text,
+                },
+                timeout=15.0,
+            )
+            if resp.status_code in (200, 201):
+                print(f"OK: Email successfully sent via Brevo to {to_email}", flush=True)
+                return True
+            else:
+                print(f"WARNING: Brevo API returned status={resp.status_code}: {resp.text}. Trying next provider...", flush=True)
+        except Exception as brevo_err:
+            print(f"WARNING: Brevo HTTP error ({brevo_err}). Trying next provider...", flush=True)
+
+    # 2. Try Resend HTTP API (Port 443 - Never blocked on cloud platforms)
     resend_api_key = (getattr(mail_settings, "resend_api_key", "") or "").strip()
     resend_from = (getattr(mail_settings, "resend_from", "") or "").strip()
     if resend_api_key:
         if not resend_from:
-            print("WARNING: RESEND_FROM is not set, falling back to SMTP", flush=True)
-        else:
-            try:
-                print(f"DEBUG: Sending email via Resend to={to_email} from={resend_from}", flush=True)
-                resp = httpx.post(
-                    "https://api.resend.com/emails",
-                    headers={
-                        "Authorization": f"Bearer {resend_api_key}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "from": resend_from,
-                        "to": [to_email],
-                        "subject": subject,
-                        "text": text,
-                        "html": html,
-                    },
-                    timeout=20.0,
-                )
-                if resp.status_code >= 400:
-                    print(f"WARNING: Resend failed (status={resp.status_code}): {resp.text}. Falling back to Gmail SMTP...", flush=True)
-                else:
-                    return True
-            except Exception as resend_err:
-                print(f"WARNING: Resend error ({resend_err}). Falling back to Gmail SMTP...", flush=True)
+            resend_from = "AgriFlow <onboarding@resend.dev>"
+        elif any(pub in resend_from.lower() for pub in ["@gmail.com", "@yahoo.com", "@outlook.com", "@hotmail.com"]):
+            print(f"WARNING: RESEND_FROM is set to a public email ({resend_from}). Resend requires 'onboarding@resend.dev' or a custom verified domain. Falling back to 'AgriFlow <onboarding@resend.dev>'", flush=True)
+            resend_from = "AgriFlow <onboarding@resend.dev>"
 
+        try:
+            print(f"DEBUG: Sending email via Resend to={to_email} from={resend_from}", flush=True)
+            resp = httpx.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {resend_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": resend_from,
+                    "to": [to_email],
+                    "subject": subject,
+                    "text": text,
+                    "html": html,
+                },
+                timeout=15.0,
+            )
+            if resp.status_code in (200, 201):
+                print(f"OK: Email successfully sent via Resend to {to_email}", flush=True)
+                return True
+            else:
+                print(f"WARNING: Resend failed (status={resp.status_code}): {resp.text}. Falling back to SMTP...", flush=True)
+        except Exception as resend_err:
+            print(f"WARNING: Resend error ({resend_err}). Falling back to SMTP...", flush=True)
+
+    # 3. Fallback to Direct SMTP (Works on localhost, frequently blocked on cloud platforms)
     message = MIMEMultipart("alternative")
     message["Subject"] = subject
     message["From"] = mail_settings.smtp_user
@@ -85,9 +130,6 @@ def _send_email(to_email: str, subject: str, text: str, html: str) -> bool:
     use_ssl = bool(getattr(mail_settings, "smtp_use_ssl", False))
     use_starttls = bool(getattr(mail_settings, "smtp_use_starttls", False))
 
-    # Auto-reconcile standard SMTP ports to prevent timeout misconfigurations:
-    # Port 465 is implicit SSL/TLS. Plain SMTP + STARTTLS on 465 will always time out.
-    # Port 587 is submission via explicit STARTTLS.
     if port == 465:
         use_ssl = True
         use_starttls = False
@@ -98,20 +140,27 @@ def _send_email(to_email: str, subject: str, text: str, html: str) -> bool:
     print(f"DEBUG: SMTP connect host={host} port={port} ssl={use_ssl} starttls={use_starttls} timeout={timeout}", flush=True)
 
     context = ssl.create_default_context()
-    if use_ssl:
-        with smtplib.SMTP_SSL(host, port, context=context, timeout=timeout) as server:
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port, context=context, timeout=timeout) as server:
+                server.login(mail_settings.smtp_user, mail_settings.smtp_password)
+                server.sendmail(mail_settings.smtp_user, to_email, message.as_string())
+            return True
+
+        with smtplib.SMTP(host, port, timeout=timeout) as server:
+            server.ehlo()
+            if use_starttls:
+                server.starttls(context=context)
+                server.ehlo()
             server.login(mail_settings.smtp_user, mail_settings.smtp_password)
             server.sendmail(mail_settings.smtp_user, to_email, message.as_string())
         return True
-
-    with smtplib.SMTP(host, port, timeout=timeout) as server:
-        server.ehlo()
-        if use_starttls:
-            server.starttls(context=context)
-            server.ehlo()
-        server.login(mail_settings.smtp_user, mail_settings.smtp_password)
-        server.sendmail(mail_settings.smtp_user, to_email, message.as_string())
-    return True
+    except smtplib.SMTPAuthenticationError as auth_err:
+        print(f"ERROR: Gmail/SMTP authentication rejected: {auth_err}. Make sure you are using a 16-character Google App Password (not your normal account password).", flush=True)
+        raise auth_err
+    except (OSError, TimeoutError) as net_err:
+        print(f"ERROR: Outbound SMTP connection failed ({net_err}). Cloud platforms (Railway, Render, Fly.io, AWS) block SMTP ports 465 and 587 by default. Fix: Set BREVO_API_KEY (recommended free HTTP API) or RESEND_API_KEY in your deployed environment variables.", flush=True)
+        raise net_err
 
 def send_registration_otp_email(to_email: str, otp: str, role: str):
     """Sends an account verification OTP email during registration."""

@@ -100,11 +100,18 @@ async def debug_exception_handler(request: Request, exc: Exception):
 @app.on_event("startup")
 async def on_startup():
     async def _init_db_safe():
-        try:
-            await init_db()
-        except Exception as exc:
-            print(f"[startup] init_db failed: {exc}")
-            traceback.print_exc()
+        max_retries = 10
+        for attempt in range(1, max_retries + 1):
+            try:
+                await init_db()
+                print(f"[startup] Database initialized successfully on attempt {attempt}")
+                break
+            except Exception as exc:
+                print(f"[startup] init_db attempt {attempt}/{max_retries} failed: {exc}")
+                if attempt == max_retries:
+                    traceback.print_exc()
+                else:
+                    await asyncio.sleep(3)
 
     asyncio.create_task(_init_db_safe())
 

@@ -306,14 +306,21 @@ async def verify_phone_otp(request: VerifyPhoneOTPRequest, session: AsyncSession
 
 class SendRegisterOTPRequest(BaseModel):
     email: str
-    role: str
+    role: Optional[str] = "farmer"
+
+
+class VerifyRegistrationOTPRequest(BaseModel):
+    email: str
+    otp: str
+    role: Optional[str] = None
 
 
 @router.post("/send-register-otp")
+@router.post("/send-registration-otp")
 async def send_register_otp(request: SendRegisterOTPRequest, session: AsyncSession = Depends(get_session)):
     """Send a verification OTP to email before account creation."""
     email = request.email.lower().strip()
-    role = request.role
+    role = request.role or "farmer"
 
     if _otp_disabled():
         return {"message": "OTP disabled"}
@@ -339,13 +346,42 @@ async def send_register_otp(request: SendRegisterOTPRequest, session: AsyncSessi
     session.add(otp_entry)
     await session.commit()
 
-    print(f"\n[DEMO] Registration OTP for {email} ({role}): {otp_code}\n")
+    print(f"\n[DEMO] Registration OTP for {email} ({role}): {otp_code}\n", flush=True)
 
     email_sent = send_registration_otp_email(email, otp_code, role)
     if not email_sent:
         raise HTTPException(status_code=500, detail="Failed to send verification email. Please check backend logs.")
 
     return {"message": "Verification code sent to your email"}
+
+
+@router.post("/verify-registration-otp")
+async def verify_registration_otp(request: VerifyRegistrationOTPRequest, session: AsyncSession = Depends(get_session)):
+    """Verify email registration OTP code prior to submitting account creation."""
+    if _otp_disabled():
+        return {"message": "Verification code verified successfully", "verified": True}
+
+    email = request.email.lower().strip()
+    now = datetime.utcnow()
+
+    query = select(EmailVerificationOTP).where(
+        EmailVerificationOTP.email == email,
+        EmailVerificationOTP.otp_code == request.otp.strip(),
+        EmailVerificationOTP.expires_at > now,
+    )
+    if request.role:
+        role_val = request.role.value if hasattr(request.role, "value") else str(request.role)
+        query = query.where(EmailVerificationOTP.role == role_val)
+
+    result = await session.exec(query)
+    otp_entry = result.first()
+    if not otp_entry:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+
+    otp_entry.is_verified = True
+    session.add(otp_entry)
+    await session.commit()
+    return {"message": "Verification code verified successfully", "verified": True}
 
 
 @router.post("/register", response_model=UserRead)
@@ -364,35 +400,43 @@ async def register(user: UserCreate, session: AsyncSession = Depends(get_session
             raise HTTPException(status_code=400, detail=f"Phone number already registered as {role_val}")
     else:
         # Email registration — require verified OTP
-        if not _otp_disabled() and not user.email_otp_code:
-            raise HTTPException(status_code=400, detail="Email verification code is required")
-
         email = (user.email or "").lower().strip()
         now = datetime.utcnow()
         if not _otp_disabled():
-            otp_stmt = select(EmailVerificationOTP).where(
-                EmailVerificationOTP.email == email,
-                EmailVerificationOTP.role == role_val,
-                EmailVerificationOTP.otp_code == user.email_otp_code,
-                EmailVerificationOTP.expires_at > now,
-                EmailVerificationOTP.is_verified == False
-            )
-            otp_result = await session.exec(otp_stmt)
-            otp_entry = otp_result.first()
+            otp_entry = None
+            if user.email_otp_code:
+                otp_stmt = select(EmailVerificationOTP).where(
+                    EmailVerificationOTP.email == email,
+                    EmailVerificationOTP.role == role_val,
+                    EmailVerificationOTP.otp_code == user.email_otp_code.strip(),
+                    EmailVerificationOTP.expires_at > now,
+                )
+                otp_result = await session.exec(otp_stmt)
+                otp_entry = otp_result.first()
+
+            # If not matched directly with code, check if verified earlier in 2-step registration
+            if not otp_entry:
+                verified_stmt = select(EmailVerificationOTP).where(
+                    EmailVerificationOTP.email == email,
+                    EmailVerificationOTP.role == role_val,
+                    EmailVerificationOTP.is_verified == True,
+                    EmailVerificationOTP.expires_at > now
+                ).order_by(EmailVerificationOTP.expires_at.desc())
+                verified_result = await session.exec(verified_stmt)
+                otp_entry = verified_result.first()
 
             if not otp_entry:
-                raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+                raise HTTPException(status_code=400, detail="Email verification code is required or has expired")
+
+            # Mark OTP used
+            otp_entry.is_verified = True
+            session.add(otp_entry)
 
         # Check if email+role already exists (race-condition guard)
         dup_stmt = select(User).where(User.email == email, User.role == role_val)
         dup_result = await session.exec(dup_stmt)
         if dup_result.first():
             raise HTTPException(status_code=400, detail=f"Email already registered as {role_val}")
-
-        # Mark OTP used
-        if not _otp_disabled():
-            otp_entry.is_verified = True
-            session.add(otp_entry)
 
     hashed_pwd = get_password_hash(user.password)
     # Build user dict with role as its plain string VALUE (not enum name)

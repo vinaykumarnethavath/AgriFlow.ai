@@ -74,7 +74,10 @@ export default function RegisterPage() {
 
         setOtpSending(true);
         try {
-            await api.post("/auth/send-registration-otp", { email });
+            await api.post("/auth/send-registration-otp", {
+                email: email.toLowerCase().trim(),
+                role,
+            });
             setEmailStep("otp");
             setResendCooldown(60);
         } catch (err: any) {
@@ -98,8 +101,9 @@ export default function RegisterPage() {
         setLoading(true);
         try {
             const verifyRes = await api.post("/auth/verify-registration-otp", {
-                email: emailFormData.email,
+                email: emailFormData.email.toLowerCase().trim(),
                 otp: otpCode,
+                role: emailFormData.role,
             });
 
             if (!verifyRes.data?.verified) {
@@ -111,9 +115,10 @@ export default function RegisterPage() {
             const { full_name, email, password, role } = emailFormData;
             const regRes = await api.post("/auth/register", {
                 full_name,
-                email,
+                email: email.toLowerCase().trim(),
                 password,
                 role,
+                email_otp_code: otpCode,
             });
 
             const user = { id: regRes.data.id, email, role: regRes.data.role, full_name };
@@ -133,7 +138,10 @@ export default function RegisterPage() {
         setError("");
         setOtpSending(true);
         try {
-            await api.post("/auth/send-registration-otp", { email: emailFormData.email });
+            await api.post("/auth/send-registration-otp", {
+                email: emailFormData.email.toLowerCase().trim(),
+                role: emailFormData.role,
+            });
             setResendCooldown(60);
         } catch (err: any) {
             setError(err.response?.data?.detail || "Failed to resend code");

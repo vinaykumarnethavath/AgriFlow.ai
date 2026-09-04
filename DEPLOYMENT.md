@@ -56,11 +56,28 @@ FRONTEND_URL=https://your-app.vercel.app
 RAZORPAY_KEY_ID=your_razorpay_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 
-# Email
+# Email (Choose Option A or Option B)
+# -------------------------------------------------------------
+# OPTION A: Brevo HTTP API (RECOMMENDED for Railway/Render/Cloud)
+# Cloud platforms (Railway, Render, Fly.io) block outbound SMTP ports (465/587).
+# Brevo sends via HTTPS API (Port 443) which is NEVER blocked, and allows 300 free emails/day.
+# Sign up at https://brevo.com -> SMTP & API -> Create API Key
+BREVO_API_KEY=your_brevo_api_key
+BREVO_SENDER_EMAIL=your-verified-email@gmail.com
+
+# OPTION B: Resend HTTP API (Alternative HTTP API)
+# Get key at: https://resend.com
+# RESEND_API_KEY=re_your_resend_key
+# RESEND_FROM=AgriFlow <onboarding@resend.dev>
+
+# OPTION C: Gmail SMTP (Works on localhost; often blocked on Railway/cloud)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-gmail-app-password
+
+# Emergency / Demo OTP bypass (Optional - set to true to bypass OTP requirement)
+# DISABLE_OTP_VERIFICATION=false
 
 # SMS
 FAST2SMS_API_KEY=your_fast2sms_api_key
