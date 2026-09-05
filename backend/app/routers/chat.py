@@ -10,6 +10,9 @@ from ..database import get_session
 from ..models.user import User, UserRole
 from ..models.chat import ChatChannel, ChannelMember, ChatMessage, ChannelType
 from ..models.farmer import FarmerProfile
+from ..models.shop import ShopProfile
+from ..models.manufacturer import MillProfile
+from ..models.customer import CustomerProfile
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -44,6 +47,8 @@ class FarmerListItem(BaseModel):
     id: int
     full_name: str
     role: UserRole
+    phone_number: Optional[str] = None
+    village: Optional[str] = None
     district: Optional[str] = None
     state: Optional[str] = None
     profile_picture_url: Optional[str] = None
@@ -166,29 +171,93 @@ async def discover_local_farmers(
     db: AsyncSession = Depends(get_session)
 ):
     """
-    Search and find other farmers in the system to initiate chat.
+    Search and find any registered user by name or phone number to initiate chat.
+    Searches across all roles: Farmer, Shop, Manufacturer, Customer, Expert.
     """
-    stmt = select(User).join(FarmerProfile, isouter=True).where(
-        and_(or_(User.role == UserRole.FARMER, User.role == UserRole.EXPERT), User.id != current_user.id)
-    )
+    stmt = select(User).where(User.id != current_user.id)
+
     if query:
-        stmt = stmt.where(User.full_name.ilike(f"%{query}%"))
-    
+        clean_q = query.strip()
+        # If query looks like a phone number (mostly digits), search by phone
+        if clean_q.replace("+", "").replace("-", "").replace(" ", "").isdigit():
+            stmt = stmt.where(User.phone_number.ilike(f"%{clean_q}%"))
+        else:
+            stmt = stmt.where(User.full_name.ilike(f"%{clean_q}%"))
+
+    # Limit results to avoid huge lists
+    stmt = stmt.limit(50)
     res = await db.execute(stmt)
     users = res.scalars().all()
 
+    # Deduplicate by user id (in case of multiple accounts with same phone across roles)
+    seen_ids = set()
     result = []
     for u in users:
-        stmt_p = select(FarmerProfile).where(FarmerProfile.user_id == u.id)
-        p_res = await db.execute(stmt_p)
-        p = p_res.scalar_one_or_none()
+        if u.id in seen_ids:
+            continue
+        seen_ids.add(u.id)
+
+        district = None
+        state = None
+        village = None
+        profile_picture_url = None
+        phone = u.phone_number
+
+        # Try to get profile info from the user's role-specific table
+        if u.role == UserRole.FARMER or u.role == UserRole.EXPERT:
+            p_res = await db.execute(select(FarmerProfile).where(FarmerProfile.user_id == u.id))
+            p = p_res.scalar_one_or_none()
+            if p:
+                district = p.district
+                state = p.state
+                village = p.village
+                profile_picture_url = p.profile_picture_url
+                if not phone:
+                    phone = p.phone_number
+        elif u.role == UserRole.SHOP:
+            p_res = await db.execute(select(ShopProfile).where(ShopProfile.user_id == u.id))
+            p = p_res.scalar_one_or_none()
+            if p:
+                district = p.district
+                state = p.state
+                village = p.village
+                profile_picture_url = p.profile_picture_url
+                if not phone:
+                    phone = p.phone_number or p.contact_number
+        elif u.role == UserRole.MANUFACTURER:
+            p_res = await db.execute(select(MillProfile).where(MillProfile.user_id == u.id))
+            p = p_res.scalar_one_or_none()
+            if p:
+                district = p.district
+                state = p.state
+                village = p.village
+                profile_picture_url = p.profile_picture_url
+                if not phone:
+                    phone = p.phone_number or p.contact_number
+        elif u.role == UserRole.CUSTOMER:
+            p_res = await db.execute(select(CustomerProfile).where(CustomerProfile.user_id == u.id))
+            p = p_res.scalar_one_or_none()
+            if p:
+                district = p.district
+                state = p.state
+                village = p.village
+                profile_picture_url = p.profile_picture_url
+                if not phone:
+                    phone = p.phone_number
+
+        # Skip users that have no real name (placeholder OTP accounts)
+        if not u.full_name or "@" in u.full_name:
+            continue
+
         result.append(FarmerListItem(
             id=u.id,
             full_name=u.full_name,
             role=u.role,
-            district=p.district if p else None,
-            state=p.state if p else None,
-            profile_picture_url=p.profile_picture_url if p else None
+            phone_number=phone,
+            village=village,
+            district=district,
+            state=state,
+            profile_picture_url=profile_picture_url
         ))
     return result
 

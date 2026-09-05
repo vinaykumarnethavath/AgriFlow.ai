@@ -29,7 +29,8 @@ import {
     Mic,
     Square,
     FileText,
-    CheckCircle2
+    CheckCircle2,
+    Phone
 } from "lucide-react";
 
 // Interfaces matching backend models and routers
@@ -59,6 +60,8 @@ interface FarmerListItem {
     id: number;
     full_name: string;
     role: string;
+    phone_number: string | null;
+    village: string | null;
     district: string | null;
     state: string | null;
     profile_picture_url: string | null;
@@ -80,7 +83,8 @@ export default function CommunityPage() {
     const [uploading, setUploading] = useState(false);
 
     // Form/Search inputs
-    const [activeTab, setActiveTab] = useState<"chats" | "discover" | "experts" | "groups">("chats");
+    const [activeTab, setActiveTab] = useState<"chats" | "experts" | "groups">("chats");
+    const [searchMode, setSearchMode] = useState(false);
     const [allGroups, setAllGroups] = useState<ChannelRead[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
     const [discoverQuery, setDiscoverQuery] = useState("");
@@ -174,13 +178,19 @@ export default function CommunityPage() {
         }
     };
 
-    // Auto-trigger discover search on empty query/mount to show some farmers
+    // Auto-trigger discover search on tab change
     useEffect(() => {
-        if (activeTab === "discover" || activeTab === "experts") {
+        if (activeTab === "experts") {
             handleDiscoverSearch();
         }
         if (activeTab === "groups") {
             fetchAllGroups();
+        }
+        // Reset search mode when switching away from chats
+        if (activeTab !== "chats") {
+            setSearchMode(false);
+            setDiscoverQuery("");
+            setDiscoveredFarmers([]);
         }
     }, [activeTab]);
 
@@ -200,8 +210,23 @@ export default function CommunityPage() {
         try {
             await api.post(`/chat/channels/${channelId}/join`);
             setActiveTab("chats");
-            await fetchChannels(channelId);
             setMobileShowChat(true);
+
+            // Find the group from allGroups to set it active immediately
+            const groupData = allGroups.find((g) => g.id === channelId);
+            if (groupData) {
+                setActiveChannel(groupData);
+                setChannels((prev) => {
+                    if (!prev.find((c) => c.id === groupData.id)) {
+                        return [groupData, ...prev];
+                    }
+                    return prev;
+                });
+                fetchMessages(groupData.id);
+            }
+
+            // Sync full channel list in background (with selectChannelId so it won't overwrite)
+            fetchChannels(channelId);
         } catch (err) {
             console.error("Failed to join group", err);
         }
@@ -212,10 +237,22 @@ export default function CommunityPage() {
         try {
             const res = await api.post(`/chat/channels/p2p/${farmerId}`);
             const channel = res.data;
-            // Switch tabs, refresh channels list and select the newly created/retrieved P2P channel
+            // Switch to Active Chats tab and immediately show the chat
             setActiveTab("chats");
             setMobileShowChat(true);
-            await fetchChannels(channel.id);
+
+            // Set the active channel immediately so the chat window appears right away
+            setActiveChannel(channel);
+            setChannels((prev) => {
+                if (!prev.find((c) => c.id === channel.id)) {
+                    return [channel, ...prev];
+                }
+                return prev;
+            });
+            fetchMessages(channel.id);
+
+            // Sync full channel list in background (with selectChannelId so it won't overwrite)
+            fetchChannels(channel.id);
         } catch (err) {
             console.error("Failed to start direct message chat", err);
         }
@@ -430,17 +467,6 @@ export default function CommunityPage() {
                             {t("community.chats", "Active Chats")}
                         </Button>
                         <Button
-                            variant={activeTab === "discover" ? "default" : "ghost"}
-                            className={`flex-1 text-xs gap-2 py-1.5 h-auto rounded-lg ${
-                                activeTab === "discover" ? "bg-green-700 hover:bg-green-800 text-white" : "text-slate-600 dark:text-slate-400"
-                            }`}
-                            id="btn-tab-discover"
-                            onClick={() => setActiveTab("discover")}
-                        >
-                            <Search className="h-4 w-4" />
-                            {t("community.discover", "Discover")}
-                        </Button>
-                        <Button
                             variant={activeTab === "experts" ? "default" : "ghost"}
                             className={`flex-1 text-xs gap-2 py-1.5 h-auto rounded-lg ${
                                 activeTab === "experts" ? "bg-green-700 hover:bg-green-800 text-white" : "text-slate-600 dark:text-slate-400"
@@ -464,134 +490,217 @@ export default function CommunityPage() {
                         </Button>
                     </div>
 
-                    {/* Active Chats list tab */}
+                    {/* Active Chats list tab with integrated search */}
                     {activeTab === "chats" && (
-                        <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-900">
-                            {loadingChannels ? (
-                                <div className="flex flex-col items-center justify-center h-48 text-slate-400">
-                                    <Loader2 className="h-8 w-8 animate-spin mb-2 text-green-600" />
-                                    <p className="text-xs">{t("common.loading", "Loading active channels...")}</p>
-                                </div>
-                            ) : channels.length === 0 ? (
-                                <div className="p-8 text-center text-slate-400">
-                                    <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-30 text-green-700" />
-                                    <p className="font-semibold text-muted-foreground text-sm mb-1">
-                                        {t("community.noChatsTitle", "No Active Chats")}
-                                    </p>
-                                    <p className="text-xs leading-relaxed">
-                                        {t("community.noChatsDesc", "Connect with other farmers via the Discover tab or join automatically via your profile location.")}
-                                    </p>
-                                </div>
-                            ) : (
-                                channels.map((ch) => {
-                                    const isSelected = activeChannel?.id === ch.id;
-                                    const initials = ch.name.substring(0, 2).toUpperCase();
-                                    return (
-                                        <div
-                                            key={ch.id}
-                                            id={`channel-${ch.id}`}
-                                            onClick={() => selectChannel(ch)}
-                                            className={`p-3.5 flex gap-3 cursor-pointer items-start hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors ${
-                                                isSelected ? "bg-green-50/70 dark:bg-green-950/20 border-l-4 border-green-600" : ""
-                                            }`}
-                                        >
-                                            <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
-                                                ch.channel_type === "group" 
-                                                ? "bg-emerald-600 text-white" 
-                                                : "bg-blue-600 text-white"
-                                            }`}>
-                                                {ch.channel_type === "group" ? <Users className="h-5 w-5" /> : initials}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-baseline mb-1">
-                                                    <h3 className="font-semibold text-foreground text-sm truncate">
-                                                        {ch.name}
-                                                    </h3>
-                                                    {ch.last_message_time && (
-                                                        <span className="text-[10px] text-slate-400 shrink-0 ml-1">
-                                                            {formatTime(ch.last_message_time)}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className="text-xs text-muted-foreground truncate">
-                                                    {ch.last_message || t("community.noMessages", "No messages yet")}
-                                                </p>
-                                                {ch.location_tag && (
-                                                    <span className="inline-flex mt-1 items-center gap-0.5 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium">
-                                                        <MapPin className="h-2 w-2 text-slate-400" />
-                                                        {ch.location_tag}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            )}
-                        </div>
-                    )}
-
-                    {/* Discover farmers tab */}
-                    {activeTab === "discover" && (
                         <div className="flex-1 flex flex-col overflow-hidden">
-                            <form onSubmit={handleDiscoverSearch} className="p-3 flex gap-2 border-b border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-slate-900/50">
-                                <Input
-                                    type="text"
-                                    placeholder={t("community.searchPlaceholder", "Search by name...")}
-                                    value={discoverQuery}
-                                    onChange={(e) => setDiscoverQuery(e.target.value)}
-                                    id="input-discover-search"
-                                    className="bg-white dark:bg-slate-950 h-8 text-xs"
-                                />
+                            {/* Search bar to find new people */}
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    if (discoverQuery.trim()) {
+                                        setSearchMode(true);
+                                        handleDiscoverSearch(e);
+                                    }
+                                }}
+                                className="p-2.5 flex gap-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 shrink-0"
+                            >
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                    <Input
+                                        type="text"
+                                        placeholder={t("community.searchPlaceholder", "Search people by name or phone...")}
+                                        value={discoverQuery}
+                                        onChange={(e) => {
+                                            setDiscoverQuery(e.target.value);
+                                            if (!e.target.value.trim()) {
+                                                setSearchMode(false);
+                                                setDiscoveredFarmers([]);
+                                            }
+                                        }}
+                                        id="input-discover-search"
+                                        className="bg-white dark:bg-slate-950 h-8 text-xs pl-8 pr-2"
+                                    />
+                                    {searchMode && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setDiscoverQuery("");
+                                                setSearchMode(false);
+                                                setDiscoveredFarmers([]);
+                                            }}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                        >
+                                            <X className="h-3.5 w-3.5" />
+                                        </button>
+                                    )}
+                                </div>
                                 <Button type="submit" size="sm" className="bg-green-700 hover:bg-green-800 text-white h-8 px-2.5" id="btn-discover-search">
                                     <Search className="h-3.5 w-3.5" />
                                 </Button>
                             </form>
 
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                                {loadingDiscover ? (
-                                    <div className="flex flex-col items-center justify-center h-48 text-slate-400">
-                                        <Loader2 className="h-8 w-8 animate-spin mb-2 text-green-600" />
-                                        <p className="text-xs">{t("community.searching", "Searching farmers...")}</p>
+                            {/* Search results OR active chats list */}
+                            {searchMode ? (
+                                <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+                                    {/* Search results header */}
+                                    <div className="flex items-center justify-between px-1 pb-1">
+                                        <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                            {t("community.searchResults", "Search Results")}
+                                        </span>
+                                        <button
+                                            onClick={() => { setSearchMode(false); setDiscoverQuery(""); setDiscoveredFarmers([]); }}
+                                            className="text-[10px] text-green-700 dark:text-green-400 hover:underline font-medium"
+                                        >
+                                            {t("community.backToChats", "← Back to Chats")}
+                                        </button>
                                     </div>
-                                ) : discoveredFarmers.length === 0 ? (
-                                    <div className="p-6 text-center text-slate-400 text-xs">
-                                        <User className="h-8 w-8 mx-auto mb-2 opacity-30 text-green-700" />
-                                        <p>{t("community.noFarmersFound", "No farmers found matching query.")}</p>
-                                    </div>
-                                ) : (
-                                    discoveredFarmers.map((farmer) => (
-                                        <Card key={farmer.id} className="overflow-hidden border-slate-100 dark:border-slate-900 shadow-sm hover:shadow-md transition-shadow">
-                                            <CardContent className="p-3 flex items-center justify-between gap-2">
-                                                <div className="flex items-center gap-2 min-w-0">
-                                                    <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-semibold shrink-0">
-                                                        {farmer.full_name.substring(0, 2).toUpperCase()}
+                                    {loadingDiscover ? (
+                                        <div className="flex flex-col items-center justify-center h-36 text-slate-400">
+                                            <Loader2 className="h-7 w-7 animate-spin mb-2 text-green-600" />
+                                            <p className="text-xs">{t("community.searching", "Searching users...")}</p>
+                                        </div>
+                                    ) : discoveredFarmers.length === 0 ? (
+                                        <div className="p-6 text-center text-slate-400 text-xs">
+                                            <User className="h-8 w-8 mx-auto mb-2 opacity-30 text-green-700" />
+                                            <p>{t("community.noFarmersFound", "No users found matching your search.")}</p>
+                                            <p className="mt-1 text-[10px]">Try searching by name or phone number</p>
+                                        </div>
+                                    ) : (
+                                        discoveredFarmers.map((farmer) => {
+                                            const roleConfig: Record<string, { emoji: string; label: string; color: string }> = {
+                                                farmer: { emoji: "🌾", label: "Farmer", color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" },
+                                                shop: { emoji: "🏪", label: "Shop", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
+                                                manufacturer: { emoji: "🏭", label: "Manufacturer", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" },
+                                                customer: { emoji: "🛒", label: "Customer", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
+                                                expert: { emoji: "🎓", label: "Expert", color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300" },
+                                            };
+                                            const rc = roleConfig[farmer.role] || { emoji: "👤", label: farmer.role, color: "bg-slate-100 text-slate-800" };
+                                            const avatarColors: Record<string, string> = {
+                                                farmer: "bg-green-600",
+                                                shop: "bg-blue-600",
+                                                manufacturer: "bg-purple-600",
+                                                customer: "bg-amber-600",
+                                                expert: "bg-cyan-600",
+                                            };
+                                            const avatarBg = avatarColors[farmer.role] || "bg-slate-600";
+
+                                            return (
+                                                <Card key={farmer.id} className="overflow-hidden border-slate-100 dark:border-slate-900 shadow-sm hover:shadow-md transition-shadow">
+                                                    <CardContent className="p-3 flex items-center justify-between gap-2">
+                                                        <div className="flex items-center gap-2.5 min-w-0">
+                                                            {farmer.profile_picture_url ? (
+                                                                <img
+                                                                    src={farmer.profile_picture_url}
+                                                                    alt={farmer.full_name}
+                                                                    className="h-9 w-9 rounded-full object-cover shrink-0 border-2 border-white dark:border-slate-800 shadow-sm"
+                                                                />
+                                                            ) : (
+                                                                <div className={`h-9 w-9 rounded-full ${avatarBg} text-white flex items-center justify-center text-xs font-semibold shrink-0`}>
+                                                                    {farmer.full_name.substring(0, 2).toUpperCase()}
+                                                                </div>
+                                                            )}
+                                                            <div className="min-w-0">
+                                                                <h4 className="font-semibold text-foreground text-xs truncate flex items-center gap-1">
+                                                                    {farmer.full_name}
+                                                                    {farmer.role === 'expert' && <span title="Verified Expert"><CheckCircle2 className="h-3 w-3 text-blue-500" /></span>}
+                                                                </h4>
+                                                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${rc.color}`}>
+                                                                        {rc.emoji} {rc.label}
+                                                                    </span>
+                                                                    {farmer.phone_number && (
+                                                                        <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                                                            <Phone className="h-2.5 w-2.5 text-slate-400" />
+                                                                            {farmer.phone_number}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {(farmer.village || farmer.district || farmer.state) && (
+                                                                    <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 truncate mt-0.5">
+                                                                        <MapPin className="h-2 w-2 text-slate-400 shrink-0" />
+                                                                        {[farmer.village, farmer.district, farmer.state].filter(Boolean).join(", ")}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            size="sm"
+                                                            id={`btn-chat-farmer-${farmer.id}`}
+                                                            onClick={() => { startP2PChat(farmer.id); setSearchMode(false); setDiscoverQuery(""); setDiscoveredFarmers([]); }}
+                                                            className="bg-green-700 hover:bg-green-800 text-white text-[11px] h-7 px-3 shrink-0 rounded-lg"
+                                                        >
+                                                            {t("community.chatBtn", "Chat")}
+                                                        </Button>
+                                                    </CardContent>
+                                                </Card>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-900">
+                                    {loadingChannels ? (
+                                        <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                                            <Loader2 className="h-8 w-8 animate-spin mb-2 text-green-600" />
+                                            <p className="text-xs">{t("common.loading", "Loading active channels...")}</p>
+                                        </div>
+                                    ) : channels.length === 0 ? (
+                                        <div className="p-8 text-center text-slate-400">
+                                            <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-30 text-green-700" />
+                                            <p className="font-semibold text-muted-foreground text-sm mb-1">
+                                                {t("community.noChatsTitle", "No Active Chats")}
+                                            </p>
+                                            <p className="text-xs leading-relaxed">
+                                                {t("community.noChatsDesc", "Use the search bar above to find people by name or phone number and start chatting.")}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        channels.map((ch) => {
+                                            const isSelected = activeChannel?.id === ch.id;
+                                            const initials = ch.name.substring(0, 2).toUpperCase();
+                                            return (
+                                                <div
+                                                    key={ch.id}
+                                                    id={`channel-${ch.id}`}
+                                                    onClick={() => selectChannel(ch)}
+                                                    className={`p-3.5 flex gap-3 cursor-pointer items-start hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors ${
+                                                        isSelected ? "bg-green-50/70 dark:bg-green-950/20 border-l-4 border-green-600" : ""
+                                                    }`}
+                                                >
+                                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
+                                                        ch.channel_type === "group"
+                                                        ? "bg-emerald-600 text-white"
+                                                        : "bg-blue-600 text-white"
+                                                    }`}>
+                                                        {ch.channel_type === "group" ? <Users className="h-5 w-5" /> : initials}
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <h4 className="font-semibold text-foreground text-xs truncate flex items-center gap-1">
-                                                            {farmer.full_name}
-                                                            {farmer.role === 'expert' && <span title="Verified Expert"><CheckCircle2 className="h-3 w-3 text-blue-500" /></span>}
-                                                        </h4>
-                                                        {(farmer.district || farmer.state) && (
-                                                            <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 truncate">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex justify-between items-baseline mb-1">
+                                                            <h3 className="font-semibold text-foreground text-sm truncate">
+                                                                {ch.name}
+                                                            </h3>
+                                                            {ch.last_message_time && (
+                                                                <span className="text-[10px] text-slate-400 shrink-0 ml-1">
+                                                                    {formatTime(ch.last_message_time)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground truncate">
+                                                            {ch.last_message || t("community.noMessages", "No messages yet")}
+                                                        </p>
+                                                        {ch.location_tag && (
+                                                            <span className="inline-flex mt-1 items-center gap-0.5 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium">
                                                                 <MapPin className="h-2 w-2 text-slate-400" />
-                                                                {farmer.district && `${farmer.district}, `}{farmer.state}
-                                                            </p>
+                                                                {ch.location_tag}
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </div>
-                                                <Button
-                                                    size="sm"
-                                                    id={`btn-chat-farmer-${farmer.id}`}
-                                                    onClick={() => startP2PChat(farmer.id)}
-                                                    className="bg-green-700 hover:bg-green-800 text-white text-[11px] h-7 px-3 shrink-0 rounded-lg"
-                                                >
-                                                    {t("community.chatBtn", "Chat")}
-                                                </Button>
-                                            </CardContent>
-                                        </Card>
-                                    ))
-                                )}
-                            </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
                     {/* Experts tab */}
@@ -977,7 +1086,17 @@ export default function CommunityPage() {
                         </>
                     ) : (
                         /* Welcome / Selection Placeholder */
-                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400 relative">
+                            {mobileShowChat && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="md:hidden absolute top-4 left-4 text-slate-600 dark:text-slate-300"
+                                    onClick={() => setMobileShowChat(false)}
+                                >
+                                    <ArrowLeft className="h-5 w-5" />
+                                </Button>
+                            )}
                             <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-2xl mb-4 border border-green-100 dark:border-green-900/30">
                                 <MessageSquare className="h-12 w-12 text-green-600 dark:text-green-400" />
                             </div>
