@@ -36,6 +36,7 @@ async def init_db():
         "ALTER TABLE shop_profiles ADD COLUMN IF NOT EXISTS contact_number VARCHAR",
         "ALTER TABLE mill_profiles ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
         "ALTER TABLE mill_profiles ADD COLUMN IF NOT EXISTS contact_number VARCHAR",
+        "ALTER TABLE chatmessage ADD COLUMN IF NOT EXISTS media_type VARCHAR",
     ]
     for stmt in alter_statements:
         try:

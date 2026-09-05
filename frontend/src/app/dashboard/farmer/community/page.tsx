@@ -121,7 +121,7 @@ export default function CommunityPage() {
         if (messages.length > 0) {
             scrollToBottom();
         }
-    }, [messages]);
+    }, [messages.length]); // Only scroll when message count changes to prevent scroll jank during polling
 
     // Fetch active channels
     const fetchChannels = async (selectChannelId?: number) => {
@@ -150,17 +150,30 @@ export default function CommunityPage() {
     };
 
     // Fetch messages for a specific channel
-    const fetchMessages = async (channelId: number) => {
+    const fetchMessages = async (channelId: number, silent = false) => {
         try {
-            setLoadingMessages(true);
+            if (!silent) setLoadingMessages(true);
             const res = await api.get(`/chat/channels/${channelId}/messages`);
             setMessages(res.data);
         } catch (err) {
             console.error("Failed to fetch messages", err);
         } finally {
-            setLoadingMessages(false);
+            if (!silent) setLoadingMessages(false);
         }
     };
+
+    // Poll messages for active channel
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (activeChannel) {
+            interval = setInterval(() => {
+                fetchMessages(activeChannel.id, true);
+            }, 3000);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [activeChannel]);
 
     // Discover local farmers
     const handleDiscoverSearch = async (e?: React.FormEvent) => {
@@ -840,11 +853,11 @@ export default function CommunityPage() {
                                             {activeChannel.name}
                                         </h2>
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            <Badge variant="outline" className="text-[9px] uppercase px-1.5 py-0 rounded">
-                                                {activeChannel.channel_type === "group" 
-                                                    ? t("community.groupChat", "Group Chat") 
-                                                    : t("community.p2pChat", "Private Message")}
-                                            </Badge>
+                                            {activeChannel.channel_type === "group" && (
+                                                <Badge variant="outline" className="text-[9px] uppercase px-1.5 py-0 rounded">
+                                                    {t("community.groupChat", "Group Chat")}
+                                                </Badge>
+                                            )}
                                             {activeChannel.location_tag && (
                                                 <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
                                                     <MapPin className="h-2.5 w-2.5 text-slate-400" />
@@ -963,38 +976,6 @@ export default function CommunityPage() {
 
                             {/* Chat Composer */}
                             <div className="bg-white dark:bg-slate-950 p-3 border-t border-slate-200 dark:border-slate-800 shadow-lg shrink-0">
-                                {/* Quick agriculture shortcut suggestions */}
-                                <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 border-b border-slate-100 dark:border-slate-900 no-scrollbar">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleQuickReply(t("community.shortcutPest", "Here is a pest control tip that worked for me: "))}
-                                        className="text-[10px] bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 hover:dark:bg-slate-900 text-muted-foreground px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
-                                    >
-                                        🌾 {t("community.pestTip", "Pest Tip")}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleQuickReply(t("community.shortcutCropPlan", "Here is my crop plan for this season: "))}
-                                        className="text-[10px] bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 hover:dark:bg-slate-900 text-muted-foreground px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
-                                    >
-                                        🚜 {t("community.cropPlanTip", "Crop Plan")}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleQuickReply(t("community.shortcutMarket", "What are the latest market prices for crops in your mandi?"))}
-                                        className="text-[10px] bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 hover:dark:bg-slate-900 text-muted-foreground px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
-                                    >
-                                        📈 {t("community.marketPricesTip", "Mandi Prices")}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleQuickReply(t("community.shortcutWeather", "How is the weather conditions at your farm today?"))}
-                                        className="text-[10px] bg-slate-50 dark:bg-slate-955 hover:bg-slate-100 hover:dark:bg-slate-900 text-muted-foreground px-2 py-1 rounded-full border border-slate-200 dark:border-slate-800 whitespace-nowrap"
-                                    >
-                                        🌦️ {t("community.weatherTip", "Weather Status")}
-                                    </button>
-                                </div>
-
                                 {/* Media Preview */}
                                 {mediaUrl && (
                                     <div className="relative inline-block mb-3 p-2 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
