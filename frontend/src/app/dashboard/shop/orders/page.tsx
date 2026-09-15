@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ContactInfoCard from "@/components/ui/ContactInfoCard";
 import {
     Package, Truck, CheckCircle, Clock, ShoppingCart, CreditCard,
-    TrendingUp, AlertCircle, Wallet, ChevronDown, ChevronUp, X
+    TrendingUp, AlertCircle, Wallet, ChevronDown, ChevronUp, X, UserCircle
 } from "lucide-react";
 
 export default function ShopOrdersPage() {
@@ -323,6 +324,14 @@ export default function ShopOrdersPage() {
                                                 {selectedOrder.payment_mode?.toUpperCase()} · {selectedOrder.payment_status === "paid" ? "PAID" : "PENDING"}
                                             </span>
                                         </div>
+                                    )}
+
+                                    {/* Customer Contact Details */}
+                                    {selectedOrder.farmer_contact && (
+                                        <ContactInfoCard
+                                            contact={selectedOrder.farmer_contact}
+                                            label="Customer Details"
+                                        />
                                     )}
 
                                     {/* Items Table */}

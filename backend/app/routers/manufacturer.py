@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
@@ -14,6 +14,7 @@ from ..models import (
     ManufacturerExpense, ManufacturerExpenseCreate,
 )
 from ..deps import get_current_user
+from .orders import get_user_contact_info
 
 router = APIRouter(prefix="/manufacturer", tags=["manufacturer"])
 
@@ -194,7 +195,7 @@ async def create_purchase(
     return db_purchase
 
 
-@router.get("/purchases", response_model=List[ManufacturerPurchase])
+@router.get("/purchases")
 async def get_purchases(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
@@ -205,7 +206,37 @@ async def get_purchases(
         .where(ManufacturerPurchase.manufacturer_id == current_user.id)
         .order_by(ManufacturerPurchase.date.desc())
     )
-    return result.all()
+    purchases = result.all()
+
+    # Enrich with farmer contact info
+    farmer_ids = list({p.farmer_id for p in purchases if p.farmer_id})
+    farmer_contact_map: Dict[int, dict] = {}
+    for fid in farmer_ids:
+        contact = await get_user_contact_info(session, fid)
+        if contact:
+            farmer_contact_map[fid] = contact
+
+    enriched = []
+    for p in purchases:
+        p_dict = {
+            "id": p.id,
+            "manufacturer_id": p.manufacturer_id,
+            "farmer_id": p.farmer_id,
+            "farmer_name": p.farmer_name,
+            "farmer_contact": farmer_contact_map.get(p.farmer_id) if p.farmer_id else None,
+            "crop_name": p.crop_name,
+            "quantity": p.quantity,
+            "unit": p.unit,
+            "price_per_unit": p.price_per_unit,
+            "total_cost": p.total_cost,
+            "transport_cost": p.transport_cost,
+            "quality_grade": p.quality_grade,
+            "batch_id": p.batch_id,
+            "date": p.date.isoformat() if p.date else None,
+        }
+        enriched.append(p_dict)
+
+    return enriched
 
 
 # ── Production ────────────────────────────────────────────────────────────────
@@ -324,7 +355,7 @@ async def create_sale(
     return db_sale
 
 
-@router.get("/sales", response_model=List[ManufacturerSale])
+@router.get("/sales")
 async def get_sales_history(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
@@ -335,7 +366,38 @@ async def get_sales_history(
         .where(ManufacturerSale.manufacturer_id == current_user.id)
         .order_by(ManufacturerSale.date.desc())
     )
-    return result.all()
+    sales = result.all()
+
+    # Enrich with buyer contact info
+    buyer_ids = list({s.buyer_id for s in sales if s.buyer_id})
+    buyer_contact_map: Dict[int, dict] = {}
+    for bid in buyer_ids:
+        contact = await get_user_contact_info(session, bid)
+        if contact:
+            buyer_contact_map[bid] = contact
+
+    enriched = []
+    for s in sales:
+        s_dict = {
+            "id": s.id,
+            "manufacturer_id": s.manufacturer_id,
+            "buyer_type": s.buyer_type,
+            "buyer_id": s.buyer_id,
+            "buyer_name": s.buyer_name,
+            "buyer_contact": buyer_contact_map.get(s.buyer_id) if s.buyer_id else None,
+            "product_id": s.product_id,
+            "quantity": s.quantity,
+            "selling_price": s.selling_price,
+            "discount": s.discount,
+            "total_amount": s.total_amount,
+            "payment_mode": s.payment_mode,
+            "invoice_id": s.invoice_id,
+            "delivery_status": s.delivery_status,
+            "date": s.date.isoformat() if s.date else None,
+        }
+        enriched.append(s_dict)
+
+    return enriched
 
 
 @router.patch("/sales/{sale_id}/status")

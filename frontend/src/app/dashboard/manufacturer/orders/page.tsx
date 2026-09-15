@@ -5,6 +5,7 @@ import { getManufacturerSales, updateSaleDeliveryStatus, getMyProducts, Manufact
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import ContactInfoCard from "@/components/ui/ContactInfoCard";
 import {
     Truck, CheckCircle, Package, ArrowUpRight,
     TrendingUp, ShoppingCart
@@ -245,6 +246,14 @@ export default function ManufacturerOrdersPage() {
                                             </table>
                                         </div>
                                     </div>
+
+                                    {/* Buyer Contact Details */}
+                                    {sel.buyer_contact && (
+                                        <ContactInfoCard
+                                            contact={sel.buyer_contact}
+                                            label="Buyer Details"
+                                        />
+                                    )}
 
                                     {/* Order Info Grid */}
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">

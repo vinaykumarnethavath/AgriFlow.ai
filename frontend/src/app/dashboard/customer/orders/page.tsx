@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Package, Clock } from "lucide-react";
+import ContactInfoCard from "@/components/ui/ContactInfoCard";
 
 export default function OrdersPage() {
     const [orders, setOrders] = useState<CustomerOrder[]>([]);
@@ -63,8 +64,8 @@ export default function OrdersPage() {
                                     </div>
                                 </div>
                             </AccordionTrigger>
-                            <AccordionContent className="px-6 py-4 bg-gray-50 border-t">
-                                <h4 className="font-semibold mb-3 text-sm text-muted-foreground">Items Ordered</h4>
+                            <AccordionContent className="px-6 py-4 bg-gray-50 border-t space-y-4">
+                                <h4 className="font-semibold text-sm text-muted-foreground">Items Ordered</h4>
                                 <ul className="space-y-2">
                                     {order.items.map((item, idx) => (
                                         <li key={idx} className="flex justify-between items-center text-sm p-2 bg-white rounded border">
@@ -75,6 +76,33 @@ export default function OrdersPage() {
                                         </li>
                                     ))}
                                 </ul>
+
+                                {/* Seller Contact Details - deduplicated by seller_id */}
+                                {(() => {
+                                    const seenSellerIds = new Set<number>();
+                                    const uniqueContacts = order.items
+                                        .filter((item) => {
+                                            if (!item.seller_contact || seenSellerIds.has(item.seller_id)) return false;
+                                            seenSellerIds.add(item.seller_id);
+                                            return true;
+                                        })
+                                        .map((item) => item.seller_contact!);
+
+                                    if (uniqueContacts.length === 0) return null;
+
+                                    return (
+                                        <div className="space-y-3 pt-2">
+                                            <h4 className="font-semibold text-sm text-muted-foreground">Seller Details</h4>
+                                            {uniqueContacts.map((contact) => (
+                                                <ContactInfoCard
+                                                    key={contact.user_id}
+                                                    contact={contact}
+                                                    label="Seller Contact"
+                                                />
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
                             </AccordionContent>
                         </AccordionItem>
                     ))}

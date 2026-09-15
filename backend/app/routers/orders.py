@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
@@ -7,9 +7,94 @@ from sqlalchemy.orm import selectinload
 from ..database import get_session
 from ..models import ShopOrder, ShopOrderCreate, ShopOrderRead, ShopOrderItem, Product, User, ShopOrderStatusUpdate
 from ..models.expense import ShopExpense
+from ..models.farmer import FarmerProfile
+from ..models.shop import ShopProfile
+from ..models.manufacturer import MillProfile
+from ..models.customer import CustomerProfile
 from ..deps import get_current_user
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+
+
+async def get_user_contact_info(session: AsyncSession, user_id: int) -> Optional[Dict]:
+    """Look up a user's contact details from their profile for display in orders."""
+    user = await session.get(User, user_id)
+    if not user:
+        return None
+
+    contact = {
+        "user_id": user.id,
+        "full_name": user.full_name,
+        "role": user.role,
+        "phone_number": user.phone_number,
+        "address": None,
+        "profile_picture_url": None,
+        "village": None,
+        "mandal": None,
+        "district": None,
+        "state": None,
+    }
+
+    profile = None
+    if user.role == "farmer":
+        result = await session.exec(select(FarmerProfile).where(FarmerProfile.user_id == user_id))
+        profile = result.first()
+        if profile:
+            contact["phone_number"] = profile.phone_number or user.phone_number
+            contact["profile_picture_url"] = profile.profile_picture_url
+            contact["village"] = profile.village
+            contact["mandal"] = profile.mandal
+            contact["district"] = profile.district
+            contact["state"] = profile.state
+            parts = [p for p in [profile.house_no, profile.street, profile.village, profile.mandal, profile.district, profile.state, profile.pincode] if p]
+            contact["address"] = ", ".join(parts) if parts else None
+
+    elif user.role == "shop":
+        result = await session.exec(select(ShopProfile).where(ShopProfile.user_id == user_id))
+        profile = result.first()
+        if profile:
+            contact["full_name"] = profile.owner_name or user.full_name
+            contact["phone_number"] = profile.phone_number or profile.contact_number or user.phone_number
+            contact["profile_picture_url"] = profile.profile_picture_url
+            contact["village"] = profile.village
+            contact["mandal"] = profile.mandal
+            contact["district"] = profile.district
+            contact["state"] = profile.state
+            # Use shop_address if available, else build from components
+            if profile.shop_address:
+                contact["address"] = profile.shop_address
+            else:
+                parts = [p for p in [profile.house_no, profile.street, profile.village, profile.mandal, profile.district, profile.state, profile.pincode] if p]
+                contact["address"] = ", ".join(parts) if parts else None
+
+    elif user.role == "manufacturer":
+        result = await session.exec(select(MillProfile).where(MillProfile.user_id == user_id))
+        profile = result.first()
+        if profile:
+            contact["full_name"] = profile.owner_name or user.full_name
+            contact["phone_number"] = profile.phone_number or profile.contact_number or user.phone_number
+            contact["profile_picture_url"] = profile.profile_picture_url
+            contact["village"] = profile.village
+            contact["mandal"] = profile.mandal
+            contact["district"] = profile.district
+            contact["state"] = profile.state
+            parts = [p for p in [profile.house_no, profile.street, profile.village, profile.mandal, profile.district, profile.state, profile.pincode] if p]
+            contact["address"] = ", ".join(parts) if parts else None
+
+    elif user.role == "customer":
+        result = await session.exec(select(CustomerProfile).where(CustomerProfile.user_id == user_id))
+        profile = result.first()
+        if profile:
+            contact["phone_number"] = profile.phone_number or user.phone_number
+            contact["profile_picture_url"] = profile.profile_picture_url
+            contact["village"] = profile.village
+            contact["mandal"] = profile.mandal
+            contact["district"] = profile.district
+            contact["state"] = profile.state
+            parts = [p for p in [profile.house_no, profile.street, profile.village, profile.mandal, profile.district, profile.state, profile.pincode] if p]
+            contact["address"] = ", ".join(parts) if parts else None
+
+    return contact
 
 @router.post("/", response_model=ShopOrderRead)
 async def create_shop_order(
@@ -159,7 +244,7 @@ async def read_shop_orders_detailed(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    """Returns shop orders with full expense & profit breakdown."""
+    """Returns shop orders with full expense & profit breakdown + farmer contact info."""
     if current_user.role != "shop":
         raise HTTPException(status_code=403, detail="Not authorized")
 
@@ -180,6 +265,12 @@ async def read_shop_orders_detailed(
         prod_stmt = select(Product).where(Product.id.in_(product_ids))
         prod_res = await session.exec(prod_stmt)
         prod_dict = {p.id: p for p in prod_res.all()}
+
+    # Pre-fetch contact info for all unique farmer_ids
+    farmer_ids = list({o.farmer_id for o in orders if o.farmer_id})
+    farmer_contact_map: Dict[int, Optional[Dict]] = {}
+    for fid in farmer_ids:
+        farmer_contact_map[fid] = await get_user_contact_info(session, fid)
 
     for order in orders:
         exp_stmt = select(ShopExpense).where(ShopExpense.order_id == order.id)
@@ -204,6 +295,7 @@ async def read_shop_orders_detailed(
             "shop_id": order.shop_id,
             "farmer_id": order.farmer_id,
             "farmer_name": order.farmer_name,
+            "farmer_contact": farmer_contact_map.get(order.farmer_id) if order.farmer_id else None,
             "total_amount": order.total_amount,
             "discount": order.discount or 0.0,
             "final_amount": order.final_amount,
@@ -366,6 +458,11 @@ async def read_my_orders(
         shops_res = await session.exec(shop_stmt)
         shop_dict = {s.id: s.full_name for s in shops_res.all()}
 
+    # Pre-fetch contact info for all unique shop_ids
+    shop_contact_map: Dict[int, Optional[Dict]] = {}
+    for sid in shop_ids:
+        shop_contact_map[sid] = await get_user_contact_info(session, sid)
+
     product_ids = {item.product_id for order in orders for item in order.items}
     prod_dict = {}
     if product_ids:
@@ -394,6 +491,7 @@ async def read_my_orders(
             "id": o.id,
             "shop_id": o.shop_id,
             "shop_name": shop_dict.get(o.shop_id, "Unknown Shop"),
+            "shop_contact": shop_contact_map.get(o.shop_id),
             "farmer_id": o.farmer_id,
             "total_amount": o.total_amount,
             "discount": o.discount,

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, desc
@@ -12,6 +12,7 @@ from ..models import (
     ShopOrder, ShopOrderItem
 )
 from ..deps import get_current_user
+from .orders import get_user_contact_info
 
 router = APIRouter(prefix="/customer", tags=["customer"])
 
@@ -215,7 +216,7 @@ async def checkout(
 
 # --- Orders History ---
 
-@router.get("/orders", response_model=List[CustomerOrderRead])
+@router.get("/orders")
 async def get_my_orders(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
@@ -223,23 +224,45 @@ async def get_my_orders(
     query = select(CustomerOrder).where(CustomerOrder.customer_id == current_user.id).order_by(CustomerOrder.created_at.desc())
     orders = (await session.exec(query)).all()
     
-    # Populate items for response
-    result_orders = []
+    # Collect all seller_ids from order items for batch contact lookup
+    all_seller_ids: set = set()
+    order_items_map: Dict[int, list] = {}
+
     for order in orders:
         items_query = select(CustomerOrderItem).where(CustomerOrderItem.order_id == order.id)
         items = (await session.exec(items_query)).all()
+        order_items_map[order.id] = items
+        for item in items:
+            all_seller_ids.add(item.seller_id)
+
+    # Pre-fetch contact info for all sellers
+    seller_contact_map: Dict[int, dict] = {}
+    for sid in all_seller_ids:
+        contact = await get_user_contact_info(session, sid)
+        if contact:
+            seller_contact_map[sid] = contact
+
+    # Populate items for response
+    result_orders = []
+    for order in orders:
+        items = order_items_map.get(order.id, [])
         
-        result_orders.append(CustomerOrderRead(
-            id=order.id,
-            total_amount=order.total_amount,
-            status=order.status,
-            created_at=order.created_at,
-            items=[CustomerOrderItemRead(
-                product_name=i.product_name,
-                quantity=i.quantity,
-                price=i.price,
-                seller_id=i.seller_id
-            ) for i in items]
-        ))
+        result_orders.append({
+            "id": order.id,
+            "total_amount": order.total_amount,
+            "status": order.status,
+            "created_at": order.created_at.isoformat() if order.created_at else None,
+            "items": [
+                {
+                    "product_name": i.product_name,
+                    "quantity": i.quantity,
+                    "price": i.price,
+                    "seller_id": i.seller_id,
+                    "seller_contact": seller_contact_map.get(i.seller_id),
+                }
+                for i in items
+            ],
+        })
         
     return result_orders
+

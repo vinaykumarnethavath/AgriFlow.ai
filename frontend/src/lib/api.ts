@@ -345,11 +345,25 @@ export const getCategoryRevenue = async (period?: string) => {
   return response.data;
 };
 
+export interface ContactInfo {
+  user_id: number;
+  full_name: string;
+  role: string;
+  phone_number?: string;
+  address?: string;
+  profile_picture_url?: string;
+  village?: string;
+  mandal?: string;
+  district?: string;
+  state?: string;
+}
+
 export interface ShopOrderDetailed {
   id: number;
   shop_id: number;
   farmer_id?: number;
   farmer_name?: string;
+  farmer_contact?: ContactInfo;
   total_amount: number;
   discount: number;
   final_amount: number;
@@ -589,6 +603,7 @@ export interface ManufacturerPurchase {
     manufacturer_id: number;
     farmer_id?: number;
     farmer_name: string;
+    farmer_contact?: ContactInfo;
     crop_name: string;
     quantity: number;
     unit: string;
@@ -606,6 +621,7 @@ export interface ManufacturerSale {
     buyer_type: string;
     buyer_id?: number;
     buyer_name: string;
+    buyer_contact?: ContactInfo;
     product_id: number;
     quantity: number;
     selling_price: number;
@@ -749,6 +765,7 @@ export interface CustomerOrderItem {
     quantity: number;
     price: number;
     seller_id: number;
+    seller_contact?: ContactInfo;
 }
 
 export interface CustomerOrder {

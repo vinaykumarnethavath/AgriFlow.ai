@@ -5,6 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { ContactInfo } from "@/lib/api";
+import ContactInfoCard from "@/components/ui/ContactInfoCard";
 import Link from "next/link";
 import {
     ShoppingCart,
@@ -79,6 +81,7 @@ interface Order {
     id: number;
     shop_id: number;
     shop_name?: string;
+    shop_contact?: ContactInfo;
     farmer_id?: number;
     total_amount: number;
     discount: number;
@@ -537,6 +540,14 @@ export default function MarketPage() {
                                         </div>
                                     </CardHeader>
                                     <CardContent className="p-5 space-y-5">
+                                        {/* Shop Contact Details */}
+                                        {selectedOrder.shop_contact && (
+                                            <ContactInfoCard
+                                                contact={selectedOrder.shop_contact}
+                                                label="Shop Contact"
+                                            />
+                                        )}
+
                                         {/* Cart Items */}
                                         <div>
                                             <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider mb-3">Cart Items</h3>
