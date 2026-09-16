@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import api from "@/lib/api";
 import { PredictiveStockingWidget } from "@/components/shop/PredictiveStockingWidget";
 import { ProductAlertsWidget } from "@/components/shop/ProductAlertsWidget";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -18,16 +19,26 @@ const regionalDemandData = [
     { month: "Jul", urea: 349, dap: 430, seeds: 210 },
 ];
 
-const cropCultivationData = [
-    { name: "Paddy (Rice)", area: 4523, color: "#10b981" },
-    { name: "Maize", area: 3187, color: "#f59e0b" },
-    { name: "Cotton", area: 2841, color: "#8b5cf6" },
-    { name: "Groundnut", area: 1459, color: "#ec4899" },
-    { name: "Sugarcane", area: 812, color: "#06b6d4" }
-];
-
 export default function DiscoveryPage() {
     const { t } = useLanguage();
+    const [cropCultivationData, setCropCultivationData] = useState<any[]>([]);
+    const [recommendations, setRecommendations] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDiscoveryData = async () => {
+            try {
+                const { data } = await api.get("/analytics/shop/discovery");
+                if (data.crop_cultivation) setCropCultivationData(data.crop_cultivation);
+                if (data.recommendations) setRecommendations(data.recommendations);
+            } catch (err) {
+                console.error("Failed to fetch discovery data:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDiscoveryData();
+    }, []);
 
     return (
         <div className="space-y-6">
@@ -44,7 +55,7 @@ export default function DiscoveryPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <PredictiveStockingWidget />
+                <PredictiveStockingWidget baseRecs={recommendations} loading={loading} />
                 <ProductAlertsWidget />
             </div>
 
@@ -62,21 +73,31 @@ export default function DiscoveryPage() {
                     </CardHeader>
                     <CardContent className="h-[300px] w-full pt-4">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={cropCultivationData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" className="text-gray-200 dark:text-gray-700 dark:opacity-20" />
-                                <XAxis type="number" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} />
-                                <YAxis dataKey="name" type="category" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} width={90} />
-                                <Tooltip 
-                                    formatter={(value) => [`${value} Acres`, "Total Area"]}
-                                    cursor={{fill: 'transparent'}}
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                />
-                                <Bar dataKey="area" radius={[0, 4, 4, 0]} barSize={24}>
-                                    {cropCultivationData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
+                            {loading ? (
+                                <div className="flex justify-center items-center h-full">
+                                    <div className="animate-spin h-6 w-6 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                                </div>
+                            ) : cropCultivationData.length === 0 ? (
+                                <div className="flex justify-center items-center h-full text-muted-foreground text-sm">
+                                    No crop cultivation data available yet.
+                                </div>
+                            ) : (
+                                <BarChart data={cropCultivationData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" className="text-gray-200 dark:text-gray-700 dark:opacity-20" />
+                                    <XAxis type="number" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} />
+                                    <YAxis dataKey="name" type="category" stroke="currentColor" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12, fill: 'currentColor' }} width={90} />
+                                    <Tooltip 
+                                        formatter={(value) => [`${value} Acres`, "Total Area"]}
+                                        cursor={{fill: 'transparent'}}
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    />
+                                    <Bar dataKey="area" radius={[0, 4, 4, 0]} barSize={24}>
+                                        {cropCultivationData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            )}
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>

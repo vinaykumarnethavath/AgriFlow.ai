@@ -18,7 +18,7 @@ interface Recommendation {
     searchQuery: string;
 }
 
-export function PredictiveStockingWidget() {
+export function PredictiveStockingWidget({ baseRecs = [], loading: externalLoading = false }: { baseRecs?: any[], loading?: boolean }) {
     const { t } = useLanguage();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -38,43 +38,12 @@ export function PredictiveStockingWidget() {
     }, []);
 
     const getDynamicRecommendations = (): Recommendation[] => {
-        const baseRecs = [
-            {
-                id: "1",
-                productName: "Urea 46% N",
-                category: "Fertilizer",
-                confidence: 94,
-                reason: "Upcoming Kharif season and high historical demand in your 50km radius.",
-                icon: <TrendingUp className="w-5 h-5" />,
-                color: "text-blue-600 bg-blue-100",
-                searchQuery: "Urea",
-                targetStock: 500
-            },
-            {
-                id: "2",
-                productName: "Paddy Seeds (IR64)",
-                category: "Seeds",
-                confidence: 88,
-                reason: "Monsoon forecasts predict favorable rainfall starting next week.",
-                icon: <CloudRain className="w-5 h-5" />,
-                color: "text-emerald-600 bg-emerald-100",
-                searchQuery: "Paddy Seed IR64",
-                targetStock: 200
-            },
-            {
-                id: "3",
-                productName: "Systemic Fungicide",
-                category: "Pesticide",
-                confidence: 76,
-                reason: "Recent high humidity alerts indicate potential fungal outbreaks.",
-                icon: <Sprout className="w-5 h-5" />,
-                color: "text-purple-600 bg-purple-100",
-                searchQuery: "Fungicide",
-                targetStock: 100
-            },
-        ];
+        if (!baseRecs || baseRecs.length === 0) return [];
 
-        return baseRecs.map(rec => {
+        return baseRecs.map((rec: any) => {
+            let icon = <TrendingUp className="w-5 h-5" />;
+            if (rec.category === "Seeds") icon = <CloudRain className="w-5 h-5" />;
+            if (rec.category === "Pesticide") icon = <Sprout className="w-5 h-5" />;
             // Find if we have this product or similar in inventory
             const matchingProducts = products.filter(p => 
                 p.name.toLowerCase().includes(rec.searchQuery.toLowerCase()) || 
@@ -100,6 +69,7 @@ export function PredictiveStockingWidget() {
 
             return {
                 ...rec,
+                icon,
                 reason: finalReason,
                 suggestedQuantity,
             };
@@ -122,9 +92,13 @@ export function PredictiveStockingWidget() {
                 </div>
             </CardHeader>
             <CardContent className="pt-6 space-y-5">
-                {loading ? (
+                {(loading || externalLoading) ? (
                     <div className="flex justify-center py-8">
                         <div className="animate-spin h-6 w-6 border-2 border-indigo-500 border-t-transparent rounded-full" />
+                    </div>
+                ) : recommendations.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                        No recommendations available yet based on current crop data.
                     </div>
                 ) : (
                     recommendations.map((rec) => (

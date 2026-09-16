@@ -1,7 +1,9 @@
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import Field, SQLModel, Relationship, Column, JSON
 from datetime import datetime
-# from .user import User  # Removed circular import
+
+if TYPE_CHECKING:
+    from .user import User
 
 class ShopProfileBase(SQLModel):
     shop_name: str

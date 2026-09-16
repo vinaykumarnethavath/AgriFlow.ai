@@ -720,3 +720,104 @@ async def get_order_health(
         })
         
     return sorted(output, key=lambda x: x["count"], reverse=True)
+
+@router.get("/shop/discovery")
+async def get_shop_discovery(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user.role != "shop":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # 1. Aggregate Crop Cultivation Area
+    query_crops = select(Crop.name, func.sum(Crop.area)).group_by(Crop.name)
+    crop_res = await session.exec(query_crops)
+    crop_data = crop_res.all()
+    
+    # Map for BarChart
+    colors = ["#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"]
+    crop_cultivation = []
+    
+    total_db_area = 0.0
+    for i, (cname, carea) in enumerate(crop_data):
+        carea = float(carea or 0.0)
+        total_db_area += carea
+        crop_cultivation.append({
+            "name": cname or "Unknown",
+            "area": carea,
+            "color": colors[i % len(colors)]
+        })
+        
+    crop_cultivation = sorted(crop_cultivation, key=lambda x: x["area"], reverse=True)
+
+    # 2. Estimate Shop Market Share
+    query_customers = select(func.count(func.distinct(ShopOrder.farmer_id))).where(ShopOrder.shop_id == current_user.id)
+    shop_customers = (await session.exec(query_customers)).first() or 0
+    
+    query_total_farmers = select(func.count(User.id)).where(User.role == "farmer")
+    total_farmers = (await session.exec(query_total_farmers)).first() or 1
+    
+    market_share = shop_customers / total_farmers if total_farmers > 0 else 0
+    if market_share == 0: 
+        market_share = 0.05 # Baseline 5% market share if no sales yet
+        
+    # 3. Recommendations Generation
+    CROP_MAPPING = {
+        "Paddy (Rice)": [
+            {"productName": "Urea 46% N", "category": "Fertilizer", "dose_per_acre": 50, "searchQuery": "Urea"},
+            {"productName": "Paddy Seeds (IR64)", "category": "Seeds", "dose_per_acre": 10, "searchQuery": "Paddy Seed"},
+            {"productName": "Systemic Fungicide", "category": "Pesticide", "dose_per_acre": 2, "searchQuery": "Fungicide"}
+        ],
+        "Cotton": [
+            {"productName": "NPK 19:19:19", "category": "Fertilizer", "dose_per_acre": 40, "searchQuery": "NPK"},
+            {"productName": "Cotton Seeds", "category": "Seeds", "dose_per_acre": 5, "searchQuery": "Cotton Seed"},
+            {"productName": "Insecticide (Imidacloprid)", "category": "Pesticide", "dose_per_acre": 1, "searchQuery": "Insecticide"}
+        ],
+        "Maize": [
+            {"productName": "DAP", "category": "Fertilizer", "dose_per_acre": 50, "searchQuery": "DAP"},
+            {"productName": "Maize Hybrid Seeds", "category": "Seeds", "dose_per_acre": 8, "searchQuery": "Maize Seed"}
+        ],
+        "Wheat": [
+            {"productName": "Urea 46% N", "category": "Fertilizer", "dose_per_acre": 40, "searchQuery": "Urea"},
+            {"productName": "Wheat Seeds (HD 2967)", "category": "Seeds", "dose_per_acre": 40, "searchQuery": "Wheat Seed"}
+        ]
+    }
+    
+    aggregated_areas = {}
+    for cname, carea in crop_data:
+        carea = float(carea or 0.0)
+        matched_crop = None
+        for key in CROP_MAPPING.keys():
+            if key.lower() in (cname or "").lower() or (cname or "").lower() in key.lower():
+                matched_crop = key
+                break
+                
+        if matched_crop and carea > 0:
+            aggregated_areas[matched_crop] = aggregated_areas.get(matched_crop, 0.0) + carea
+            
+    recommendations = []
+    rec_id = 1
+    for matched_crop, total_carea in aggregated_areas.items():
+        for prod in CROP_MAPPING[matched_crop]:
+            target_stock = total_carea * prod["dose_per_acre"] * market_share
+            if target_stock >= 1:
+                recommendations.append({
+                    "id": str(rec_id),
+                    "productName": prod["productName"],
+                    "category": prod["category"],
+                    "searchQuery": prod["searchQuery"],
+                    "confidence": min(98, max(75, int(market_share * 1000))),
+                    "targetStock": int(target_stock),
+                    "color": "text-blue-600 bg-blue-100",
+                    "reason": f"Total local {matched_crop} area is {total_carea:,.0f} acres. With a {market_share*100:.1f}% estimated customer base share, you should maintain ~{int(target_stock)} units of {prod['productName']}."
+                })
+                rec_id += 1
+                    
+    # Sort recommendations by targetStock (highest demand)
+    recommendations = sorted(recommendations, key=lambda x: x["targetStock"], reverse=True)
+    
+    return {
+        "crop_cultivation": crop_cultivation,
+        "recommendations": recommendations[:10] # Top 10
+    }
+
