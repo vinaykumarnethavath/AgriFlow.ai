@@ -1,5 +1,5 @@
 from typing import Optional, List
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, SQLModel, Relationship, Column, JSON
 from datetime import datetime
 # from .user import User  # Removed circular import
 
@@ -46,10 +46,11 @@ class ShopProfileBase(SQLModel):
     
     location_text: Optional[str] = None
     
-    bank_name: str
-    account_number: str
-    ifsc_code: str
+    bank_name: Optional[str] = None
+    account_number: Optional[str] = None
+    ifsc_code: Optional[str] = None
     profile_picture_url: Optional[str] = None
+    payment_accounts: Optional[List[dict]] = Field(default=None, sa_column=Column(JSON))
 
 class ShopProfile(ShopProfileBase, table=True):
     __tablename__ = "shop_profiles"

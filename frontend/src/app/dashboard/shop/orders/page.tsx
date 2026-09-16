@@ -17,6 +17,7 @@ export default function ShopOrdersPage() {
     const [orders, setOrders] = useState<ShopOrderDetailed[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<ShopOrderDetailed | null>(null);
+    const [showCustomerDetails, setShowCustomerDetails] = useState(false);
     const [timeFilter, setTimeFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
 
@@ -181,7 +182,10 @@ export default function ShopOrdersPage() {
                                     filteredOrders.map((order) => (
                                         <div
                                             key={order.id}
-                                            onClick={() => setSelectedOrder(order)}
+                                            onClick={() => {
+                                                setSelectedOrder(order);
+                                                setShowCustomerDetails(false);
+                                            }}
                                             className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${selectedOrder?.id === order.id ? "bg-green-50 border-l-4 border-l-green-600" : ""}`}
                                         >
                                             <div className="flex justify-between items-start mb-1">
@@ -284,6 +288,17 @@ export default function ShopOrdersPage() {
                                                     <CheckCircle className="w-4 h-4 mr-1" /> Complete
                                                 </Button>
                                             )}
+
+                                            {/* Toggle Customer Details */}
+                                            <Button 
+                                                size="sm" 
+                                                variant="outline"
+                                                onClick={() => setShowCustomerDetails(!showCustomerDetails)} 
+                                                className="border-green-600 text-green-700 hover:bg-green-50"
+                                            >
+                                                <UserCircle className="w-4 h-4 mr-1" /> 
+                                                {showCustomerDetails ? "Hide Customer" : "Customer Details"}
+                                            </Button>
                                         </div>
                                     </div>
                                 </CardHeader>
@@ -327,7 +342,7 @@ export default function ShopOrdersPage() {
                                     )}
 
                                     {/* Customer Contact Details */}
-                                    {selectedOrder.farmer_contact && (
+                                    {showCustomerDetails && selectedOrder.farmer_contact && (
                                         <ContactInfoCard
                                             contact={selectedOrder.farmer_contact}
                                             label="Customer Details"

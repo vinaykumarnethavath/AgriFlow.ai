@@ -46,6 +46,7 @@ interface ShopProfileData {
     account_number?: string;
     ifsc_code?: string;
     full_name?: string;
+    payment_accounts?: any[];
 }
 
 function Section({ title, children, extra }: { title: string; children: React.ReactNode; extra?: React.ReactNode }) {
@@ -106,6 +107,10 @@ export default function ShopProfilePage() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const [paymentAccounts, setPaymentAccounts] = useState<any[]>([{
+        beneficiary_name: "", upi_id: "", bank_name: "", account_number: "", ifsc_code: "", payout_notes: "", is_primary: true
+    }]);
+
     const [form, setForm] = useState<ShopProfileData>({
         shop_name: "", owner_name: "", license_number: "", shop_id: "", father_name: "", relation_type: "S/O",
         contact_number: "", phone_number: "", profile_picture_url: "",
@@ -129,6 +134,19 @@ export default function ShopProfilePage() {
                     phone_number: data.phone_number || data.contact_number || user?.phone_number || "",
                 });
                 setProfileExists(true);
+                if (data.payment_accounts && data.payment_accounts.length > 0) {
+                    setPaymentAccounts(data.payment_accounts);
+                } else if (data.bank_name || data.account_number) {
+                    setPaymentAccounts([{
+                        beneficiary_name: data.full_name || "",
+                        upi_id: "",
+                        bank_name: data.bank_name || "",
+                        account_number: data.account_number || "",
+                        ifsc_code: data.ifsc_code || "",
+                        payout_notes: "",
+                        is_primary: true
+                    }]);
+                }
             } catch (err: any) {
                 if (err?.response?.status === 404) {
                     setProfileExists(false);
@@ -138,6 +156,10 @@ export default function ShopProfilePage() {
                         contact_number: user?.phone_number || "",
                         phone_number: user?.phone_number || "",
                     }));
+                    setPaymentAccounts([{
+                        beneficiary_name: user?.full_name || "",
+                        upi_id: "", bank_name: "", account_number: "", ifsc_code: "", payout_notes: "", is_primary: true
+                    }]);
                 }
             } finally {
                 setLoading(false);
@@ -240,14 +262,38 @@ export default function ShopProfilePage() {
 
     const handlePaymentSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const data = new FormData(e.currentTarget);
         try {
-            await api.post("/shop/payment-settings", Object.fromEntries(data.entries()));
-            alert("Payment details saved");
+            await api.post("/shop/profile", { ...form, payment_accounts: paymentAccounts });
+            alert("Payment details saved successfully");
         } catch (err: any) {
             console.error(err);
             alert(err?.response?.data?.detail || "Failed to save payment settings");
         }
+    };
+
+    const addPaymentAccount = () => {
+        setPaymentAccounts([...paymentAccounts, {
+            beneficiary_name: form.full_name || user?.full_name || "", upi_id: "", bank_name: "", account_number: "", ifsc_code: "", payout_notes: "", is_primary: paymentAccounts.length === 0
+        }]);
+    };
+
+    const updatePaymentAccount = (index: number, field: string, value: any) => {
+        const updated = [...paymentAccounts];
+        updated[index][field] = value;
+        setPaymentAccounts(updated);
+    };
+
+    const setPrimaryAccount = (index: number) => {
+        const updated = paymentAccounts.map((acc, i) => ({ ...acc, is_primary: i === index }));
+        setPaymentAccounts(updated);
+    };
+
+    const removePaymentAccount = (index: number) => {
+        const updated = paymentAccounts.filter((_, i) => i !== index);
+        if (updated.length > 0 && paymentAccounts[index].is_primary) {
+            updated[0].is_primary = true;
+        }
+        setPaymentAccounts(updated);
     };
 
     type NotificationSettings = {
@@ -508,41 +554,63 @@ export default function ShopProfilePage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <form className="space-y-4" onSubmit={handlePaymentSave}>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Beneficiary Name</label>
-                                    <input name="beneficiary_name" defaultValue={form.full_name || user?.full_name || ""} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                        <form className="space-y-6" onSubmit={handlePaymentSave}>
+                            {paymentAccounts.map((account, index) => (
+                                <div key={index} className={`p-4 rounded-xl border ${account.is_primary ? 'border-green-500 bg-green-50/30' : 'border-gray-200'} space-y-4 relative`}>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="primary_account" 
+                                                checked={account.is_primary} 
+                                                onChange={() => setPrimaryAccount(index)}
+                                                className="text-green-600 focus:ring-green-500 w-4 h-4"
+                                            />
+                                            <span className={`font-semibold ${account.is_primary ? 'text-green-700' : 'text-foreground'}`}>
+                                                Primary Account {account.is_primary && "(Receives Payouts)"}
+                                            </span>
+                                        </label>
+                                        {paymentAccounts.length > 1 && (
+                                            <button type="button" onClick={() => removePaymentAccount(index)} className="text-red-500 hover:text-red-700 p-1">
+                                                <X className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Beneficiary Name</label>
+                                            <input value={account.beneficiary_name} onChange={(e) => updatePaymentAccount(index, 'beneficiary_name', e.target.value)} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">UPI ID</label>
+                                            <input value={account.upi_id} onChange={(e) => updatePaymentAccount(index, 'upi_id', e.target.value)} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" placeholder="example@upi" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Bank Name</label>
+                                            <input value={account.bank_name} onChange={(e) => updatePaymentAccount(index, 'bank_name', e.target.value)} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Account Number</label>
+                                            <input value={account.account_number} onChange={(e) => updatePaymentAccount(index, 'account_number', e.target.value)} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">IFSC Code</label>
+                                            <input value={account.ifsc_code} onChange={(e) => updatePaymentAccount(index, 'ifsc_code', e.target.value)} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">UPI ID</label>
-                                    <input name="upi_id" className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" placeholder="example@upi" />
-                                </div>
+                            ))}
+                            
+                            <div className="flex gap-4">
+                                <button type="button" onClick={addPaymentAccount} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200">
+                                    + Add Another Account
+                                </button>
+                                <button type="submit" className="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700">
+                                    Save Payment Details
+                                </button>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Bank Name</label>
-                                    <input name="bank_name" defaultValue={form.bank_name} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Account Number</label>
-                                    <input name="account_number" defaultValue={form.account_number} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">IFSC Code</label>
-                                    <input name="ifsc_code" defaultValue={form.ifsc_code} className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Payout Notes</label>
-                                <textarea
-                                    name="payout_notes"
-                                    className="w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-                                    rows={3}
-                                    placeholder="Extra instructions for weekly settlements, GST invoice references etc."
-                                />
-                            </div>
-                            <button type="submit" className="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700">Save Payment Details</button>
                         </form>
                     </CardContent>
                 </Card>

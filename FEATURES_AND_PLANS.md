@@ -288,3 +288,5 @@ AgriFlow AI is committed to continuous evolution. Our roadmap focuses on communi
 
 #### **E. Frontend Enhancements**
 1. **Persistent Role Selection**: Provide an option to "Remember Role" during the first login. If selected, bypass the role selection screen on future logins. If "Do not remember" is chosen, the role selection screen will always be shown when the user tries to log in.
+
+direct call
