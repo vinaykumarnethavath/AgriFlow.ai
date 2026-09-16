@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import api, {
     getCropDetails,
     getCropExpenses,
@@ -32,7 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label"; // Ensure Label is available or use standard label
-import { ArrowLeft, Plus, Trash2, Sprout, TrendingUp, IndianRupee, Tractor, Droplets, Truck, Pickaxe, Package, Pencil, AlertTriangle, CheckCircle, Info, Lightbulb, QrCode, Store, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Sprout, TrendingUp, IndianRupee, Tractor, Droplets, Truck, Pickaxe, Package, Pencil, AlertTriangle, CheckCircle, Info, Lightbulb, QrCode, Store, ShoppingCart, Factory } from "lucide-react";
 import { motion } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
 import { useLanguage } from "@/context/LanguageContext";
@@ -1460,12 +1461,19 @@ export default function CropDetailPage() {
                                 <h2 className="text-xl font-semibold text-foreground">Sell Your Crop</h2>
                                 <p className="text-sm text-muted-foreground">List your harvested crop for sale to mills, markets, or direct buyers</p>
                             </div>
-                            <Button
-                                onClick={() => setShowSellForm(!showSellForm)}
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                                <Plus className="w-4 h-4 mr-2" /> New Listing
-                            </Button>
+                            <div className="flex gap-2">
+                                <Link href={`/dashboard/farmer/mills?cropId=${cropId}`}>
+                                    <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all shadow-blue-200">
+                                        <Factory className="w-4 h-4 mr-2" /> Direct Sale to Mills
+                                    </Button>
+                                </Link>
+                                <Button
+                                    onClick={() => setShowSellForm(!showSellForm)}
+                                    className="bg-green-600 hover:bg-green-700 text-white shadow-sm transition-all shadow-green-200"
+                                >
+                                    <Plus className="w-4 h-4 mr-2" /> New Listing
+                                </Button>
+                            </div>
                         </div>
 
                         {showSellForm && (
