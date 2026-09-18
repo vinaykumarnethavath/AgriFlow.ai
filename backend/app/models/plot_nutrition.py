@@ -51,6 +51,7 @@ class FertilizerApplicationBase(SQLModel):
     application_method: Optional[str] = None  # "Broadcasting", "Fertigation", "Band placement"
     crop_id: Optional[int] = Field(default=None, foreign_key="crop.id")
     notes: Optional[str] = None
+    expense_id: Optional[int] = Field(default=None, index=True)
 
 
 class FertilizerApplication(FertilizerApplicationBase, table=True):

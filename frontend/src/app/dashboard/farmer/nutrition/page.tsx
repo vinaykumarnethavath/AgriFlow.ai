@@ -1372,11 +1372,23 @@ export default function PrecisionNutritionPage() {
                                                                 <Package className="h-4 w-4" />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className="font-bold text-foreground truncate">{app.fertilizer_name}</p>
-                                                                <p className="text-slate-500 font-mono">
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <p className="font-bold text-foreground truncate">{app.fertilizer_name}</p>
+                                                                    {app.notes && (app.notes.toLowerCase().includes("crop expense") || app.notes.toLowerCase().includes("expense")) && (
+                                                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                                                                            Synced from Crop
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-slate-500 font-mono mt-0.5">
                                                                     {app.quantity} {app.unit} • {new Date(app.application_date).toLocaleDateString()}
                                                                     {app.application_method && ` • ${app.application_method}`}
                                                                 </p>
+                                                                {app.notes && (
+                                                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                                                                        {app.notes}
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     ))}

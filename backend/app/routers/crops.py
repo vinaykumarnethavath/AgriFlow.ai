@@ -11,6 +11,7 @@ from ..models import (
 from ..models.plot_nutrition import PlotSoilData, FertilizerApplication
 from ..deps import get_current_user
 from ..services.crop_service import recalculate_crop_financials
+from ..services.nutrition_sync_service import sync_single_crop_expense, delete_synced_fertilizer_expense
 
 router = APIRouter(prefix="/crops", tags=["crops"])
 
@@ -141,25 +142,11 @@ async def add_crop_expense(
     # Update Crop Financials
     await recalculate_crop_financials(crop_id, session)
     
-    # Auto-sync to Fertilizer Impact Tracker if it's a Fertilizer
-    if db_expense.category.lower() == "fertilizer":
-        # Check if crop is linked to a plot
-        soil_stmt = select(PlotSoilData).where(PlotSoilData.crop_id == crop_id)
-        soil_res = await session.exec(soil_stmt)
-        soil = soil_res.first()
-        if soil:
-            fert_app = FertilizerApplication(
-                plot_soil_data_id=soil.id,
-                fertilizer_name=db_expense.type,
-                quantity=db_expense.quantity,
-                unit=db_expense.unit,
-                application_date=db_expense.date,
-                application_method="Broadcasting", # Default
-                crop_id=crop_id,
-                user_id=current_user.id
-            )
-            session.add(fert_app)
-            await session.commit()
+    # Auto-sync to Fertilizer Impact Tracker / Live Soil Nutrition
+    try:
+        await sync_single_crop_expense(session, db_expense, crop_id, current_user.id)
+    except Exception as sync_err:
+        print(f"[CropsRouter] Fertilizer sync error on create: {sync_err}")
     
     return db_expense
 
@@ -196,6 +183,12 @@ async def delete_crop_expense(
     if not expense or expense.crop_id != crop_id:
         raise HTTPException(status_code=404, detail="Expense not found")
         
+    # Remove synced fertilizer application if any
+    try:
+        await delete_synced_fertilizer_expense(session, expense_id)
+    except Exception as sync_err:
+        print(f"[CropsRouter] Fertilizer sync error on delete: {sync_err}")
+
     await session.delete(expense)
     await session.commit()
     

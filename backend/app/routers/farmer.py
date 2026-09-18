@@ -15,6 +15,7 @@ from ..models import (
 )
 # New Service Import
 from ..services.crop_service import recalculate_crop_financials
+from ..services.nutrition_sync_service import sync_single_crop_expense, delete_synced_fertilizer_expense
 
 
 def safe_display_name(user: User) -> str:
@@ -251,6 +252,12 @@ async def create_crop_expense(
     # Recalculate using service
     await recalculate_crop_financials(crop_id, session)
     
+    # Auto-sync to Fertilizer Impact Tracker / Live Soil Nutrition
+    try:
+        await sync_single_crop_expense(session, db_expense, crop_id, current_user.id)
+    except Exception as sync_err:
+        print(f"[FarmerRouter] Fertilizer sync error on create: {sync_err}")
+    
     return db_expense
 
 @router.put("/crops/expenses/{expense_id}", response_model=CropExpense)
@@ -280,6 +287,12 @@ async def update_crop_expense(
     # Recalculate
     await recalculate_crop_financials(crop.id, session)
     
+    # Auto-sync to Fertilizer Impact Tracker / Live Soil Nutrition
+    try:
+        await sync_single_crop_expense(session, expense, crop.id, current_user.id)
+    except Exception as sync_err:
+        print(f"[FarmerRouter] Fertilizer sync error on update: {sync_err}")
+    
     return expense
 
 @router.delete("/crops/expenses/{expense_id}")
@@ -296,7 +309,13 @@ async def delete_crop_expense(
     if crop.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    session.delete(expense)
+    # Remove synced fertilizer application if any
+    try:
+        await delete_synced_fertilizer_expense(session, expense_id)
+    except Exception as sync_err:
+        print(f"[FarmerRouter] Fertilizer sync error on delete: {sync_err}")
+
+    await session.delete(expense)
     await session.commit()
     
     # Recalculate

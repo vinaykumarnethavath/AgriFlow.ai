@@ -19,6 +19,7 @@ from ..models.plot_nutrition import (
     PlotSoilData, PlotSoilDataCreate, PlotSoilDataRead,
     FertilizerApplication, FertilizerApplicationCreate, FertilizerApplicationRead,
 )
+from ..services.nutrition_sync_service import sync_crop_expenses_for_plot
 
 router = APIRouter(prefix="/plot-nutrition", tags=["plot-nutrition"])
 
@@ -302,11 +303,14 @@ def compute_live_soil_dynamics(
 
     for app in sorted_apps:
         name = (app.fertilizer_name or "").lower()
-        qty = app.quantity
-        if app.unit == "bags":
+        qty = float(app.quantity) if app.quantity else 0.0
+        unit_clean = (app.unit or "").lower().strip()
+        if unit_clean in ["bags", "bag", "b"]:
             qty *= 50.0  # standard 50kg bag
-        elif app.unit == "tons":
+        elif unit_clean in ["tons", "ton", "t"]:
             qty *= 1000.0
+        elif unit_clean in ["quintals", "quintal", "qtl", "qtls"]:
+            qty *= 100.0
 
         # Method efficiency
         method = (app.application_method or "").lower()
@@ -323,7 +327,7 @@ def compute_live_soil_dynamics(
         if "urea" in name:
             n_raw = qty * 0.46
             total_added_n_kg += n_raw * eff
-            ph_shift -= 0.02 * (qty / max(area, 1.0))
+            ph_shift -= min(0.3, 0.002 * (qty / max(area, 1.0)))
         elif "dap" in name:
             n_raw = qty * 0.18
             p_raw = qty * 0.46 * 0.4364  # P2O5 to elemental P
@@ -339,9 +343,9 @@ def compute_live_soil_dynamics(
             total_added_n_kg += qty * 0.19 * eff
             total_added_p_kg += qty * 0.19 * 0.4364 * (eff * 0.45)
             total_added_k_kg += qty * 0.19 * 0.83 * eff
-        elif "ammonium sulphate" in name:
+        elif "ammonium sulphate" in name or "ammonium sulfate" in name:
             total_added_n_kg += qty * 0.21 * eff
-            ph_shift -= 0.03 * (qty / max(area, 1.0))
+            ph_shift -= min(0.35, 0.003 * (qty / max(area, 1.0)))
         elif "lime" in name or "calcium" in name:
             ph_shift += min(1.2, 0.015 * (qty / max(area, 1.0)))
         elif "gypsum" in name:
@@ -593,6 +597,7 @@ async def get_plots(
 
         live_adjusted_data = None
         if soil:
+            await sync_crop_expenses_for_plot(session, soil.id, current_user.id)
             fert_stmt = select(FertilizerApplication).where(FertilizerApplication.plot_soil_data_id == soil.id)
             if soil.crop_id:
                 fert_stmt = fert_stmt.where(FertilizerApplication.crop_id == soil.crop_id)
@@ -631,6 +636,8 @@ async def get_plot_live_status(
     soil = await session.get(PlotSoilData, plot_soil_id)
     if not soil or soil.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Plot soil data not found")
+
+    await sync_crop_expenses_for_plot(session, plot_soil_id, current_user.id)
 
     lr = await session.get(LandRecord, soil.land_record_id)
     area = lr.area if lr else 1.0
@@ -767,6 +774,7 @@ async def link_crop_to_plot(
     session.add(soil)
     await session.commit()
     await session.refresh(soil)
+    await sync_crop_expenses_for_plot(session, plot_soil_id, current_user.id)
     return soil
 
 
@@ -914,6 +922,8 @@ async def get_fertilizer_history(
     if not soil or soil.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Plot soil data not found")
 
+    await sync_crop_expenses_for_plot(session, plot_soil_id, current_user.id)
+
     stmt = select(FertilizerApplication).where(FertilizerApplication.plot_soil_data_id == plot_soil_id)
     if soil.crop_id:
         stmt = stmt.where(FertilizerApplication.crop_id == soil.crop_id)
@@ -1012,6 +1022,7 @@ async def analyze_fertilizer_impact(
             sowing_date = crop.sowing_date.strftime("%Y-%m-%d") if crop.sowing_date else "Not specified"
 
     # Get fertilizer history
+    await sync_crop_expenses_for_plot(session, plot_soil_id, current_user.id)
     stmt = select(FertilizerApplication).where(FertilizerApplication.plot_soil_data_id == plot_soil_id)
     if soil.crop_id:
         stmt = stmt.where(FertilizerApplication.crop_id == soil.crop_id)
