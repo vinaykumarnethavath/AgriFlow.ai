@@ -61,7 +61,7 @@ function getDayName(dateStr: string, idx: number, locale: string = "en") {
 }
 
 export default function SoilWeatherDashboard() {
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const [lat, setLat] = useState<number>(17.3850);
     const [lon, setLon] = useState<number>(78.4867);
     const [locationName, setLocationName] = useState("Detecting Farm Location...");
@@ -74,7 +74,7 @@ export default function SoilWeatherDashboard() {
         setLoading(true);
         setError(null);
         try {
-            const resp = await getSoilWeatherForecast(latitude, longitude);
+            const resp = await getSoilWeatherForecast(latitude, longitude, locale);
             setData(resp);
             if (name) {
                 setLocationName(name);
@@ -142,7 +142,7 @@ export default function SoilWeatherDashboard() {
         };
 
         resolveLocationAndLoad();
-    }, [fetchDirectValues]);
+    }, [fetchDirectValues, locale]);
 
     const handleRefresh = () => {
         fetchDirectValues(lat, lon, locationName);

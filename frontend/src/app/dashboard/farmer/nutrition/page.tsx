@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { T } from "@/components/TranslateText";
 import {
     Droplets, FlaskConical, Sprout, Loader2, Info, CheckCircle2, AlertTriangle,
     MapPin, Leaf, Plus, Beaker, BarChart3, ArrowRight, Calendar, Package,
@@ -363,7 +364,7 @@ export default function PrecisionNutritionPage() {
                         {t("sidebar.nutrition", "Precision Nutrition & Soil Dynamics")}
                     </h1>
                     <p className="text-slate-600 dark:text-slate-400 mt-1">
-                        Plot-wise soil testing, crop absorption tracking, continuous fertilizer adjustments & AI advice
+                        <T>Plot-wise soil testing, crop absorption tracking, continuous fertilizer adjustments & AI advice</T>
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -374,7 +375,7 @@ export default function PrecisionNutritionPage() {
                         className="gap-2 rounded-xl"
                     >
                         <RefreshCw className={`h-4 w-4 ${loadingPlots ? "animate-spin" : ""}`} />
-                        Refresh Plots
+                        <T>Refresh Plots</T>
                     </Button>
                 </div>
             </div>
@@ -400,7 +401,7 @@ export default function PrecisionNutritionPage() {
             {loadingPlots && (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-                    <p className="text-slate-600 dark:text-slate-400">Loading your land plots and soil health records...</p>
+                    <p className="text-slate-600 dark:text-slate-400"><T>Loading your land plots and soil health records...</T></p>
                 </div>
             )}
 
@@ -410,7 +411,7 @@ export default function PrecisionNutritionPage() {
                     <div className="h-16 w-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-4">
                         <MapPin className="h-8 w-8" />
                     </div>
-                    <h3 className="text-xl font-bold text-foreground">No Land Plots Found</h3>
+                    <h3 className="text-xl font-bold text-foreground"><T>No Land Plots Found</T></h3>
                     <p className="text-slate-600 dark:text-slate-400 mt-2 max-w-md">
                         Please set up your farmer profile with land records first. Go to your <strong>Profile</strong> page to add your land plots, then come back here.
                     </p>
@@ -427,7 +428,7 @@ export default function PrecisionNutritionPage() {
                                 className="gap-2 rounded-xl px-4 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-medium"
                             >
                                 <MapPin className="h-4 w-4 text-blue-500" />
-                                My Plots ({plots.length})
+                                <T>My Plots</T> ({plots.length})
                             </TabsTrigger>
                             <TabsTrigger
                                 value="manager"
@@ -435,7 +436,7 @@ export default function PrecisionNutritionPage() {
                                 disabled={!selectedPlot}
                             >
                                 <Beaker className="h-4 w-4 text-teal-500" />
-                                Nutrition Manager
+                                <T>Nutrition Manager</T>
                                 {selectedPlot && (
                                     <Badge variant="secondary" className="ml-1 text-[11px] px-1.5 py-0 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
                                         Plot {selectedPlot.serial_number}
@@ -448,7 +449,7 @@ export default function PrecisionNutritionPage() {
                                 disabled={!selectedPlot?.soil_data}
                             >
                                 <BarChart3 className="h-4 w-4 text-purple-500" />
-                                Fertilizer Impact
+                                <T>Fertilizer Impact</T>
                                 {fertHistory.length > 0 && (
                                     <Badge variant="secondary" className="ml-1 text-[11px] px-1.5 py-0 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
                                         {fertHistory.length}
@@ -478,9 +479,9 @@ export default function PrecisionNutritionPage() {
                     <TabsContent value="plots" className="space-y-6">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                             <div>
-                                <h2 className="text-xl font-bold text-foreground">Your Land Plots ({plots.length})</h2>
+                                <h2 className="text-xl font-bold text-foreground"><T>Your Land Plots</T> ({plots.length})</h2>
                                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                                    Click any plot to open its <strong>Nutrition Manager</strong> and view instant AI advice
+                                    <T>Click any plot to open its Nutrition Manager and view instant AI advice</T>
                                 </p>
                             </div>
                             {selectedPlot && (
@@ -488,7 +489,7 @@ export default function PrecisionNutritionPage() {
                                     onClick={() => setActiveTab("manager")}
                                     className="gap-2 bg-gradient-to-r from-blue-600 to-teal-600 text-white rounded-xl shadow-md shadow-blue-500/20"
                                 >
-                                    <span>Manage Plot {selectedPlot.serial_number}</span>
+                                    <span><T>Manage Plot</T> {selectedPlot.serial_number}</span>
                                     <ArrowRight className="h-4 w-4" />
                                 </Button>
                             )}
@@ -539,7 +540,7 @@ export default function PrecisionNutritionPage() {
                                                 </div>
                                                 {isSelected ? (
                                                     <Badge className="bg-blue-600 text-white text-xs border-0 shadow-sm px-2.5 py-0.5">
-                                                        Selected
+                                                        <T>Selected</T>
                                                     </Badge>
                                                 ) : (
                                                     <span className="text-xs text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity font-semibold flex items-center gap-0.5">
@@ -554,7 +555,7 @@ export default function PrecisionNutritionPage() {
                                                     <div className="flex items-center gap-1.5">
                                                         <Beaker className={`h-3.5 w-3.5 ${hasSoil ? "text-emerald-500" : "text-slate-400"}`} />
                                                         <span className={hasSoil ? "text-emerald-700 dark:text-emerald-400 font-medium" : "text-slate-500"}>
-                                                            {hasSoil ? "Soil test registered" : "No soil test yet"}
+                                                            {hasSoil ? <T>Soil test registered</T> : <T>No soil test yet</T>}
                                                         </span>
                                                     </div>
                                                     {hasSoil && plot.soil_data?.ph_level && (
@@ -568,7 +569,7 @@ export default function PrecisionNutritionPage() {
                                                     <div className="flex items-center gap-1.5">
                                                         <Sprout className={`h-3.5 w-3.5 ${hasCrop ? "text-green-500" : "text-slate-400"}`} />
                                                         <span className={hasCrop ? "text-green-700 dark:text-green-400 font-medium" : "text-slate-500"}>
-                                                            {hasCrop ? `${plot.crop_name} (${plot.crop_status})` : "No crop linked"}
+                                                            {hasCrop ? `${plot.crop_name} (${plot.crop_status})` : <T>No crop linked</T>}
                                                         </span>
                                                     </div>
                                                     {totalApps > 0 && (
@@ -617,7 +618,7 @@ export default function PrecisionNutritionPage() {
                                                     {/* NPK Values Grid */}
                                                     <div className="grid grid-cols-3 gap-2 text-center bg-slate-50/80 dark:bg-slate-800/40 p-2.5 rounded-xl">
                                                         <div>
-                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Nitrogen</p>
+                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold"><T>Nitrogen</T></p>
                                                             <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{displayN}</p>
                                                             {plotMode === "live" && deltaN !== 0 && (
                                                                 <span className={`text-[10px] font-semibold ${deltaN > 0 ? "text-emerald-500" : "text-amber-500"}`}>
@@ -626,7 +627,7 @@ export default function PrecisionNutritionPage() {
                                                             )}
                                                         </div>
                                                         <div>
-                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Phosphorus</p>
+                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold"><T>Phosphorus</T></p>
                                                             <p className="text-sm font-bold text-orange-600 dark:text-orange-400">{displayP}</p>
                                                             {plotMode === "live" && deltaP !== 0 && (
                                                                 <span className={`text-[10px] font-semibold ${deltaP > 0 ? "text-emerald-500" : "text-amber-500"}`}>
@@ -635,7 +636,7 @@ export default function PrecisionNutritionPage() {
                                                             )}
                                                         </div>
                                                         <div>
-                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Potassium</p>
+                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold"><T>Potassium</T></p>
                                                             <p className="text-sm font-bold text-purple-600 dark:text-purple-400">{displayK}</p>
                                                             {plotMode === "live" && deltaK !== 0 && (
                                                                 <span className={`text-[10px] font-semibold ${deltaK > 0 ? "text-emerald-500" : "text-amber-500"}`}>
@@ -651,10 +652,10 @@ export default function PrecisionNutritionPage() {
                                         {/* Bottom Action Hint */}
                                         <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                                             <span className="text-slate-500">
-                                                {hasSoil ? "Tap to view AI nutrition advice" : "Tap to add soil test data"}
+                                                {hasSoil ? <T>Tap to view AI nutrition advice</T> : <T>Tap to add soil test data</T>}
                                             </span>
                                             <span className="text-blue-600 dark:text-blue-400 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-                                                Manage <ArrowRight className="h-3.5 w-3.5" />
+                                                <T>Manage</T> <ArrowRight className="h-3.5 w-3.5" />
                                             </span>
                                         </div>
                                     </div>

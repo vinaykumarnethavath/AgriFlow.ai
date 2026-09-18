@@ -10,7 +10,7 @@ import { T } from '@/components/TranslateText';
 export default function WeatherBoard() {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
 
     useEffect(() => {
         const resolveFallbackLocationFromProfile = async () => {
@@ -48,7 +48,7 @@ export default function WeatherBoard() {
         };
 
         const fetchWeatherForCoords = async (lat: number, lon: number) => {
-            const res = await api.get('/weather/', { params: { lat, lon } });
+            const res = await api.get('/weather/', { params: { lat, lon, lang: locale } });
             setWeather(res.data);
         };
 
@@ -59,7 +59,7 @@ export default function WeatherBoard() {
                     if (fallback) {
                         await fetchWeatherForCoords(fallback.lat, fallback.lon);
                     } else {
-                        const res = await api.get('/weather/');
+                        const res = await api.get('/weather/', { params: { lang: locale } });
                         setWeather(res.data);
                     }
                     return;
@@ -81,7 +81,7 @@ export default function WeatherBoard() {
                             if (fallback) {
                                 await fetchWeatherForCoords(fallback.lat, fallback.lon);
                             } else {
-                                const res = await api.get('/weather/');
+                                const res = await api.get('/weather/', { params: { lang: locale } });
                                 setWeather(res.data);
                             }
                             resolve();
@@ -97,7 +97,7 @@ export default function WeatherBoard() {
         };
 
         fetchWeather();
-    }, []);
+    }, [locale]);
 
     const getWeatherIcon = (condition: string) => {
         switch (condition?.toLowerCase()) {

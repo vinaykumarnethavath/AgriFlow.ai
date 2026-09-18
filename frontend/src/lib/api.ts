@@ -907,8 +907,10 @@ export interface GeocodeResult {
     country_code: string;
 }
 
-export const getSoilWeatherForecast = async (lat: number, lon: number): Promise<SoilWeatherResponse> => {
-    const response = await api.get<SoilWeatherResponse>('/weather/forecast', { params: { lat, lon } });
+export const getSoilWeatherForecast = async (lat: number, lon: number, lang?: string): Promise<SoilWeatherResponse> => {
+    const params: any = { lat, lon };
+    if (lang) params.lang = lang;
+    const response = await api.get<SoilWeatherResponse>('/weather/forecast', { params });
     return response.data;
 };
 
@@ -922,8 +924,10 @@ export const searchGeocodeCities = async (name: string): Promise<GeocodeResult[]
     return response.data.results || [];
 };
 
-export const getWeather = async (lat?: number, lon?: number) => {
-    const response = await api.get<WeatherData>('/weather/', { params: lat && lon ? { lat, lon } : undefined });
+export const getWeather = async (lat?: number, lon?: number, lang?: string) => {
+    const params: any = lat && lon ? { lat, lon } : {};
+    if (lang) params.lang = lang;
+    const response = await api.get<WeatherData>('/weather/', { params });
     return response.data;
 };
 

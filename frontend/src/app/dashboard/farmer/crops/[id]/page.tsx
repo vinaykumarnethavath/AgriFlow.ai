@@ -1124,8 +1124,8 @@ export default function CropDetailPage() {
                     <div className="space-y-6">
                         <div className="flex justify-between items-center">
                             <div>
-                                <h2 className="text-xl font-semibold">Yield & Revenue</h2>
-                                <p className="text-sm text-muted-foreground">Track multiple harvest stages.</p>
+                                <h2 className="text-xl font-semibold"><T>Yield & Revenue</T></h2>
+                                <p className="text-sm text-muted-foreground"><T>Track multiple harvest stages.</T></p>
                             </div>
                             <Button onClick={() => {
                                 setEditingHarvestId(null);
@@ -1143,19 +1143,19 @@ export default function CropDetailPage() {
                                 });
                                 setShowHarvestModal(true);
                             }} className="bg-green-600 hover:bg-green-700">
-                                <Plus className="w-4 h-4 mr-2" /> Record Harvest
+                                <Plus className="w-4 h-4 mr-2" /> <T>Record Harvest</T>
                             </Button>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Card>
-                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Yield</CardTitle></CardHeader>
+                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground"><T>Total Yield</T></CardTitle></CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{harvests.reduce((sum, h) => sum + h.quantity, 0)} Quintals</div>
                                 </CardContent>
                             </Card>
                             <Card>
-                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Harvest Events</CardTitle></CardHeader>
+                                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground"><T>Harvest Events</T></CardTitle></CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{harvests.length}</div>
                                 </CardContent>
@@ -1183,13 +1183,13 @@ export default function CropDetailPage() {
                                                 }}
                                             />
                                         </th>
-                                        <th className="p-4">Date</th>
-                                        <th className="p-4">Stage</th>
-                                        <th className="p-4">No. of Bags</th>
-                                        <th className="p-4">Bag Size</th>
-                                        <th className="p-4">Quintals</th>
-                                        <th className="p-4">Notes</th>
-                                        <th className="p-4 text-right">Actions</th>
+                                        <th className="p-4"><T>Date</T></th>
+                                        <th className="p-4"><T>Stage</T></th>
+                                        <th className="p-4"><T>No. of Bags</T></th>
+                                        <th className="p-4"><T>Bag Size</T></th>
+                                        <th className="p-4"><T>Quintals</T></th>
+                                        <th className="p-4"><T>Notes</T></th>
+                                        <th className="p-4 text-right"><T>Actions</T></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -1230,7 +1230,7 @@ export default function CropDetailPage() {
                                                 <td className="p-4 text-muted-foreground">{h.notes || '-'}</td>
                                                 <td className="p-4 text-right flex items-center justify-end gap-1">
                                                     {h.status === 'Sold' ? (
-                                                        <span className="text-muted-foreground text-sm italic">Listing created</span>
+                                                        <span className="text-muted-foreground text-sm italic"><T>Listing created</T></span>
                                                     ) : (
                                                         <>
                                                             <Button
