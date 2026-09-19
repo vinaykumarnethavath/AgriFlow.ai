@@ -729,193 +729,234 @@ async def get_shop_discovery(
     if current_user.role != "shop":
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    # 1. Aggregate Active Crop Cultivation Area
-    # Canonical mapping to normalize crop varieties, casings, and duplicate entries
-    CROP_CANONICAL_MAP = {
-        "paddy": "Paddy (Rice)",
-        "rice": "Paddy (Rice)",
-        "wheat": "Wheat",
-        "cotton": "Cotton",
-        "maize": "Maize",
-        "corn": "Maize",
-        "chilli": "Chilli",
-        "chili": "Chilli",
-        "sugarcane": "Sugarcane",
-        "chickpea": "Chickpea",
-        "bengal gram": "Bengal Gram",
-        "gram": "Chickpea",
-        "potato": "Potato",
-        "mustard": "Mustard",
-        "onion": "Onion",
-        "groundnut": "Groundnut",
-        "peanut": "Groundnut",
-        "soybean": "Soybean",
-        "soya": "Soybean",
-        "jowar": "Jowar",
-        "sorghum": "Jowar",
-        "tomato": "Tomato",
-    }
+    # 1. Fetch Shop's Live Product Inventory
+    query_shop_products = select(Product).where(Product.user_id == current_user.id)
+    shop_products = (await session.exec(query_shop_products)).all()
+    
+    inventory_map = {}
+    for p in shop_products:
+        name_lower = p.name.lower()
+        if name_lower not in inventory_map:
+            inventory_map[name_lower] = {"qty": 0, "threshold": p.low_stock_threshold or 10, "id": p.id}
+        inventory_map[name_lower]["qty"] += p.quantity
 
+    def get_inventory_stock(search_terms: List[str]):
+        total_qty = 0
+        min_threshold = 10
+        matched_ids = []
+        for term in search_terms:
+            t = term.lower()
+            for inv_name, data in inventory_map.items():
+                if t in inv_name:
+                    total_qty += data["qty"]
+                    min_threshold = max(min_threshold, data["threshold"])
+                    if data["id"] not in matched_ids:
+                        matched_ids.append(data["id"])
+        return total_qty, min_threshold, matched_ids
+
+    # 2. Canonical mapping to normalize crop varieties
+    CROP_CANONICAL_MAP = {
+        "paddy": "Paddy (Rice)", "rice": "Paddy (Rice)", "wheat": "Wheat",
+        "cotton": "Cotton", "maize": "Maize", "corn": "Maize",
+        "chilli": "Chilli", "chili": "Chilli", "sugarcane": "Sugarcane",
+        "chickpea": "Chickpea", "bengal gram": "Bengal Gram", "gram": "Chickpea",
+        "potato": "Potato", "mustard": "Mustard", "onion": "Onion",
+        "groundnut": "Groundnut", "peanut": "Groundnut", "soybean": "Soybean",
+        "soya": "Soybean", "jowar": "Jowar", "sorghum": "Jowar", "tomato": "Tomato",
+    }
     CROP_COLORS = {
-        "Chickpea": "#8b5cf6",
-        "Bengal Gram": "#a78bfa",
-        "Potato": "#d97706",
-        "Onion": "#ec4899",
-        "Mustard": "#84cc16",
-        "Wheat": "#f59e0b",
-        "Maize": "#eab308",
-        "Sugarcane": "#10b981",
-        "Chilli": "#ef4444",
-        "Jowar": "#6366f1",
-        "Groundnut": "#f97316",
-        "Cotton": "#06b6d4",
-        "Soybean": "#14b8a6",
-        "Paddy (Rice)": "#059669",
-        "Tomato": "#f43f5e",
+        "Chickpea": "#8b5cf6", "Bengal Gram": "#a78bfa", "Potato": "#d97706",
+        "Onion": "#ec4899", "Mustard": "#84cc16", "Wheat": "#f59e0b",
+        "Maize": "#eab308", "Sugarcane": "#10b981", "Chilli": "#ef4444",
+        "Jowar": "#6366f1", "Groundnut": "#f97316", "Cotton": "#06b6d4",
+        "Soybean": "#14b8a6", "Paddy (Rice)": "#059669", "Tomato": "#f43f5e",
     }
 
     def normalize_crop_name(raw: str) -> str:
         n = (raw or "").strip().lower()
-        if "bengal gram" in n:
-            return "Bengal Gram"
+        if "bengal gram" in n: return "Bengal Gram"
         for key, canonical in CROP_CANONICAL_MAP.items():
-            if key in n:
-                return canonical
+            if key in n: return canonical
         return (raw or "Other").strip().title()
 
-    # Query currently active / growing crops
-    query_crops = select(Crop.name, func.sum(Crop.area))\
-        .where(Crop.status.in_(["Growing", "active", "growing"]))\
-        .group_by(Crop.name)
+    # 3. Query Past Harvested Crops (Depletion & Rotation Intel)
+    query_past = select(Crop.name, func.sum(Crop.area))        .where(Crop.status.in_(["Harvested", "Sold"]))        .group_by(Crop.name)
+    past_crop_res = await session.exec(query_past)
+    past_crop_data = past_crop_res.all()
+    
+    past_aggregated = {}
+    for cname, carea in past_crop_data:
+        canonical = normalize_crop_name(cname)
+        past_aggregated[canonical] = past_aggregated.get(canonical, 0.0) + float(carea or 0.0)
+    
+    total_past_area = sum(past_aggregated.values())
+
+    # 4. Query Current Active Crops
+    query_crops = select(Crop.name, func.sum(Crop.area))        .where(Crop.status.in_(["Growing", "active", "growing"]))        .group_by(Crop.name)
     crop_res = await session.exec(query_crops)
     crop_data = crop_res.all()
 
-    # Fallback to all crops if no active crops exist
     if not crop_data:
         query_all = select(Crop.name, func.sum(Crop.area)).group_by(Crop.name)
         crop_data = (await session.exec(query_all)).all()
 
-    # Consolidate by canonical crop name
-    aggregated: Dict[str, float] = {}
+    active_aggregated = {}
     for cname, carea in crop_data:
         canonical = normalize_crop_name(cname)
-        aggregated[canonical] = aggregated.get(canonical, 0.0) + float(carea or 0.0)
+        active_aggregated[canonical] = active_aggregated.get(canonical, 0.0) + float(carea or 0.0)
 
-    total_db_area = sum(aggregated.values())
+    total_db_area = sum(active_aggregated.values())
 
-    # Build clean cultivation list sorted descending by area
+    # Build active cultivation list for chart
     fallback_palette = ["#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6"]
     crop_cultivation = []
-    for i, (name, area) in enumerate(sorted(aggregated.items(), key=lambda x: x[1], reverse=True)):
+    for i, (name, area) in enumerate(sorted(active_aggregated.items(), key=lambda x: x[1], reverse=True)):
         color = CROP_COLORS.get(name, fallback_palette[i % len(fallback_palette)])
         pct = round((area / total_db_area * 100), 1) if total_db_area > 0 else 0.0
         crop_cultivation.append({
-            "name": name,
-            "area": round(area, 1),
-            "percentage": pct,
-            "color": color
+            "name": name, "area": round(area, 1), "percentage": pct, "color": color
         })
 
-    # 2. Estimate Shop Market Share
+    # 5. Estimate Shop Market Share
     query_customers = select(func.count(func.distinct(ShopOrder.farmer_id))).where(ShopOrder.shop_id == current_user.id)
     shop_customers = (await session.exec(query_customers)).first() or 0
     
-    query_total_farmers = select(func.count(User.id)).where(User.role == "farmer")
-    total_farmers = (await session.exec(query_total_farmers)).first() or 1
-    
-    market_share = shop_customers / total_farmers if total_farmers > 0 else 0
-    if market_share == 0: 
-        market_share = 0.05 # Baseline 5% market share if no sales yet
-        
-    # 3. Recommendations Generation for Regional Crops
-    CROP_MAPPING = {
-        "Paddy (Rice)": [
-            {"productName": "Urea 46% N", "category": "Fertilizer", "dose_per_acre": 50, "searchQuery": "Urea"},
-            {"productName": "Paddy Seeds (IR64)", "category": "Seeds", "dose_per_acre": 10, "searchQuery": "Paddy Seed"},
-            {"productName": "Systemic Fungicide", "category": "Pesticide", "dose_per_acre": 2, "searchQuery": "Fungicide"}
-        ],
-        "Cotton": [
-            {"productName": "NPK 19:19:19", "category": "Fertilizer", "dose_per_acre": 40, "searchQuery": "NPK"},
-            {"productName": "Cotton Seeds", "category": "Seeds", "dose_per_acre": 5, "searchQuery": "Cotton Seed"},
-            {"productName": "Insecticide (Imidacloprid)", "category": "Pesticide", "dose_per_acre": 1, "searchQuery": "Insecticide"}
-        ],
-        "Maize": [
-            {"productName": "DAP", "category": "Fertilizer", "dose_per_acre": 50, "searchQuery": "DAP"},
-            {"productName": "Maize Hybrid Seeds", "category": "Seeds", "dose_per_acre": 8, "searchQuery": "Maize Seed"}
-        ],
-        "Wheat": [
-            {"productName": "Urea 46% N", "category": "Fertilizer", "dose_per_acre": 40, "searchQuery": "Urea"},
-            {"productName": "Wheat Seeds (HD 2967)", "category": "Seeds", "dose_per_acre": 40, "searchQuery": "Wheat Seed"}
-        ],
-        "Chickpea": [
-            {"productName": "DAP Fertilizer", "category": "Fertilizer", "dose_per_acre": 35, "searchQuery": "DAP"},
-            {"productName": "Chickpea Seeds (JG-11)", "category": "Seeds", "dose_per_acre": 30, "searchQuery": "Chickpea"}
-        ],
-        "Bengal Gram": [
-            {"productName": "DAP Fertilizer", "category": "Fertilizer", "dose_per_acre": 35, "searchQuery": "DAP"},
-            {"productName": "Bengal Gram Seeds", "category": "Seeds", "dose_per_acre": 30, "searchQuery": "Gram"}
-        ],
-        "Chilli": [
-            {"productName": "NPK 20-20-0", "category": "Fertilizer", "dose_per_acre": 45, "searchQuery": "NPK"},
-            {"productName": "Imidacloprid 17.8 SL", "category": "Pesticide", "dose_per_acre": 1, "searchQuery": "Imidacloprid"}
-        ],
-        "Mustard": [
-            {"productName": "DAP Fertilizer", "category": "Fertilizer", "dose_per_acre": 30, "searchQuery": "DAP"},
-            {"productName": "Mustard Seeds (Pusa Bold)", "category": "Seeds", "dose_per_acre": 4, "searchQuery": "Mustard"}
-        ],
-        "Groundnut": [
-            {"productName": "Gypsum / DAP", "category": "Fertilizer", "dose_per_acre": 40, "searchQuery": "DAP"},
-            {"productName": "Groundnut Seeds (TMV-2)", "category": "Seeds", "dose_per_acre": 45, "searchQuery": "Groundnut"}
-        ],
-        "Soybean": [
-            {"productName": "DAP Fertilizer", "category": "Fertilizer", "dose_per_acre": 35, "searchQuery": "DAP"},
-            {"productName": "Soybean Seeds (JS-335)", "category": "Seeds", "dose_per_acre": 30, "searchQuery": "Soybean"}
-        ],
-        "Potato": [
-            {"productName": "DAP Fertilizer", "category": "Fertilizer", "dose_per_acre": 60, "searchQuery": "DAP"},
-            {"productName": "MOP Potash", "category": "Fertilizer", "dose_per_acre": 40, "searchQuery": "MOP"}
-        ],
-        "Onion": [
-            {"productName": "NPK 20-20-0", "category": "Fertilizer", "dose_per_acre": 50, "searchQuery": "NPK"},
-            {"productName": "Carbendazim 50 WP", "category": "Pesticide", "dose_per_acre": 1, "searchQuery": "Carbendazim"}
-        ],
-        "Sugarcane": [
-            {"productName": "Urea 46% N", "category": "Fertilizer", "dose_per_acre": 75, "searchQuery": "Urea"},
-            {"productName": "MOP Potash", "category": "Fertilizer", "dose_per_acre": 50, "searchQuery": "MOP"}
-        ],
-        "Jowar": [
-            {"productName": "Urea 46% N", "category": "Fertilizer", "dose_per_acre": 35, "searchQuery": "Urea"},
-            {"productName": "DAP Fertilizer", "category": "Fertilizer", "dose_per_acre": 30, "searchQuery": "DAP"}
-        ]
-    }
-    
+    # Realistic base market share of ~10% for a dealer in their catchment, scales up to 25% with real orders
+    market_share = min(0.25, max(0.10, 0.08 + (shop_customers * 0.005)))
+
+    # 6. Consolidated Agricultural Inputs Catalog
+    INPUTS_CATALOG = [
+        {
+            "id": "DAP", "name": "DAP (Di-Ammonium Phosphate)", "category": "Fertilizer", "unit": "50kg Bags",
+            "search_terms": ["dap", "di-ammonium"], "color": "text-blue-700 bg-blue-100", "urgency_window": "Peak Basal Sowing",
+            "depletion_multiplier": {"Paddy (Rice)": 1.2, "Maize": 1.15, "Sugarcane": 1.25, "Soybean": 0.8},
+            "active_dose": {"Potato": 60, "Wheat": 40, "Chickpea": 35, "Mustard": 30, "Onion": 45, "Maize": 50, "Bengal Gram": 35}
+        },
+        {
+            "id": "UREA", "name": "Urea 46% N", "category": "Fertilizer", "unit": "45kg Bags",
+            "search_terms": ["urea"], "color": "text-emerald-700 bg-emerald-100", "urgency_window": "Vegetative Top-Dressing",
+            "depletion_multiplier": {"Paddy (Rice)": 1.3, "Cotton": 1.2, "Sugarcane": 1.3},
+            "active_dose": {"Wheat": 40, "Sugarcane": 75, "Paddy (Rice)": 50, "Maize": 40, "Jowar": 35, "Cotton": 30}
+        },
+        {
+            "id": "MOP", "name": "MOP Potash (60% K2O)", "category": "Fertilizer", "unit": "50kg Bags",
+            "search_terms": ["mop", "potash"], "color": "text-purple-700 bg-purple-100", "urgency_window": "Tuber/Grain Development",
+            "depletion_multiplier": {"Potato": 1.4, "Sugarcane": 1.5, "Paddy (Rice)": 1.1},
+            "active_dose": {"Potato": 40, "Sugarcane": 50, "Wheat": 20, "Onion": 30}
+        },
+        {
+            "id": "NPK", "name": "NPK 20-20-0 / 19-19-19", "category": "Fertilizer", "unit": "50kg Bags",
+            "search_terms": ["npk", "20-20-0", "19-19-19"], "color": "text-indigo-700 bg-indigo-100", "urgency_window": "Balanced Starter",
+            "depletion_multiplier": {"Cotton": 1.1, "Chilli": 1.2},
+            "active_dose": {"Chilli": 45, "Onion": 50, "Cotton": 40, "Tomato": 50}
+        },
+        {
+            "id": "ZINC", "name": "Zinc Sulphate", "category": "Fertilizer", "unit": "5kg Packets",
+            "search_terms": ["zinc", "sulphate"], "color": "text-cyan-700 bg-cyan-100", "urgency_window": "Micronutrient Fill",
+            "depletion_multiplier": {"Paddy (Rice)": 1.5, "Maize": 1.3},
+            "active_dose": {"Paddy (Rice)": 5, "Wheat": 4, "Maize": 5, "Potato": 4}
+        },
+        {
+            "id": "FUNG", "name": "Broad-Spectrum Fungicide", "category": "Crop Protection", "unit": "1kg/1L",
+            "search_terms": ["carbendazim", "mancozeb", "fungicide"], "color": "text-rose-700 bg-rose-100", "urgency_window": "Active Protection",
+            "depletion_multiplier": {"Potato": 1.4, "Onion": 1.3, "Chilli": 1.2},
+            "active_dose": {"Potato": 1.5, "Onion": 1.0, "Paddy (Rice)": 1.0, "Chilli": 1.0}
+        },
+        {
+            "id": "SEED_WHEAT", "name": "Wheat Seeds (HD-2967/PBW)", "category": "Seeds", "unit": "40kg Bags",
+            "search_terms": ["wheat seed"], "color": "text-amber-700 bg-amber-100", "urgency_window": "Imminent Sowing",
+            "depletion_multiplier": {}, "active_dose": {"Wheat": 40}
+        },
+        {
+            "id": "SEED_CHICKPEA", "name": "Chickpea Seeds (JG-11)", "category": "Seeds", "unit": "30kg Bags",
+            "search_terms": ["chickpea seed", "gram seed"], "color": "text-amber-700 bg-amber-100", "urgency_window": "Imminent Sowing",
+            "depletion_multiplier": {}, "active_dose": {"Chickpea": 30, "Bengal Gram": 30}
+        }
+    ]
+
     recommendations = []
-    rec_id = 1
-    for matched_crop, total_carea in aggregated.items():
-        if matched_crop in CROP_MAPPING and total_carea > 0:
-            for prod in CROP_MAPPING[matched_crop]:
-                target_stock = total_carea * prod["dose_per_acre"] * market_share
-                if target_stock >= 1:
-                    recommendations.append({
-                        "id": str(rec_id),
-                        "productName": prod["productName"],
-                        "category": prod["category"],
-                        "searchQuery": prod["searchQuery"],
-                        "confidence": min(98, max(75, int(market_share * 1000))),
-                        "targetStock": int(target_stock),
-                        "color": "text-blue-600 bg-blue-100",
-                        "reason": f"Total active {matched_crop} cultivation is {total_carea:,.0f} acres in your region. With an estimated {market_share*100:.1f}% customer base share, stock ~{int(target_stock)} units of {prod['productName']}."
-                    })
-                    rec_id += 1
-                    
-    # Sort recommendations by targetStock (highest demand)
-    recommendations = sorted(recommendations, key=lambda x: x["targetStock"], reverse=True)
+    
+    for item in INPUTS_CATALOG:
+        active_demand = 0.0
+        contributing_crops = []
+        for crop, dose in item["active_dose"].items():
+            area = active_aggregated.get(crop, 0.0)
+            if area > 0:
+                active_demand += area * dose
+                contributing_crops.append({"crop": crop, "acres": area})
+                
+        rotation_surge_demand = 0.0
+        past_influences = []
+        for crop, multi in item["depletion_multiplier"].items():
+            past_area = past_aggregated.get(crop, 0.0)
+            if past_area > 0 and multi > 1.0:
+                avg_dose = sum(item["active_dose"].values()) / len(item["active_dose"])
+                extra = past_area * (multi - 1.0) * avg_dose
+                rotation_surge_demand += extra
+                past_influences.append({"crop": crop, "acres": past_area})
+                
+        total_regional_demand = active_demand + rotation_surge_demand
+        
+        if total_regional_demand > 0:
+            store_expected_demand = total_regional_demand * market_share
+            safety_buffer = store_expected_demand * 0.20
+            target_maintain = int(round(store_expected_demand + safety_buffer))
+            
+            current_qty, low_thresh, matched_ids = get_inventory_stock(item["search_terms"])
+            reorder_qty = max(0, target_maintain - current_qty)
+            
+            status = "optimal"
+            if current_qty == 0:
+                status = "critical"
+            elif current_qty < (target_maintain * 0.4) or current_qty <= low_thresh:
+                status = "low"
+            elif current_qty > (target_maintain * 1.5):
+                status = "surplus"
+                
+            urgency = "Normal"
+            if status == "critical": urgency = "Critical Urgency"
+            elif status == "low": urgency = "High Urgency"
+            
+            sorted_contributors = sorted(contributing_crops, key=lambda x: x["acres"], reverse=True)
+            crops_str = ", ".join([f"{c['crop']} ({c['acres']:,.0f} ac)" for c in sorted_contributors[:3]])
+            
+            past_str = ""
+            if past_influences:
+                sorted_past = sorted(past_influences, key=lambda x: x["acres"], reverse=True)
+                top_past = sorted_past[0]
+                past_str = f" Following the harvest of {top_past['acres']:,.0f} acres of {top_past['crop']}, soil depletion drives up demand."
+
+            reason = f"Driven by active {crops_str}.{past_str} Maintain ~{target_maintain} units for your {market_share*100:.1f}% catchment footprint."
+
+            recommendations.append({
+                "id": item["id"],
+                "productName": item["name"],
+                "category": item["category"],
+                "unit": item["unit"],
+                "color": item["color"],
+                "urgencyWindow": item["urgency_window"],
+                "urgencyLevel": urgency,
+                "confidence": min(98, max(85, int(85 + (market_share * 50)))),
+                "targetMaintainStock": target_maintain,
+                "safetyBuffer": int(round(safety_buffer)),
+                "currentStock": current_qty,
+                "reorderQuantity": reorder_qty,
+                "stockStatus": status,
+                "reason": reason,
+                "contributingCrops": sorted_contributors,
+                "matchedProductIds": matched_ids
+            })
+
+    status_order = {"critical": 0, "low": 1, "optimal": 2, "surplus": 3}
+    recommendations = sorted(recommendations, key=lambda x: (status_order[x["stockStatus"]], -x["reorderQuantity"]))
     
     return {
         "crop_cultivation": crop_cultivation,
         "total_cultivation_area": round(total_db_area, 1),
+        "total_past_area": round(total_past_area, 1),
         "active_crops_count": len(crop_cultivation),
-        "recommendations": recommendations[:12]
+        "recommendations": recommendations
     }
+
 
 
