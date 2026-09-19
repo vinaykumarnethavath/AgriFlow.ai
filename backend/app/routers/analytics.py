@@ -950,12 +950,91 @@ async def get_shop_discovery(
     status_order = {"critical": 0, "low": 1, "optimal": 2, "surplus": 3}
     recommendations = sorted(recommendations, key=lambda x: (status_order[x["stockStatus"]], -x["reorderQuantity"]))
     
+    # 7. Dynamic New Product Alerts based on active crops and reviews
+    PREMIUM_NEW_PRODUCTS = [
+        {
+            "id": "new-1", "productName": "AquaSave Wheat Seed v2", "manufacturer": "GreenTech Seeds Ltd.",
+            "type": "Seeds", "highlights": ["Drought Resistant", "High Yield", "Short Cycle"],
+            "priceHint": "₹3,500 / 50kg bag", "isNew": True, "iconType": "leaf",
+            "target_crops": ["Wheat"],
+            "fieldEffect": "Field Review: ⭐ 4.8/5.0 - Demonstrates 15-20% yield increase in early trials under water-stressed conditions. Highly effective for dry spells.",
+            "rating": 4.8,
+            "details": {
+                "photo": "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=400&q=80",
+                "crops": ["Wheat", "Barley"],
+                "conditions": ["Low rainfall regions", "Dry soil conditions"],
+                "description": "A genetically optimized wheat seed variety designed for maximum yield in water-scarce environments. Reduces water usage by up to 30%."
+            }
+        },
+        {
+            "id": "new-2", "productName": "BioShield Pro", "manufacturer": "AgriChem Industries",
+            "type": "Bio-Pesticide", "highlights": ["Organic Certified", "Broad Spectrum", "Residue Free"],
+            "priceHint": "₹850 / Liter", "isNew": True, "iconType": "shield",
+            "target_crops": ["Cotton", "Chilli", "Tomato", "Bengal Gram", "Chickpea"],
+            "fieldEffect": "Field Review: ⭐ 4.6/5.0 - Effectively controls 90% of sap-sucking pests within 48 hours without harming beneficial pollinators.",
+            "rating": 4.6,
+            "details": {
+                "photo": "https://images.unsplash.com/photo-1627918349071-70e28f0957b8?auto=format&fit=crop&w=400&q=80",
+                "crops": ["Cotton", "Chilli", "Tomato", "Pulses"],
+                "conditions": ["High humidity", "Pest-prone seasons"],
+                "description": "An advanced organic bio-pesticide that targets multiple harmful insects while remaining completely safe for pollinators and crops."
+            }
+        },
+        {
+            "id": "new-3", "productName": "Nano-Urea Plus", "manufacturer": "National Fertilizers",
+            "type": "Fertilizer", "highlights": ["High Efficiency", "Foliar Spray", "Cost Effective"],
+            "priceHint": "₹240 / 500ml", "isNew": False, "iconType": "sparkles",
+            "target_crops": ["Paddy (Rice)", "Maize", "Sugarcane", "Jowar"],
+            "fieldEffect": "Field Review: ⭐ 4.9/5.0 - Reduces traditional urea requirement by 50%. Immediate greening effect observed within 5-7 days of foliar application.",
+            "rating": 4.9,
+            "details": {
+                "photo": "https://images.unsplash.com/photo-1592982537447-6f23b7b25e5a?auto=format&fit=crop&w=400&q=80",
+                "crops": ["Paddy", "Maize", "Sugarcane", "Jowar"],
+                "conditions": ["Mid-growth stage", "Nitrogen deficient soil"],
+                "description": "Liquid nano-urea formulation that provides 80% higher nitrogen use efficiency compared to conventional granular urea."
+            }
+        },
+        {
+            "id": "new-4", "productName": "RootBoost Mycorrhizae", "manufacturer": "SoilVigor Labs",
+            "type": "Bio-Fertilizer", "highlights": ["Root Expansion", "Phosphorus Uptake", "Drought Resilient"],
+            "priceHint": "₹450 / 1kg", "isNew": True, "iconType": "factory",
+            "target_crops": ["Potato", "Onion", "Groundnut", "Soybean", "Mustard"],
+            "fieldEffect": "Field Review: ⭐ 4.7/5.0 - Enhances root mass by 40%. Exceptionally effective for tuber expansion and improving phosphorus solubilization.",
+            "rating": 4.7,
+            "details": {
+                "photo": "https://images.unsplash.com/photo-1592982537447-6f23b7b25e5a?auto=format&fit=crop&w=400&q=80",
+                "crops": ["Potato", "Onion", "Groundnut", "Soybean"],
+                "conditions": ["Early vegetative stage", "Phosphorus deficient soil"],
+                "description": "Premium mycorrhizal fungi blend that creates a symbiotic network with plant roots, drastically improving nutrient and water uptake."
+            }
+        }
+    ]
+
+    new_product_alerts = []
+    for prod in PREMIUM_NEW_PRODUCTS:
+        matched_acreage = 0.0
+        matched_crops_list = []
+        for t_crop in prod["target_crops"]:
+            area = active_aggregated.get(t_crop, 0.0)
+            if area > 0:
+                matched_acreage += area
+                matched_crops_list.append({"crop": t_crop, "area": area})
+        
+        if matched_acreage > 0:
+            prod_copy = dict(prod)
+            prod_copy["matchedAcreage"] = matched_acreage
+            prod_copy["matchedCrops"] = sorted(matched_crops_list, key=lambda x: x["area"], reverse=True)
+            new_product_alerts.append(prod_copy)
+
+    new_product_alerts = sorted(new_product_alerts, key=lambda x: x["matchedAcreage"], reverse=True)[:3]
+    
     return {
         "crop_cultivation": crop_cultivation,
         "total_cultivation_area": round(total_db_area, 1),
         "total_past_area": round(total_past_area, 1),
         "active_crops_count": len(crop_cultivation),
-        "recommendations": recommendations
+        "recommendations": recommendations,
+        "new_product_alerts": new_product_alerts
     }
 
 

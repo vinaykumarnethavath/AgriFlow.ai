@@ -25,6 +25,7 @@ export default function DiscoveryPage() {
     const [totalCultivationArea, setTotalCultivationArea] = useState<number>(0);
     const [totalPastArea, setTotalPastArea] = useState<number>(0);
     const [recommendations, setRecommendations] = useState<any[]>([]);
+    const [alerts, setAlerts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<"top8" | "all">("top8");
 
@@ -36,6 +37,7 @@ export default function DiscoveryPage() {
                 if (data.total_cultivation_area) setTotalCultivationArea(data.total_cultivation_area);
                 if (data.total_past_area) setTotalPastArea(data.total_past_area);
                 if (data.recommendations) setRecommendations(data.recommendations);
+                if (data.new_product_alerts) setAlerts(data.new_product_alerts);
             } catch (err) {
                 console.error("Failed to fetch discovery data:", err);
             } finally {
@@ -63,7 +65,7 @@ export default function DiscoveryPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <PredictiveStockingWidget baseRecs={recommendations} loading={loading} activeArea={totalCultivationArea} pastArea={totalPastArea} />
-                <ProductAlertsWidget />
+                <ProductAlertsWidget alerts={alerts} loading={loading} />
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
