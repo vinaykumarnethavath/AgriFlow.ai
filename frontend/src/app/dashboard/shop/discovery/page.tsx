@@ -5,19 +5,10 @@ import { useLanguage } from "@/context/LanguageContext";
 import api from "@/lib/api";
 import { PredictiveStockingWidget } from "@/components/shop/PredictiveStockingWidget";
 import { ProductAlertsWidget } from "@/components/shop/ProductAlertsWidget";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { RegionalCropCalendar } from "@/components/shop/RegionalCropCalendar";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MapPin, TrendingUp, Tractor } from "lucide-react";
-
-const regionalDemandData = [
-    { month: "Jan", urea: 400, dap: 240, seeds: 240 },
-    { month: "Feb", urea: 300, dap: 139, seeds: 221 },
-    { month: "Mar", urea: 200, dap: 980, seeds: 229 },
-    { month: "Apr", urea: 278, dap: 390, seeds: 200 },
-    { month: "May", urea: 189, dap: 480, seeds: 218 },
-    { month: "Jun", urea: 239, dap: 380, seeds: 250 },
-    { month: "Jul", urea: 349, dap: 430, seeds: 210 },
-];
+import { MapPin, TrendingUp, Tractor, Sparkles, Compass } from "lucide-react";
 
 export default function DiscoveryPage() {
     const { t } = useLanguage();
@@ -26,6 +17,9 @@ export default function DiscoveryPage() {
     const [totalPastArea, setTotalPastArea] = useState<number>(0);
     const [recommendations, setRecommendations] = useState<any[]>([]);
     const [alerts, setAlerts] = useState<any[]>([]);
+    const [regionalCropCalendar, setRegionalCropCalendar] = useState<any[]>([]);
+    const [historicalDemandData, setHistoricalDemandData] = useState<any[]>([]);
+    const [regionInfo, setRegionInfo] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<"top8" | "all">("top8");
 
@@ -38,6 +32,9 @@ export default function DiscoveryPage() {
                 if (data.total_past_area) setTotalPastArea(data.total_past_area);
                 if (data.recommendations) setRecommendations(data.recommendations);
                 if (data.new_product_alerts) setAlerts(data.new_product_alerts);
+                if (data.regional_crop_calendar) setRegionalCropCalendar(data.regional_crop_calendar);
+                if (data.historical_demand_patterns) setHistoricalDemandData(data.historical_demand_patterns);
+                if (data.region_info) setRegionInfo(data.region_info);
             } catch (err) {
                 console.error("Failed to fetch discovery data:", err);
             } finally {
@@ -51,26 +48,64 @@ export default function DiscoveryPage() {
 
     return (
         <div className="space-y-6">
-            <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/40 dark:via-teal-950/40 dark:to-cyan-950/40 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-5 shadow-sm">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-white dark:bg-zinc-800 rounded-full shadow-sm">
-                        <MapPin className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/40 dark:via-teal-950/40 dark:to-cyan-950/40 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-5 shadow-xs">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-white dark:bg-zinc-800 rounded-full shadow-xs text-emerald-600 dark:text-emerald-400">
+                            <MapPin className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-foreground">
+                                {t('shop.discovery') || "Smart Stocking & Regional Agronomic Intelligence"}
+                            </h1>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                Regional crop lifecycle tracking, growth-stage stocking targets, and real 181-product catalog demand matching.
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-foreground">{t('shop.discovery') || "Market Insights & Discovery"}</h1>
-                        <p className="text-sm text-muted-foreground">Smart recommendations tailored for your 50km radius based on regional trends and crop cycles.</p>
-                    </div>
+
+                    {regionInfo && (
+                        <div className="flex items-center gap-2 self-start md:self-auto text-xs bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xs px-3.5 py-2 rounded-xl border border-emerald-100 dark:border-emerald-900/40 shadow-xs">
+                            <Compass className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            <div>
+                                <span className="font-bold text-foreground">{regionInfo.name}</span>
+                                <span className="text-muted-foreground ml-1.5 font-medium">
+                                    ({regionInfo.radius_km}km catchment • {regionInfo.total_farmers} farmers • {regionInfo.market_share_pct}% market share)
+                                </span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <PredictiveStockingWidget baseRecs={recommendations} loading={loading} activeArea={totalCultivationArea} pastArea={totalPastArea} />
-                <ProductAlertsWidget alerts={alerts} loading={loading} />
+            {/* Section 1: Regional Crop Calendar (Stage Progression & Harvest Timeline) */}
+            <RegionalCropCalendar
+                crops={regionalCropCalendar}
+                loading={loading}
+                regionName={regionInfo?.name || "Catchment Area"}
+                totalAcres={totalCultivationArea}
+                totalFarmers={regionInfo?.total_farmers || 0}
+            />
+
+            {/* Section 2: Predictive Stocking Widget (Stage-Aware Recommendations) & Product Alerts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <PredictiveStockingWidget
+                    baseRecs={recommendations}
+                    loading={loading}
+                    activeArea={totalCultivationArea}
+                    pastArea={totalPastArea}
+                />
+                <ProductAlertsWidget
+                    alerts={alerts}
+                    loading={loading}
+                />
             </div>
 
+            {/* Section 3: Active Cultivation Chart & Regional Demand Trends */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
                 {/* Crop Cultivation Area Chart */}
-                <Card className="border-gray-200 dark:border-zinc-800">
+                <Card className="border-gray-200 dark:border-zinc-800 shadow-xs">
                     <CardHeader className="pb-3">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="flex items-center gap-2.5">
@@ -95,7 +130,7 @@ export default function DiscoveryPage() {
                                             onClick={() => setViewMode("top8")}
                                             className={`px-2.5 py-1 rounded-md transition-all ${
                                                 viewMode === "top8"
-                                                    ? "bg-white dark:bg-zinc-700 text-foreground shadow-sm font-semibold"
+                                                    ? "bg-white dark:bg-zinc-700 text-foreground shadow-xs font-semibold"
                                                     : "text-muted-foreground hover:text-foreground"
                                             }`}
                                         >
@@ -106,7 +141,7 @@ export default function DiscoveryPage() {
                                             onClick={() => setViewMode("all")}
                                             className={`px-2.5 py-1 rounded-md transition-all ${
                                                 viewMode === "all"
-                                                    ? "bg-white dark:bg-zinc-700 text-foreground shadow-sm font-semibold"
+                                                    ? "bg-white dark:bg-zinc-700 text-foreground shadow-xs font-semibold"
                                                     : "text-muted-foreground hover:text-foreground"
                                             }`}
                                         >
@@ -208,31 +243,46 @@ export default function DiscoveryPage() {
                     </CardContent>
                 </Card>
 
-                {/* Regional Demand Trends Line Chart */}
-                <Card className="border-gray-200 dark:border-zinc-800">
+                {/* Regional Seasonal Demand Trends (From Live DB Planting Cycles) */}
+                <Card className="border-gray-200 dark:border-zinc-800 shadow-xs">
                     <CardHeader className="pb-3">
                         <div className="flex items-center gap-2.5">
                             <div className="p-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg text-blue-600 dark:text-blue-400">
                                 <TrendingUp className="w-5 h-5" />
                             </div>
                             <div>
-                                <CardTitle className="text-lg font-bold">Regional Demand Trends</CardTitle>
-                                <CardDescription className="text-xs">Historical demand for top input categories in your area</CardDescription>
+                                <CardTitle className="text-lg font-bold">Regional Seasonal Demand Trends</CardTitle>
+                                <CardDescription className="text-xs">
+                                    Monthly estimated demand curve derived from {regionInfo?.name || "catchment"} planting cycles
+                                </CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-2">
                         <div className="h-[340px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={regionalDemandData} margin={{ top: 8, right: 24, left: 10, bottom: 8 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-800 opacity-50" />
-                                    <XAxis dataKey="month" stroke="currentColor" className="text-gray-500 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} />
-                                    <YAxis stroke="currentColor" className="text-gray-500 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} />
-                                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                    <Line type="monotone" dataKey="urea" stroke="#3b82f6" name="Urea" strokeWidth={2} dot={{ r: 3 }} />
-                                    <Line type="monotone" dataKey="dap" stroke="#10b981" name="DAP" strokeWidth={2} dot={{ r: 3 }} />
-                                    <Line type="monotone" dataKey="seeds" stroke="#8b5cf6" name="Seeds" strokeWidth={2} dot={{ r: 3 }} />
-                                </LineChart>
+                                {loading ? (
+                                    <div className="flex justify-center items-center h-full">
+                                        <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full" />
+                                    </div>
+                                ) : historicalDemandData.length === 0 ? (
+                                    <div className="flex justify-center items-center h-full text-muted-foreground text-sm">
+                                        No seasonal demand trends available yet.
+                                    </div>
+                                ) : (
+                                    <LineChart data={historicalDemandData} margin={{ top: 8, right: 24, left: 10, bottom: 8 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-800 opacity-50" />
+                                        <XAxis dataKey="month" stroke="currentColor" className="text-gray-500 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} />
+                                        <YAxis stroke="currentColor" className="text-gray-500 dark:text-gray-400" tick={{ fontSize: 11, fill: 'currentColor' }} />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                        <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '6px' }} />
+                                        <Line type="monotone" dataKey="urea" stroke="#10b981" name="Urea (Bags)" strokeWidth={2.5} dot={{ r: 3 }} />
+                                        <Line type="monotone" dataKey="dap" stroke="#3b82f6" name="DAP (Bags)" strokeWidth={2} dot={{ r: 3 }} />
+                                        <Line type="monotone" dataKey="mop" stroke="#a855f7" name="MOP Potash (Bags)" strokeWidth={2} dot={{ r: 2 }} />
+                                        <Line type="monotone" dataKey="seeds" stroke="#f59e0b" name="Seeds (Bags)" strokeWidth={1.8} strokeDasharray="3 3" dot={{ r: 2 }} />
+                                        <Line type="monotone" dataKey="protection" stroke="#ef4444" name="Crop Protection" strokeWidth={1.8} dot={{ r: 2 }} />
+                                    </LineChart>
+                                )}
                             </ResponsiveContainer>
                         </div>
                     </CardContent>
