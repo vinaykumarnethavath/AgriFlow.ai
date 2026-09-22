@@ -144,6 +144,8 @@ app.include_router(location.router)
 app.include_router(crop_health.router)
 app.include_router(nutrition.router)
 app.include_router(learning.router)
+from .routers import recommendations
+app.include_router(recommendations.router)
 from .routers import voice
 app.include_router(voice.router)
 from .routers import plot_nutrition

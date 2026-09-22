@@ -17,6 +17,7 @@ import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
 import MarketPriceWidget from "@/components/info/MarketPriceWidget";
 import NewsWidget from "@/components/info/NewsWidget";
+import CropRecommendationWidget from "@/components/info/CropRecommendationWidget";
 import { AICropDiagnosis } from "@/components/AICropDiagnosis";
 import { Stethoscope } from "lucide-react";
 
@@ -1153,6 +1154,12 @@ export default function FarmerDashboard() {
                 </CardContent>
             </Card>
 
+            {/* ═══════════════════════════════════════════════════
+                CROP RECOMMENDATIONS
+               ═══════════════════════════════════════════════════ */}
+            <div>
+                <CropRecommendationWidget />
+            </div>
 
             {/* ═══════════════════════════════════════════════════
                 3. ACTIVE CROPS (Top 3)
