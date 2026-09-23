@@ -46,3 +46,7 @@ from .crop_insurance import (
     CropInsurance, CropInsuranceCreate, CropInsuranceRead, CropInsuranceUpdate,
     CropInsuranceClaimRequest, CropInsuranceSummary
 )
+from .crop_storage import (
+    CropStorage, CropStorageCreate, CropStorageRead, CropStorageUpdate,
+    CropStorageReleaseRequest, CropStorageSummary
+)

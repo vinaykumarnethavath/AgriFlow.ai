@@ -2015,5 +2015,103 @@ export const getPMFBYGuidance = async (): Promise<PMFBYGuidance> => {
     return response.data;
 };
 
+// ==================== CROP STORAGE TRACKING ====================
+export interface CropStorage {
+    id: number;
+    farmer_id: number;
+    crop_name: string;
+    variety: string | null;
+    storage_type: 'cold_storage' | 'warehouse_cwc_swc' | 'private_godown' | 'on_farm_silo' | 'other' | string;
+    facility_name: string;
+    location: string;
+    receipt_number: string | null;
+    bags_count: number;
+    weight_quintals: number;
+    bag_weight_kg: number;
+    monthly_rent_per_bag: number;
+    deposit_date: string;
+    expected_release_date: string | null;
+    actual_release_date: string | null;
+    status: 'stored' | 'partially_released' | 'fully_released' | 'overdue_alert' | string;
+    target_sell_price_per_quintal: number | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+    days_in_storage: number;
+    accumulated_rent: number;
+    days_until_release: number | null;
+    is_release_due: boolean;
+}
+
+export interface CropStorageCreate {
+    crop_name: string;
+    variety?: string;
+    storage_type?: string;
+    facility_name: string;
+    location: string;
+    receipt_number?: string;
+    bags_count: number;
+    weight_quintals: number;
+    bag_weight_kg?: number;
+    monthly_rent_per_bag?: number;
+    deposit_date?: string;
+    expected_release_date?: string;
+    status?: string;
+    target_sell_price_per_quintal?: number;
+    notes?: string;
+}
+
+export interface CropStorageReleaseRequest {
+    bags_released: number;
+    release_date?: string;
+    selling_price_per_quintal?: number;
+    notes?: string;
+}
+
+export interface CropStorageSummary {
+    total_bags_stored: number;
+    total_quintals_stored: number;
+    monthly_rent_commitment: number;
+    total_accumulated_rent: number;
+    active_facilities_count: number;
+    release_due_count: number;
+}
+
+export const getCropStorages = async (status?: string): Promise<CropStorage[]> => {
+    const params: Record<string, string> = {};
+    if (status) params.status = status;
+    const response = await api.get<CropStorage[]>('/crop-storage/', { params });
+    return response.data;
+};
+
+export const getCropStorageSummary = async (): Promise<CropStorageSummary> => {
+    const response = await api.get<CropStorageSummary>('/crop-storage/summary');
+    return response.data;
+};
+
+export const getCropStorage = async (storageId: number): Promise<CropStorage> => {
+    const response = await api.get<CropStorage>(`/crop-storage/${storageId}`);
+    return response.data;
+};
+
+export const createCropStorage = async (data: CropStorageCreate): Promise<CropStorage> => {
+    const response = await api.post<CropStorage>('/crop-storage/', data);
+    return response.data;
+};
+
+export const updateCropStorage = async (storageId: number, data: Partial<CropStorageCreate>): Promise<CropStorage> => {
+    const response = await api.put<CropStorage>(`/crop-storage/${storageId}`, data);
+    return response.data;
+};
+
+export const deleteCropStorage = async (storageId: number): Promise<void> => {
+    await api.delete(`/crop-storage/${storageId}`);
+};
+
+export const releaseCropStorage = async (storageId: number, data: CropStorageReleaseRequest): Promise<CropStorage> => {
+    const response = await api.post<CropStorage>(`/crop-storage/${storageId}/release`, data);
+    return response.data;
+};
+
 export default api;
 
