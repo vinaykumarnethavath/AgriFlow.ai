@@ -18,6 +18,7 @@ import { Modal } from "@/components/ui/modal";
 import MarketPriceWidget from "@/components/info/MarketPriceWidget";
 import NewsWidget from "@/components/info/NewsWidget";
 import CropRecommendationWidget from "@/components/info/CropRecommendationWidget";
+import BestCropRecommendationCard from "@/components/info/BestCropRecommendationCard";
 import { AICropDiagnosis } from "@/components/AICropDiagnosis";
 import { Stethoscope } from "lucide-react";
 
@@ -1251,9 +1252,20 @@ export default function FarmerDashboard() {
             </Card>
 
             {/* ═══════════════════════════════════════════════════
-                CROP RECOMMENDATIONS
+                4. BEST CROP RECOMMENDATION & ROTATION
                ═══════════════════════════════════════════════════ */}
-            <div>
+            <div className="space-y-4">
+                <BestCropRecommendationCard
+                    onSelectCrop={(cropName, variety, season) => {
+                        setNewCrop(prev => ({
+                            ...prev,
+                            name: cropName,
+                            variety: variety || "",
+                            season: season || "Kharif",
+                        }));
+                        setIsAddCropOpen(true);
+                    }}
+                />
                 <CropRecommendationWidget />
             </div>
 

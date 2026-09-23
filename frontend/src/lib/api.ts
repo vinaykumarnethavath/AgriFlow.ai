@@ -1812,5 +1812,38 @@ export const getAllSeasonsOverview = async (): Promise<SeasonSummary[]> => {
     return response.data;
 };
 
+// ─── Best Crop Recommendation ───────────────────────────
+export interface AlternativeCrop {
+    crop_name: string;
+    icon: string;
+    variety: string;
+    expected_profit_per_acre: number;
+    confidence_score: number;
+    tag: string;
+}
+
+export interface BestCropRecommendation {
+    crop_name: string;
+    icon: string;
+    variety: string;
+    target_season: string;
+    expected_profit_per_acre: number;
+    expected_yield_per_acre: number;
+    estimated_cost_per_acre: number;
+    estimated_revenue_per_acre: number;
+    confidence_score: number;
+    headline: string;
+    reason: string;
+    past_profit_factor: string;
+    market_trend_factor: string;
+    weather_factor: string;
+    alternatives: AlternativeCrop[];
+}
+
+export const getBestCropRecommendation = async (): Promise<BestCropRecommendation> => {
+    const response = await api.get<BestCropRecommendation>('/recommendations/best-crop');
+    return response.data;
+};
+
 export default api;
 
