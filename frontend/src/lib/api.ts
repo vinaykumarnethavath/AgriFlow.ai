@@ -2113,5 +2113,105 @@ export const releaseCropStorage = async (storageId: number, data: CropStorageRel
     return response.data;
 };
 
+// ==================== SOIL PROFILE & TESTING ====================
+export interface SoilProfile {
+    id: number;
+    farmer_id: number;
+    land_record_id: number | null;
+    plot_label: string;
+    soil_type: string;
+    shc_number: string | null;
+    testing_lab: string;
+    test_date: string;
+    ph_level: number;
+    organic_carbon_percent: number;
+    ec_ds_m: number | null;
+    nitrogen_kg_ha: number;
+    phosphorus_kg_ha: number;
+    potassium_kg_ha: number;
+    sulphur_ppm: number | null;
+    zinc_ppm: number | null;
+    iron_ppm: number | null;
+    boron_ppm: number | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+    health_score: number;
+    health_status: 'optimal' | 'moderate' | 'needs_attention' | string;
+    ph_status: 'acidic' | 'neutral' | 'alkaline' | string;
+    nitrogen_status: 'low' | 'medium' | 'high' | string;
+    phosphorus_status: 'low' | 'medium' | 'high' | string;
+    potassium_status: 'low' | 'medium' | 'high' | string;
+    is_test_overdue: boolean;
+}
+
+export interface SoilProfileCreate {
+    land_record_id?: number | null;
+    plot_label?: string;
+    soil_type?: string;
+    shc_number?: string | null;
+    testing_lab?: string;
+    test_date?: string;
+    ph_level?: number;
+    organic_carbon_percent?: number;
+    ec_ds_m?: number | null;
+    nitrogen_kg_ha?: number;
+    phosphorus_kg_ha?: number;
+    potassium_kg_ha?: number;
+    sulphur_ppm?: number | null;
+    zinc_ppm?: number | null;
+    iron_ppm?: number | null;
+    boron_ppm?: number | null;
+    notes?: string | null;
+}
+
+export interface SoilHealthSummary {
+    total_profiles: number;
+    dominant_soil_type: string;
+    avg_health_score: number;
+    overall_fertility: string;
+    avg_ph: number;
+    avg_organic_carbon: number;
+    avg_n: number;
+    avg_p: number;
+    avg_k: number;
+    overdue_tests_count: number;
+    key_recommendation: string;
+}
+
+export const getSoilProfiles = async (): Promise<SoilProfile[]> => {
+    const response = await api.get<SoilProfile[]>('/soil-profile/');
+    return response.data;
+};
+
+export const getSoilHealthSummary = async (): Promise<SoilHealthSummary> => {
+    const response = await api.get<SoilHealthSummary>('/soil-profile/summary');
+    return response.data;
+};
+
+export const getSoilProfile = async (id: number): Promise<SoilProfile> => {
+    const response = await api.get<SoilProfile>(`/soil-profile/${id}`);
+    return response.data;
+};
+
+export const createSoilProfile = async (data: SoilProfileCreate): Promise<SoilProfile> => {
+    const response = await api.post<SoilProfile>('/soil-profile/', data);
+    return response.data;
+};
+
+export const updateSoilProfile = async (id: number, data: Partial<SoilProfileCreate>): Promise<SoilProfile> => {
+    const response = await api.put<SoilProfile>(`/soil-profile/${id}`, data);
+    return response.data;
+};
+
+export const deleteSoilProfile = async (id: number): Promise<void> => {
+    await api.delete(`/soil-profile/${id}`);
+};
+
+export const seedDefaultSoilProfiles = async (): Promise<SoilProfile[]> => {
+    const response = await api.post<SoilProfile[]>('/soil-profile/seed-defaults');
+    return response.data;
+};
+
 export default api;
 

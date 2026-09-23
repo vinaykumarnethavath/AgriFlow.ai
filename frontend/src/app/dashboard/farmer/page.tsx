@@ -19,6 +19,7 @@ import MarketPriceWidget from "@/components/info/MarketPriceWidget";
 import NewsWidget from "@/components/info/NewsWidget";
 import CropRecommendationWidget from "@/components/info/CropRecommendationWidget";
 import BestCropRecommendationCard from "@/components/info/BestCropRecommendationCard";
+import SoilProfileCard from "@/components/info/SoilProfileCard";
 import ExportReportModal from "@/components/info/ExportReportModal";
 import { AICropDiagnosis } from "@/components/AICropDiagnosis";
 import { Stethoscope } from "lucide-react";
@@ -1276,6 +1277,7 @@ export default function FarmerDashboard() {
                         setIsAddCropOpen(true);
                     }}
                 />
+                <SoilProfileCard />
                 <CropRecommendationWidget />
             </div>
 

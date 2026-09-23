@@ -50,3 +50,6 @@ from .crop_storage import (
     CropStorage, CropStorageCreate, CropStorageRead, CropStorageUpdate,
     CropStorageReleaseRequest, CropStorageSummary
 )
+from .soil_profile import (
+    SoilProfile, SoilProfileCreate, SoilProfileRead, SoilProfileUpdate, SoilHealthSummary
+)
