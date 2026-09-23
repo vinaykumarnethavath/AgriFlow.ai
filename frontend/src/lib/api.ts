@@ -2213,5 +2213,92 @@ export const seedDefaultSoilProfiles = async (): Promise<SoilProfile[]> => {
     return response.data;
 };
 
+// ==================== ANNUAL PERFORMANCE SUMMARY ====================
+export interface YoYMetric {
+    current: number;
+    previous: number;
+    difference: number;
+    percent_change: number;
+    is_positive: boolean;
+}
+
+export interface SeasonAnnualBreakdown {
+    season_name: string;
+    crops_count: number;
+    area_acres: number;
+    production_quintals: number;
+    cost: number;
+    revenue: number;
+    net_profit: number;
+    profit_share_percent: number;
+}
+
+export interface CropAnnualRank {
+    rank: number;
+    crop_id: number;
+    crop_name: string;
+    variety: string | null;
+    season: string;
+    area: number;
+    yield_quintals: number;
+    yield_per_acre: number;
+    total_cost: number;
+    revenue: number;
+    net_profit: number;
+    profit_per_acre: number;
+    cost_benefit_ratio: number;
+}
+
+export interface ExpenseCategoryItem {
+    category: string;
+    amount: number;
+    percentage: number;
+}
+
+export interface MonthlyCashflowItem {
+    month_num: number;
+    month_name: string;
+    income: number;
+    expenses: number;
+    net: number;
+}
+
+export interface AnnualSummaryResponse {
+    year: number;
+    available_years: number[];
+    total_crops_planted: number;
+    gross_cropped_area_acres: number;
+    net_operated_area_acres: number;
+    cropping_intensity_percent: number;
+    total_production_quintals: number;
+    gross_revenue: number;
+    total_input_cost: number;
+    net_farm_income: number;
+    profit_margin_percent: number;
+    avg_return_per_acre: number;
+    yoy_revenue: YoYMetric;
+    yoy_profit: YoYMetric;
+    yoy_cost: YoYMetric;
+    yoy_yield: YoYMetric;
+    seasonal_breakdown: SeasonAnnualBreakdown[];
+    crop_rankings: CropAnnualRank[];
+    expense_breakdown: ExpenseCategoryItem[];
+    monthly_cashflow: MonthlyCashflowItem[];
+    key_highlights: string[];
+    audit_summary: string;
+}
+
+export const getAnnualSummaryYears = async (): Promise<number[]> => {
+    const response = await api.get<number[]>('/annual-summary/years');
+    return response.data;
+};
+
+export const getAnnualPerformanceSummary = async (year?: number): Promise<AnnualSummaryResponse> => {
+    const params: Record<string, any> = {};
+    if (year) params.year = year;
+    const response = await api.get<AnnualSummaryResponse>('/annual-summary/', { params });
+    return response.data;
+};
+
 export default api;
 

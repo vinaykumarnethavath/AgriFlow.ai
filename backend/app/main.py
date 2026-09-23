@@ -166,4 +166,6 @@ from .routers import crop_storage
 app.include_router(crop_storage.router)
 from .routers import soil_profile
 app.include_router(soil_profile.router)
+from .routers import annual_summary
+app.include_router(annual_summary.router)
 
