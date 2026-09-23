@@ -19,3 +19,4 @@ razorpay
 gunicorn
 psycopg2-binary
 aiofiles
+reportlab

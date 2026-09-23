@@ -8,7 +8,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import { ArrowLeft, Plus, Sprout, ArrowRight, Stethoscope, LineChart } from "lucide-react";
+import { ArrowLeft, Plus, Sprout, ArrowRight, Stethoscope, LineChart, FileDown } from "lucide-react";
+import ExportReportModal from "@/components/info/ExportReportModal";
 
 export default function CropsListPage() {
     const router = useRouter();
@@ -16,6 +17,7 @@ export default function CropsListPage() {
     const [crops, setCrops] = useState<Crop[]>([]);
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [isExportReportOpen, setIsExportReportOpen] = useState(false);
 
     // Add Crop State
     const [isAddCropOpen, setIsAddCropOpen] = useState(false);
@@ -303,6 +305,13 @@ export default function CropsListPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button
+                        onClick={() => setIsExportReportOpen(true)}
+                        variant="outline"
+                        className="border-emerald-300 text-emerald-800 hover:bg-emerald-50"
+                    >
+                        <FileDown className="h-4 w-4 mr-2 text-emerald-700" /> Export PDF
+                    </Button>
                     <Link href="/dashboard/farmer/season-comparison">
                         <Button variant="outline" className="border-emerald-300 text-emerald-800 hover:bg-emerald-50">
                             <LineChart className="h-4 w-4 mr-2 text-emerald-700" /> Season Comparison
@@ -685,6 +694,14 @@ export default function CropsListPage() {
                     </Button>
                 </form>
             </Modal>
+
+            {/* Export Farm Statement Report Modal */}
+            <ExportReportModal
+                isOpen={isExportReportOpen}
+                onClose={() => setIsExportReportOpen(false)}
+                farmerName={profile?.full_name}
+                farmerId={profile?.farmer_id}
+            />
         </div>
     );
 }

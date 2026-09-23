@@ -1845,5 +1845,45 @@ export const getBestCropRecommendation = async (): Promise<BestCropRecommendatio
     return response.data;
 };
 
+// ─── Farm Reports (PDF Export) ──────────────────────────
+export interface FarmReportMeta {
+    crops_count: number;
+    total_area_acres: number;
+    total_yield_quintals: number;
+    total_cost: number;
+    total_revenue: number;
+    net_profit: number;
+    eligible_uses: string[];
+}
+
+export const getFarmReportPreviewMeta = async (season?: string): Promise<FarmReportMeta> => {
+    const params: Record<string, string> = {};
+    if (season) params.season = season;
+    const response = await api.get<FarmReportMeta>('/farm-reports/preview-meta', { params });
+    return response.data;
+};
+
+export const downloadFarmReportPdf = async (season?: string, year?: number): Promise<Blob> => {
+    const params: Record<string, string | number> = {};
+    if (season) params.season = season;
+    if (year) params.year = year;
+    const response = await api.get('/farm-reports/download', {
+        params,
+        responseType: 'blob',
+    });
+    return response.data;
+};
+
+export const triggerBlobDownload = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(url);
+};
+
 export default api;
 

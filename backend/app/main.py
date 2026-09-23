@@ -158,4 +158,6 @@ from .routers import credit_loan
 app.include_router(credit_loan.router)
 from .routers import season_comparison
 app.include_router(season_comparison.router)
+from .routers import farm_reports
+app.include_router(farm_reports.router)
 

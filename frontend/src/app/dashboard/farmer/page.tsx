@@ -11,7 +11,7 @@ import {
     Sprout, User, Plus, Trash2, ArrowRight, AlertTriangle,
     CloudRain, Sun, Wind, Droplets, Newspaper, Clock,
     PenSquare, Wallet, ShoppingCart, ChevronDown, ChevronUp, ShoppingBag,
-    Eye, EyeOff, Calendar, MessageSquare, Lightbulb, Activity, CreditCard
+    Eye, EyeOff, Calendar, MessageSquare, Lightbulb, Activity, CreditCard, FileDown
 } from "lucide-react";
 import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
@@ -19,6 +19,7 @@ import MarketPriceWidget from "@/components/info/MarketPriceWidget";
 import NewsWidget from "@/components/info/NewsWidget";
 import CropRecommendationWidget from "@/components/info/CropRecommendationWidget";
 import BestCropRecommendationCard from "@/components/info/BestCropRecommendationCard";
+import ExportReportModal from "@/components/info/ExportReportModal";
 import { AICropDiagnosis } from "@/components/AICropDiagnosis";
 import { Stethoscope } from "lucide-react";
 
@@ -247,6 +248,7 @@ export default function FarmerDashboard() {
     const [cropHealthStatuses, setCropHealthStatuses] = useState<Record<number, CropHealthStatusData>>({});
     const [aiSuggestion, setAiSuggestion] = useState<AISuggestion | null>(null);
     const [showAllSuggestions, setShowAllSuggestions] = useState(false);
+    const [isExportReportOpen, setIsExportReportOpen] = useState(false);
 
     const customActivitiesStorageKey = useMemo(() => {
         const userId = (user as any)?.id;
@@ -1008,6 +1010,14 @@ export default function FarmerDashboard() {
                         <CreditCard className="h-4 w-4 mr-1 text-emerald-700" /> Credit & Loans
                     </Button>
                 </Link>
+                <Button
+                    onClick={() => setIsExportReportOpen(true)}
+                    size="sm"
+                    variant="outline"
+                    className="border-emerald-400 text-emerald-800 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 rounded-full font-bold shadow-sm shrink-0"
+                >
+                    <FileDown className="h-4 w-4 mr-1 text-emerald-700" /> Export Report (PDF)
+                </Button>
                 <Link href="/dashboard/farmer/crops">
                     <Button size="sm" variant="outline" className="border-gray-300 text-black dark:text-black bg-white hover:bg-gray-100 rounded-full font-bold shadow-sm">
                         <Wallet className="h-4 w-4 mr-1 text-black" /> {t('farmer.addExpense')}
@@ -1733,6 +1743,14 @@ export default function FarmerDashboard() {
                     <AICropDiagnosis />
                 </div>
             </Modal>
+
+            {/* Export Farm Statement Report Modal */}
+            <ExportReportModal
+                isOpen={isExportReportOpen}
+                onClose={() => setIsExportReportOpen(false)}
+                farmerName={farmerDisplayName}
+                farmerId={profile?.farmer_id}
+            />
         </div >
     );
 }
