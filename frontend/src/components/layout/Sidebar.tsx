@@ -62,6 +62,7 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
                     { name: t("sidebar.seasonComparison", "Season Comparison"), href: "/dashboard/farmer/season-comparison", icon: LineChart },
                     { name: t("sidebar.calendar", "Farm Calendar"), href: "/dashboard/farmer/calendar", icon: Calendar },
                     { name: t("sidebar.creditTracker", "Credit & Loans"), href: "/dashboard/farmer/credit", icon: CreditCard },
+                    { name: t("sidebar.insurance", "Crop Insurance"), href: "/dashboard/farmer/insurance", icon: ShieldCheck },
                     { name: t("sidebar.buyFertilizers"), href: "/dashboard/farmer/market", icon: ShoppingBag },
                     { name: t("sidebar.marketPrices"), href: "/dashboard/farmer/market-prices", icon: TrendingUp },
                     { name: t("sidebar.weather"), href: "/dashboard/farmer/weather", icon: Sun },

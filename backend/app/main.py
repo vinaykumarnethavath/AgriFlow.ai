@@ -160,4 +160,6 @@ from .routers import season_comparison
 app.include_router(season_comparison.router)
 from .routers import farm_reports
 app.include_router(farm_reports.router)
+from .routers import crop_insurance
+app.include_router(crop_insurance.router)
 

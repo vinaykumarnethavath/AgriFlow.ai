@@ -1885,5 +1885,135 @@ export const triggerBlobDownload = (blob: Blob, filename: string) => {
     window.URL.revokeObjectURL(url);
 };
 
+// ─── Crop Insurance Tracker ─────────────────────────────
+export interface CropInsurance {
+    id: number;
+    farmer_id: number;
+    scheme_name: string;
+    policy_number: string;
+    insured_crop_name: string;
+    crop_id?: number;
+    season: string;
+    area_insured_acres: number;
+    sum_insured: number;
+    farmer_premium_paid: number;
+    gov_subsidy_amount?: number;
+    insurance_company: string;
+    application_date: string;
+    policy_status: 'active' | 'expired' | 'claim_filed';
+    claim_status: 'none' | 'submitted' | 'under_survey' | 'approved' | 'settled' | 'rejected';
+    claim_amount_requested?: number;
+    claim_amount_approved?: number;
+    claim_loss_reason?: string;
+    claim_filed_date?: string;
+    notes?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CropInsuranceCreate {
+    scheme_name?: string;
+    policy_number: string;
+    insured_crop_name: string;
+    crop_id?: number | null;
+    season: string;
+    area_insured_acres: number;
+    sum_insured: number;
+    farmer_premium_paid: number;
+    gov_subsidy_amount?: number;
+    insurance_company?: string;
+    application_date: string;
+    policy_status?: string;
+    claim_status?: string;
+    notes?: string;
+}
+
+export interface CropInsuranceClaimRequest {
+    claim_amount_requested: number;
+    claim_loss_reason: string;
+    claim_filed_date: string;
+    notes?: string;
+}
+
+export interface CropInsuranceSummary {
+    total_policies_count: number;
+    active_policies_count: number;
+    total_sum_insured: number;
+    total_premium_paid: number;
+    claims_pending_count: number;
+    claims_settled_count: number;
+    total_claims_received: number;
+}
+
+export interface PMFBYGuidance {
+    scheme: string;
+    helpline: {
+        toll_free: string;
+        kisan_call_center: string;
+        official_portal: string;
+        app_name: string;
+    };
+    critical_rule: string;
+    steps: {
+        step: number;
+        title: string;
+        description: string;
+    }[];
+    required_documents: string[];
+}
+
+export const getCropInsurances = async (policyStatus?: string, claimStatus?: string): Promise<CropInsurance[]> => {
+    const params: Record<string, string> = {};
+    if (policyStatus) params.policy_status = policyStatus;
+    if (claimStatus) params.claim_status = claimStatus;
+    const response = await api.get<CropInsurance[]>('/crop-insurance/', { params });
+    return response.data;
+};
+
+export const getCropInsuranceSummary = async (): Promise<CropInsuranceSummary> => {
+    const response = await api.get<CropInsuranceSummary>('/crop-insurance/summary');
+    return response.data;
+};
+
+export const getCropInsurance = async (policyId: number): Promise<CropInsurance> => {
+    const response = await api.get<CropInsurance>(`/crop-insurance/${policyId}`);
+    return response.data;
+};
+
+export const createCropInsurance = async (data: CropInsuranceCreate): Promise<CropInsurance> => {
+    const response = await api.post<CropInsurance>('/crop-insurance/', data);
+    return response.data;
+};
+
+export const updateCropInsurance = async (policyId: number, data: Partial<CropInsuranceCreate>): Promise<CropInsurance> => {
+    const response = await api.put<CropInsurance>(`/crop-insurance/${policyId}`, data);
+    return response.data;
+};
+
+export const deleteCropInsurance = async (policyId: number): Promise<void> => {
+    await api.delete(`/crop-insurance/${policyId}`);
+};
+
+export const fileInsuranceClaim = async (policyId: number, data: CropInsuranceClaimRequest): Promise<CropInsurance> => {
+    const response = await api.post<CropInsurance>(`/crop-insurance/${policyId}/file-claim`, data);
+    return response.data;
+};
+
+export const updateInsuranceClaimStatus = async (
+    policyId: number,
+    claimStatus: string,
+    approvedAmount?: number
+): Promise<CropInsurance> => {
+    const params: Record<string, any> = { claim_status: claimStatus };
+    if (approvedAmount !== undefined) params.claim_amount_approved = approvedAmount;
+    const response = await api.patch<CropInsurance>(`/crop-insurance/${policyId}/claim-status`, null, { params });
+    return response.data;
+};
+
+export const getPMFBYGuidance = async (): Promise<PMFBYGuidance> => {
+    const response = await api.get<PMFBYGuidance>('/crop-insurance/guidance/pmfby');
+    return response.data;
+};
+
 export default api;
 

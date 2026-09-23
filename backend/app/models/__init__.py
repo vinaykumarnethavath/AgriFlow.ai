@@ -42,3 +42,7 @@ from .credit_loan import (
     CreditLoan, CreditLoanCreate, CreditLoanRead, CreditLoanUpdate,
     LoanRepayment, LoanRepaymentCreate, LoanRepaymentRead, CreditSummaryRead
 )
+from .crop_insurance import (
+    CropInsurance, CropInsuranceCreate, CropInsuranceRead, CropInsuranceUpdate,
+    CropInsuranceClaimRequest, CropInsuranceSummary
+)
