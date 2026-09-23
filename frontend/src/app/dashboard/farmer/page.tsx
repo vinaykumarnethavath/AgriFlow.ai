@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import api, { Crop, WeatherData } from "@/lib/api";
+import api, { Crop, WeatherData, CropHealthStatusData, AISuggestion, getAllCropHealthStatuses, getAISuggestion } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { T } from "@/components/TranslateText";
@@ -11,7 +11,7 @@ import {
     Sprout, User, Plus, Trash2, ArrowRight, AlertTriangle,
     CloudRain, Sun, Wind, Droplets, Newspaper, Clock,
     PenSquare, Wallet, ShoppingCart, ChevronDown, ChevronUp, ShoppingBag,
-    Eye, EyeOff, Calendar, MessageSquare
+    Eye, EyeOff, Calendar, MessageSquare, Lightbulb, Activity
 } from "lucide-react";
 import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
@@ -243,6 +243,9 @@ export default function FarmerDashboard() {
     const [showAddActivity, setShowAddActivity] = useState(false);
     const [newActivity, setNewActivity] = useState({ text: '', daysLeft: 7, type: 'custom' });
     const [isDiagnosisOpen, setIsDiagnosisOpen] = useState(false);
+    const [cropHealthStatuses, setCropHealthStatuses] = useState<Record<number, CropHealthStatusData>>({});
+    const [aiSuggestion, setAiSuggestion] = useState<AISuggestion | null>(null);
+    const [showAllSuggestions, setShowAllSuggestions] = useState(false);
 
     const customActivitiesStorageKey = useMemo(() => {
         const userId = (user as any)?.id;
@@ -365,6 +368,24 @@ export default function FarmerDashboard() {
                 setWeather(weatherRes.data);
             } catch (e) {
                 console.error("Failed to load weather", e);
+            }
+
+            // Fetch crop health statuses
+            try {
+                const healthData = await getAllCropHealthStatuses();
+                const healthMap: Record<number, CropHealthStatusData> = {};
+                healthData.forEach(h => { healthMap[h.crop_id] = h; });
+                setCropHealthStatuses(healthMap);
+            } catch (e) {
+                console.error("Failed to load crop health statuses", e);
+            }
+
+            // Fetch AI suggestion
+            try {
+                const suggestion = await getAISuggestion();
+                setAiSuggestion(suggestion);
+            } catch (e) {
+                console.error("Failed to load AI suggestion", e);
             }
 
             setLastUpdated(new Date());
@@ -525,8 +546,21 @@ export default function FarmerDashboard() {
         return `Zaid ${year}`;
     };
 
-    // Helper: Simple crop health based on days since sowing
-    const getCropHealth = (sowingDate: string) => {
+    // Helper: Get crop health from backend status or auto-calculate fallback
+    const getCropHealth = (sowingDate: string, cropId?: number) => {
+        // Check if we have a backend status for this crop
+        if (cropId && cropHealthStatuses[cropId]) {
+            const s = cropHealthStatuses[cropId];
+            switch (s.status) {
+                case 'healthy':
+                    return { label: 'Healthy', color: 'text-green-600', bg: 'bg-green-100', icon: '🟢', notes: s.notes };
+                case 'monitor':
+                    return { label: 'Monitor', color: 'text-yellow-600', bg: 'bg-yellow-100', icon: '🟡', notes: s.notes };
+                case 'issue':
+                    return { label: 'Issue Detected', color: 'text-red-600', bg: 'bg-red-100', icon: '🔴', notes: s.notes };
+            }
+        }
+        // Fallback: auto-calculate from sowing date
         const daysSinceSowing = Math.floor((Date.now() - new Date(sowingDate).getTime()) / (1000 * 60 * 60 * 24));
         if (daysSinceSowing < 30) return { label: 'Healthy', color: 'text-green-600', bg: 'bg-green-100', icon: '🟢' };
         if (daysSinceSowing < 90) return { label: 'Healthy', color: 'text-green-600', bg: 'bg-green-100', icon: '🟢' };
@@ -1009,6 +1043,52 @@ export default function FarmerDashboard() {
 
 
             {/* ═══════════════════════════════════════════════════
+                AI SUGGESTION BOX
+               ═══════════════════════════════════════════════════ */}
+            {aiSuggestion && (
+                <Card className="border border-purple-200 shadow-sm bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950/30 dark:via-indigo-950/20 dark:to-blue-950/20 dark:border-purple-800 overflow-hidden">
+                    <CardContent className="p-5">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-purple-900/50 shrink-0">
+                                <Lightbulb className="h-6 w-6 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="font-bold text-foreground text-base">💡 Today&apos;s Suggestion</h3>
+                                    <span className="text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full uppercase tracking-wider">AI Powered</span>
+                                </div>
+                                <p className="text-sm text-foreground/80 leading-relaxed">
+                                    <span className="mr-1.5">{aiSuggestion.icon}</span>
+                                    {aiSuggestion.suggestion}
+                                </p>
+                                {aiSuggestion.all_suggestions && aiSuggestion.all_suggestions.length > 1 && (
+                                    <>
+                                        <button
+                                            onClick={() => setShowAllSuggestions(!showAllSuggestions)}
+                                            className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-2 hover:underline flex items-center gap-1"
+                                        >
+                                            {showAllSuggestions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                            {showAllSuggestions ? 'Show less' : `View ${aiSuggestion.all_suggestions.length - 1} more suggestions`}
+                                        </button>
+                                        {showAllSuggestions && (
+                                            <div className="mt-3 space-y-2 animate-in slide-in-from-top-2">
+                                                {aiSuggestion.all_suggestions.slice(1).map((s, idx) => (
+                                                    <div key={idx} className="flex items-start gap-2 bg-white/60 dark:bg-white/5 rounded-lg p-2.5 border border-purple-100 dark:border-purple-800/50">
+                                                        <span className="text-sm shrink-0">{s.icon}</span>
+                                                        <p className="text-xs text-foreground/70 leading-relaxed">{s.suggestion}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* ═══════════════════════════════════════════════════
                 LAND UTILIZATION (Compact Bar)
                ═══════════════════════════════════════════════════ */}
             <Card className="border border-gray-100 shadow-sm">
@@ -1211,6 +1291,16 @@ export default function FarmerDashboard() {
                                                 </h3>
                                                 <p className="text-xs text-muted-foreground">{t('farmer.sownOn')}: {new Date(crop.sowing_date).toLocaleDateString()} • {crop.area} {t('farmer.acres')}</p>
                                             </div>
+                                            {/* Crop Health Badge */}
+                                            {(() => {
+                                                const health = getCropHealth(crop.sowing_date, crop.id);
+                                                return (
+                                                    <div className={`${health.bg} ${health.color} px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 shrink-0 border ${health.color.includes('green') ? 'border-green-200' : health.color.includes('yellow') ? 'border-yellow-200' : 'border-red-200'}`} title={health.notes || health.label}>
+                                                        <span>{health.icon}</span>
+                                                        <span className="hidden sm:inline">{health.label}</span>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                         <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-gray-100">
                                             <div>

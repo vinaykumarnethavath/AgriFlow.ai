@@ -1527,5 +1527,46 @@ export const analyzeFertilizerImpact = async (plotSoilId: number): Promise<Impac
     return response.data;
 };
 
+// ─── Crop Health Indicator ────────────────────────────────────────────
+
+export interface CropHealthStatusData {
+    id: number;
+    crop_id: number;
+    user_id: number;
+    status: 'healthy' | 'monitor' | 'issue';
+    notes?: string;
+    updated_at: string;
+}
+
+export interface AISuggestion {
+    suggestion: string;
+    category: string;
+    icon: string;
+    all_suggestions?: { suggestion: string; category: string; icon: string; priority: number }[];
+}
+
+export const getAllCropHealthStatuses = async (): Promise<CropHealthStatusData[]> => {
+    const response = await api.get<CropHealthStatusData[]>('/crop-health-indicator/crops');
+    return response.data;
+};
+
+export const getCropHealthStatus = async (cropId: number): Promise<CropHealthStatusData> => {
+    const response = await api.get<CropHealthStatusData>(`/crop-health-indicator/crop/${cropId}`);
+    return response.data;
+};
+
+export const updateCropHealthStatus = async (
+    cropId: number,
+    data: { status?: string; notes?: string }
+): Promise<CropHealthStatusData> => {
+    const response = await api.put<CropHealthStatusData>(`/crop-health-indicator/crop/${cropId}`, data);
+    return response.data;
+};
+
+export const getAISuggestion = async (): Promise<AISuggestion> => {
+    const response = await api.get<AISuggestion>('/crop-health-indicator/suggestion');
+    return response.data;
+};
+
 export default api;
 

@@ -32,3 +32,6 @@ from .plot_nutrition import (
     PlotSoilData, PlotSoilDataCreate, PlotSoilDataRead,
     FertilizerApplication, FertilizerApplicationCreate, FertilizerApplicationRead
 )
+from .crop_health_indicator import (
+    CropHealthStatus, CropHealthStatusCreate, CropHealthStatusRead, CropHealthStatusUpdate
+)
