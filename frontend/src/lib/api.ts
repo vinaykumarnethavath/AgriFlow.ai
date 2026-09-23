@@ -1629,5 +1629,116 @@ export const toggleFarmEvent = async (eventId: number): Promise<{ id: number; is
     return response.data;
 };
 
+// ─── Credit & Loan Tracker ──────────────────────────────
+export interface CreditLoan {
+    id: number;
+    farmer_id: number;
+    source_type: 'bank' | 'trader' | 'fertilizer_shop' | 'cooperative' | 'relative_friend' | 'other';
+    lender_name: string;
+    purpose: string;
+    crop_id?: number;
+    principal_amount: number;
+    interest_rate_percent: number;
+    interest_type: 'annual' | 'monthly' | 'flat' | 'none';
+    start_date: string;
+    due_date?: string;
+    amount_paid: number;
+    status: 'active' | 'paid_off' | 'overdue';
+    notes?: string;
+    created_at: string;
+    updated_at: string;
+    remaining_balance: number;
+    days_until_due?: number | null;
+    is_overdue: boolean;
+}
+
+export interface CreditLoanCreate {
+    source_type: string;
+    lender_name: string;
+    purpose: string;
+    crop_id?: number | null;
+    principal_amount: number;
+    interest_rate_percent?: number;
+    interest_type?: string;
+    start_date: string;
+    due_date?: string | null;
+    amount_paid?: number;
+    status?: string;
+    notes?: string;
+}
+
+export interface LoanRepayment {
+    id: number;
+    loan_id: number;
+    payment_date: string;
+    amount: number;
+    payment_mode: 'cash' | 'upi' | 'bank_transfer' | 'harvest_crop' | 'other';
+    notes?: string;
+    created_at: string;
+}
+
+export interface LoanRepaymentCreate {
+    payment_date: string;
+    amount: number;
+    payment_mode?: string;
+    notes?: string;
+}
+
+export interface CreditSummary {
+    total_borrowed: number;
+    total_repaid: number;
+    total_outstanding: number;
+    active_loans_count: number;
+    paid_off_count: number;
+    overdue_count: number;
+    upcoming_due_loans: CreditLoan[];
+}
+
+export const getCreditLoans = async (statusFilter?: string, sourceType?: string): Promise<CreditLoan[]> => {
+    const params: Record<string, string> = {};
+    if (statusFilter) params.status_filter = statusFilter;
+    if (sourceType) params.source_type = sourceType;
+    const response = await api.get<CreditLoan[]>('/credit-loans/', { params });
+    return response.data;
+};
+
+export const getCreditSummary = async (): Promise<CreditSummary> => {
+    const response = await api.get<CreditSummary>('/credit-loans/summary');
+    return response.data;
+};
+
+export const getCreditLoan = async (loanId: number): Promise<CreditLoan> => {
+    const response = await api.get<CreditLoan>(`/credit-loans/${loanId}`);
+    return response.data;
+};
+
+export const createCreditLoan = async (data: CreditLoanCreate): Promise<CreditLoan> => {
+    const response = await api.post<CreditLoan>('/credit-loans/', data);
+    return response.data;
+};
+
+export const updateCreditLoan = async (loanId: number, data: Partial<CreditLoanCreate>): Promise<CreditLoan> => {
+    const response = await api.put<CreditLoan>(`/credit-loans/${loanId}`, data);
+    return response.data;
+};
+
+export const deleteCreditLoan = async (loanId: number): Promise<void> => {
+    await api.delete(`/credit-loans/${loanId}`);
+};
+
+export const getLoanRepayments = async (loanId: number): Promise<LoanRepayment[]> => {
+    const response = await api.get<LoanRepayment[]>(`/credit-loans/${loanId}/repayments`);
+    return response.data;
+};
+
+export const addLoanRepayment = async (loanId: number, data: LoanRepaymentCreate): Promise<LoanRepayment> => {
+    const response = await api.post<LoanRepayment>(`/credit-loans/${loanId}/repayments`, data);
+    return response.data;
+};
+
+export const deleteLoanRepayment = async (loanId: number, repaymentId: number): Promise<void> => {
+    await api.delete(`/credit-loans/${loanId}/repayments/${repaymentId}`);
+};
+
 export default api;
 

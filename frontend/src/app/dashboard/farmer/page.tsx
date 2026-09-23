@@ -11,7 +11,7 @@ import {
     Sprout, User, Plus, Trash2, ArrowRight, AlertTriangle,
     CloudRain, Sun, Wind, Droplets, Newspaper, Clock,
     PenSquare, Wallet, ShoppingCart, ChevronDown, ChevronUp, ShoppingBag,
-    Eye, EyeOff, Calendar, MessageSquare, Lightbulb, Activity
+    Eye, EyeOff, Calendar, MessageSquare, Lightbulb, Activity, CreditCard
 } from "lucide-react";
 import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
@@ -1000,6 +1000,11 @@ export default function FarmerDashboard() {
                 <Link href="/dashboard/farmer/market">
                     <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-md font-bold">
                         <ShoppingBag className="h-4 w-4 mr-1" /> {t('sidebar.buyFertilizers')}
+                    </Button>
+                </Link>
+                <Link href="/dashboard/farmer/credit">
+                    <Button size="sm" variant="outline" className="border-emerald-300 text-emerald-800 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 rounded-full font-bold shadow-sm">
+                        <CreditCard className="h-4 w-4 mr-1 text-emerald-700" /> Credit & Loans
                     </Button>
                 </Link>
                 <Link href="/dashboard/farmer/crops">

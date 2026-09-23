@@ -38,3 +38,7 @@ from .crop_health_indicator import (
 from .farm_calendar import (
     FarmEvent, FarmEventCreate, FarmEventRead, FarmEventUpdate
 )
+from .credit_loan import (
+    CreditLoan, CreditLoanCreate, CreditLoanRead, CreditLoanUpdate,
+    LoanRepayment, LoanRepaymentCreate, LoanRepaymentRead, CreditSummaryRead
+)

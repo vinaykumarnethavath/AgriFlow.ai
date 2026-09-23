@@ -154,4 +154,6 @@ from .routers import crop_health_indicator
 app.include_router(crop_health_indicator.router)
 from .routers import farm_calendar
 app.include_router(farm_calendar.router)
+from .routers import credit_loan
+app.include_router(credit_loan.router)
 
