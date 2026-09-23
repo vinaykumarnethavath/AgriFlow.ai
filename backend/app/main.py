@@ -152,4 +152,6 @@ from .routers import plot_nutrition
 app.include_router(plot_nutrition.router)
 from .routers import crop_health_indicator
 app.include_router(crop_health_indicator.router)
+from .routers import farm_calendar
+app.include_router(farm_calendar.router)
 

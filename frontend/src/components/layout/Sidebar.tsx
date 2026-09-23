@@ -33,7 +33,8 @@ import {
     Brain,
     ShieldCheck,
     Menu,
-    ChevronLeft
+    ChevronLeft,
+    Calendar
 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
@@ -57,6 +58,7 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
                 return [
                     { name: t("sidebar.dashboard"), href: "/dashboard/farmer", icon: LayoutDashboard },
                     { name: t("sidebar.myCrops"), href: "/dashboard/farmer/crops", icon: Sprout },
+                    { name: t("sidebar.calendar", "Farm Calendar"), href: "/dashboard/farmer/calendar", icon: Calendar },
                     { name: t("sidebar.buyFertilizers"), href: "/dashboard/farmer/market", icon: ShoppingBag },
                     { name: t("sidebar.marketPrices"), href: "/dashboard/farmer/market-prices", icon: TrendingUp },
                     { name: t("sidebar.weather"), href: "/dashboard/farmer/weather", icon: Sun },

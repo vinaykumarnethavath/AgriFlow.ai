@@ -1568,5 +1568,66 @@ export const getAISuggestion = async (): Promise<AISuggestion> => {
     return response.data;
 };
 
+// ─── Farm Calendar ────────────────────────────────────────────────────
+
+export interface FarmEvent {
+    id: number;
+    user_id: number;
+    title: string;
+    event_type: string; // sowing, fertilizer, weeding, harvest, loan, irrigation, spraying, custom
+    event_date: string;
+    description?: string;
+    crop_id?: number;
+    crop_name?: string;
+    reminder_days_before: number;
+    is_completed: boolean;
+    color?: string;
+    created_at: string;
+}
+
+export interface FarmEventCreate {
+    title: string;
+    event_type: string;
+    event_date: string;
+    description?: string;
+    crop_id?: number;
+    crop_name?: string;
+    reminder_days_before?: number;
+    is_completed?: boolean;
+    color?: string;
+}
+
+export const getFarmEvents = async (month?: number, year?: number): Promise<FarmEvent[]> => {
+    const params: Record<string, number> = {};
+    if (month) params.month = month;
+    if (year) params.year = year;
+    const response = await api.get<FarmEvent[]>('/farm-calendar/events', { params });
+    return response.data;
+};
+
+export const getUpcomingFarmEvents = async (days: number = 7): Promise<FarmEvent[]> => {
+    const response = await api.get<FarmEvent[]>('/farm-calendar/upcoming', { params: { days } });
+    return response.data;
+};
+
+export const createFarmEvent = async (event: FarmEventCreate): Promise<FarmEvent> => {
+    const response = await api.post<FarmEvent>('/farm-calendar/events', event);
+    return response.data;
+};
+
+export const updateFarmEvent = async (eventId: number, data: Partial<FarmEventCreate>): Promise<FarmEvent> => {
+    const response = await api.put<FarmEvent>(`/farm-calendar/events/${eventId}`, data);
+    return response.data;
+};
+
+export const deleteFarmEvent = async (eventId: number): Promise<void> => {
+    await api.delete(`/farm-calendar/events/${eventId}`);
+};
+
+export const toggleFarmEvent = async (eventId: number): Promise<{ id: number; is_completed: boolean }> => {
+    const response = await api.patch<{ id: number; is_completed: boolean }>(`/farm-calendar/events/${eventId}/toggle`);
+    return response.data;
+};
+
 export default api;
 

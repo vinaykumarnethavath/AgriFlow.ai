@@ -1144,14 +1144,25 @@ export default function FarmerDashboard() {
                         <h3 className="font-bold text-foreground flex items-center gap-2">
                             <Calendar className="h-5 w-5 text-amber-600" /> {t('farmer.upcomingActivities')}
                         </h3>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-amber-700 border-amber-300 hover:bg-amber-100"
-                            onClick={() => setShowAddActivity(!showAddActivity)}
-                        >
-                            <Plus className="h-3 w-3 mr-1" /> {t('common.add')}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Link href="/dashboard/farmer/calendar">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-green-700 border-green-300 hover:bg-green-100 flex items-center gap-1"
+                                >
+                                    <Calendar className="h-3 w-3" /> Full Calendar
+                                </Button>
+                            </Link>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-amber-700 border-amber-300 hover:bg-amber-100"
+                                onClick={() => setShowAddActivity(!showAddActivity)}
+                            >
+                                <Plus className="h-3 w-3 mr-1" /> {t('common.add')}
+                            </Button>
+                        </div>
                     </div>
 
                     {showAddActivity && (

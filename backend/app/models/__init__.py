@@ -35,3 +35,6 @@ from .plot_nutrition import (
 from .crop_health_indicator import (
     CropHealthStatus, CropHealthStatusCreate, CropHealthStatusRead, CropHealthStatusUpdate
 )
+from .farm_calendar import (
+    FarmEvent, FarmEventCreate, FarmEventRead, FarmEventUpdate
+)
