@@ -156,4 +156,6 @@ from .routers import farm_calendar
 app.include_router(farm_calendar.router)
 from .routers import credit_loan
 app.include_router(credit_loan.router)
+from .routers import season_comparison
+app.include_router(season_comparison.router)
 

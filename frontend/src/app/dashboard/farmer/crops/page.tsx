@@ -8,7 +8,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import { ArrowLeft, Plus, Sprout, ArrowRight, Stethoscope } from "lucide-react";
+import { ArrowLeft, Plus, Sprout, ArrowRight, Stethoscope, LineChart } from "lucide-react";
 
 export default function CropsListPage() {
     const router = useRouter();
@@ -302,9 +302,16 @@ export default function CropsListPage() {
                         <p className="text-muted-foreground">{t('crops.manageDesc')}</p>
                     </div>
                 </div>
-                <Button onClick={() => setIsAddCropOpen(true)} className="bg-green-600 hover:bg-green-700">
-                    <Plus className="h-4 w-4 mr-2" /> {t('farmer.addCrop')}
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Link href="/dashboard/farmer/season-comparison">
+                        <Button variant="outline" className="border-emerald-300 text-emerald-800 hover:bg-emerald-50">
+                            <LineChart className="h-4 w-4 mr-2 text-emerald-700" /> Season Comparison
+                        </Button>
+                    </Link>
+                    <Button onClick={() => setIsAddCropOpen(true)} className="bg-green-600 hover:bg-green-700">
+                        <Plus className="h-4 w-4 mr-2" /> {t('farmer.addCrop')}
+                    </Button>
+                </div>
             </div>
 
             {/* Harvested/Sold Crops Section */}

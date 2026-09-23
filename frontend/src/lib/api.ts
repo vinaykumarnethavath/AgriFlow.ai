@@ -1740,5 +1740,77 @@ export const deleteLoanRepayment = async (loanId: number, repaymentId: number): 
     await api.delete(`/credit-loans/${loanId}/repayments/${repaymentId}`);
 };
 
+// ─── Season Comparison ──────────────────────────────────
+export interface MetricComparison {
+    season_a_val: number;
+    season_b_val: number;
+    difference: number;
+    percent_change: number;
+    is_positive: boolean;
+}
+
+export interface SeasonSummary {
+    season_name: string;
+    year: number;
+    label: string;
+    crops_count: number;
+    total_area_acres: number;
+    total_cost: number;
+    total_yield_quintals: number;
+    total_revenue: number;
+    net_profit: number;
+    profit_margin_percent: number;
+    yield_per_acre: number;
+    cost_per_acre: number;
+    profit_per_acre: number;
+}
+
+export interface CropComparisonItem {
+    crop_name: string;
+    season_a_area: number;
+    season_b_area: number;
+    season_a_yield: number;
+    season_b_yield: number;
+    season_a_cost: number;
+    season_b_cost: number;
+    season_a_revenue: number;
+    season_b_revenue: number;
+    season_a_profit: number;
+    season_b_profit: number;
+    profit_change_percent: number;
+    yield_change_percent: number;
+    cost_change_percent: number;
+    status_text: string;
+}
+
+export interface SeasonComparisonResponse {
+    season_a: SeasonSummary;
+    season_b: SeasonSummary;
+    profit_comparison: MetricComparison;
+    yield_comparison: MetricComparison;
+    cost_comparison: MetricComparison;
+    revenue_comparison: MetricComparison;
+    crop_comparisons: CropComparisonItem[];
+    ai_insights: string[];
+}
+
+export const getAvailableSeasons = async (): Promise<string[]> => {
+    const response = await api.get<string[]>('/season-comparison/seasons');
+    return response.data;
+};
+
+export const compareSeasons = async (seasonA?: string, seasonB?: string): Promise<SeasonComparisonResponse> => {
+    const params: Record<string, string> = {};
+    if (seasonA) params.season_a = seasonA;
+    if (seasonB) params.season_b = seasonB;
+    const response = await api.get<SeasonComparisonResponse>('/season-comparison/compare', { params });
+    return response.data;
+};
+
+export const getAllSeasonsOverview = async (): Promise<SeasonSummary[]> => {
+    const response = await api.get<SeasonSummary[]>('/season-comparison/all-overview');
+    return response.data;
+};
+
 export default api;
 
