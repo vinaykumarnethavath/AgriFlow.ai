@@ -21,6 +21,15 @@ graph TD
     subgraph APIGateway ["API Layer (FastAPI Asynchronous Gateway)"]
         Router_Auth["Auth Router (/api/auth)"]
         Router_Crops["Crops & Farmer Router (/api/crops)"]
+        Router_Calendar["Farm Calendar (/api/farm-calendar)"]
+        Router_Credit["Credit & Loan Tracker (/api/credit-loan)"]
+        Router_Season["Season Comparison (/api/season-comparison)"]
+        Router_Annual["Annual Summary (/api/annual-summary)"]
+        Router_Reports["Farm PDF Reports (/api/farm-reports)"]
+        Router_Insurance["Crop Insurance (/api/crop-insurance)"]
+        Router_Storage["Warehouse Storage (/api/crop-storage)"]
+        Router_SoilProfile["Soil Profile & SHC (/api/soil-profile)"]
+        Router_Emergency["Emergency SOS (/api/emergency-contacts)"]
         Router_Nutrition["Soil Nutrition Router (/api/nutrition)"]
         Router_Weather["Weather Router (/api/weather)"]
         Router_Chat["AI Chat & Voice Router (/api/chat)"]
@@ -516,4 +525,73 @@ graph LR
     EP_Translate --> Dict_Cache
     Dict_Cache -. If Uncached Phrase .-> Fallback_Translator
     Fallback_Translator --> Dynamic_Text
+```
+
+---
+
+## 13. Farmer Financial, Asset & Operations Architecture
+
+```mermaid
+graph TD
+    subgraph FarmerClients ["Farmer Frontend Dashboards & Modules"]
+        UI_Dash["Farmer Central Dashboard\n(Crop Health 🟢🟡🔴, AI Suggestion, Soil Card, SOS Banner)"]
+        UI_Calendar["Farm Activity Calendar\n(/dashboard/farmer/calendar)"]
+        UI_Credit["Credit & Loan Tracker\n(/dashboard/farmer/credit)"]
+        UI_Season["Season Performance & YoY Audit\n(/dashboard/farmer/season-comparison & /annual-summary)"]
+        UI_Insurance["Crop Insurance Tracker (PMFBY)\n(/dashboard/farmer/insurance)"]
+        UI_Storage["Warehouse & Cold Storage\n(/dashboard/farmer/storage)"]
+        UI_Reports["Export PDF Statement Modal\n(Bank Loans, KCC, Subsidies)"]
+    end
+
+    subgraph OperationsRouters ["FastAPI Operations & Financial Routers"]
+        R_Health["/crop-health-indicator/\n(Status ratings & AI advice)"]
+        R_Calendar["/farm-calendar/\n(Auto-milestone scheduling)"]
+        R_Credit["/credit-loan/\n(KCC, PACS, repayments ledger)"]
+        R_Season["/season-comparison/\n(Season A vs B delta metrics)"]
+        R_Annual["/annual-summary/\n(YoY growth, CBR, cashflow)"]
+        R_Insurance["/crop-insurance/\n(PMFBY claims, 72h calamity)"]
+        R_Storage["/crop-storage/\n(Rent calculation, e-NWR)"]
+        R_Soil["/soil-profile/\n(NPK, pH, ICAR fertility score)"]
+        R_Reports["/farm-reports/\n(ReportLab PDF rendering engine)"]
+        R_Emergency["/emergency-contacts/\n(1551, 14447, 1912 direct dial)"]
+    end
+
+    subgraph OperationsDB ["Database Models (SQLModel)"]
+        DB_Crops[("crops, crop_expenses, crop_harvests")]
+        DB_Events[("farm_events")]
+        DB_Credit[("credit_loans, loan_repayments")]
+        DB_Insurance[("crop_insurances")]
+        DB_Storage[("crop_storages")]
+        DB_Soil[("soil_profiles")]
+        DB_Emergency[("emergency_contacts")]
+    end
+
+    subgraph PDFEngine ["Server-Side Document Generation"]
+        ReportLab["ReportLab PDF Library\n(Institutional formatting, tables, verification seal)"]
+    end
+
+    UI_Dash --> R_Health
+    UI_Dash --> R_Soil
+    UI_Dash --> R_Emergency
+    UI_Calendar --> R_Calendar
+    UI_Credit --> R_Credit
+    UI_Season --> R_Season
+    UI_Season --> R_Annual
+    UI_Insurance --> R_Insurance
+    UI_Storage --> R_Storage
+    UI_Reports --> R_Reports
+
+    R_Calendar --> DB_Events
+    R_Calendar --> DB_Crops
+    R_Credit --> DB_Credit
+    R_Season --> DB_Crops
+    R_Annual --> DB_Crops
+    R_Insurance --> DB_Insurance
+    R_Storage --> DB_Storage
+    R_Soil --> DB_Soil
+    R_Emergency --> DB_Emergency
+    R_Reports --> PDFEngine
+    PDFEngine --> DB_Crops
+    PDFEngine --> DB_Credit
+    PDFEngine --> DB_Insurance
 ```

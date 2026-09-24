@@ -49,6 +49,41 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
   - Interactive password show/hide toggle (`PasswordInput`) across all auth and profile forms.
   - Single-page, zero-scroll responsive layout for login and registration.
   - Selector-based dark mode tokens (`@custom-variant dark`) ensuring crystal-clear readability and contrast in outdoor and high-sunlight conditions.
+- **Crop Health Indicator (🟢🟡🔴) & AI Agronomist Suggestion Box**
+  - Live crop visual health status tags based on disease scans, weather alerts, and growth age.
+  - Real-time AI advisory box tailored to the farmer's active crops, current season, and upcoming milestones.
+- **Farm Activity Calendar & Automatic Scheduling**
+  - Monthly interactive farm calendar with crop auto-event generation for sowing, irrigation, fertilizer dressing, and harvest.
+  - Filterable by activity type with custom event creation and completion tracking.
+- **Credit & Loan Tracker**
+  - Financial ledger for Kisan Credit Card (KCC), fertilizer shop credits, cooperative PACS loans, and traders.
+  - Tracks principal amounts, interest rates (annual/monthly/flat), repayment milestones, and repayment history.
+- **Season Performance Comparison**
+  - Multi-season analytics comparing cost, yield (Qtl), gross revenue, net profit, and profit margin % across Kharif, Rabi, and Zaid.
+  - Crop-by-crop comparative analysis with automatic rule-based AI performance insights.
+- **Best Crop Recommendation with 3-Factor AI & Expected Profit**
+  - Intelligent crop suitability engine matching farm soil texture, upcoming season, and local mandi demand.
+  - Calculates expected gross profit per acre, required investment, and 1-click planting pre-fill.
+- **Institutional Farm Report Export (PDF)**
+  - Generates downloadable official PDF statements formatted for bank loan applications (KCC), equipment financing, PMFBY claims, and government subsidies.
+  - Dynamic season filtering, crop summary tables, loan liability ledgers, and authorized verification sign-off blocks.
+- **Crop Insurance Tracker (PMFBY)**
+  - Comprehensive policy management for Pradhan Mantri Fasal Bima Yojana (PMFBY) and weather-based insurance.
+  - End-to-end claim filing workflow with mandatory 72-hour disaster intimation guidance and toll-free helpline (14447).
+- **Produce Storage & Warehouse Tracking (e-NWR)**
+  - Tracks post-harvest inventory deposited in cold storages, government warehouses (CWC/SWC), and private godowns.
+  - Dynamic monthly storage rent calculation, accumulated charges, e-NWR receipt registration, and peak mandi price release alerts.
+- **Soil Profile & Government Soil Health Card (SHC)**
+  - Laboratory soil test recorder tracking Available Nitrogen, Phosphorus, Potassium (kg/ha), pH reaction, Organic Carbon %, Electrical Conductivity (EC), and micronutrients (Zinc, Iron, Sulphur, Boron).
+  - ICAR fertility benchmark scoring (0-100) and automated agronomist soil reclamation recommendations.
+- **Annual Performance Summary & Financial Audit**
+  - Consolidated calendar and financial year audit computing Year-over-Year (YoY) revenue, cost, net income, and yield deltas.
+  - Seasonal income contribution shares, ranked Crop Profitability League (🥇 #1, 🥈 #2, 🥉 #3) with Cost-Benefit Ratios (CBR), and 12-month cashflow tiles.
+- **Emergency Contacts & SOS Directory**
+  - Instant direct-dial SOS crisis banner for Kisan Call Center (1551), PMFBY Crop Loss (14447), and Rural Transformer Power Breakdowns (1912).
+  - Categorized directory for KVK scientists, mobile veterinary units (1962), canal water officers, and personal local technicians.
+- **Structured Sidebar Architecture**
+  - Categorized navigation into Core Operations, Finance & Storage, Market & Agri Trade, and Intelligence & Hub.
 
 
 
@@ -68,8 +103,10 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 │                        Frontend UI                           │
 │        (Next.js + React + TypeScript + TailwindCSS)           │
 │  - Role-based screens & Dashboards                            │
-│  - Chatbot Assistant (RAG)                                    │
+│  - Chatbot Assistant (RAG) & Voice Assistant                 │
 │  - Soil Moisture & Weather Dashboard (Open-Meteo)            │
+│  - Farm Activity Calendar, Credit Tracker, Insurance Tracker │
+│  - Storage Tracking, Soil Profile, Annual Summary Audit      │
 │  - Leaflet Geo-Analysis Mapping                              │
 │  - public/trace/[id] (QR Traceability Journey Verification)   │
 │  - dashboard/blockchain (Ledger Explorer & Integrity Audit)  │
@@ -79,7 +116,10 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 ┌──────────────────────────────────────────────────────────────┐
 │                       FastAPI Backend                         │
 │              (backend/app/main.py + routers/)                 │
-│  - API Routers: auth, crops, products, orders, analytics,    │
+│  - API Routers: auth, crops, farm_calendar, credit_loan,      │
+│    crop_health_indicator, season_comparison, farm_reports,    │
+│    crop_insurance, crop_storage, soil_profile, annual_summary, │
+│    emergency_contacts, products, orders, analytics,           │
 │    traceability, blockchain, rag, payments, weather, etc.     │
 │  - Service Orchestration Layer (app/services/*)               │
 └──────────────────────────────────────────────────────────────┘

@@ -100,6 +100,66 @@ The farmer's experience is designed to be a complete farm management system, org
     - **Historical ERA5-Land Archive**: Retrospective climate research querying past satellite reanalysis datasets.
 3. **Dedicated News Page**: Full-screen experience for in-depth agricultural news, policy updates, and government schemes.
 
+#### **E. Crop Health & AI Agronomic Advisory**
+1. **Visual Health Indicators (🟢🟡🔴)**:
+    - Real-time crop status tags (`optimal_green`, `attention_yellow`, `critical_red`) evaluated against disease diagnoses, extreme weather warnings, and crop stage.
+2. **AI Agronomist Suggestion Box**:
+    - Contextual, dynamic advice synthesized from active crops, soil type, and current season.
+3. **Best Crop Recommendation with Expected Profit**:
+    - 3-Factor AI engine matching soil texture, season, and mandi price projections.
+    - Computes expected net profit/acre, required input investment, and provides 1-click planting pre-fill.
+
+#### **F. Farm Activity Calendar & Automated Scheduling**
+1. **Interactive Monthly View**: Comprehensive farm calendar displaying color-coded agricultural milestones.
+2. **Auto-Event Generation**: Automatically projects sowing, irrigation, fertilizer top-dressing, and harvest dates directly from crop registries.
+3. **Activity Tracker**: Event status completion, custom event logging, and day countdowns.
+
+#### **G. Farm Financials & Credit Ledger**
+1. **Institutional Credit & Loan Tracker**:
+    - Multi-source tracking: Bank Loans (Kisan Credit Card / KCC), Fertilizer Shop Credits, Cooperative Societies (PACS), and Traders.
+    - Tracks principal amounts, interest rates (annual, monthly, flat), repayment due dates, and reminders.
+2. **Repayment Ledger**:
+    - Record partial or full repayments with payment modes (Digital/Cash) and transaction receipts.
+    - Dynamic outstanding balance calculation and interest accumulation.
+
+#### **H. Risk Protection & Storage Asset Tracking**
+1. **Crop Insurance Tracker (PMFBY)**:
+    - Policy registry for Pradhan Mantri Fasal Bima Yojana (PMFBY), weather-index insurance, and commercial coverage.
+    - End-to-end claim filing workflow with calamity loss cause selection (flooding, drought, hailstorm, pest attack).
+    - Emergency 72-Hour Calamity Loss Reporting banner with direct toll-free hotline (`14447`).
+2. **Warehouse & Cold Storage Produce Tracker**:
+    - Track post-harvest produce deposited in cold storages, government warehouses (CWC/SWC), and private godowns.
+    - Dynamic monthly storage rent calculation and accumulated payable charges.
+    - e-NWR (electronic Negotiable Warehouse Receipt) registration and target mandi price release alerts.
+    - Partial and full release produce workflow.
+
+#### **I. Soil Profile & Soil Health Card (SHC)**
+1. **Laboratory Soil Health Card**:
+    - Physical and chemical parameters: Available Nitrogen (N), Phosphorus (P), Potassium (K) in kg/ha, pH reaction, Organic Carbon %, Electrical Conductivity (EC).
+    - Secondary & micronutrients: Zinc (Zn), Iron (Fe), Sulphur (S), Boron (B) in ppm.
+2. **ICAR Benchmark Fertility Scoring**:
+    - Automated fertility health score (0–100) with status ratings (Optimal, Moderate, Needs Attention).
+    - AI agronomist soil reclamation recommendations and overdue retest warnings (> 2 years).
+
+#### **J. Multi-Season & Annual Performance Audit**
+1. **Season Performance Comparison**:
+    - Side-by-side comparative analysis of two seasons (Kharif, Rabi, Zaid) across cost, yield, revenue, net profit, and profit margins.
+    - Crop-by-crop comparative analysis with rule-based AI seasonal insights.
+2. **Annual Financial Audit Ledger**:
+    - Multi-year financial ledger computing Year-over-Year (YoY) revenue, cost, net income, and yield changes.
+    - Seasonal income contribution shares (Kharif/Rabi/Zaid/Year-round).
+    - Ranked Crop Profitability League table (🥇 #1, 🥈 #2, 🥉 #3) with Cost-Benefit Ratios (CBR) and profit per acre.
+    - Expense categorization and 12-month net cashflow pattern.
+
+#### **K. Emergency Contacts & SOS Directory**
+1. **Priority 3-Box SOS Banner**: Instant direct-dial for Kisan Call Center (`1551`), PMFBY Calamity Line (`14447`), and Rural Transformer/Electricity Breakdown (`1912`).
+2. **Categorized Agricultural Directory**: National helplines, KVK agronomists, mobile veterinary units (`1962`), canal irrigation officers, and personal local technicians.
+3. **Personal Contacts Management**: Add, edit, and delete village linemen, veterinary doctors, tractor mechanics, and agro-dealers.
+
+#### **L. Official Farm Report Export (PDF)**
+1. **Institutional Statement Generation**: Downloadable formal PDF reports generated via `reportlab` tailored for bank loan officers (KCC), equipment financing, PMFBY claims, and state subsidies.
+2. **Comprehensive Statement Contents**: Farmer bio & landholdings, crop production history, inputs & expenses ledger, credit & loan liabilities, and authorized verification seal sign-off area.
+
 ---
 
 ### 🏪 2. Shop Role (Retail & Logistics)
