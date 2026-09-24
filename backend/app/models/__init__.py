@@ -53,3 +53,6 @@ from .crop_storage import (
 from .soil_profile import (
     SoilProfile, SoilProfileCreate, SoilProfileRead, SoilProfileUpdate, SoilHealthSummary
 )
+from .emergency_contact import (
+    EmergencyContact, EmergencyContactCreate, EmergencyContactRead, EmergencyContactUpdate
+)

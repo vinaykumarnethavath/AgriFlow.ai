@@ -2300,5 +2300,55 @@ export const getAnnualPerformanceSummary = async (year?: number): Promise<Annual
     return response.data;
 };
 
+// ==================== EMERGENCY CONTACTS & SOS DIRECTORY ====================
+export interface EmergencyContact {
+    id: number;
+    farmer_id: number | null;
+    name: string;
+    category: 'national_helpline' | 'kvk_agriculture_officer' | 'electricity_power' | 'water_irrigation' | 'veterinary' | 'machinery_mechanic' | 'input_retailer' | 'other' | string;
+    phone_number: string;
+    alternate_phone: string | null;
+    department_or_village: string | null;
+    is_toll_free: boolean;
+    is_verified: boolean;
+    availability_hours: string;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+    is_system_contact: boolean;
+}
+
+export interface EmergencyContactCreate {
+    name: string;
+    category?: string;
+    phone_number: string;
+    alternate_phone?: string;
+    department_or_village?: string;
+    is_toll_free?: boolean;
+    availability_hours?: string;
+    notes?: string;
+}
+
+export const getEmergencyContacts = async (category?: string): Promise<EmergencyContact[]> => {
+    const params: Record<string, string> = {};
+    if (category) params.category = category;
+    const response = await api.get<EmergencyContact[]>('/emergency-contacts/', { params });
+    return response.data;
+};
+
+export const createEmergencyContact = async (data: EmergencyContactCreate): Promise<EmergencyContact> => {
+    const response = await api.post<EmergencyContact>('/emergency-contacts/', data);
+    return response.data;
+};
+
+export const updateEmergencyContact = async (id: number, data: Partial<EmergencyContactCreate>): Promise<EmergencyContact> => {
+    const response = await api.put<EmergencyContact>(`/emergency-contacts/${id}`, data);
+    return response.data;
+};
+
+export const deleteEmergencyContact = async (id: number): Promise<void> => {
+    await api.delete(`/emergency-contacts/${id}`);
+};
+
 export default api;
 

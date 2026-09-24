@@ -20,6 +20,7 @@ import NewsWidget from "@/components/info/NewsWidget";
 import CropRecommendationWidget from "@/components/info/CropRecommendationWidget";
 import BestCropRecommendationCard from "@/components/info/BestCropRecommendationCard";
 import SoilProfileCard from "@/components/info/SoilProfileCard";
+import EmergencyContactsCard from "@/components/info/EmergencyContactsCard";
 import ExportReportModal from "@/components/info/ExportReportModal";
 import { AICropDiagnosis } from "@/components/AICropDiagnosis";
 import { Stethoscope } from "lucide-react";
@@ -1444,6 +1445,13 @@ export default function FarmerDashboard() {
                     </Card>
                 )
             }
+            {/* ═══════════════════════════════════════════════════
+                EMERGENCY SOS & HELPLINES
+               ═══════════════════════════════════════════════════ */}
+            <div>
+                <EmergencyContactsCard />
+            </div>
+
             {/* ═══════════════════════════════════════════════════
                 8. AGRICULTURAL NEWS (Live, Past 15 Days)
                ═══════════════════════════════════════════════════ */}

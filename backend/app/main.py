@@ -168,4 +168,6 @@ from .routers import soil_profile
 app.include_router(soil_profile.router)
 from .routers import annual_summary
 app.include_router(annual_summary.router)
+from .routers import emergency_contacts
+app.include_router(emergency_contacts.router)
 
