@@ -12,7 +12,7 @@ class ProductType(str):
 class ProductBase(SQLModel):
     name: str
     short_name: Optional[str] = None
-    category: str # fertilizer, crop, processed, pesticide, seeds
+    category: str = Field(index=True) # fertilizer, crop, processed, pesticide, seeds
     brand: Optional[str] = None # Brand name
     manufacturer: Optional[str] = None # Manufacturer name (separate from brand)
     price: float # Selling Price
@@ -32,7 +32,7 @@ class ProductBase(SQLModel):
     expiry_date: Optional[datetime] = None
     
     # Product lifecycle status
-    status: str = Field(default="draft")  # "draft" | "active"
+    status: str = Field(default="draft", index=True)  # "draft" | "active"
     
     # Apportioned Expenses linked to this specific batch
     apportioned_transport: float = Field(default=0.0)
@@ -42,7 +42,7 @@ class ProductBase(SQLModel):
 
 class Product(ProductBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
+    user_id: int = Field(foreign_key="user.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     # Traceability JSON
@@ -64,14 +64,14 @@ class ShopOrderBase(SQLModel):
     payment_mode: str = "cash" # cash, upi, credit, razorpay
     payment_status: str = "pending" # pending, paid
     payment_id: Optional[str] = None
-    status: str = "completed" # completed, pending, confirmed, dispatched, cancelled
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    status: str = Field(default="completed", index=True) # completed, pending, confirmed, dispatched, cancelled
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 class ShopOrder(ShopOrderBase, table=True):
     __tablename__ = "shop_orders"
     id: Optional[int] = Field(default=None, primary_key=True)
-    shop_id: int = Field(foreign_key="user.id")
-    farmer_id: Optional[int] = Field(foreign_key="user.id", default=None) # Nullable for walk-in customers
+    shop_id: int = Field(foreign_key="user.id", index=True)
+    farmer_id: Optional[int] = Field(foreign_key="user.id", default=None, index=True) # Nullable for walk-in customers
     farmer_name: Optional[str] = None # For quick display or walk-ins
     
     total_expenses: float = Field(default=0.0)  # cached sum of shop expenses
@@ -87,19 +87,19 @@ class ShopOrderItemBase(SQLModel):
 class ShopOrderItem(ShopOrderItemBase, table=True):
     __tablename__ = "shop_order_items"
     id: Optional[int] = Field(default=None, primary_key=True)
-    order_id: int = Field(foreign_key="shop_orders.id")
-    product_id: int = Field(foreign_key="product.id")
+    order_id: int = Field(foreign_key="shop_orders.id", index=True)
+    product_id: int = Field(foreign_key="product.id", index=True)
     
     order: Optional[ShopOrder] = Relationship(back_populates="items")
 
 # Traceability Events
 class TraceabilityEvent(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    product_id: int = Field(foreign_key="product.id")
-    actor_id: int = Field(foreign_key="user.id")
+    product_id: int = Field(foreign_key="product.id", index=True)
+    actor_id: int = Field(foreign_key="user.id", index=True)
     action: str 
     details: str 
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 class ProductCreate(ProductBase):
     pass

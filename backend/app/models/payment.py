@@ -6,7 +6,7 @@ from datetime import datetime
 class Payment(SQLModel, table=True):
     __tablename__ = "payments"
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
+    user_id: int = Field(foreign_key="user.id", index=True)
 
     # Razorpay fields
     razorpay_order_id: str = Field(index=True)
@@ -16,11 +16,11 @@ class Payment(SQLModel, table=True):
     # Transaction details
     amount: float  # in INR (rupees, not paise — we convert to paise in the router)
     currency: str = "INR"
-    status: str = "created"  # created, paid, failed
+    status: str = Field(default="created", index=True)  # created, paid, failed
 
     # What this payment is for
-    payment_for: str  # customer_order, shop_order, manufacturer_purchase, manufacturer_sale, farmer_expense
-    reference_id: Optional[int] = None  # foreign order/expense ID
+    payment_for: str = Field(index=True)  # customer_order, shop_order, manufacturer_purchase, manufacturer_sale, farmer_expense
+    reference_id: Optional[int] = Field(default=None, index=True)  # foreign order/expense ID
 
     # Shipping / extra details (JSON-like free text)
     shipping_address: Optional[str] = None
@@ -28,7 +28,7 @@ class Payment(SQLModel, table=True):
     tracking_id: Optional[str] = None
     notes: Optional[str] = None
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     paid_at: Optional[datetime] = None
 
 

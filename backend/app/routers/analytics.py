@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func, col
+from sqlalchemy import case
 from datetime import datetime, timedelta
 
 from ..database import get_session
@@ -122,43 +123,31 @@ async def get_shop_overview(
     if current_user.role != "shop":
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    # 1. Total Products
-    products_query = select(func.count(Product.id)).where(Product.user_id == current_user.id)
-    products_count = (await session.exec(products_query)).first() or 0
-
-    # 2. Total Stock (Sum of quantity)
-    stock_query = select(func.sum(Product.quantity)).where(Product.user_id == current_user.id)
-    total_stock = (await session.exec(stock_query)).first() or 0
+    # 1. Product Metrics (Combined in single query)
+    prod_query = select(
+        func.count(Product.id),
+        func.coalesce(func.sum(Product.quantity), 0),
+        func.count(case((Product.quantity < Product.low_stock_threshold, 1)))
+    ).where(Product.user_id == current_user.id)
+    prod_res = (await session.exec(prod_query)).first()
+    products_count = prod_res[0] or 0
+    total_stock = prod_res[1] or 0
+    low_stock_count = prod_res[2] or 0
 
     SOLD_STATUSES = ["dispatched", "completed"]
-
-    # 3. Today's Sales
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    sales_query = select(func.sum(ShopOrder.final_amount))\
-        .where(ShopOrder.shop_id == current_user.id)\
-        .where(ShopOrder.status.in_(SOLD_STATUSES))\
-        .where(ShopOrder.created_at >= today_start)
-    today_sales = (await session.exec(sales_query)).first() or 0.0
-
-    # 4. Monthly Revenue
     month_start = today_start.replace(day=1)
-    revenue_query = select(func.sum(ShopOrder.final_amount))\
-        .where(ShopOrder.shop_id == current_user.id)\
-        .where(ShopOrder.status.in_(SOLD_STATUSES))\
-        .where(ShopOrder.created_at >= month_start)
-    month_revenue = (await session.exec(revenue_query)).first() or 0.0
 
-    # 5. Low Stock
-    low_stock_query = select(func.count(Product.id))\
-        .where(Product.user_id == current_user.id)\
-        .where(Product.quantity < Product.low_stock_threshold)
-    low_stock_count = (await session.exec(low_stock_query)).first() or 0
-
-    # 6. Pending Orders
-    pending_query = select(func.count(ShopOrder.id))\
-        .where(ShopOrder.shop_id == current_user.id)\
-        .where(ShopOrder.status == "pending")
-    pending_orders = (await session.exec(pending_query)).first() or 0
+    # 2. Order Metrics (Combined in single query)
+    order_query = select(
+        func.coalesce(func.sum(case(((ShopOrder.status.in_(SOLD_STATUSES)) & (ShopOrder.created_at >= today_start), ShopOrder.final_amount))), 0.0),
+        func.coalesce(func.sum(case(((ShopOrder.status.in_(SOLD_STATUSES)) & (ShopOrder.created_at >= month_start), ShopOrder.final_amount))), 0.0),
+        func.count(case((ShopOrder.status == "pending", 1)))
+    ).where(ShopOrder.shop_id == current_user.id)
+    order_res = (await session.exec(order_query)).first()
+    today_sales = float(order_res[0] or 0.0)
+    month_revenue = float(order_res[1] or 0.0)
+    pending_orders = int(order_res[2] or 0)
 
     return {
         "total_products": products_count,
@@ -281,29 +270,22 @@ async def get_farmer_overview(
     if current_user.role != "farmer":
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    # 1. Total Revenue & Profit
     from ..models import Crop
-    financials_query = select(
-        func.sum(Crop.total_revenue),
-        func.sum(Crop.net_profit),
-        func.sum(Crop.actual_yield)
+    # Combined query for financials and active crops
+    query = select(
+        func.coalesce(func.sum(Crop.total_revenue), 0.0),
+        func.coalesce(func.sum(Crop.net_profit), 0.0),
+        func.coalesce(func.sum(Crop.actual_yield), 0.0),
+        func.count(case((Crop.status == "Growing", 1)))
     ).where(Crop.user_id == current_user.id)
     
-    financials = (await session.exec(financials_query)).first()
-    
-    total_revenue = financials[0] or 0.0
-    total_profit = financials[1] or 0.0
-    total_yield = financials[2] or 0.0
-    
-    # 2. Active Crops Count
-    active_query = select(func.count(Crop.id)).where(Crop.user_id == current_user.id).where(Crop.status == "Growing")
-    active_count = (await session.exec(active_query)).first() or 0
+    financials = (await session.exec(query)).first()
     
     return {
-        "total_revenue": total_revenue,
-        "total_profit": total_profit,
-        "total_yield": total_yield,
-        "active_crops": active_count
+        "total_revenue": financials[0] or 0.0,
+        "total_profit": financials[1] or 0.0,
+        "total_yield": financials[2] or 0.0,
+        "active_crops": financials[3] or 0
     }
 
 @router.get("/farmer/yield-trend")

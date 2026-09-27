@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import api, {
@@ -123,7 +123,7 @@ const formatLandArea = (area: number) => {
     return `${acres}.${guntas.toString().padStart(2, '0')}`;
 };
 
-export default function CropDetailPage() {
+function CropDetailContent() {
     const { t } = useLanguage();
     const params = useParams();
     const router = useRouter();
@@ -1906,5 +1906,13 @@ export default function CropDetailPage() {
 
             {mockOptions && <MockRazorpayPopup options={mockOptions} onClose={() => setMockOptions(null)} />}
         </div>
+    );
+}
+
+export default function CropDetailPage() {
+    return (
+        <Suspense fallback={<div className="p-6 text-center text-muted-foreground animate-pulse">Loading crop details...</div>}>
+            <CropDetailContent />
+        </Suspense>
     );
 }

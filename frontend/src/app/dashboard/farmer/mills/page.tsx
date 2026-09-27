@@ -60,7 +60,7 @@ const MOCK_MILLS = [
     }
 ];
 
-export default function MillsMarketplace() {
+function MillsMarketplaceContent() {
     const searchParams = useSearchParams();
     const cropId = searchParams.get("cropId");
     const [searchTerm, setSearchTerm] = useState("");
@@ -156,5 +156,13 @@ export default function MillsMarketplace() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function MillsMarketplace() {
+    return (
+        <React.Suspense fallback={<div className="p-6 text-center text-muted-foreground animate-pulse">Loading mills marketplace...</div>}>
+            <MillsMarketplaceContent />
+        </React.Suspense>
     );
 }

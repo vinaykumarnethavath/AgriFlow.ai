@@ -215,28 +215,7 @@ async def read_shop_orders(
         .order_by(ShopOrder.created_at.desc())
     )
     result = await session.exec(statement)
-    orders = result.all()
-
-    # Attach expense details to each order
-    rich_orders = []
-    for order in orders:
-        exp_stmt = select(ShopExpense).where(ShopExpense.order_id == order.id)
-        exp_result = await session.exec(exp_stmt)
-        expense = exp_result.first()
-        order_dict = order.dict()
-        if expense:
-            order_dict["expense"] = {
-                "transportation": expense.transportation,
-                "labour": expense.labour,
-                "other": expense.other,
-                "notes": expense.notes,
-                "total": expense.transportation + expense.labour + expense.other,
-            }
-        else:
-            order_dict["expense"] = None
-        rich_orders.append(order_dict)
-
-    return orders  # Return the ORM objects so response_model serialises correctly
+    return result.all()
 
 
 @router.get("/shop-orders-detailed")
@@ -266,6 +245,14 @@ async def read_shop_orders_detailed(
         prod_res = await session.exec(prod_stmt)
         prod_dict = {p.id: p for p in prod_res.all()}
 
+    # Batch-fetch all expenses in 1 query instead of N individual queries
+    order_ids = [o.id for o in orders if o.id]
+    expense_dict: Dict[int, ShopExpense] = {}
+    if order_ids:
+        exp_stmt = select(ShopExpense).where(ShopExpense.order_id.in_(order_ids))
+        exp_res = await session.exec(exp_stmt)
+        expense_dict = {e.order_id: e for e in exp_res.all()}
+
     # Pre-fetch contact info for all unique farmer_ids
     farmer_ids = list({o.farmer_id for o in orders if o.farmer_id})
     farmer_contact_map: Dict[int, Optional[Dict]] = {}
@@ -273,9 +260,7 @@ async def read_shop_orders_detailed(
         farmer_contact_map[fid] = await get_user_contact_info(session, fid)
 
     for order in orders:
-        exp_stmt = select(ShopExpense).where(ShopExpense.order_id == order.id)
-        exp_result = await session.exec(exp_stmt)
-        expense = exp_result.first()
+        expense = expense_dict.get(order.id)
 
         # Cost = sum of (cost_price * qty) for items
         total_cost = sum(

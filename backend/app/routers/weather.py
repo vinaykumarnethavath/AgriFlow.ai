@@ -1,10 +1,32 @@
 import os
 import httpx
+import time
 from fastapi import APIRouter, Query, HTTPException
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/weather", tags=["weather"])
+
+# ─── In-memory TTL cache for external Open-Meteo API requests ─────────
+_weather_cache: Dict[str, tuple[float, Any]] = {}
+
+def _get_cached_weather(key: str) -> Optional[Any]:
+    if key in _weather_cache:
+        exp, data = _weather_cache[key]
+        if time.time() < exp:
+            return data
+        del _weather_cache[key]
+    return None
+
+def _set_cached_weather(key: str, data: Any, ttl: int = 900):
+    if len(_weather_cache) > 1000:
+        now = time.time()
+        expired = [k for k, (exp, _) in _weather_cache.items() if now >= exp]
+        for k in expired:
+            del _weather_cache[k]
+        if len(_weather_cache) > 1000:
+            _weather_cache.clear()
+    _weather_cache[key] = (time.time() + ttl, data)
 
 # ─── Open-Meteo API Endpoints ──────────────────────────────────────────
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
@@ -199,6 +221,11 @@ def _generate_recommendations(current: dict) -> list:
 @router.get("/geocode")
 async def geocode_city(name: str = Query(..., min_length=2)):
     """Search global cities and return geocoded coordinates using Open-Meteo Geocoding API."""
+    cache_key = f"geo:{name.strip().lower()}"
+    cached = _get_cached_weather(cache_key)
+    if cached is not None:
+        return cached
+
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
             resp = await client.get(
@@ -223,7 +250,9 @@ async def geocode_city(name: str = Query(..., min_length=2)):
                     "display": ", ".join(parts),
                     "country_code": r.get("country_code", "")
                 })
-            return {"results": results}
+            out = {"results": results}
+            _set_cached_weather(cache_key, out, ttl=86400)
+            return out
     except Exception as e:
         print(f"Geocoding error: {e}")
         return {"results": []}
@@ -235,6 +264,11 @@ async def get_forecast(lat: float = 17.385, lon: float = 78.4867, lang: str = "e
     Fetch comprehensive live weather & multi-depth soil moisture data from Open-Meteo Forecast API.
     Translates recommendations and advisories if lang != 'en'.
     """
+    cache_key = f"fc:{round(lat, 2)}:{round(lon, 2)}:{lang}"
+    cached = _get_cached_weather(cache_key)
+    if cached is not None:
+        return cached
+
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(
@@ -307,7 +341,7 @@ async def get_forecast(lat: float = 17.385, lon: float = 78.4867, lang: str = "e
             except Exception as e:
                 print(f"[weather] Recommendation auto-translation error: {e}")
 
-        return {
+        out = {
             "latitude": raw.get("latitude", lat),
             "longitude": raw.get("longitude", lon),
             "elevation": raw.get("elevation", 0),
@@ -317,6 +351,8 @@ async def get_forecast(lat: float = 17.385, lon: float = 78.4867, lang: str = "e
             "recommendations": recommendations,
             "source": "open-meteo"
         }
+        _set_cached_weather(cache_key, out, ttl=900)
+        return out
     except HTTPException:
         raise
     except Exception as e:
@@ -335,6 +371,11 @@ async def get_historical(lat: float, lon: float, date: str):
         datetime.strptime(date, "%Y-%m-%d")
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    cache_key = f"hist:{round(lat, 2)}:{round(lon, 2)}:{date}"
+    cached = _get_cached_weather(cache_key)
+    if cached is not None:
+        return cached
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -360,7 +401,7 @@ async def get_historical(lat: float, lon: float, date: str):
 
         recommendations = _generate_recommendations(current)
 
-        return {
+        out = {
             "latitude": raw.get("latitude", lat),
             "longitude": raw.get("longitude", lon),
             "elevation": raw.get("elevation", 0),
@@ -371,6 +412,8 @@ async def get_historical(lat: float, lon: float, date: str):
             "recommendations": recommendations,
             "source": "open-meteo-era5"
         }
+        _set_cached_weather(cache_key, out, ttl=86400 * 7)
+        return out
     except HTTPException:
         raise
     except Exception as e:

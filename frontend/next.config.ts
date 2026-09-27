@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
+  experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns", "recharts", "framer-motion"],
+  },
 };
 
 export default nextConfig;

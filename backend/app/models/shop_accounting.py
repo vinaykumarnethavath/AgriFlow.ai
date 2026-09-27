@@ -8,12 +8,12 @@ class ShopAccountingExpense(SQLModel, table=True):
     These are NOT per-order expenses — they are periodic shop running costs."""
     __tablename__ = "shop_accounting_expenses"
     id: Optional[int] = Field(default=None, primary_key=True)
-    shop_id: int = Field(foreign_key="user.id")
-    category: str  # rent, labour, transportation, utilities, batch_purchase, batch_transport, batch_labour, batch_other
+    shop_id: int = Field(foreign_key="user.id", index=True)
+    category: str = Field(index=True)  # rent, labour, transportation, utilities, batch_purchase, batch_transport, batch_labour, batch_other
     amount: float
     description: Optional[str] = None
-    expense_date: date = Field(default_factory=date.today)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    expense_date: date = Field(default_factory=date.today, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     # IDs of product batches this expense was linked/distributed to (JSON array string)
     linked_product_ids: Optional[str] = None
 

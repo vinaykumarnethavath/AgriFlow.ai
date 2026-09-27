@@ -1,13 +1,15 @@
 from fastapi import APIRouter
 import random
 
+_market_lang_cache: dict = {}
+
 router = APIRouter(prefix="/market", tags=["market"])
 
 @router.get("/prices")
 async def get_market_prices(lang: str = "en"):
     """
     Returns mock market prices for common crops with multiple nearby markets.
-    Translates crop names and mandi names if lang != 'en'.
+    Translates crop names and mandi names if lang != 'en' with cache.
     """
     crops = [
         {"name": "Wheat", "base_price": 2200, "msp": 2125},
@@ -65,19 +67,23 @@ async def get_market_prices(lang: str = "en"):
         
     if lang and lang != "en" and market_data:
         try:
-            from .translate import translate_texts_batch
-            crop_names = [item["crop_name"] for item in market_data]
-            unique_mandi_names = list({loc["name"] for loc in market_locations})
+            if lang in _market_lang_cache:
+                crop_translated, mandi_map = _market_lang_cache[lang]
+            else:
+                from .translate import translate_texts_batch
+                crop_names = [item["crop_name"] for item in market_data]
+                unique_mandi_names = list({loc["name"] for loc in market_locations})
 
-            all_to_translate = crop_names + unique_mandi_names
-            translated = await translate_texts_batch(all_to_translate, target_lang=lang)
+                all_to_translate = crop_names + unique_mandi_names
+                translated = await translate_texts_batch(all_to_translate, target_lang=lang)
 
-            crop_translated = translated[:len(crop_names)]
-            mandi_translated = translated[len(crop_names):]
-            mandi_map = dict(zip(unique_mandi_names, mandi_translated))
+                crop_translated = translated[:len(crop_names)]
+                mandi_translated = translated[len(crop_names):]
+                mandi_map = dict(zip(unique_mandi_names, mandi_translated))
+                _market_lang_cache[lang] = (crop_translated, mandi_map)
 
             for idx, item in enumerate(market_data):
-                if crop_translated[idx]:
+                if idx < len(crop_translated) and crop_translated[idx]:
                     item["crop_name"] = crop_translated[idx]
                 if item["nearest_mandi"] in mandi_map:
                     item["nearest_mandi"] = mandi_map[item["nearest_mandi"]]

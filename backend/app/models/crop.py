@@ -10,7 +10,7 @@ class CropBase(SQLModel):
     variety: Optional[str] = None # e.g. Sona Masuri, PBW 343
     sowing_date: datetime
     expected_harvest_date: Optional[datetime] = None
-    status: str = "Growing" # Growing, Harvested, Sold
+    status: str = Field(default="Growing", index=True) # Growing, Harvested, Sold
     crop_type: str = Field(default="Other") # Cereal, Pulse, Oilseed, Vegetable, Fruit, Commercial, Spice, Other
     notes: Optional[str] = None
     
@@ -24,11 +24,11 @@ class CropBase(SQLModel):
 
 class Crop(CropBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 class CropHarvestBase(SQLModel):
-    date: datetime
+    date: datetime = Field(index=True)
     stage: str # First Picking, Second Picking, Final Harvest
     quantity: float
     unit: str # Quintals, Kg, Tons
@@ -38,11 +38,11 @@ class CropHarvestBase(SQLModel):
     buyer_type: str # Market, Private, Government
     sold_to: Optional[str] = None
     notes: Optional[str] = None
-    status: str = "Available" # Available, Sold
+    status: str = Field(default="Available", index=True) # Available, Sold
 
 class CropHarvest(CropHarvestBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    crop_id: int = Field(foreign_key="crop.id")
+    crop_id: int = Field(foreign_key="crop.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class CropHarvestCreate(CropHarvestBase):
@@ -70,13 +70,13 @@ class CropRead(CropBase):
     user_id: int
 
 class CropExpenseBase(SQLModel):
-    category: str # Input, Labor, Machinery, Irrigation, Logistics, Miscellaneous
+    category: str = Field(index=True) # Input, Labor, Machinery, Irrigation, Logistics, Miscellaneous
     type: str # Seed, Fertilizer, etc.
     quantity: float
     unit: str # kg, hours, days
     unit_cost: float
     total_cost: float
-    date: datetime
+    date: datetime = Field(index=True)
     payment_mode: str # cash, digital
     unit_size: float = 1.0 # e.g. 50kg bag, 1 liter bottle
     duration: float = 1.0 # e.g. 5 days of labor
@@ -86,7 +86,7 @@ class CropExpenseBase(SQLModel):
 
 class CropExpense(CropExpenseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    crop_id: int = Field(foreign_key="crop.id")
+    crop_id: int = Field(foreign_key="crop.id", index=True)
 
 class CropExpenseCreate(CropExpenseBase):
     pass
@@ -99,7 +99,7 @@ class CropExpenseWithCrop(CropExpenseRead):
     crop_name: str
 
 class CropSaleBase(SQLModel):
-    date: datetime
+    date: datetime = Field(index=True)
     buyer_type: str # Mill, Market, Direct, Trader
     buyer_name: str
     buyer_id: Optional[str] = None
@@ -110,11 +110,11 @@ class CropSaleBase(SQLModel):
     total_revenue: float
     payment_mode: str
     notes: Optional[str] = None
-    status: str = "listed" # listed, sold
+    status: str = Field(default="listed", index=True) # listed, sold
 
 class CropSale(CropSaleBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    crop_id: int = Field(foreign_key="crop.id")
+    crop_id: int = Field(foreign_key="crop.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class CropSaleCreate(CropSaleBase):
