@@ -10,6 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { ArrowLeft, Plus, Sprout, ArrowRight, Stethoscope, LineChart, FileDown } from "lucide-react";
 import ExportReportModal from "@/components/info/ExportReportModal";
+import BestCropRecommendationCard from "@/components/info/BestCropRecommendationCard";
+import CropRecommendationWidget from "@/components/info/CropRecommendationWidget";
 
 export default function CropsListPage() {
     const router = useRouter();
@@ -321,6 +323,22 @@ export default function CropsListPage() {
                         <Plus className="h-4 w-4 mr-2" /> {t('farmer.addCrop')}
                     </Button>
                 </div>
+            </div>
+
+            {/* AI Crop Recommendations & Smart Insights */}
+            <div className="space-y-4">
+                <BestCropRecommendationCard
+                    onSelectCrop={(cropName, variety, season) => {
+                        setNewCrop(prev => ({
+                            ...prev,
+                            name: cropName,
+                            variety: variety || "",
+                            season: season || "Kharif",
+                        }));
+                        setIsAddCropOpen(true);
+                    }}
+                />
+                <CropRecommendationWidget />
             </div>
 
             {/* Harvested/Sold Crops Section */}

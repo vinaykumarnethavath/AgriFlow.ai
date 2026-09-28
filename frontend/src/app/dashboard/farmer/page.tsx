@@ -17,8 +17,6 @@ import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
 import MarketPriceWidget from "@/components/info/MarketPriceWidget";
 import NewsWidget from "@/components/info/NewsWidget";
-import CropRecommendationWidget from "@/components/info/CropRecommendationWidget";
-import BestCropRecommendationCard from "@/components/info/BestCropRecommendationCard";
 import SoilProfileCard from "@/components/info/SoilProfileCard";
 import EmergencyContactsCard from "@/components/info/EmergencyContactsCard";
 import ExportReportModal from "@/components/info/ExportReportModal";
@@ -1271,22 +1269,10 @@ export default function FarmerDashboard() {
             </Card>
 
             {/* ═══════════════════════════════════════════════════
-                4. BEST CROP RECOMMENDATION & ROTATION
+                4. SOIL HEALTH & PLOT PROFILE
                ═══════════════════════════════════════════════════ */}
             <div className="space-y-4">
-                <BestCropRecommendationCard
-                    onSelectCrop={(cropName, variety, season) => {
-                        setNewCrop(prev => ({
-                            ...prev,
-                            name: cropName,
-                            variety: variety || "",
-                            season: season || "Kharif",
-                        }));
-                        setIsAddCropOpen(true);
-                    }}
-                />
                 <SoilProfileCard />
-                <CropRecommendationWidget />
             </div>
 
             {/* ═══════════════════════════════════════════════════
