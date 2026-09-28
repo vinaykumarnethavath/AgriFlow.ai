@@ -312,7 +312,7 @@ export default function CropsListPage() {
                     >
                         <FileDown className="h-4 w-4 mr-2 text-emerald-700" /> Export PDF
                     </Button>
-                    <Link href="/dashboard/farmer/season-comparison">
+                    <Link href="/dashboard/farmer/finance?tab=season-comparison">
                         <Button variant="outline" className="border-emerald-300 text-emerald-800 hover:bg-emerald-50">
                             <LineChart className="h-4 w-4 mr-2 text-emerald-700" /> Season Comparison
                         </Button>

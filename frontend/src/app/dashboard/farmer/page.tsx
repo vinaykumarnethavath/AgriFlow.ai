@@ -1007,7 +1007,7 @@ export default function FarmerDashboard() {
                         <ShoppingBag className="h-4 w-4 mr-1" /> {t('sidebar.buyFertilizers')}
                     </Button>
                 </Link>
-                <Link href="/dashboard/farmer/credit">
+                <Link href="/dashboard/farmer/finance?tab=credit">
                     <Button size="sm" variant="outline" className="border-emerald-300 text-emerald-800 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 rounded-full font-bold shadow-sm">
                         <CreditCard className="h-4 w-4 mr-1 text-emerald-700" /> Credit & Loans
                     </Button>

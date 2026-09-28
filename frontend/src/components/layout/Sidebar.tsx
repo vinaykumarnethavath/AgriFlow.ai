@@ -36,7 +36,8 @@ import {
     ChevronLeft,
     Calendar,
     CreditCard,
-    PackageCheck
+    PackageCheck,
+    Landmark
 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
@@ -65,24 +66,17 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
         switch (user.role) {
             case UserRole.FARMER:
                 return [
-                    { category: "Core Operations", name: t("sidebar.dashboard"), href: "/dashboard/farmer", icon: LayoutDashboard },
-                    { category: "Core Operations", name: t("sidebar.myCrops"), href: "/dashboard/farmer/crops", icon: Sprout },
-                    { category: "Core Operations", name: t("sidebar.calendar", "Farm Calendar"), href: "/dashboard/farmer/calendar", icon: Calendar },
-                    { category: "Core Operations", name: t("sidebar.nutrition", "Precision Nutrition"), href: "/dashboard/farmer/nutrition", icon: Droplets },
-                    
-                    { category: "Finance & Storage", name: t("sidebar.seasonComparison", "Season Comparison"), href: "/dashboard/farmer/season-comparison", icon: LineChart },
-                    { category: "Finance & Storage", name: t("sidebar.annualSummary", "Annual Summary"), href: "/dashboard/farmer/annual-summary", icon: BarChart2 },
-                    { category: "Finance & Storage", name: t("sidebar.creditTracker", "Credit & Loans"), href: "/dashboard/farmer/credit", icon: CreditCard },
-                    { category: "Finance & Storage", name: t("sidebar.insurance", "Crop Insurance"), href: "/dashboard/farmer/insurance", icon: ShieldCheck },
-                    { category: "Finance & Storage", name: t("sidebar.storage", "Warehouse Storage"), href: "/dashboard/farmer/storage", icon: PackageCheck },
-                    
-                    { category: "Market & Agri Trade", name: t("sidebar.buyFertilizers"), href: "/dashboard/farmer/market", icon: ShoppingBag },
-                    { category: "Market & Agri Trade", name: t("sidebar.marketPrices"), href: "/dashboard/farmer/market-prices", icon: TrendingUp },
-                    
-                    { category: "Intelligence & Hub", name: t("sidebar.weather"), href: "/dashboard/farmer/weather", icon: Sun },
-                    { category: "Intelligence & Hub", name: t("sidebar.farmerNews", "Farmer News"), href: "/dashboard/farmer/news", icon: PackageSearch },
-                    { category: "Intelligence & Hub", name: t("sidebar.communityHub", "Community Hub"), href: "/dashboard/farmer/community", icon: MessageSquare },
-                    { category: "Intelligence & Hub", name: t("sidebar.learning", "Learning Hub"), href: "/dashboard/farmer/learning", icon: Video },
+                    { name: t("sidebar.dashboard"), href: "/dashboard/farmer", icon: LayoutDashboard },
+                    { name: t("sidebar.myCrops"), href: "/dashboard/farmer/crops", icon: Sprout },
+                    { name: t("sidebar.calendar", "Farm Calendar"), href: "/dashboard/farmer/calendar", icon: Calendar },
+                    { name: t("sidebar.nutrition", "Precision Nutrition"), href: "/dashboard/farmer/nutrition", icon: Droplets },
+                    { name: t("sidebar.financeStorage", "Finance & Storage"), href: "/dashboard/farmer/finance", icon: Landmark },
+                    { name: t("sidebar.buyFertilizers"), href: "/dashboard/farmer/market", icon: ShoppingBag },
+                    { name: t("sidebar.marketPrices"), href: "/dashboard/farmer/market-prices", icon: TrendingUp },
+                    { name: t("sidebar.weather"), href: "/dashboard/farmer/weather", icon: Sun },
+                    { name: t("sidebar.farmerNews", "Farmer News"), href: "/dashboard/farmer/news", icon: PackageSearch },
+                    { name: t("sidebar.communityHub", "Community Hub"), href: "/dashboard/farmer/community", icon: MessageSquare },
+                    { name: t("sidebar.learning", "Learning Hub"), href: "/dashboard/farmer/learning", icon: Video },
                 ];
             case UserRole.SHOP:
                 return [
@@ -162,34 +156,19 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
             </div>
 
             <nav className={cn("flex-1 space-y-1 overflow-y-auto mt-2", isOpen ? "pr-1 w-full" : "w-full flex flex-col items-center overflow-x-hidden")}>
-                {navItems.map((item, index) => {
-                    const isNewCategory = item.category && (index === 0 || navItems[index - 1].category !== item.category);
-
-                    return (
-                        <React.Fragment key={item.href}>
-                            {isNewCategory && (
-                                isOpen ? (
-                                    <div className="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-green-300/70 select-none">
-                                        {item.category}
-                                    </div>
-                                ) : (
-                                    index > 0 && <div className="w-8 border-t border-green-800/80 my-2" />
-                                )
-                            )}
-                            <Link href={item.href}>
-                                <div className={cn(
-                                    "flex items-center rounded-lg transition-colors hover:bg-green-800 group",
-                                    isOpen ? "gap-3 px-3 py-2" : "justify-center p-3 mb-2 w-12 h-12",
-                                    pathname === item.href ? "bg-green-700 text-white font-medium" : "text-green-100"
-                                )}
-                                title={!isOpen ? item.name : undefined}>
-                                    <item.icon className={cn("flex-shrink-0", isOpen ? "h-5 w-5" : "h-6 w-6 group-hover:scale-110 transition-transform")} />
-                                    {isOpen && <span className="text-sm">{item.name}</span>}
-                                </div>
-                            </Link>
-                        </React.Fragment>
-                    );
-                })}
+                {navItems.map((item) => (
+                    <Link key={item.href} href={item.href}>
+                        <div className={cn(
+                            "flex items-center rounded-lg transition-colors hover:bg-green-800 group",
+                            isOpen ? "gap-3 px-3 py-2" : "justify-center p-3 mb-2 w-12 h-12",
+                            pathname === item.href ? "bg-green-700 text-white font-medium" : "text-green-100"
+                        )}
+                        title={!isOpen ? item.name : undefined}>
+                            <item.icon className={cn("flex-shrink-0", isOpen ? "h-5 w-5" : "h-6 w-6 group-hover:scale-110 transition-transform")} />
+                            {isOpen && <span className="text-sm">{item.name}</span>}
+                        </div>
+                    </Link>
+                ))}
             </nav>
 
             <div className={cn("pt-3 border-t border-green-800 mt-2 w-full flex flex-col gap-3", !isOpen && "items-center")}>
