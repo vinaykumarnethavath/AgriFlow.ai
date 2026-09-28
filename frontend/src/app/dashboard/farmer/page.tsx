@@ -24,6 +24,7 @@ import EmergencyContactsCard from "@/components/info/EmergencyContactsCard";
 import ExportReportModal from "@/components/info/ExportReportModal";
 import { AICropDiagnosis } from "@/components/AICropDiagnosis";
 import { Stethoscope } from "lucide-react";
+import FarmCalendarView from "@/components/farmer/FarmCalendarView";
 
 interface LandRecord {
     serial_number: string;
@@ -245,6 +246,7 @@ export default function FarmerDashboard() {
     const [isLandEditOpen, setIsLandEditOpen] = useState(false);
     const [customActivities, setCustomActivities] = useState<{ text: string; daysLeft: number; type: string }[]>([]);
     const [showAddActivity, setShowAddActivity] = useState(false);
+    const [showFullCalendar, setShowFullCalendar] = useState(false);
     const [newActivity, setNewActivity] = useState({ text: '', daysLeft: 7, type: 'custom' });
     const [isDiagnosisOpen, setIsDiagnosisOpen] = useState(false);
     const [cropHealthStatuses, setCropHealthStatuses] = useState<Record<number, CropHealthStatusData>>({});
@@ -1163,15 +1165,14 @@ export default function FarmerDashboard() {
                             <Calendar className="h-5 w-5 text-amber-600" /> {t('farmer.upcomingActivities')}
                         </h3>
                         <div className="flex items-center gap-2">
-                            <Link href="/dashboard/farmer/calendar">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-green-700 border-green-300 hover:bg-green-100 flex items-center gap-1"
-                                >
-                                    <Calendar className="h-3 w-3" /> Full Calendar
-                                </Button>
-                            </Link>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className={showFullCalendar ? "bg-green-700 text-white border-green-700 hover:bg-green-800 flex items-center gap-1 shadow-xs" : "text-green-700 border-green-300 hover:bg-green-100 flex items-center gap-1"}
+                                onClick={() => setShowFullCalendar(!showFullCalendar)}
+                            >
+                                <Calendar className="h-3 w-3" /> {showFullCalendar ? t('farmer.hideCalendar', 'Hide Calendar') : t('farmer.fullCalendar', 'Full Calendar')}
+                            </Button>
                             <Button
                                 size="sm"
                                 variant="outline"
@@ -1259,6 +1260,12 @@ export default function FarmerDashboard() {
                         </div>
                     ) : (
                         <p className="text-sm text-muted-foreground text-center py-4">{t('farmer.noActivities')}</p>
+                    )}
+
+                    {showFullCalendar && (
+                        <div className="mt-5 pt-5 border-t border-amber-200 dark:border-amber-800 animate-fade-in">
+                            <FarmCalendarView />
+                        </div>
                     )}
                 </CardContent>
             </Card>
