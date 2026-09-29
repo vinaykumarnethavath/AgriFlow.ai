@@ -1006,19 +1006,6 @@ export default function FarmerDashboard() {
                         <ShoppingBag className="h-4 w-4 mr-1" /> {t('sidebar.buyFertilizers')}
                     </Button>
                 </Link>
-                <Link href="/dashboard/farmer/finance?tab=credit">
-                    <Button size="sm" variant="outline" className="border-emerald-300 text-emerald-800 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 rounded-full font-bold shadow-sm">
-                        <CreditCard className="h-4 w-4 mr-1 text-emerald-700" /> Credit & Loans
-                    </Button>
-                </Link>
-                <Button
-                    onClick={() => setIsExportReportOpen(true)}
-                    size="sm"
-                    variant="outline"
-                    className="border-emerald-400 text-emerald-800 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 rounded-full font-bold shadow-sm shrink-0"
-                >
-                    <FileDown className="h-4 w-4 mr-1 text-emerald-700" /> Export Report (PDF)
-                </Button>
                 <Link href="/dashboard/farmer/crops">
                     <Button size="sm" variant="outline" className="border-gray-300 text-black dark:text-black bg-white hover:bg-gray-100 rounded-full font-bold shadow-sm">
                         <Wallet className="h-4 w-4 mr-1 text-black" /> {t('farmer.addExpense')}

@@ -130,12 +130,10 @@ async def get_ai_suggestion(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Returns a smart AI suggestion based on:
-    - Current weather conditions (if available)
-    - Crop growth stages
-    - Time of year
-    
-    Simple rule-based logic — no ML required.
+    Returns high-priority, actionable daily AI recommendations for TODAY based on:
+    - Today's real-time weather & microclimate (rain, wind, heat, soil moisture)
+    - Today's scheduled farm activities
+    - Immediate daily field inspections and crop growth stage tasks
     """
     # Get active crops
     query = select(Crop).where(
@@ -145,15 +143,97 @@ async def get_ai_suggestion(
     result = await session.exec(query)
     active_crops = result.all()
 
-    if not active_crops:
-        return {
-            "suggestion": "No active crops found. Consider planning your next sowing based on the upcoming season.",
-            "category": "planning",
-            "icon": "🌱",
-        }
-
     suggestions = []
+    today_date = datetime.utcnow().date()
 
+    # 1. ── Today's Scheduled Farm Activities (Highest Priority if due today) ──
+    try:
+        from ..models.farm_calendar import FarmEvent
+        event_query = select(FarmEvent).where(
+            FarmEvent.user_id == current_user.id,
+            FarmEvent.event_date == today_date,
+            FarmEvent.is_completed == False,
+        )
+        today_events = (await session.exec(event_query)).all()
+        for ev in today_events:
+            suggestions.append({
+                "suggestion": f"Today's scheduled task: {ev.title} ({ev.event_type.capitalize()}). Prioritize completing this task during morning farm hours.",
+                "category": "schedule",
+                "icon": "📋",
+                "priority": 0,
+            })
+    except Exception as e:
+        print(f"[AISuggestion] Calendar query skipped: {e}")
+
+    # 2. ── Today's Live Weather Operations Advisory ──
+    try:
+        from ..models.farmer import FarmerProfile
+        from .weather import get_forecast
+
+        prof_res = await session.exec(select(FarmerProfile).where(FarmerProfile.user_id == current_user.id))
+        f_prof = prof_res.first()
+
+        lat, lon = 17.385, 78.4867
+        if f_prof and getattr(f_prof, "district", None):
+            try:
+                from .weather import geocode
+                geo = await geocode(f_prof.district)
+                if geo.get("results"):
+                    lat = geo["results"][0].get("latitude", lat)
+                    lon = geo["results"][0].get("longitude", lon)
+            except Exception:
+                pass
+
+        forecast_data = await get_forecast(lat=lat, lon=lon)
+        current_w = forecast_data.get("current", {})
+        daily_w = forecast_data.get("daily", [])
+        today_d = daily_w[0] if daily_w else {}
+
+        temp_max = today_d.get("temperature_2m_max") or current_w.get("temperature_2m", 30)
+        precip = today_d.get("precipitation_sum") or current_w.get("precipitation", 0)
+        rain_prob = today_d.get("precipitation_probability_max", 0)
+        wind_spd = current_w.get("wind_speed_10m") or current_w.get("wind_speed", 10)
+        sm_surface = current_w.get("soil_moisture_0_to_1cm") if current_w.get("soil_moisture_0_to_1cm") is not None else current_w.get("soil_moisture_0_to_7cm")
+
+        if precip > 2.0 or rain_prob >= 40:
+            suggestions.append({
+                "suggestion": f"Rain expected today ({precip} mm, {rain_prob}% chance). Postpone fertilizer broadcasting and pesticide sprays today to prevent wash-off; ensure field drainage trenches are clear.",
+                "category": "weather_action",
+                "icon": "🌧️",
+                "priority": 0,
+            })
+        elif wind_spd > 20:
+            suggestions.append({
+                "suggestion": f"Breezy conditions today ({round(wind_spd)} km/h). Delay chemical foliar spraying today to prevent spray drift onto neighboring rows or non-target plants.",
+                "category": "weather_action",
+                "icon": "💨",
+                "priority": 1,
+            })
+        elif temp_max >= 35:
+            suggestions.append({
+                "suggestion": f"High temperature expected today (peak {round(temp_max)}°C). Complete field irrigation in early morning or after sunset to minimize heat stress and rapid evaporation.",
+                "category": "weather_action",
+                "icon": "☀️",
+                "priority": 1,
+            })
+        elif sm_surface is not None and sm_surface < 0.12:
+            suggestions.append({
+                "suggestion": "Surface soil moisture is depleted today (<12%). Run an irrigation cycle this morning to keep root zones hydrated and maintain active nutrient uptake.",
+                "category": "irrigation",
+                "icon": "💧",
+                "priority": 1,
+            })
+        else:
+            suggestions.append({
+                "suggestion": f"Clear weather today ({round(temp_max)}°C). Ideal window for morning field inspection, light weeding, or planned foliar nutrient application.",
+                "category": "weather_action",
+                "icon": "🌤️",
+                "priority": 1,
+            })
+    except Exception as e:
+        print(f"[AISuggestion] Weather evaluation fallback: {e}")
+
+    # 3. ── Active Crops — Immediate Tasks for Today ──
     for crop in active_crops:
         days_since_sowing = (datetime.utcnow() - crop.sowing_date).days
         crop_name = crop.name
@@ -161,98 +241,74 @@ async def get_ai_suggestion(
         # Early stage (0-15 days) — germination
         if days_since_sowing <= 15:
             suggestions.append({
-                "suggestion": f"Your {crop_name} is in germination stage ({days_since_sowing} days). Ensure consistent soil moisture and avoid waterlogging.",
+                "suggestion": f"Today's field check: Inspect {crop_name} (day {days_since_sowing}) rows for uniform seedling emergence and maintain moist soil bed.",
                 "category": "irrigation",
-                "icon": "💧",
-                "priority": 2,
+                "icon": "🌱",
+                "priority": 1,
             })
 
-        # Seedling stage (15-30 days)
-        elif days_since_sowing <= 30:
+        # Seedling stage (15-35 days)
+        elif days_since_sowing <= 35:
             suggestions.append({
-                "suggestion": f"Your {crop_name} seedlings are {days_since_sowing} days old. This is a good time for first dose of nitrogen fertilizer (urea/DAP).",
+                "suggestion": f"Today's crop task: Check {crop_name} (day {days_since_sowing}) seedlings for early stem borer/damping-off; ideal time for first scheduled dose of nitrogen fertilizer.",
                 "category": "fertilizer",
                 "icon": "🧪",
-                "priority": 2,
+                "priority": 1,
             })
 
-        # Vegetative stage (30-60 days)
-        elif days_since_sowing <= 60:
+        # Vegetative stage (35-65 days)
+        elif days_since_sowing <= 65:
             suggestions.append({
-                "suggestion": f"{crop_name} is in active vegetative growth ({days_since_sowing} days). Monitor for pest attacks and consider preventive spraying.",
+                "suggestion": f"Today's scouting: Inspect underleaves of {crop_name} (day {days_since_sowing}) during early morning hours for aphids, caterpillars, or fungal leaf spots.",
                 "category": "pest_management",
                 "icon": "🛡️",
                 "priority": 1,
             })
 
-        # Flowering/Reproductive (60-90 days)
-        elif days_since_sowing <= 90:
+        # Flowering/Reproductive (65-95 days)
+        elif days_since_sowing <= 95:
             suggestions.append({
-                "suggestion": f"{crop_name} is entering flowering stage ({days_since_sowing} days). Avoid excess nitrogen. Apply potash for better grain filling.",
+                "suggestion": f"Today's priority: Maintain steady root moisture for {crop_name} (day {days_since_sowing}) during critical flowering stage; avoid water stress today.",
                 "category": "fertilizer",
                 "icon": "🌸",
                 "priority": 1,
             })
 
-        # Maturity (90-120 days)
-        elif days_since_sowing <= 120:
+        # Maturity / Approaching Harvest (95-125 days)
+        elif days_since_sowing <= 125:
             suggestions.append({
-                "suggestion": f"{crop_name} is maturing ({days_since_sowing} days). Reduce irrigation gradually. Start planning harvest logistics and market linkage.",
+                "suggestion": f"Today's harvest check: Check grain hardness and husk drying in {crop_name} (day {days_since_sowing}) to schedule threshing and harvest logistics.",
                 "category": "harvest",
                 "icon": "🌾",
-                "priority": 1,
+                "priority": 2,
             })
 
-        # Ready to harvest (120+ days)
+        # Overdue / Past Normal Harvest (>125 days)
         else:
             suggestions.append({
-                "suggestion": f"{crop_name} is at {days_since_sowing} days. If not harvested yet, check crop maturity indicators and harvest promptly to avoid field losses.",
+                "suggestion": f"Record update: {crop_name} is recorded at {days_since_sowing} days. If harvest was completed, mark this crop completed in My Crops; if still standing, harvest promptly.",
                 "category": "harvest",
                 "icon": "⚠️",
-                "priority": 0,
+                "priority": 5,  # Low priority so it does NOT displace today's actual daily operational advice!
             })
 
-    # Season-based suggestions
-    month = datetime.utcnow().month
-    if month in (6, 7):  # June-July — monsoon start
+    if not suggestions:
         suggestions.append({
-            "suggestion": "Monsoon season: ensure proper drainage in fields. Check bunds for leaks. Prepare for excess rainfall events.",
-            "category": "weather",
-            "icon": "🌧️",
-            "priority": 3,
-        })
-    elif month in (11, 12):  # Rabi sowing
-        suggestions.append({
-            "suggestion": "Rabi season is here. Consider sowing wheat, mustard, or chickpea if land is available. Soil moisture from kharif harvest is ideal for Rabi sowing.",
-            "category": "planning",
-            "icon": "📅",
-            "priority": 3,
-        })
-    elif month in (3, 4):  # Summer/Pre-Kharif
-        suggestions.append({
-            "suggestion": "Summer heat is increasing. Mulching can reduce soil moisture loss by 25-30%. Consider summer ploughing for pest control.",
+            "suggestion": "Today's farm routine: Scout field borders early in the day for pest movement and ensure irrigation drip lines/channels are free of silt.",
             "category": "management",
-            "icon": "☀️",
-            "priority": 3,
+            "icon": "🔍",
+            "priority": 2,
         })
 
-    # Sort by priority (lower = more urgent)
+    # Sort by priority (lower number = more urgent / relevant for TODAY)
     suggestions.sort(key=lambda s: s.get("priority", 5))
 
-    # Return top suggestion
-    if suggestions:
-        top = suggestions[0]
-        return {
-            "suggestion": top["suggestion"],
-            "category": top["category"],
-            "icon": top["icon"],
-            "all_suggestions": suggestions[:5],  # Return top 5
-        }
-
+    top = suggestions[0]
     return {
-        "suggestion": "All crops are growing well. Keep monitoring regularly.",
-        "category": "general",
-        "icon": "✅",
+        "suggestion": top["suggestion"],
+        "category": top["category"],
+        "icon": top["icon"],
+        "all_suggestions": suggestions[:5],
     }
 
 
