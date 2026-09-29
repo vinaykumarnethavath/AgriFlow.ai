@@ -25,7 +25,12 @@ const SOIL_TYPE_LABELS: Record<string, string> = {
     silt_loam: "Silt Loam"
 };
 
-export default function SoilProfileCard() {
+interface SoilProfileCardProps {
+    onNavigateToManager?: () => void;
+    hideNutritionLink?: boolean;
+}
+
+export default function SoilProfileCard({ onNavigateToManager, hideNutritionLink = false }: SoilProfileCardProps = {}) {
     const [profiles, setProfiles] = useState<SoilProfile[]>([]);
     const [summary, setSummary] = useState<SoilHealthSummary | null>(null);
     const [loading, setLoading] = useState(true);
@@ -143,14 +148,24 @@ export default function SoilProfileCard() {
                         >
                             <Plus className="h-3.5 w-3.5" /> Add Lab Test
                         </Button>
-                        <Link href="/dashboard/farmer/nutrition">
+                        {onNavigateToManager ? (
                             <Button
                                 size="sm"
+                                onClick={onNavigateToManager}
                                 className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
                             >
-                                Precision Nutrition <ArrowRight className="h-3.5 w-3.5 ml-0.5" />
+                                Manage Crop Nutrition <ArrowRight className="h-3.5 w-3.5 ml-0.5" />
                             </Button>
-                        </Link>
+                        ) : !hideNutritionLink ? (
+                            <Link href="/dashboard/farmer/nutrition">
+                                <Button
+                                    size="sm"
+                                    className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
+                                >
+                                    Precision Nutrition <ArrowRight className="h-3.5 w-3.5 ml-0.5" />
+                                </Button>
+                            </Link>
+                        ) : null}
                     </div>
                 </div>
 

@@ -111,7 +111,7 @@ const en = {
     weather: "Weather",
     farmerNews: "Farmer News",
     communityHub: "Community Hub",
-    nutrition: "Precision Nutrition",
+    nutrition: "Soil & Nutrition",
     learning: "Learning Hub",
     inventory: "Inventory",
     orders: "Orders",

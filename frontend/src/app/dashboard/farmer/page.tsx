@@ -17,7 +17,6 @@ import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
 import MarketPriceWidget from "@/components/info/MarketPriceWidget";
 import NewsWidget from "@/components/info/NewsWidget";
-import SoilProfileCard from "@/components/info/SoilProfileCard";
 import EmergencyContactsCard from "@/components/info/EmergencyContactsCard";
 import ExportReportModal from "@/components/info/ExportReportModal";
 import { AICropDiagnosis } from "@/components/AICropDiagnosis";
@@ -1267,13 +1266,6 @@ export default function FarmerDashboard() {
                     )}
                 </CardContent>
             </Card>
-
-            {/* ═══════════════════════════════════════════════════
-                4. SOIL HEALTH & PLOT PROFILE
-               ═══════════════════════════════════════════════════ */}
-            <div className="space-y-4">
-                <SoilProfileCard />
-            </div>
 
             {/* ═══════════════════════════════════════════════════
                 3. ACTIVE CROPS (Top 3)

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { T } from "@/components/TranslateText";
 import {
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import SoilProfileCard from "@/components/info/SoilProfileCard";
 import {
     getPlots, getActiveCrops, savePlotSoilData, linkCropToPlot,
     getPlotRecommendation, applyFertilizer, getFertilizerHistory, analyzeFertilizerImpact,
@@ -80,11 +82,25 @@ function nutrientLabel(key: string) {
 }
 
 // ── Component ──────────────────────────────────────────────────
-export default function PrecisionNutritionPage() {
+function PrecisionNutritionContent() {
     const { t } = useLanguage();
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get("tab");
 
     // Tab state (controlled)
-    const [activeTab, setActiveTab] = useState<string>("plots");
+    const [activeTab, setActiveTab] = useState<string>(
+        tabParam === "soil" || tabParam === "soil-card" ? "soil" : (tabParam || "plots")
+    );
+
+    useEffect(() => {
+        if (tabParam) {
+            if (tabParam === "soil" || tabParam === "soil-card") {
+                setActiveTab("soil");
+            } else if (["plots", "manager", "impact"].includes(tabParam)) {
+                setActiveTab(tabParam);
+            }
+        }
+    }, [tabParam]);
 
     // Global state
     const [plots, setPlots] = useState<PlotOverview[]>([]);
@@ -407,14 +423,19 @@ export default function PrecisionNutritionPage() {
 
             {/* ── Empty State ── */}
             {!loadingPlots && plots.length === 0 && !error && (
-                <div className="flex flex-col items-center justify-center py-20 bg-slate-100 dark:bg-slate-800/60 rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-center p-8">
-                    <div className="h-16 w-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-4">
-                        <MapPin className="h-8 w-8" />
+                <div className="space-y-6">
+                    <div className="flex flex-col items-center justify-center py-12 bg-slate-100 dark:bg-slate-800/60 rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-center p-8">
+                        <div className="h-16 w-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-4">
+                            <MapPin className="h-8 w-8" />
+                        </div>
+                        <h3 className="text-xl font-bold text-foreground"><T>No Land Plots Found</T></h3>
+                        <p className="text-slate-600 dark:text-slate-400 mt-2 max-w-md">
+                            Please set up your farmer profile with land records first. Go to your <strong>Profile</strong> page to add your land plots, then come back here to track plot nutrition.
+                        </p>
                     </div>
-                    <h3 className="text-xl font-bold text-foreground"><T>No Land Plots Found</T></h3>
-                    <p className="text-slate-600 dark:text-slate-400 mt-2 max-w-md">
-                        Please set up your farmer profile with land records first. Go to your <strong>Profile</strong> page to add your land plots, then come back here.
-                    </p>
+                    <div>
+                        <SoilProfileCard />
+                    </div>
                 </div>
             )}
 
@@ -429,6 +450,13 @@ export default function PrecisionNutritionPage() {
                             >
                                 <MapPin className="h-4 w-4 text-blue-500" />
                                 <T>My Plots</T> ({plots.length})
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="soil"
+                                className="gap-2 rounded-xl px-4 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm font-medium"
+                            >
+                                <Layers className="h-4 w-4 text-amber-500" />
+                                <T>Soil Health Card</T>
                             </TabsTrigger>
                             <TabsTrigger
                                 value="manager"
@@ -662,6 +690,32 @@ export default function PrecisionNutritionPage() {
                                 );
                             })}
                         </div>
+
+                        {/* ── Soil Profile & Health Card Section ── */}
+                        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                                    <Layers className="h-5 w-5 text-amber-500" />
+                                    <T>Soil Health Card & Profile</T>
+                                </h3>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setActiveTab("soil")}
+                                    className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                                >
+                                    <T>Full Soil Card View</T> <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                                </Button>
+                            </div>
+                            <SoilProfileCard onNavigateToManager={() => setActiveTab("manager")} />
+                        </div>
+                    </TabsContent>
+
+                    {/* ═══════════════════════════════════════════════════════
+                        TAB: SOIL HEALTH CARD & PROFILE
+                       ═══════════════════════════════════════════════════════ */}
+                    <TabsContent value="soil" className="space-y-6">
+                        <SoilProfileCard onNavigateToManager={() => setActiveTab("manager")} />
                     </TabsContent>
 
                     {/* ═══════════════════════════════════════════════════════
@@ -1542,5 +1596,18 @@ export default function PrecisionNutritionPage() {
                 </Tabs>
             )}
         </div>
+    );
+}
+
+export default function PrecisionNutritionPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
+                <p className="text-slate-600 dark:text-slate-400">Loading Soil & Nutrition Module...</p>
+            </div>
+        }>
+            <PrecisionNutritionContent />
+        </Suspense>
     );
 }

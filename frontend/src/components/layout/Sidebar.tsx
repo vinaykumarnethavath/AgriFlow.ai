@@ -68,7 +68,7 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
                 return [
                     { name: t("sidebar.dashboard"), href: "/dashboard/farmer", icon: LayoutDashboard },
                     { name: t("sidebar.myCrops"), href: "/dashboard/farmer/crops", icon: Sprout },
-                    { name: t("sidebar.nutrition", "Precision Nutrition"), href: "/dashboard/farmer/nutrition", icon: Droplets },
+                    { name: t("sidebar.nutrition", "Soil & Nutrition"), href: "/dashboard/farmer/nutrition", icon: Droplets },
                     { name: t("sidebar.financeStorage", "Finance & Storage"), href: "/dashboard/farmer/finance", icon: Landmark },
                     { name: t("sidebar.buyFertilizers"), href: "/dashboard/farmer/market", icon: ShoppingBag },
                     { name: t("sidebar.marketPrices"), href: "/dashboard/farmer/market-prices", icon: TrendingUp },
