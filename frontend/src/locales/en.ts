@@ -124,6 +124,7 @@ const en = {
     home: "Home",
     marketplace: "Marketplace",
     cart: "Cart",
+    emergency: "Emergency SOS",
   },
 
   // ── Farmer Dashboard ──────────────────────────────────────────────────

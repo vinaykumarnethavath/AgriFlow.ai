@@ -37,7 +37,8 @@ import {
     Calendar,
     CreditCard,
     PackageCheck,
-    Landmark
+    Landmark,
+    PhoneCall
 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
@@ -76,6 +77,7 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
                     { name: t("sidebar.farmerNews", "Farmer News"), href: "/dashboard/farmer/news", icon: PackageSearch },
                     { name: t("sidebar.communityHub", "Community Hub"), href: "/dashboard/farmer/community", icon: MessageSquare },
                     { name: t("sidebar.learning", "Learning Hub"), href: "/dashboard/farmer/learning", icon: Video },
+                    { name: t("sidebar.emergency", "Emergency SOS"), href: "/dashboard/farmer/emergency", icon: PhoneCall },
                 ];
             case UserRole.SHOP:
                 return [

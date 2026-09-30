@@ -44,6 +44,7 @@ const NAV_TARGETS: Record<string, NavTarget> = {
     learning: { path: "/dashboard/farmer/learning", label: "Learning Hub" },
     expenses: { path: "/dashboard/farmer/expenses", label: "Expenses" },
     profile: { path: "/dashboard/farmer/profile", label: "Profile" },
+    emergency: { path: "/dashboard/farmer/emergency", label: "Emergency SOS" },
 };
 
 // ── Multilingual Keyword Dictionaries ────────────────────────────────────────
@@ -322,6 +323,10 @@ function detectNavTarget(text: string, locale: SupportedLocale): NavTarget | nul
     const kw = KEYWORDS[locale] || KEYWORDS.en;
 
     // Check in priority order (more specific first)
+    if (containsAny(text, ["emergency", "sos", "helpline", "help line", "112", "1551", "lineman", "आपातकालीन", "ఆపత్కాల", "அவசர", "ತುರ್ತು"])) {
+        return NAV_TARGETS.emergency;
+    }
+
     const targets: [string[], string][] = [
         [kw.navMarketPrices, "market_prices"],
         [kw.navExpenses, "expenses"],

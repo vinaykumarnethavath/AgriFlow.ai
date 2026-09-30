@@ -11,13 +11,12 @@ import {
     Sprout, User, Plus, Trash2, ArrowRight, AlertTriangle,
     CloudRain, Sun, Wind, Droplets, Newspaper, Clock,
     PenSquare, Wallet, ShoppingCart, ChevronDown, ChevronUp, ShoppingBag,
-    Eye, EyeOff, Calendar, MessageSquare, Lightbulb, Activity, CreditCard, FileDown
+    Eye, EyeOff, Calendar, MessageSquare, Lightbulb, Activity, CreditCard, FileDown, PhoneCall
 } from "lucide-react";
 import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
 import MarketPriceWidget from "@/components/info/MarketPriceWidget";
 import NewsWidget from "@/components/info/NewsWidget";
-import EmergencyContactsCard from "@/components/info/EmergencyContactsCard";
 import ExportReportModal from "@/components/info/ExportReportModal";
 import { AICropDiagnosis } from "@/components/AICropDiagnosis";
 import { Stethoscope } from "lucide-react";
@@ -873,6 +872,15 @@ export default function FarmerDashboard() {
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 items-end">
+                        <Link href="/dashboard/farmer/emergency">
+                            <Button
+                                variant="outline"
+                                className="border-rose-300/40 text-rose-100 hover:text-white hover:bg-rose-600/40 bg-rose-900/30 backdrop-blur-sm shadow-sm text-xs font-bold"
+                            >
+                                <PhoneCall className="h-3.5 w-3.5 mr-1.5 text-rose-300 animate-pulse" />
+                                {t('sidebar.emergency', 'Emergency SOS')}
+                            </Button>
+                        </Link>
                         <Button
                             onClick={() => {
                                 if (profile?.relation_type) setRelationType(profile.relation_type);
@@ -1418,10 +1426,30 @@ export default function FarmerDashboard() {
                 )
             }
             {/* ═══════════════════════════════════════════════════
-                EMERGENCY SOS & HELPLINES
+                EMERGENCY SOS & HELPLINES BANNER
                ═══════════════════════════════════════════════════ */}
-            <div>
-                <EmergencyContactsCard />
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-500/10 via-red-500/5 to-amber-500/10 border border-rose-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-400 shrink-0">
+                        <PhoneCall className="h-5 w-5 animate-pulse" />
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                            Emergency SOS & Crisis Helplines
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                                24/7 Hotlines
+                            </span>
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Kisan Call Center (1551), PMFBY Crop Loss (14447), Discom (1912), KVK scientists & local contacts directory.
+                        </p>
+                    </div>
+                </div>
+                <Link href="/dashboard/farmer/emergency" className="shrink-0">
+                    <Button size="sm" variant="outline" className="border-rose-300 hover:bg-rose-500 hover:text-white dark:border-rose-800 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-300 text-xs font-bold gap-1.5 w-full sm:w-auto">
+                        Open SOS Directory <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                </Link>
             </div>
 
             {/* ═══════════════════════════════════════════════════
