@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, delete
 from sqlalchemy.orm import selectinload
 from typing import List
 
@@ -49,6 +49,7 @@ async def get_farmer_profile(
         profile_read.phone_number = current_user.phone_number
     return profile_read
 
+@router.put("/profile", response_model=FarmerProfileRead)
 @router.post("/profile", response_model=FarmerProfileRead)
 async def create_or_update_profile(
     profile_data: FarmerProfileCreate,
@@ -97,7 +98,7 @@ async def create_or_update_profile(
     result = await session.exec(statement)
     db_profile = result.first()
     
-    exclude_fields = {"full_name"}
+    exclude_fields = {"full_name", "land_records"}
     update_data = profile_data.dict(exclude=exclude_fields)
     if profile_data.phone_number:
         update_data["phone_number"] = profile_data.phone_number.strip()
@@ -121,6 +122,14 @@ async def create_or_update_profile(
         await session.rollback()
         raise HTTPException(status_code=400, detail=f"Failed to save profile: {str(e)}")
     await session.refresh(db_profile)
+
+    # Sync land records if provided
+    if profile_data.land_records is not None:
+        await session.exec(delete(LandRecord).where(LandRecord.farmer_profile_id == db_profile.id))
+        for lr in profile_data.land_records:
+            if lr.serial_number and lr.area > 0:
+                session.add(LandRecord(serial_number=lr.serial_number, area=lr.area, farmer_profile_id=db_profile.id))
+        await session.commit()
     
     # Reload with relationships to avoid MissingGreenlet error
     # Because refresh() only reloads simple attributes, not relationships
@@ -167,11 +176,8 @@ async def update_land_records(
     if not profile:
         raise HTTPException(status_code=400, detail="Create a farmer profile first")
         
-    # Delete existing land records
-    delete_statement = select(LandRecord).where(LandRecord.farmer_profile_id == profile.id)
-    existing_records = await session.exec(delete_statement)
-    for record in existing_records:
-        await session.delete(record)
+    # Delete existing land records in a single optimized query
+    await session.exec(delete(LandRecord).where(LandRecord.farmer_profile_id == profile.id))
         
     # Add new ones
     new_records = []
@@ -185,6 +191,7 @@ async def update_land_records(
         await session.refresh(record)
         
     return new_records
+
 
 @router.get("/expenses", response_model=List[CropExpenseWithCrop])
 async def get_all_farmer_expenses(

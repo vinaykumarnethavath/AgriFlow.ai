@@ -1,4 +1,4 @@
-from .user import User, UserCreate, UserRead, UserRole, UserLogin, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest, SendPhoneOTPRequest, VerifyPhoneOTPRequest
+from .user import User, UserCreate, UserRead, UserRole, UserLogin, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest, SendPhoneOTPRequest, VerifyPhoneOTPRequest, ChangePasswordRequest
 from .crop import (
     Crop, CropCreate, CropRead, CropUpdate, 
     CropExpense, CropExpenseCreate, CropExpenseRead, CropExpenseWithCrop,

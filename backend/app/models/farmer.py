@@ -33,6 +33,14 @@ class FarmerProfileBase(SQLModel):
     account_number: str
     ifsc_code: str
     profile_picture_url: Optional[str] = None
+    
+    # Additional Farmer Details & Preferences
+    upi_id: Optional[str] = None
+    secondary_phone: Optional[str] = None
+    irrigation_type: Optional[str] = None
+    primary_crop: Optional[str] = None
+    preferred_language: Optional[str] = None
+    notification_preferences: Optional[str] = None
 
 class FarmerProfile(FarmerProfileBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -42,6 +50,7 @@ class FarmerProfile(FarmerProfileBase, table=True):
 
 class FarmerProfileCreate(FarmerProfileBase):
     full_name: Optional[str] = None
+    land_records: Optional[List[LandRecordBase]] = None
 
 class FarmerProfileRead(FarmerProfileBase):
     id: int
@@ -49,3 +58,4 @@ class FarmerProfileRead(FarmerProfileBase):
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
     land_records: List[LandRecordBase] = []
+

@@ -49,6 +49,12 @@ async def init_db():
     # Safely migrate new columns and performance indexes on existing database tables
     migration_statements = [
         "ALTER TABLE farmerprofile ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
+        "ALTER TABLE farmerprofile ADD COLUMN IF NOT EXISTS upi_id VARCHAR",
+        "ALTER TABLE farmerprofile ADD COLUMN IF NOT EXISTS secondary_phone VARCHAR",
+        "ALTER TABLE farmerprofile ADD COLUMN IF NOT EXISTS irrigation_type VARCHAR",
+        "ALTER TABLE farmerprofile ADD COLUMN IF NOT EXISTS primary_crop VARCHAR",
+        "ALTER TABLE farmerprofile ADD COLUMN IF NOT EXISTS preferred_language VARCHAR",
+        "ALTER TABLE farmerprofile ADD COLUMN IF NOT EXISTS notification_preferences VARCHAR",
         "ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
         "ALTER TABLE shop_profiles ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
         "ALTER TABLE shop_profiles ADD COLUMN IF NOT EXISTS contact_number VARCHAR",
@@ -56,6 +62,8 @@ async def init_db():
         "ALTER TABLE mill_profiles ADD COLUMN IF NOT EXISTS contact_number VARCHAR",
         "ALTER TABLE chatmessage ADD COLUMN IF NOT EXISTS media_type VARCHAR",
         # Performance Indexes
+        "CREATE INDEX IF NOT EXISTS idx_farmerprofile_user_id ON farmerprofile(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_landrecord_farmer_profile_id ON landrecord(farmer_profile_id)",
         "CREATE INDEX IF NOT EXISTS idx_product_user_id ON product(user_id)",
         "CREATE INDEX IF NOT EXISTS idx_product_category ON product(category)",
         "CREATE INDEX IF NOT EXISTS idx_product_status ON product(status)",

@@ -67,3 +67,8 @@ class ResetPasswordRequest(SQLModel):
     role: UserRole
     otp_code: Optional[str] = None
     new_password: str
+
+class ChangePasswordRequest(SQLModel):
+    current_password: str
+    new_password: str
+

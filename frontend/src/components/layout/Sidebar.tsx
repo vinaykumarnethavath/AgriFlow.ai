@@ -78,6 +78,7 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
                     { name: t("sidebar.communityHub", "Community Hub"), href: "/dashboard/farmer/community", icon: MessageSquare },
                     { name: t("sidebar.learning", "Learning Hub"), href: "/dashboard/farmer/learning", icon: Video },
                     { name: t("sidebar.emergency", "Emergency SOS"), href: "/dashboard/farmer/emergency", icon: PhoneCall },
+                    { name: t("common.settings", "Settings"), href: "/dashboard/farmer/settings", icon: Settings },
                 ];
             case UserRole.SHOP:
                 return [
@@ -185,12 +186,16 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
                 )}
 
                 {isOpen ? (
-                    <div className="px-2 mt-1">
+                    <Link
+                        href={user?.role === UserRole.FARMER ? '/dashboard/farmer/settings' : user?.role === UserRole.SHOP ? '/dashboard/shop/profile' : user?.role === UserRole.MANUFACTURER ? '/dashboard/manufacturer/profile' : '/dashboard/customer/profile'}
+                        className="px-2 mt-1 hover:bg-green-800/70 p-1.5 rounded-lg transition-colors block cursor-pointer group"
+                        title={t("common.settings", "Settings")}
+                    >
                         <div className="overflow-hidden">
-                            <p className="font-semibold truncate">{user?.full_name}</p>
+                            <p className="font-semibold truncate group-hover:text-green-200 transition-colors">{user?.full_name}</p>
                             <p className="text-xs text-green-300 capitalize truncate">{user?.role === 'manufacturer' ? t("auth.manufacturer") : user?.role === 'farmer' ? t("auth.farmer") : user?.role === 'shop' ? t("auth.shopOwner") : user?.role === 'customer' ? t("auth.customer") : user?.role}</p>
                         </div>
-                    </div>
+                    </Link>
                 ) : (
                     <div className="flex justify-center">
                         <ThemeToggle />

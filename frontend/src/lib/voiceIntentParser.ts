@@ -44,6 +44,7 @@ const NAV_TARGETS: Record<string, NavTarget> = {
     learning: { path: "/dashboard/farmer/learning", label: "Learning Hub" },
     expenses: { path: "/dashboard/farmer/expenses", label: "Expenses" },
     profile: { path: "/dashboard/farmer/profile", label: "Profile" },
+    settings: { path: "/dashboard/farmer/settings", label: "Settings" },
     emergency: { path: "/dashboard/farmer/emergency", label: "Emergency SOS" },
 };
 

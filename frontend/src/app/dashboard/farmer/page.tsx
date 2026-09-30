@@ -362,33 +362,27 @@ export default function FarmerDashboard() {
             if (profileRes.data.gender) setGender(profileRes.data.gender);
             if (profileRes.data.relation_type) setRelationType(profileRes.data.relation_type);
 
-            const cropsRes = await api.get("/crops/");
-            setCrops(cropsRes.data);
+            // Fetch independent dashboard datasets in parallel for faster load time
+            const [cropsRes, weatherRes, healthDataRes, suggestionRes] = await Promise.allSettled([
+                api.get("/crops/"),
+                api.get('/weather/'),
+                getAllCropHealthStatuses(),
+                getAISuggestion(),
+            ]);
 
-            // Fetch weather
-            try {
-                const weatherRes = await api.get('/weather/');
-                setWeather(weatherRes.data);
-            } catch (e) {
-                console.error("Failed to load weather", e);
+            if (cropsRes.status === "fulfilled") {
+                setCrops(cropsRes.value.data);
             }
-
-            // Fetch crop health statuses
-            try {
-                const healthData = await getAllCropHealthStatuses();
+            if (weatherRes.status === "fulfilled") {
+                setWeather(weatherRes.value.data);
+            }
+            if (healthDataRes.status === "fulfilled") {
                 const healthMap: Record<number, CropHealthStatusData> = {};
-                healthData.forEach(h => { healthMap[h.crop_id] = h; });
+                healthDataRes.value.forEach(h => { healthMap[h.crop_id] = h; });
                 setCropHealthStatuses(healthMap);
-            } catch (e) {
-                console.error("Failed to load crop health statuses", e);
             }
-
-            // Fetch AI suggestion
-            try {
-                const suggestion = await getAISuggestion();
-                setAiSuggestion(suggestion);
-            } catch (e) {
-                console.error("Failed to load AI suggestion", e);
+            if (suggestionRes.status === "fulfilled") {
+                setAiSuggestion(suggestionRes.value);
             }
 
             setLastUpdated(new Date());

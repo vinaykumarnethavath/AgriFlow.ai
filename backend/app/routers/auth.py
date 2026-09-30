@@ -10,7 +10,8 @@ from datetime import datetime, timedelta
 import sqlalchemy.exc
 
 from ..database import get_session
-from ..models import User, UserCreate, UserRead, UserLogin, UserOTP, PhoneOTP, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest, SendPhoneOTPRequest, VerifyPhoneOTPRequest, EmailVerificationOTP
+from ..deps import get_current_user
+from ..models import User, UserCreate, UserRead, UserLogin, UserOTP, PhoneOTP, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest, SendPhoneOTPRequest, VerifyPhoneOTPRequest, EmailVerificationOTP, ChangePasswordRequest
 from ..utils import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from ..mail_utils import send_otp_email, send_registration_otp_email
 from ..sms_utils import send_otp_sms
@@ -252,6 +253,27 @@ async def reset_password(request: ResetPasswordRequest, session: AsyncSession = 
         return {"message": "Password reset successful"}
 
     raise HTTPException(status_code=400, detail="Either email or phone number is required")
+
+@router.post("/change-password")
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    if not verify_password(request.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+    if not request.new_password or len(request.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 6 characters"
+        )
+    current_user.hashed_password = get_password_hash(request.new_password)
+    session.add(current_user)
+    await session.commit()
+    return {"message": "Password changed successfully"}
 
 @router.post("/send-phone-otp")
 async def send_phone_otp(request: SendPhoneOTPRequest, session: AsyncSession = Depends(get_session)):
