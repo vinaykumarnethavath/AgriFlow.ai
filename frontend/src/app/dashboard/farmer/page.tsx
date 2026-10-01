@@ -866,15 +866,6 @@ export default function FarmerDashboard() {
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 items-end">
-                        <Link href="/dashboard/farmer/emergency">
-                            <Button
-                                variant="outline"
-                                className="border-rose-300/40 text-rose-100 hover:text-white hover:bg-rose-600/40 bg-rose-900/30 backdrop-blur-sm shadow-sm text-xs font-bold"
-                            >
-                                <PhoneCall className="h-3.5 w-3.5 mr-1.5 text-rose-300 animate-pulse" />
-                                {t('sidebar.emergency', 'Emergency SOS')}
-                            </Button>
-                        </Link>
                         <Button
                             onClick={() => {
                                 if (profile?.relation_type) setRelationType(profile.relation_type);

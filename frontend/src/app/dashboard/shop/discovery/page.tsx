@@ -3,12 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import api from "@/lib/api";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { PredictiveStockingWidget } from "@/components/shop/PredictiveStockingWidget";
 import { ProductAlertsWidget } from "@/components/shop/ProductAlertsWidget";
-import { RegionalCropCalendar } from "@/components/shop/RegionalCropCalendar";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MapPin, TrendingUp, Tractor, Sparkles, Compass } from "lucide-react";
+import { MapPin, TrendingUp, Tractor, Sparkles, Compass, Calendar, ArrowRight } from "lucide-react";
 
 export default function DiscoveryPage() {
     const { t } = useLanguage();
@@ -79,14 +80,30 @@ export default function DiscoveryPage() {
                 </div>
             </div>
 
-            {/* Section 1: Regional Crop Calendar (Stage Progression & Harvest Timeline) */}
-            <RegionalCropCalendar
-                crops={regionalCropCalendar}
-                loading={loading}
-                regionName={regionInfo?.name || "Catchment Area"}
-                totalAcres={totalCultivationArea}
-                totalFarmers={regionInfo?.total_farmers || 0}
-            />
+            {/* Dedicated Regional Crop Calendar Link Banner */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-green-50 dark:from-emerald-950/30 dark:via-teal-950/30 dark:to-green-950/30 border border-emerald-200 dark:border-emerald-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-emerald-600 text-white shrink-0 shadow-2xs">
+                        <Calendar className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                            Regional Crop Calendar & Growth Stages
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+                                Dedicated Page
+                            </span>
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Track crop progression timelines, days-to-harvest countdowns, and upcoming input needs across regional plots.
+                        </p>
+                    </div>
+                </div>
+                <Link href="/dashboard/shop/crop-calendar" className="shrink-0">
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 shadow-2xs w-full sm:w-auto">
+                        Open Crop Calendar <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                </Link>
+            </div>
 
             {/* Section 2: Predictive Stocking Widget (Stage-Aware Recommendations) & Product Alerts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">

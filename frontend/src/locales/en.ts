@@ -125,6 +125,7 @@ const en = {
     marketplace: "Marketplace",
     cart: "Cart",
     emergency: "Emergency SOS",
+    cropCalendar: "Crop Calendar",
   },
 
   // ── Farmer Dashboard ──────────────────────────────────────────────────

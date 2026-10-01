@@ -83,6 +83,7 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
             case UserRole.SHOP:
                 return [
                     { name: t("sidebar.dashboard"), href: "/dashboard/shop", icon: LayoutDashboard },
+                    { name: t("sidebar.cropCalendar", "Crop Calendar"), href: "/dashboard/shop/crop-calendar", icon: Calendar },
                     { name: t("sidebar.inventory"), href: "/dashboard/shop/inventory", icon: PackageSearch },
                     { name: t("sidebar.orders"), href: "/dashboard/shop/orders", icon: Box },
                     { name: t("sidebar.accounting"), href: "/dashboard/shop/accounting", icon: TrendingUp },
