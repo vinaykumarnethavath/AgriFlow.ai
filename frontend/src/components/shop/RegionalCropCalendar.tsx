@@ -51,6 +51,8 @@ interface RegionalCropCalendarProps {
     regionName?: string;
     totalAcres?: number;
     totalFarmers?: number;
+    selectedCrop?: string | null;
+    onSelectCrop?: (cropName: string | null) => void;
     onSelectInput?: (inputName: string) => void;
 }
 
@@ -60,11 +62,24 @@ export function RegionalCropCalendar({
     regionName = "Catchment Area",
     totalAcres = 0,
     totalFarmers = 0,
+    selectedCrop = null,
+    onSelectCrop,
     onSelectInput
 }: RegionalCropCalendarProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [urgencyFilter, setUrgencyFilter] = useState<"all" | "critical" | "harvest_ready">("all");
     const [expandedCrop, setExpandedCrop] = useState<string | null>(null);
+
+    // Auto expand and focus selected crop when set from charts
+    React.useEffect(() => {
+        if (selectedCrop) {
+            setExpandedCrop(selectedCrop);
+            const el = document.getElementById(`crop-row-${selectedCrop.replace(/\s+/g, '-').toLowerCase()}`);
+            if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }
+    }, [selectedCrop]);
 
     const filteredCrops = useMemo(() => {
         return crops.filter(c => {
@@ -219,10 +234,18 @@ export function RegionalCropCalendar({
                 ) : (
                     filteredCrops.map((crop) => {
                         const isExpanded = expandedCrop === crop.crop_name;
+                        const isSelected = selectedCrop === crop.crop_name;
                         return (
                             <div 
+                                id={`crop-row-${crop.crop_name.replace(/\s+/g, '-').toLowerCase()}`}
                                 key={crop.crop_name} 
-                                className={`transition-colors duration-150 ${isExpanded ? "bg-emerald-50/20 dark:bg-zinc-800/40" : "hover:bg-gray-50/70 dark:hover:bg-zinc-800/20"}`}
+                                className={`transition-all duration-200 ${
+                                    isSelected 
+                                        ? "bg-emerald-50/50 dark:bg-emerald-950/30 ring-2 ring-emerald-500/80 shadow-xs" 
+                                        : isExpanded 
+                                        ? "bg-emerald-50/20 dark:bg-zinc-800/40" 
+                                        : "hover:bg-gray-50/70 dark:hover:bg-zinc-800/20"
+                                }`}
                             >
                                 <div className="p-4 sm:p-5">
                                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -309,7 +332,11 @@ export function RegionalCropCalendar({
                                             </div>
 
                                             <button
-                                                onClick={() => setExpandedCrop(isExpanded ? null : crop.crop_name)}
+                                                onClick={() => {
+                                                    const next = isExpanded ? null : crop.crop_name;
+                                                    setExpandedCrop(next);
+                                                    if (onSelectCrop) onSelectCrop(next);
+                                                }}
                                                 className="p-2 rounded-lg bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:text-emerald-700 transition-colors"
                                                 title={isExpanded ? "Collapse Timeline" : "View Full Lifecycle Timeline"}
                                             >
