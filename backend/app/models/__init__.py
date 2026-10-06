@@ -14,7 +14,8 @@ from .farmer import FarmerProfile, FarmerProfileCreate, FarmerProfileRead, LandR
 from .manufacturer import (
     ManufacturerPurchase, ProductionBatch, ManufacturerSale, 
     ManufacturerPurchaseCreate, ProductionBatchCreate, ManufacturerSaleCreate,
-    MillProfile, MillProfileCreate, MillProfileRead
+    MillProfile, MillProfileCreate, MillProfileRead,
+    MillProcurementRequest, MillProcurementRequestCreate, MillProcurementRequestUpdate, MillProcurementRequestRead
 )
 from .manufacturer_expense import ManufacturerExpense, ManufacturerExpenseCreate, ManufacturerExpenseRead
 from .customer import (

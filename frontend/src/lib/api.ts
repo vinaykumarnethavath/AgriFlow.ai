@@ -217,6 +217,11 @@ export const updateCrop = async (id: number, cropData: CropUpdate) => {
     return response.data;
 };
 
+export const getCrops = async (): Promise<Crop[]> => {
+    const response = await api.get<Crop[]>('/crops/');
+    return response.data;
+};
+
 export const getCropDetails = async (id: number) => {
     const response = await api.get<Crop>(`/crops/${id}`);
     return response.data;
@@ -2351,6 +2356,118 @@ export const updateEmergencyContact = async (id: number, data: Partial<Emergency
 
 export const deleteEmergencyContact = async (id: number): Promise<void> => {
     await api.delete(`/emergency-contacts/${id}`);
+};
+
+// ── Mill Marketplace & Direct Procurement Requests ──────────────────────────
+
+export interface MillMarketplaceItem {
+    id: number;
+    mill_id: number;
+    user_id: number;
+    name: string;
+    mill_name: string;
+    type: string;
+    owner_name: string;
+    location: string;
+    district: string;
+    state: string;
+    distance: string;
+    phone: string;
+    verified: boolean;
+    rating: number;
+    price_offered: string;
+    capacity: string;
+    crops_accepted: string;
+    license_number: string;
+}
+
+export interface MillProcurementRequest {
+    id: number;
+    mill_id: number;
+    farmer_id: number;
+    crop_id?: number | null;
+    crop_name: string;
+    quantity: number;
+    unit: string;
+    expected_price_per_unit: number;
+    quality_grade?: string | null;
+    moisture_content?: number | null;
+    harvest_date?: string | null;
+    farmer_name: string;
+    farmer_phone: string;
+    farmer_location?: string | null;
+    notes?: string | null;
+    status: 'pending' | 'accepted' | 'rejected' | 'completed';
+    offered_price_per_unit?: number | null;
+    rejection_reason?: string | null;
+    created_at: string;
+    updated_at: string;
+    mill_name?: string | null;
+    mill_phone?: string | null;
+    mill_location?: string | null;
+}
+
+export interface MillProcurementRequestCreate {
+    mill_id: number;
+    crop_id?: number;
+    crop_name: string;
+    quantity: number;
+    unit?: string;
+    expected_price_per_unit: number;
+    quality_grade?: string;
+    moisture_content?: number;
+    harvest_date?: string;
+    notes?: string;
+}
+
+export const getMillsMarketplace = async (params?: {
+    search?: string;
+    crop?: string;
+    mill_type?: string;
+    state?: string;
+    district?: string;
+}): Promise<MillMarketplaceItem[]> => {
+    const response = await api.get<MillMarketplaceItem[]>('/manufacturer/mills/marketplace', { params });
+    return response.data;
+};
+
+export const createMillProcurementRequest = async (
+    data: MillProcurementRequestCreate
+): Promise<MillProcurementRequest> => {
+    const response = await api.post<MillProcurementRequest>('/manufacturer/procurement-requests', data);
+    return response.data;
+};
+
+export const getMyProcurementRequests = async (): Promise<MillProcurementRequest[]> => {
+    const response = await api.get<MillProcurementRequest[]>('/manufacturer/procurement-requests/my');
+    return response.data;
+};
+
+export const cancelProcurementRequest = async (id: number): Promise<{ ok: boolean; message: string }> => {
+    const response = await api.delete<{ ok: boolean; message: string }>(`/manufacturer/procurement-requests/${id}`);
+    return response.data;
+};
+
+export const getInboundProcurementRequests = async (status?: string): Promise<MillProcurementRequest[]> => {
+    const params = status && status !== 'all' ? { status } : {};
+    const response = await api.get<MillProcurementRequest[]>('/manufacturer/procurement-requests/inbound', { params });
+    return response.data;
+};
+
+export const acceptProcurementRequest = async (
+    id: number,
+    data?: { offered_price_per_unit?: number; notes?: string }
+): Promise<{ ok: boolean; message: string; batch_id: string; request: MillProcurementRequest }> => {
+    const response = await api.post(`/manufacturer/procurement-requests/${id}/accept`, data || {});
+    return response.data;
+};
+
+export const rejectProcurementRequest = async (
+    id: number,
+    data?: { rejection_reason?: string }
+): Promise<{ ok: boolean; message: string; request: MillProcurementRequest }> => {
+    const response = await api.post(`/manufacturer/procurement-requests/${id}/reject`, data || {});
+    return response.data;
 };
 
 export default api;

@@ -12,6 +12,11 @@ interface NewsWidgetProps {
     limit?: number;
 }
 
+// Module-level in-memory cache to prevent redundant HTTP requests across mounts and tab switches
+let cachedNewsRaw: NewsItem[] | null = null;
+let lastNewsFetchTime = 0;
+const NEWS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 function getRelativeTime(dateStr: string, locale: string = "en"): string {
     const now = new Date();
     const date = new Date(dateStr);
@@ -33,8 +38,18 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
     useEffect(() => {
         const fetchNews = async () => {
             try {
-                const res = await api.get('/news/');
-                let data = res.data;
+                let rawData: NewsItem[];
+                const now = Date.now();
+                if (cachedNewsRaw && now - lastNewsFetchTime < NEWS_CACHE_TTL) {
+                    rawData = cachedNewsRaw;
+                } else {
+                    const res = await api.get('/news/');
+                    rawData = res.data;
+                    cachedNewsRaw = rawData;
+                    lastNewsFetchTime = now;
+                }
+
+                let data = [...rawData];
 
                 if (filterCategory) {
                     data = data.filter((item: NewsItem) => item.category === filterCategory);

@@ -137,6 +137,14 @@ class MillProfileBase(SQLModel):
     ifsc_code: str
     profile_picture_url: Optional[str] = None
 
+    # Mill Marketplace Attributes
+    mill_type: Optional[str] = Field(default="Rice Mill")
+    crops_accepted: Optional[str] = Field(default="Paddy, Rice, Wheat")
+    price_offered_text: Optional[str] = Field(default="₹2,200 - ₹2,500/Quintal")
+    daily_capacity: Optional[str] = Field(default="100 Tons/Day")
+    is_verified: bool = Field(default=True)
+    rating: float = Field(default=4.8)
+
 class MillProfile(MillProfileBase, table=True):
     __tablename__ = "mill_profiles"
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -151,3 +159,58 @@ class MillProfileRead(MillProfileBase):
     user_id: int
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
+
+
+# --- Farmer-to-Mill Procurement & Direct Supply Requests ---
+class MillProcurementRequestBase(SQLModel):
+    mill_id: int = Field(index=True)
+    crop_id: Optional[int] = Field(default=None, foreign_key="crop.id")
+    crop_name: str
+    quantity: float
+    unit: str = "quintal"  # quintal, kg, ton
+    expected_price_per_unit: float
+    quality_grade: Optional[str] = "Grade A"  # Grade A, Grade B, Grade C, FAQ
+    moisture_content: Optional[float] = None
+    harvest_date: Optional[str] = None
+    farmer_name: str
+    farmer_phone: str
+    farmer_location: Optional[str] = None
+    notes: Optional[str] = None
+    status: str = Field(default="pending", index=True)  # pending, accepted, rejected, completed
+    offered_price_per_unit: Optional[float] = None
+    rejection_reason: Optional[str] = None
+
+class MillProcurementRequest(MillProcurementRequestBase, table=True):
+    __tablename__ = "mill_procurement_requests"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    farmer_id: int = Field(index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class MillProcurementRequestCreate(SQLModel):
+    mill_id: int
+    crop_id: Optional[int] = None
+    crop_name: str
+    quantity: float
+    unit: str = "quintal"
+    expected_price_per_unit: float
+    quality_grade: Optional[str] = "Grade A"
+    moisture_content: Optional[float] = None
+    harvest_date: Optional[str] = None
+    notes: Optional[str] = None
+
+class MillProcurementRequestUpdate(SQLModel):
+    status: Optional[str] = None
+    offered_price_per_unit: Optional[float] = None
+    rejection_reason: Optional[str] = None
+    notes: Optional[str] = None
+
+class MillProcurementRequestRead(MillProcurementRequestBase):
+    id: int
+    farmer_id: int
+    created_at: datetime
+    updated_at: datetime
+    mill_name: Optional[str] = None
+    mill_phone: Optional[str] = None
+    mill_location: Optional[str] = None
+

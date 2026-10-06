@@ -2,12 +2,17 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import { createPurchase, getPurchases, ManufacturerPurchase } from "@/lib/api";
+import {
+    createPurchase, getPurchases, ManufacturerPurchase,
+    getInboundProcurementRequests, acceptProcurementRequest, rejectProcurementRequest,
+    MillProcurementRequest
+} from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Truck, Plus, History, TrendingDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Truck, Plus, History, TrendingDown, CheckCircle2, Clock, XCircle, Send, Phone, MapPin, Check, AlertCircle, ShieldCheck, Scale } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
 
@@ -34,11 +39,22 @@ const PAYMENT_COLORS: Record<string, string> = {
 
 export default function PurchasesPage() {
     const [purchases, setPurchases] = useState<ManufacturerPurchase[]>([]);
+    const [inboundRequests, setInboundRequests] = useState<MillProcurementRequest[]>([]);
+    const [activeTab, setActiveTab] = useState<"ledger" | "inbound">("ledger");
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [mockOptions, setMockOptions] = useState<any>(null);
     const [period, setPeriod] = useState("all");
     const [searchTerm, setSearchTerm] = useState("");
+
+    // Accept / Reject Modals for farmer offers
+    const [acceptModalOpen, setAcceptModalOpen] = useState(false);
+    const [rejectModalOpen, setRejectModalOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<MillProcurementRequest | null>(null);
+    const [agreedPrice, setAgreedPrice] = useState<number>(0);
+    const [acceptNotes, setAcceptNotes] = useState("");
+    const [rejectReason, setRejectReason] = useState("");
+    const [actionLoading, setActionLoading] = useState(false);
 
     const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<any>();
 
@@ -78,12 +94,66 @@ export default function PurchasesPage() {
 
     const fetchData = async () => {
         try {
-            const data = await getPurchases();
-            setPurchases(data);
+            const [purchaseData, inboundData] = await Promise.all([
+                getPurchases(),
+                getInboundProcurementRequests().catch(() => [])
+            ]);
+            setPurchases(purchaseData);
+            setInboundRequests(inboundData);
         } catch (error) {
             console.error("Failed to fetch purchases:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleOpenAcceptModal = (req: MillProcurementRequest) => {
+        setSelectedRequest(req);
+        setAgreedPrice(req.expected_price_per_unit);
+        setAcceptNotes("");
+        setAcceptModalOpen(true);
+    };
+
+    const handleConfirmAccept = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedRequest) return;
+        try {
+            setActionLoading(true);
+            const res = await acceptProcurementRequest(selectedRequest.id, {
+                offered_price_per_unit: Number(agreedPrice),
+                notes: acceptNotes
+            });
+            alert(res.message);
+            setAcceptModalOpen(false);
+            fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to accept offer");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleOpenRejectModal = (req: MillProcurementRequest) => {
+        setSelectedRequest(req);
+        setRejectReason("");
+        setRejectModalOpen(true);
+    };
+
+    const handleConfirmReject = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedRequest) return;
+        try {
+            setActionLoading(true);
+            await rejectProcurementRequest(selectedRequest.id, {
+                rejection_reason: rejectReason
+            });
+            alert("Supply request declined.");
+            setRejectModalOpen(false);
+            fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to decline offer");
+        } finally {
+            setActionLoading(false);
         }
     };
 
@@ -223,83 +293,254 @@ export default function PurchasesPage() {
                 </Card>
             </div>
 
-            {/* Filters */}
-            <div className="flex flex-wrap gap-3 items-center">
-                <div className="flex border rounded-lg overflow-hidden">
-                    {PERIOD_OPTIONS.map(opt => (
-                        <button key={opt.value} onClick={() => setPeriod(opt.value)}
-                            className={`px-3 py-1.5 text-xs font-medium transition-colors ${period === opt.value ? "bg-blue-600 text-white" : "bg-white text-muted-foreground hover:bg-gray-50"}`}>
-                            {opt.label}
-                        </button>
-                    ))}
-                </div>
-                <input
-                    type="text"
-                    placeholder="Search crop or farmer…"
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400 w-52"
-                />
+            {/* Navigation Tabs */}
+            <div className="flex items-center gap-3 border-b">
+                <button
+                    onClick={() => setActiveTab("ledger")}
+                    className={`pb-3 px-4 font-semibold text-sm transition-all flex items-center gap-2 border-b-2 ${
+                        activeTab === "ledger"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                    <History className="w-4 h-4" />
+                    Purchases Ledger
+                    <Badge variant="secondary" className="ml-1 text-xs">{purchases.length}</Badge>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab("inbound")}
+                    className={`pb-3 px-4 font-semibold text-sm transition-all flex items-center gap-2 border-b-2 ${
+                        activeTab === "inbound"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                    <Send className="w-4 h-4" />
+                    Inbound Farmer Harvest Requests
+                    <Badge
+                        variant={inboundRequests.filter(r => r.status === "pending").length > 0 ? "default" : "secondary"}
+                        className="ml-1 text-xs"
+                    >
+                        {inboundRequests.filter(r => r.status === "pending").length} Pending
+                    </Badge>
+                </button>
             </div>
 
-            {/* Table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <History className="w-5 h-5" /> Purchase History
-                        <span className="ml-auto text-xs font-normal text-muted-foreground">{filteredPurchases.length} records</span>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-foreground font-medium border-b">
-                                <tr>
-                                    <th className="px-6 py-4">Batch ID</th>
-                                    <th className="px-6 py-4">Farmer</th>
-                                    <th className="px-6 py-4">Crop</th>
-                                    <th className="px-6 py-4">Quality</th>
-                                    <th className="px-6 py-4 text-right">Qty</th>
-                                    <th className="px-6 py-4 text-right">Price/Unit</th>
-                                    <th className="px-6 py-4 text-right">Transport</th>
-                                    <th className="px-6 py-4 text-right">Total Cost</th>
-                                    <th className="px-6 py-4">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {filteredPurchases.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">
-                                            No purchases found.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredPurchases.map((p) => (
-                                        <tr key={p.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 font-mono text-xs text-muted-foreground">{p.batch_id}</td>
-                                            <td className="px-6 py-4 font-medium text-foreground">{p.farmer_name}</td>
-                                            <td className="px-6 py-4 font-medium">{p.crop_name}</td>
-                                            <td className="px-6 py-4">
-                                                {p.quality_grade ? (
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${QUALITY_COLORS[p.quality_grade] || "bg-gray-100 text-muted-foreground"}`}>
-                                                        Grade {p.quality_grade}
-                                                    </span>
-                                                ) : "—"}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">{p.quantity} {p.unit}</td>
-                                            <td className="px-6 py-4 text-right">₹{p.price_per_unit.toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-right text-muted-foreground">₹{(p.transport_cost || 0).toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-right font-bold text-orange-700">₹{p.total_cost.toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-muted-foreground">{new Date(p.date).toLocaleDateString("en-IN")}</td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+            {/* TAB 1: PURCHASES LEDGER */}
+            {activeTab === "ledger" && (
+                <>
+                    {/* Filters */}
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <div className="flex border rounded-lg overflow-hidden">
+                            {PERIOD_OPTIONS.map(opt => (
+                                <button key={opt.value} onClick={() => setPeriod(opt.value)}
+                                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${period === opt.value ? "bg-blue-600 text-white" : "bg-white text-muted-foreground hover:bg-gray-50"}`}>
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search crop or farmer…"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400 w-52"
+                        />
                     </div>
-                </CardContent>
-            </Card>
 
+                    {/* Table */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <History className="w-5 h-5" /> Purchase History
+                                <span className="ml-auto text-xs font-normal text-muted-foreground">{filteredPurchases.length} records</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-gray-50 text-foreground font-medium border-b">
+                                        <tr>
+                                            <th className="px-6 py-4">Batch ID</th>
+                                            <th className="px-6 py-4">Farmer</th>
+                                            <th className="px-6 py-4">Crop</th>
+                                            <th className="px-6 py-4">Quality</th>
+                                            <th className="px-6 py-4 text-right">Qty</th>
+                                            <th className="px-6 py-4 text-right">Price/Unit</th>
+                                            <th className="px-6 py-4 text-right">Transport</th>
+                                            <th className="px-6 py-4 text-right">Total Cost</th>
+                                            <th className="px-6 py-4">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {filteredPurchases.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">
+                                                    No purchases found.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            filteredPurchases.map((p) => (
+                                                <tr key={p.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 font-mono text-xs text-muted-foreground">{p.batch_id}</td>
+                                                    <td className="px-6 py-4 font-medium text-foreground">{p.farmer_name}</td>
+                                                    <td className="px-6 py-4 font-medium">{p.crop_name}</td>
+                                                    <td className="px-6 py-4">
+                                                        {p.quality_grade ? (
+                                                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${QUALITY_COLORS[p.quality_grade] || "bg-gray-100 text-muted-foreground"}`}>
+                                                                Grade {p.quality_grade}
+                                                            </span>
+                                                        ) : "—"}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">{p.quantity} {p.unit}</td>
+                                                    <td className="px-6 py-4 text-right">₹{p.price_per_unit.toLocaleString()}</td>
+                                                    <td className="px-6 py-4 text-right text-muted-foreground">₹{(p.transport_cost || 0).toLocaleString()}</td>
+                                                    <td className="px-6 py-4 text-right font-bold text-orange-700">₹{p.total_cost.toLocaleString()}</td>
+                                                    <td className="px-6 py-4 text-muted-foreground">{new Date(p.date).toLocaleDateString("en-IN")}</td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+
+            {/* TAB 2: INBOUND FARMER HARVEST REQUESTS */}
+            {activeTab === "inbound" && (
+                <div className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                    <Send className="w-5 h-5 text-blue-600" /> Inbound Produce Supply Requests
+                                </span>
+                                <Badge variant="outline">{inboundRequests.length} Total Requests</Badge>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-gray-50 text-foreground font-medium border-b">
+                                        <tr>
+                                            <th className="px-6 py-4">Farmer Details</th>
+                                            <th className="px-6 py-4">Crop & Grade</th>
+                                            <th className="px-6 py-4 text-right">Quantity</th>
+                                            <th className="px-6 py-4 text-right">Asking Rate</th>
+                                            <th className="px-6 py-4 text-right">Est. Deal</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4 text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {inboundRequests.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
+                                                    <Send className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
+                                                    No harvest supply requests received from farmers yet.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            inboundRequests.map((req) => {
+                                                const totalValue = req.quantity * req.expected_price_per_unit;
+                                                const isPending = req.status === "pending";
+                                                const isAccepted = req.status === "accepted";
+                                                const isRejected = req.status === "rejected";
+
+                                                return (
+                                                    <tr key={req.id} className="hover:bg-gray-50">
+                                                        <td className="px-6 py-4">
+                                                            <div className="font-bold text-foreground">{req.farmer_name}</div>
+                                                            <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                                                <Phone className="w-3 h-3 text-emerald-600" /> {req.farmer_phone}
+                                                            </div>
+                                                            {req.farmer_location && (
+                                                                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                                                                    <MapPin className="w-3 h-3 text-red-500" /> {req.farmer_location}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="font-semibold text-blue-900">{req.crop_name}</div>
+                                                            <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                                                                <Badge variant="outline" className="text-[10px] py-0 px-1.5">
+                                                                    {req.quality_grade || "Grade A"}
+                                                                </Badge>
+                                                                {req.moisture_content && (
+                                                                    <span className="text-[11px]">Moisture: {req.moisture_content}%</span>
+                                                                )}
+                                                            </div>
+                                                            {req.notes && (
+                                                                <div className="text-[11px] text-muted-foreground italic truncate max-w-xs mt-0.5">
+                                                                    &quot;{req.notes}&quot;
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right font-medium">
+                                                            {req.quantity} {req.unit}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            ₹{req.expected_price_per_unit}/{req.unit}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right font-bold text-emerald-700">
+                                                            ₹{totalValue.toLocaleString("en-IN")}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            {isPending && (
+                                                                <Badge className="bg-amber-100 text-amber-800 border-amber-300 gap-1 text-xs">
+                                                                    <Clock className="w-3 h-3 animate-spin" /> Pending Review
+                                                                </Badge>
+                                                            )}
+                                                            {isAccepted && (
+                                                                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 gap-1 text-xs">
+                                                                    <CheckCircle2 className="w-3 h-3" /> Accepted
+                                                                </Badge>
+                                                            )}
+                                                            {isRejected && (
+                                                                <Badge className="bg-red-100 text-red-800 border-red-300 gap-1 text-xs">
+                                                                    <XCircle className="w-3 h-3" /> Declined
+                                                                </Badge>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            {isPending ? (
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => handleOpenAcceptModal(req)}
+                                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3"
+                                                                    >
+                                                                        Accept & Buy
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() => handleOpenRejectModal(req)}
+                                                                        className="text-red-600 hover:bg-red-50 border-red-200 text-xs h-8 px-2.5"
+                                                                    >
+                                                                        Decline
+                                                                    </Button>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-xs text-muted-foreground italic">Processed</span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Modal: Record Manual Purchase */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Record New Purchase">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -375,7 +616,113 @@ export default function PurchasesPage() {
                 </form>
             </Modal>
 
+            {/* Modal: Accept Inbound Farmer Harvest Offer */}
+            <Modal
+                isOpen={acceptModalOpen}
+                onClose={() => setAcceptModalOpen(false)}
+                title="Accept Farmer Harvest Offer"
+            >
+                {selectedRequest && (
+                    <form onSubmit={handleConfirmAccept} className="space-y-4 pt-2">
+                        <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 space-y-1.5 text-xs">
+                            <div className="flex justify-between items-center">
+                                <span className="font-bold text-emerald-950 text-sm">{selectedRequest.farmer_name}</span>
+                                <span className="font-semibold text-emerald-800">{selectedRequest.farmer_phone}</span>
+                            </div>
+                            <div className="text-emerald-700">
+                                Produce: <strong>{selectedRequest.crop_name}</strong> • Quantity: <strong>{selectedRequest.quantity} {selectedRequest.unit}s</strong>
+                            </div>
+                            <div className="text-emerald-700">
+                                Asking Rate: <strong>₹{selectedRequest.expected_price_per_unit}/{selectedRequest.unit}</strong>
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label className="text-xs font-semibold">Agreed Purchase Rate (₹ per {selectedRequest.unit})</Label>
+                            <Input
+                                type="number"
+                                required
+                                min="100"
+                                step="10"
+                                value={agreedPrice}
+                                onChange={(e) => setAgreedPrice(parseFloat(e.target.value) || 0)}
+                                className="mt-1"
+                            />
+                        </div>
+
+                        <div>
+                            <Label className="text-xs font-semibold">Logistics & Weighbridge Instructions (Optional)</Label>
+                            <Input
+                                placeholder="e.g. Weighbridge gate 2 arrival between 9 AM - 4 PM"
+                                value={acceptNotes}
+                                onChange={(e) => setAcceptNotes(e.target.value)}
+                                className="mt-1"
+                            />
+                        </div>
+
+                        <div className="p-3 bg-muted/40 rounded-xl flex justify-between items-center text-sm font-semibold">
+                            <span>Total Payable to Farmer:</span>
+                            <span className="text-lg font-black text-emerald-800">
+                                ₹{(selectedRequest.quantity * agreedPrice).toLocaleString("en-IN")}
+                            </span>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2">
+                            <Button type="button" variant="outline" onClick={() => setAcceptModalOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={actionLoading}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            >
+                                {actionLoading ? "Accepting..." : "Confirm & Create Purchase"}
+                            </Button>
+                        </div>
+                    </form>
+                )}
+            </Modal>
+
+            {/* Modal: Decline Inbound Harvest Offer */}
+            <Modal
+                isOpen={rejectModalOpen}
+                onClose={() => setRejectModalOpen(false)}
+                title="Decline Supply Offer"
+            >
+                {selectedRequest && (
+                    <form onSubmit={handleConfirmReject} className="space-y-4 pt-2">
+                        <p className="text-sm text-muted-foreground">
+                            Decline harvest offer for <strong>{selectedRequest.quantity} {selectedRequest.unit}s</strong> of <strong>{selectedRequest.crop_name}</strong> from <strong>{selectedRequest.farmer_name}</strong>?
+                        </p>
+
+                        <div>
+                            <Label className="text-xs font-semibold">Reason for Declining (Optional)</Label>
+                            <Input
+                                placeholder="e.g. High moisture content / Full milling storage capacity"
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                className="mt-1"
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2">
+                            <Button type="button" variant="outline" onClick={() => setRejectModalOpen(false)}>
+                                Back
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={actionLoading}
+                                variant="destructive"
+                            >
+                                {actionLoading ? "Declining..." : "Decline Offer"}
+                            </Button>
+                        </div>
+                    </form>
+                )}
+            </Modal>
+
             {mockOptions && <MockRazorpayPopup options={mockOptions} onClose={() => setMockOptions(null)} />}
         </div>
     );
 }
+

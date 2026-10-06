@@ -370,7 +370,7 @@ export function CropCalendarCharts({
                                             data={stageProgressData}
                                             layout="vertical"
                                             margin={{ top: 5, right: 30, left: 15, bottom: 5 }}
-                                            onClick={(state) => {
+                                            onClick={(state: any) => {
                                                 if (state && state.activePayload && state.activePayload.length) {
                                                     const cropName = state.activePayload[0].payload.name;
                                                     onSelectCrop && onSelectCrop(selectedCrop === cropName ? null : cropName);
@@ -607,7 +607,7 @@ export function CropCalendarCharts({
                                 <BarChart
                                     data={stageProgressData}
                                     margin={{ top: 15, right: 30, left: 10, bottom: 25 }}
-                                    onClick={(state) => {
+                                    onClick={(state: any) => {
                                         if (state && state.activePayload && state.activePayload.length) {
                                             const cropName = state.activePayload[0].payload.name;
                                             onSelectCrop && onSelectCrop(selectedCrop === cropName ? null : cropName);
@@ -735,7 +735,7 @@ export function CropCalendarCharts({
                                         data={acreageData}
                                         layout="vertical"
                                         margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                                        onClick={(state) => {
+                                        onClick={(state: any) => {
                                             if (state && state.activePayload && state.activePayload.length) {
                                                 const cropName = state.activePayload[0].payload.name;
                                                 onSelectCrop && onSelectCrop(selectedCrop === cropName ? null : cropName);
@@ -928,7 +928,7 @@ export function CropCalendarCharts({
                                     data={harvestScheduleData}
                                     layout="vertical"
                                     margin={{ top: 5, right: 30, left: 15, bottom: 5 }}
-                                    onClick={(state) => {
+                                    onClick={(state: any) => {
                                         if (state && state.activePayload && state.activePayload.length) {
                                             const cropName = state.activePayload[0].payload.name;
                                             onSelectCrop && onSelectCrop(selectedCrop === cropName ? null : cropName);

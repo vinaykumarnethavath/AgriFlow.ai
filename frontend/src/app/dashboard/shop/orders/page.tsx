@@ -51,13 +51,23 @@ export default function ShopOrdersPage() {
     useEffect(() => {
         fetchOrders();
         
-        // Polling every 10 seconds for real-time order sync
+        // Smart polling: avoid background polling when tab is inactive
         const interval = setInterval(() => {
-            console.log("Polling for new orders...");
+            if (typeof document !== 'undefined' && document.hidden) return;
             fetchOrders();
-        }, 10000);
+        }, 12000);
 
-        return () => clearInterval(interval);
+        const handleVisibilityChange = () => {
+            if (typeof document !== 'undefined' && !document.hidden) {
+                fetchOrders();
+            }
+        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
     }, []);
 
     useEffect(() => {

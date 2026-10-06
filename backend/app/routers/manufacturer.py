@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
@@ -7,13 +7,17 @@ import uuid
 
 from ..database import get_session
 from ..models import (
-    User, Product,
+    User, UserRole, Product,
     ManufacturerPurchase, ManufacturerPurchaseCreate,
     ProductionBatch, ProductionBatchCreate,
     ManufacturerSale, ManufacturerSaleCreate,
     ManufacturerExpense, ManufacturerExpenseCreate,
+    MillProfile, FarmerProfile,
+    MillProcurementRequest, MillProcurementRequestCreate,
+    MillProcurementRequestUpdate, MillProcurementRequestRead,
 )
 from ..deps import get_current_user
+from ..utils import get_password_hash
 from .orders import get_user_contact_info
 
 router = APIRouter(prefix="/manufacturer", tags=["manufacturer"])
@@ -644,3 +648,472 @@ async def delete_expense(
     await session.delete(expense)
     await session.commit()
     return {"ok": True}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Mill Marketplace & Direct Procurement Requests
+# ─────────────────────────────────────────────────────────────────────────────
+
+INITIAL_VERIFIED_MILLS = [
+    {
+        "email": "mill.lakshmi@agriflow.in",
+        "phone": "9876543210",
+        "full_name": "Sri Lakshmi Agro Industries",
+        "mill_name": "Sri Lakshmi Narasimha Modern Rice Mill",
+        "mill_type": "Modern Rice Mill",
+        "crops_accepted": "Paddy, Basmati, Sona Masoori, Raw Rice",
+        "price_offered_text": "₹2,250 - ₹2,480 / Quintal",
+        "daily_capacity": "150 Tons/Day",
+        "village": "Armoor Industrial Park",
+        "mandal": "Armoor",
+        "district": "Nizamabad",
+        "state": "Telangana",
+        "pincode": "503224",
+        "rating": 4.9,
+    },
+    {
+        "email": "mill.kisan@agriflow.in",
+        "phone": "9988776655",
+        "full_name": "Kisan Agro Processing Co.",
+        "mill_name": "Kisan Mega Food & Flour Processing Unit",
+        "mill_type": "Flour & Grain Mill",
+        "crops_accepted": "Wheat, Barley, Maize, Gram",
+        "price_offered_text": "₹2,180 - ₹2,350 / Quintal",
+        "daily_capacity": "250 Tons/Day",
+        "village": "GT Road Industrial Area",
+        "mandal": "Karnal",
+        "district": "Karnal",
+        "state": "Haryana",
+        "pincode": "132001",
+        "rating": 4.8,
+    },
+    {
+        "email": "mill.annapurna@agriflow.in",
+        "phone": "9123456789",
+        "full_name": "Annapurna Agro Processors",
+        "mill_name": "Annapurna Pulse & Dal Processing Industries",
+        "mill_type": "Dal & Pulse Mill",
+        "crops_accepted": "Toor Dal, Chana, Moong, Urad",
+        "price_offered_text": "₹6,400 - ₹6,800 / Quintal",
+        "daily_capacity": "80 Tons/Day",
+        "village": "Sanwer Road Sector C",
+        "mandal": "Indore",
+        "district": "Indore",
+        "state": "Madhya Pradesh",
+        "pincode": "452015",
+        "rating": 4.9,
+    },
+    {
+        "email": "mill.cotton@agriflow.in",
+        "phone": "8899001122",
+        "full_name": "Kakatiya Fibres Ltd",
+        "mill_name": "Warangal Agro Cotton Ginning & Pressing Mill",
+        "mill_type": "Cotton Ginning Mill",
+        "crops_accepted": "Cotton, Kapas, Hybrid Cotton",
+        "price_offered_text": "₹7,100 - ₹7,450 / Quintal",
+        "daily_capacity": "500 Bales/Day",
+        "village": "Enumamula Market Complex",
+        "mandal": "Warangal",
+        "district": "Warangal",
+        "state": "Telangana",
+        "pincode": "506005",
+        "rating": 4.7,
+    },
+    {
+        "email": "mill.oil@agriflow.in",
+        "phone": "9765432109",
+        "full_name": "Shree Ganesh Oil Industries",
+        "mill_name": "Marathwada Bio-Oil & Seed Extraction Mill",
+        "mill_type": "Oil Extraction Mill",
+        "crops_accepted": "Soybean, Mustard, Sunflower, Groundnut",
+        "price_offered_text": "₹4,600 - ₹5,200 / Quintal",
+        "daily_capacity": "120 Tons/Day",
+        "village": "MIDC Phase 2",
+        "mandal": "Latur",
+        "district": "Latur",
+        "state": "Maharashtra",
+        "pincode": "413531",
+        "rating": 4.8,
+    },
+]
+
+async def _ensure_seed_mills(session: AsyncSession):
+    """Seed sample verified mills if fewer than 2 exist in the database."""
+    count_stmt = select(func.count(MillProfile.id))
+    count = (await session.exec(count_stmt)).first() or 0
+    if count >= 3:
+        return
+
+    pwd_hash = get_password_hash("password123")
+    for m in INITIAL_VERIFIED_MILLS:
+        existing_user = (await session.exec(select(User).where(User.email == m["email"]))).first()
+        if not existing_user:
+            existing_user = User(
+                email=m["email"],
+                phone_number=m["phone"],
+                full_name=m["full_name"],
+                role="manufacturer",
+                is_active=True,
+                hashed_password=pwd_hash,
+            )
+            session.add(existing_user)
+            await session.flush()
+
+        existing_prof = (await session.exec(select(MillProfile).where(MillProfile.user_id == existing_user.id))).first()
+        if not existing_prof:
+            prof = MillProfile(
+                user_id=existing_user.id,
+                mill_name=m["mill_name"],
+                license_number=f"REG-MILL-{m['pincode']}-01",
+                mill_id=f"M-{m['pincode']}",
+                father_name="Director",
+                owner_name=m["full_name"],
+                contact_number=m["phone"],
+                phone_number=m["phone"],
+                village=m["village"],
+                mandal=m["mandal"],
+                district=m["district"],
+                state=m["state"],
+                pincode=m["pincode"],
+                mill_type=m["mill_type"],
+                crops_accepted=m["crops_accepted"],
+                price_offered_text=m["price_offered_text"],
+                daily_capacity=m["daily_capacity"],
+                is_verified=True,
+                rating=m["rating"],
+                bank_name="State Bank of India",
+                account_number="9876543210123",
+                ifsc_code="SBIN0001234"
+            )
+            session.add(prof)
+
+    try:
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+
+
+@router.get("/mills/marketplace")
+async def get_mills_marketplace(
+    search: Optional[str] = None,
+    crop: Optional[str] = None,
+    mill_type: Optional[str] = None,
+    state: Optional[str] = None,
+    district: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Returns verified mills and processing units for farmers to connect and sell harvests directly.
+    Computes approximate distance based on farmer's location profile.
+    """
+    await _ensure_seed_mills(session)
+
+    farmer_district = None
+    farmer_state = None
+    if current_user.role == "farmer":
+        farmer_prof = (await session.exec(select(FarmerProfile).where(FarmerProfile.user_id == current_user.id))).first()
+        if farmer_prof:
+            farmer_district = (farmer_prof.district or "").strip().lower()
+            farmer_state = (farmer_prof.state or "").strip().lower()
+
+    stmt = select(MillProfile, User).join(User, MillProfile.user_id == User.id)
+    results = (await session.exec(stmt)).all()
+
+    mills_data = []
+    for profile, user in results:
+        m_name = (profile.mill_name or "").lower()
+        m_dist = (profile.district or "").lower()
+        m_state = (profile.state or "").lower()
+        m_type = (getattr(profile, "mill_type", None) or "Modern Processing Mill").lower()
+        m_crops = (getattr(profile, "crops_accepted", None) or "").lower()
+
+        if search:
+            s = search.lower().strip()
+            if not (s in m_name or s in m_dist or s in m_state or s in m_type or s in m_crops):
+                continue
+        if crop and crop.lower().strip() not in m_crops and crop.lower().strip() not in m_name:
+            continue
+        if mill_type and mill_type.lower().strip() not in m_type:
+            continue
+        if state and state.lower().strip() not in m_state:
+            continue
+        if district and district.lower().strip() not in m_dist:
+            continue
+
+        # Distance estimation
+        dist_str = "12 km"
+        if farmer_district and m_dist:
+            if farmer_district == m_dist:
+                dist_str = "8 - 14 km"
+            elif farmer_state and farmer_state == m_state:
+                dist_str = "35 - 55 km"
+            else:
+                dist_str = "120+ km"
+        elif farmer_state and m_state:
+            dist_str = "45 km" if farmer_state == m_state else "150+ km"
+
+        location_parts = [p for p in [profile.village, profile.mandal, profile.district, profile.state] if p]
+        full_location = ", ".join(location_parts) if location_parts else (profile.location_text or "Regional Agri Hub")
+
+        phone = profile.phone_number or profile.contact_number or user.phone_number or "+91 9876543210"
+
+        mills_data.append({
+            "id": profile.id,
+            "mill_id": profile.id,
+            "user_id": profile.user_id,
+            "name": profile.mill_name,
+            "mill_name": profile.mill_name,
+            "type": getattr(profile, "mill_type", None) or "Modern Processing Mill",
+            "owner_name": profile.owner_name or user.full_name or "Authorized Mill Manager",
+            "location": full_location,
+            "district": profile.district or "",
+            "state": profile.state or "",
+            "distance": dist_str,
+            "phone": phone,
+            "verified": getattr(profile, "is_verified", True),
+            "rating": getattr(profile, "rating", 4.8),
+            "price_offered": getattr(profile, "price_offered_text", None) or "₹2,200 - ₹2,550/Quintal",
+            "capacity": getattr(profile, "daily_capacity", None) or "150 Tons/Day",
+            "crops_accepted": getattr(profile, "crops_accepted", None) or "Paddy, Wheat, Pulses",
+            "license_number": profile.license_number or "AGRI-MILL-CERT",
+        })
+
+    return mills_data
+
+
+@router.post("/procurement-requests", response_model=MillProcurementRequestRead)
+async def create_procurement_request(
+    request_in: MillProcurementRequestCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Farmer sends a direct harvest supply / sell request to a mill.
+    """
+    # Fetch farmer profile for contact details
+    farmer_prof = (await session.exec(select(FarmerProfile).where(FarmerProfile.user_id == current_user.id))).first()
+    farmer_phone = current_user.phone_number or ""
+    farmer_location = None
+    if farmer_prof:
+        if not farmer_phone and farmer_prof.phone_number:
+            farmer_phone = farmer_prof.phone_number
+        loc_parts = [p for p in [farmer_prof.village, farmer_prof.mandal, farmer_prof.district, farmer_prof.state] if p]
+        farmer_location = ", ".join(loc_parts) if loc_parts else None
+
+    # Check mill exists: request_in.mill_id could be user_id or mill_profile.id
+    mill_user = await session.get(User, request_in.mill_id)
+    mill_prof = (await session.exec(select(MillProfile).where(MillProfile.user_id == request_in.mill_id))).first()
+    if not mill_prof:
+        mill_prof = await session.get(MillProfile, request_in.mill_id)
+        if mill_prof:
+            mill_user = await session.get(User, mill_prof.user_id)
+
+    if not mill_prof or not mill_user:
+        raise HTTPException(status_code=404, detail="Selected mill not found")
+
+    new_req = MillProcurementRequest(
+        mill_id=mill_user.id,
+        farmer_id=current_user.id,
+        crop_id=request_in.crop_id,
+        crop_name=request_in.crop_name,
+        quantity=request_in.quantity,
+        unit=request_in.unit or "quintal",
+        expected_price_per_unit=request_in.expected_price_per_unit,
+        quality_grade=request_in.quality_grade or "Grade A",
+        moisture_content=request_in.moisture_content,
+        harvest_date=request_in.harvest_date,
+        farmer_name=current_user.full_name or "Farmer Partner",
+        farmer_phone=farmer_phone or "Unspecified",
+        farmer_location=farmer_location or "Local Farmland",
+        notes=request_in.notes,
+        status="pending"
+    )
+    session.add(new_req)
+    await session.commit()
+    await session.refresh(new_req)
+
+    return MillProcurementRequestRead(
+        **new_req.dict(),
+        mill_name=mill_prof.mill_name,
+        mill_phone=mill_prof.phone_number or mill_prof.contact_number or mill_user.phone_number,
+        mill_location=f"{mill_prof.district or ''}, {mill_prof.state or ''}".strip(", ")
+    )
+
+
+@router.get("/procurement-requests/my", response_model=List[MillProcurementRequestRead])
+async def get_my_procurement_requests(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Farmer views all sell requests they have sent to mills.
+    """
+    stmt = (
+        select(MillProcurementRequest)
+        .where(MillProcurementRequest.farmer_id == current_user.id)
+        .order_by(MillProcurementRequest.created_at.desc())
+    )
+    reqs = (await session.exec(stmt)).all()
+
+    # Pre-fetch mill profiles to prevent N+1 queries
+    mill_ids = list({r.mill_id for r in reqs})
+    mill_map = {}
+    if mill_ids:
+        mills = (await session.exec(select(MillProfile).where(MillProfile.user_id.in_(mill_ids)))).all()
+        for m in mills:
+            mill_map[m.user_id] = m
+
+    result = []
+    for r in reqs:
+        m = mill_map.get(r.mill_id)
+        result.append(MillProcurementRequestRead(
+            **r.dict(),
+            mill_name=m.mill_name if m else f"Mill #{r.mill_id}",
+            mill_phone=m.phone_number or m.contact_number if m else None,
+            mill_location=f"{m.district or ''}, {m.state or ''}".strip(", ") if m else None
+        ))
+    return result
+
+
+@router.delete("/procurement-requests/{request_id}")
+async def cancel_procurement_request(
+    request_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Farmer can cancel/delete their pending supply request.
+    """
+    req = await session.get(MillProcurementRequest, request_id)
+    if not req or req.farmer_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.status != "pending":
+        raise HTTPException(status_code=400, detail="Only pending requests can be cancelled")
+    await session.delete(req)
+    await session.commit()
+    return {"ok": True, "message": "Procurement request cancelled successfully"}
+
+
+@router.get("/procurement-requests/inbound", response_model=List[MillProcurementRequestRead])
+async def get_inbound_procurement_requests(
+    status: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Mill owner views incoming harvest supply requests from farmers.
+    """
+    check_manufacturer_role(current_user)
+    stmt = (
+        select(MillProcurementRequest)
+        .where(MillProcurementRequest.mill_id == current_user.id)
+    )
+    if status and status != "all":
+        stmt = stmt.where(MillProcurementRequest.status == status)
+    stmt = stmt.order_by(MillProcurementRequest.created_at.desc())
+    reqs = (await session.exec(stmt)).all()
+
+    return [MillProcurementRequestRead(**r.dict()) for r in reqs]
+
+
+@router.post("/procurement-requests/{request_id}/accept")
+async def accept_procurement_request(
+    request_id: int,
+    update_data: Optional[MillProcurementRequestUpdate] = None,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Mill accepts a farmer's procurement request.
+    Optionally updates offered_price_per_unit.
+    Automatically records a ManufacturerPurchase and adds to raw materials!
+    """
+    check_manufacturer_role(current_user)
+    req = await session.get(MillProcurementRequest, request_id)
+    if not req or req.mill_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    agreed_price = req.expected_price_per_unit
+    if update_data and update_data.offered_price_per_unit:
+        agreed_price = update_data.offered_price_per_unit
+        req.offered_price_per_unit = agreed_price
+
+    if update_data and update_data.notes:
+        req.notes = f"{req.notes or ''} | Note: {update_data.notes}".strip(" |")
+
+    req.status = "accepted"
+    req.updated_at = datetime.utcnow()
+    session.add(req)
+
+    # Automatically create ManufacturerPurchase
+    batch_id = f"M-PUR-{uuid.uuid4().hex[:6].upper()}"
+    total_cost = req.quantity * agreed_price
+
+    purchase = ManufacturerPurchase(
+        manufacturer_id=current_user.id,
+        farmer_id=req.farmer_id,
+        farmer_name=req.farmer_name,
+        crop_name=req.crop_name,
+        quantity=req.quantity,
+        unit=req.unit,
+        price_per_unit=agreed_price,
+        total_cost=total_cost,
+        transport_cost=0.0,
+        quality_grade=req.quality_grade,
+        batch_id=batch_id,
+        date=datetime.utcnow()
+    )
+    session.add(purchase)
+
+    # Register raw material in inventory
+    raw_prod = Product(
+        user_id=current_user.id,
+        name=f"Raw {req.crop_name}",
+        category="raw_material",
+        brand=req.farmer_name,
+        price=0,
+        cost_price=agreed_price,
+        quantity=req.quantity,
+        unit=req.unit,
+        batch_number=batch_id,
+        description=f"Direct Procurement from {req.farmer_name} ({req.farmer_phone})",
+        traceability_json="{}"
+    )
+    session.add(raw_prod)
+
+    await session.commit()
+    await session.refresh(req)
+
+    return {
+        "ok": True,
+        "message": f"Harvest offer accepted. Created purchase batch {batch_id} for ₹{total_cost:,.2f}",
+        "batch_id": batch_id,
+        "request": MillProcurementRequestRead(**req.dict())
+    }
+
+
+@router.post("/procurement-requests/{request_id}/reject")
+async def reject_procurement_request(
+    request_id: int,
+    update_data: Optional[MillProcurementRequestUpdate] = None,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Mill declines a farmer's procurement request with reason.
+    """
+    check_manufacturer_role(current_user)
+    req = await session.get(MillProcurementRequest, request_id)
+    if not req or req.mill_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    req.status = "rejected"
+    if update_data and update_data.rejection_reason:
+        req.rejection_reason = update_data.rejection_reason
+    req.updated_at = datetime.utcnow()
+    session.add(req)
+    await session.commit()
+    await session.refresh(req)
+    return {"ok": True, "message": "Request declined", "request": MillProcurementRequestRead(**req.dict())}
+
