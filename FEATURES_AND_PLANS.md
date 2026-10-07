@@ -160,6 +160,24 @@ The farmer's experience is designed to be a complete farm management system, org
 1. **Institutional Statement Generation**: Downloadable formal PDF reports generated via `reportlab` tailored for bank loan officers (KCC), equipment financing, PMFBY claims, and state subsidies.
 2. **Comprehensive Statement Contents**: Farmer bio & landholdings, crop production history, inputs & expenses ledger, credit & loan liabilities, and authorized verification seal sign-off area.
 
+#### **M. Mill Direct Selling, Fair Deductions & Collective Load Pooling**
+1. **Mill Marketplace & Direct Harvest Offers**:
+    - Browse nearby certified processing mills (Rice Mills, Flour Mills, Dal Mills, Oil Extraction Plants).
+    - Dispatch direct harvest offers with quantity (Quintals), moisture content (%), expected price, preferred delivery slot (`Morning 08:00 - 12:00`, `Afternoon 12:00 - 16:00`, `Evening 16:00 - 20:00`), and transport vehicle specifications (`Tractor Trolley`, `Mini Truck`, `10-Wheeler`).
+2. **Fair Moisture & Weighbridge Deduction Calculator**:
+    - Government FCI standard thresholds: Paddy (17%), Wheat (12%), Maize (14%), Soybeans (12%).
+    - Scientific formula computation: $W_{\text{standard}} = W_{\text{actual}} \times \frac{100 - M_{\text{actual}}}{100 - M_{\text{standard}}}$.
+    - Live interactive parameter sliders calculating deduction weight, net payable weight, and fair price comparison.
+    - Mandi comparison dispute alert revealing excess weight cuts by private brokers, accompanied by agronomist sun-drying day advisories.
+3. **Digital Gate Pass & QR Token Verification**:
+    - Automatic token generation (`TK-YYYYMMDD-XXXX`) upon mill acceptance.
+    - Encrypted SVG QR code for mill security gate check-in, bypassing tractor queues.
+    - Printable digital gate pass with driver, slot, vehicle, and mill inspection details.
+4. **Small-Farmer Collective Selling (Load Pooling Hub)**:
+    - Peer-to-peer load aggregation portal (`/dashboard/farmer/mills/load-pools`).
+    - Aggregates small 10–25 quintal harvests into full commercial truckloads (100–150 quintals).
+    - Live pool fill progress gauges, member pledge tracker, target mill assignments, and 1-click organizer submission for bulk premium procurement.
+
 ---
 
 ### 🏪 2. Shop Role (Retail & Logistics)
@@ -219,27 +237,45 @@ The Manufacturer role is designed for industrial processing units (e.g., Rice Mi
 1. **Industrial Health**: Month-wise Revenue, Purchase Costs, Processing Expenses, and Net Profit.
 2. **Operations Pipeline**: Quick stats on Pending Inward Harvests, Active Milling Runs, and Packaged Stocks.
 
-#### **B. Raw Harvest Procurement**
-1. **Intake Logging**: Record incoming raw produce directly from farmers or market mandis with moisture levels, grading, and weighbridge slips.
-2. **Direct Farmer Payouts**: Record settlement transactions, payment modes, and invoice receipts.
+#### **B. Raw Harvest Procurement & Queue Management**
+1. **Inbound Offer Triage & Token Scheduling**:
+    - Review incoming farmer harvest offers complete with moisture content, offered price, delivery slot, and vehicle number.
+    - Accepting an offer generates an authenticated sequential Token Number (`TK-YYYYMMDD-XXXX`) and issues an encrypted Digital Gate Pass.
+2. **Fair Weighbridge & Moisture Deduction Engine**:
+    - Replaces arbitrary cuts with scientific FCI moisture deductions.
+    - Parameter standard benchmarks for Paddy, Wheat, Maize, and Soybeans.
+    - Automatically logs deduction metrics to `moisture_deduction_logs`.
 
-#### **C. Processing & Milling Engine**
-1. **Conversion Runs**: Transform raw intake (e.g. Paddy) into finished products (e.g. Premium Basmati Rice, Broken Rice, Husk/Bran).
-2. **Wastage & Recovery Analytics**: Automatic computation of recovery efficiency percentage and byproduct yield.
-3. **Cost Factor Allocation**: Apportion electricity, machine depreciation, labor, and packaging to compute per-unit production cost.
+#### **C. Official Digital Weighment Slip (Dharamkanta Receipt / Parchi)**
+1. **Weighbridge Measurement Workflow**:
+    - Captures Gross Truck Weight (laden) upon entry and Tare Weight (unladen) upon exit.
+    - Computes Actual Gross Produce Weight, itemized Moisture Cut (%), and final Net Payable Weight.
+2. **MSP Benchmarking & Settlements**:
+    - Displays live comparisons against Government Minimum Support Price (MSP) benchmarks.
+    - Generates printable formal digital Dharamkanta slips with authorized stamp & signature blocks.
+    - Supports payment status tracking (`paid` / `pending`) and payout mode recording (Direct Bank Transfer, RTGS/NEFT, UPI, Cash).
 
-#### **D. Wholesale Sales & Orders**
+#### **D. Processing, Milling & By-Product Recovery Management**
+1. **Primary Conversion Runs**: Transform raw produce batches (e.g. Paddy) into finished wholesale packages (e.g. Premium Rice).
+2. **Secondary By-Product Inventory Engine**:
+    - Dedicated inventory tracking for secondary milling outputs: Rice Bran, Rice Husk, Broken Rice, Mustard DOC, Wheat Choker.
+    - Automatically calculates recovery yield percentages against total raw input milled.
+    - In-stock inventory tracking (kg), unit valuation, and wholesale market price tracking.
+    - Log B2B buyer sales (`PATCH /manufacturer/by-products/{id}`) with automated stock deduction and revenue recording.
+3. **Cost Factor Allocation**: Apportion electricity, machine depreciation, labor, and packaging overheads to calculate accurate per-kg cost of production.
+
+#### **E. Wholesale Sales & Orders**
 1. **B2B Fulfillment**: Sell branded products to retail shops or large distributors.
 2. **Order Pipeline**: Advance orders from "Pending" to "Dispatched" and "Delivered" with live status tracking.
 3. **Financial Summary**: Detailed revenue breakdown for every sale, including discounts and net margins.
 
-#### **E. Mill Accounting & Analytics**
+#### **F. Mill Accounting & Analytics**
 1. **P&L Ledger**: Comprehensive Profit & Loss analysis over custom periods (7d, 30d, 90d, 1y).
 2. **Expense Management**: Log industrial overheads (Labour Wages, Electricity/Power, Maintenance, Packaging).
 3. **Procurement Analytics**: Visual breakdown of top crops bought and average purchase prices.
 4. **Sales Performance**: Ranking of top-performing finished products by revenue and volume.
 
-#### **F. Settings & Security**
+#### **G. Settings & Security**
 1. **Industrial Profile**: Manage mill name, owner details, license numbers, and location.
 2. **Payout Settings**: Manage Bank and UPI details for receiving wholesale payments.
 3. **Security**: Professional password management and notification preference controls.

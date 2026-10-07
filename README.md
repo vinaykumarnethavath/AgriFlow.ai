@@ -84,6 +84,21 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
   - Categorized directory for KVK scientists, mobile veterinary units (1962), canal water officers, and personal local technicians.
 - **Structured Sidebar Architecture**
   - Categorized navigation into Core Operations, Finance & Storage, Market & Agri Trade, and Intelligence & Hub.
+- **Fair Moisture & Weighbridge Deduction Calculator**
+  - Scientific FCI-standard moisture deduction engine ($W_{std} = W_{act} \times \frac{100 - M_{act}}{100 - M_{std}}$) protecting farmers against arbitrary Mandi/Mill weight cuts on Paddy, Wheat, Maize, and Soybeans.
+  - Interactive moisture calculator sliders, excess deduction dispute alerts, government moisture thresholds, and drying advisory guidance.
+- **Digital Gate Pass & Token Time-Slot Verification (QR Code)**
+  - Automated queue management for harvest intake with delivery slot reservations (Morning, Afternoon, Evening) and vehicle details (Tractor, Mini Truck, 10-Wheeler).
+  - High-resolution SVG QR code generation and authenticated token numbers (`TK-YYYYMMDD-XXXX`) for tamper-proof gate pass check-ins.
+- **By-Product Inventory & Secondary Recovery Tracking**
+  - Industrial processing management for secondary milling outputs: Rice Bran, Husk, Broken Rice, Mustard DOC, and Wheat Choker.
+  - Recovery yield calculation, in-stock kilogram valuation, buyer dispatch recording, and realized secondary sales revenue tracking.
+- **Official Digital Weighment Slip (Dharamkanta Receipt / Parchi)**
+  - Electronic weighbridge slip recording Gross Truck Weight, Tare (Empty) Weight, Net Actual Harvest Weight, Moisture Cut Breakdown, and Net Payable Weight.
+  - Live MSP benchmark price comparisons, disbursement status tracking (`paid` / `pending`), and printable formal Dharamkanta receipts.
+- **Small-Farmer Collective Selling (Load Pooling Hub)**
+  - Peer-to-peer load aggregation allowing smallholders with 10–25 quintal harvests to pool produce into full 10-ton commercial truckloads.
+  - Live pool capacity fill gauges, member harvest pledge trackers, direct mill submissions, and elimination of middleman commission haircuts.
 
 
 
@@ -92,36 +107,42 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 ```text
 ┌──────────────────────────────────────────────────────────────┐
 │                           Users                              │
-│  - Farmer                                                     │
-│  - Fertiliser Shop                                            │
-│  - Mills / Manufacturers                                      │
-│  - Retail Customers                                           │
+│  - Farmer                                                    │
+│  - Fertiliser Shop                                           │
+│  - Mills / Manufacturers                                     │
+│  - Retail Customers                                          │
 └──────────────────────────────────────────────────────────────┘
                                │
                                ▼
 ┌──────────────────────────────────────────────────────────────┐
 │                        Frontend UI                           │
-│        (Next.js + React + TypeScript + TailwindCSS)           │
-│  - Role-based screens & Dashboards                            │
+│        (Next.js + React + TypeScript + TailwindCSS)          │
+│  - Role-based screens & Dashboards                           │
+│  - Farmer Mill Directory, Gate Pass Modal, Moisture Calc     │
+│  - Farmer Collective Load Pooling Hub (/mills/load-pools)    │
+│  - Mill Weighment Slips & Dharamkanta Receipts (/purchases)  │
+│  - Mill By-Product Inventory & Secondary Recovery            │
 │  - Chatbot Assistant (RAG) & Voice Assistant                 │
-│  - Soil Moisture & Weather Dashboard (Open-Meteo)            │
+│  - Soil Moisture & Weather Dashboard (Open-Meteo)           │
 │  - Farm Activity Calendar, Credit Tracker, Insurance Tracker │
 │  - Storage Tracking, Soil Profile, Annual Summary Audit      │
-│  - Leaflet Geo-Analysis Mapping                              │
-│  - public/trace/[id] (QR Traceability Journey Verification)   │
-│  - dashboard/blockchain (Ledger Explorer & Integrity Audit)  │
+│  - Leaflet Geo-Analysis Mapping                             │
+│  - public/trace/[id] (QR Traceability Journey Verification)  │
+│  - dashboard/blockchain (Ledger Explorer & Integrity Audit) │
 └──────────────────────────────────────────────────────────────┘
                                │
                                ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                       FastAPI Backend                         │
-│              (backend/app/main.py + routers/)                 │
-│  - API Routers: auth, crops, farm_calendar, credit_loan,      │
-│    crop_health_indicator, season_comparison, farm_reports,    │
-│    crop_insurance, crop_storage, soil_profile, annual_summary, │
-│    emergency_contacts, products, orders, analytics,           │
-│    traceability, blockchain, rag, payments, weather, etc.     │
-│  - Service Orchestration Layer (app/services/*)               │
+│                       FastAPI Backend                        │
+│              (backend/app/main.py + routers/)                │
+│  - API Routers: auth, crops, farm_calendar, credit_loan,     │
+│    crop_health_indicator, season_comparison, farm_reports,   │
+│    crop_insurance, crop_storage, soil_profile, annual_summary,│
+│    emergency_contacts, products, orders, analytics,          │
+│    manufacturer (Procurement, Moisture Calc, Gate Pass QR,   │
+│    By-Products, Weighment Slips, Farmer Load Pools),         │
+│    traceability, blockchain, rag, payments, weather, etc.    │
+│  - Service Orchestration Layer (app/services/*)              │
 └──────────────────────────────────────────────────────────────┘
          │               │               │               │
          ▼               ▼               ▼               ▼
@@ -135,14 +156,18 @@ AgriFlow AI is a full-stack web application for agriculture supply-chain and far
 ┌──────────────────────────────────────────────────────────────┐
 │                         Data Layer                           │
 │         (SQLModel / SQLAlchemy Async Core Engine)            │
-│  - Database Tables: users, crops, products, orders, etc.      │
-│  - Blockchain Block Registry Table (blockchain_blocks)        │
+│  - Core Tables: users, crops, products, orders, etc.         │
+│  - Mill Tables: mill_profiles, mill_procurement_requests,    │
+│    manufacturer_purchases, production_batches,               │
+│    moisture_deduction_logs, by_products, weighment_slips,    │
+│    farmer_load_pools, farmer_load_pool_members               │
+│  - Blockchain Block Registry Table (blockchain_blocks)       │
 └──────────────────────────────────────────────────────────────┘
                                │
                                ▼
 ┌──────────────────────────────────────────────────────────────┐
 │                 PostgreSQL / SQLite Database                 │
-│  - Persists all relational records & ledger blocks securely   │
+│  - Persists all relational records & ledger blocks securely  │
 └──────────────────────────────────────────────────────────────┘
 ```
 

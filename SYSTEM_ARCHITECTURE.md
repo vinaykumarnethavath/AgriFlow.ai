@@ -10,8 +10,9 @@ This document details the complete end-to-end architecture of **AgriFlow**, brea
 graph TD
     subgraph ClientTier ["Frontend Client Tier (Next.js 16 + React + TailwindCSS)"]
         UI_Farmer["Farmer Dashboard"]
+        UI_Pools["Farmer Collective Load Pooling Hub"]
         UI_Shop["Input Shop Dashboard"]
-        UI_Mill["Manufacturer Dashboard"]
+        UI_Mill["Manufacturer Dashboard & Weighbridge/By-Products"]
         UI_Customer["Customer Marketplace"]
         UI_Trace["Public QR Traceability"]
         UI_Auth["Auth & Onboarding Portal"]
@@ -21,6 +22,7 @@ graph TD
     subgraph APIGateway ["API Layer (FastAPI Asynchronous Gateway)"]
         Router_Auth["Auth Router (/api/auth)"]
         Router_Crops["Crops & Farmer Router (/api/crops)"]
+        Router_Mill["Manufacturer & Mill Procurement (/api/manufacturer)"]
         Router_Calendar["Farm Calendar (/api/farm-calendar)"]
         Router_Credit["Credit & Loan Tracker (/api/credit-loan)"]
         Router_Season["Season Comparison (/api/season-comparison)"]
@@ -60,6 +62,7 @@ graph TD
     end
 
     UI_Farmer --> APIGateway
+    UI_Pools --> APIGateway
     UI_Shop --> APIGateway
     UI_Mill --> APIGateway
     UI_Customer --> APIGateway
@@ -595,3 +598,110 @@ graph TD
     PDFEngine --> DB_Credit
     PDFEngine --> DB_Insurance
 ```
+
+---
+
+## 14. Mill Industrial Procurement, Quality Inspection & Collective Load Pooling Architecture
+
+This subsystem bridges smallholder farmers with large-scale agro-processing mills (rice, flour, oil, pulse mills) by eliminating arbitrary weight cuts, automating gate pass logistics, providing official digital weighbridge receipts, managing secondary by-product recoveries, and enabling smallholder harvest pooling.
+
+```mermaid
+graph TD
+    subgraph FarmerMillClients ["Farmer & Mill Frontend Tier (Next.js 16)"]
+        UI_FarmerMills["Farmer Mill Directory & Offers\n(/dashboard/farmer/mills)"]
+        UI_MoistureCalc["FCI Moisture Deduction Calculator\n(Interactive Parameter Sliders)"]
+        UI_GatePass["Digital Gate Pass Modal\n(SVG QR Code & Token Badge)"]
+        UI_FarmerPools["Collective Load Pooling Hub\n(/dashboard/farmer/mills/load-pools)"]
+        UI_MillPurchases["Mill Inbound Triage & Weighbridge\n(/dashboard/manufacturer/purchases)"]
+        UI_WeighSlip["Digital Weighment Slip Modal\n(Dharamkanta Receipt & MSP Comparison)"]
+        UI_MillProduction["Production Batches & Recovery Hub\n(/dashboard/manufacturer/production)"]
+        UI_ByProducts["By-Products Inventory & Sales\n(Bran, Husk, Broken Rice, DOC)"]
+    end
+
+    subgraph MillRouter ["FastAPI Mill & Procurement Router (/api/manufacturer)"]
+        EP_Calc["POST /moisture-calculator\nGET /moisture-standards"]
+        EP_Gate["GET /gate-pass/{request_id}"]
+        EP_Slip["POST /weighment-slip\nGET /weighment-slips\nPATCH /weighment-slip/{id}/payment"]
+        EP_ByProd["POST /production/by-products\nGET /by-products/summary\nPATCH /by-products/{id}"]
+        EP_Pools["POST /load-pools\nGET /load-pools\nPOST /load-pools/{id}/join\nPOST /load-pools/{id}/submit"]
+        EP_Proc["POST /procurement-requests\nPOST /procurement-requests/{id}/accept"]
+    end
+
+    subgraph ProcessingEngines ["Scientific Calculation & Security Engines"]
+        Eng_Moisture["FCI Scientific Moisture Engine\nW_std = W_act * (100 - M_act) / (100 - M_std)\n(Paddy 17%, Wheat 12%, Maize 14%)"]
+        Eng_QR["QR Verification & Token Dispatcher\n(TK-YYYYMMDD-XXXX Token Generation)"]
+        Eng_MSP["MSP Benchmarking Engine\n(Live comparison with Govt MSP rates)"]
+        Eng_Recovery["Secondary Recovery Analyzer\nYield % = (Byproduct kg / Input kg) * 100"]
+    end
+
+    subgraph MillDatabase ["Relational Persistence Layer (SQLModel & PostgreSQL)"]
+        T_ProcReq[("mill_procurement_requests\n(slot_date, slot_time, vehicle_num, token_number)")]
+        T_MoistLog[("moisture_deduction_logs\n(actual_moisture, std_moisture, deduction_kg, final_weight)")]
+        T_WeighSlip[("weighment_slips\n(gross_wt, tare_wt, net_wt, payable_wt, msp_comp, status)")]
+        T_Purchases[("manufacturer_purchases\n(batch_id, farmer_id, payment_mode, cost)")]
+        T_Batches[("production_batches\n(input_qty, output_qty, wastage_qty)")]
+        T_ByProducts[("by_products\n(batch_id, type, in_stock_kg, price_per_kg, sales_rev)")]
+        T_LoadPools[("farmer_load_pools\n(target_crop, target_weight, pooled_weight, status)")]
+        T_PoolMembers[("farmer_load_pool_members\n(pool_id, farmer_id, pledged_weight_quintals)")]
+    end
+
+    UI_MoistureCalc --> EP_Calc
+    EP_Calc --> Eng_Moisture
+    Eng_Moisture --> T_MoistLog
+
+    UI_FarmerMills --> EP_Proc
+    EP_Proc --> Eng_QR
+    Eng_QR --> T_ProcReq
+    UI_GatePass --> EP_Gate
+    EP_Gate --> T_ProcReq
+
+    UI_FarmerPools --> EP_Pools
+    EP_Pools --> T_LoadPools
+    EP_Pools --> T_PoolMembers
+    EP_Pools -. Submit Filled Truckload .-> EP_Proc
+
+    UI_MillPurchases --> EP_Slip
+    EP_Slip --> Eng_MSP
+    Eng_MSP --> T_WeighSlip
+    UI_WeighSlip --> EP_Slip
+    T_WeighSlip --> T_Purchases
+
+    UI_MillProduction --> EP_ByProd
+    UI_ByProducts --> EP_ByProd
+    EP_ByProd --> Eng_Recovery
+    Eng_Recovery --> T_ByProducts
+    T_ByProducts --> T_Batches
+```
+
+### End-to-End Workflow Stages
+
+#### 1. Fair Moisture & Deduction Calculation Flow
+1. Farmer inputs Crop Type (Paddy, Wheat, Maize, Soybeans), Actual Moisture reading (e.g. 19.5%), and Harvest Weight (Quintals).
+2. The engine retrieves FCI standard moisture parameters (Paddy: 17%, Wheat: 12%, Maize: 14%, Soybeans: 12%).
+3. If moisture exceeds standards, the scientific formula applies:
+   $$\text{Payable Weight} = \text{Actual Weight} \times \frac{100 - \text{Actual Moisture}}{100 - \text{Standard Moisture}}$$
+4. The system calculates fair deduction weight, identifies unfair arbitrary mandi cuts (often 2–3x higher), and provides field sun-drying advisory.
+
+#### 2. Scheduled Inbound Delivery & Digital Gate Pass Flow
+1. Farmer offers harvest to a verified mill, selecting a delivery time slot (`Morning 08:00 - 12:00`, `Afternoon 12:00 - 16:00`, `Evening 16:00 - 20:00`) and transport vehicle specs (Tractor, Mini Truck, 10-Wheeler).
+2. Mill reviews inbound offers and accepts. Acceptance triggers deterministic token generation: `TK-YYYYMMDD-XXXX`.
+3. The farmer receives an authenticated Digital Gate Pass featuring high-contrast SVG QR Code containing verification payload for instant gatekeeper scanning, bypassing overnight tractor queues.
+
+#### 3. Dharamkanta Digital Weighment Slip Flow
+1. Loaded vehicle enters the mill weighbridge: **Gross Weight (kg)** is captured.
+2. Vehicle unloads harvest into grain silos/hoppers and re-weighs: **Tare Weight (kg)** is captured.
+3. Actual Produce Weight is calculated: $\text{Gross} - \text{Tare}$.
+4. Scientific moisture deduction is deducted to yield **Net Payable Weight**.
+5. The digital Dharamkanta slip benchmarks purchase price against Government MSP and records payout status (`paid` / `pending`) with settlement method.
+
+#### 4. Secondary By-Product Recovery Flow
+1. Primary milling batch transforms raw intake into packaged finished produce.
+2. Operator logs secondary outputs (Rice Bran, Rice Husk, Broken Rice, Mustard DOC, Wheat Choker).
+3. The engine tracks recovery yield percentage against total raw input, active in-stock kilograms, and total inventory value.
+4. When wholesale buyers purchase by-products, sales are logged with buyer names, instantly decrementing stock and booking realized sales revenue.
+
+#### 5. Collective Selling / Load Pooling Hub Flow
+1. Smallholder farmer creates a pooling group for 100–150 quintals targeting a specific processing mill.
+2. Fellow village farmers browse active pools and pledge small lots (10–25 quintals each).
+3. Real-time fill percentage gauges update as farmers join.
+4. Once filled, the pool organizer dispatches the aggregated bulk load directly to the mill, securing industrial tier prices and avoiding middleman commissions.
