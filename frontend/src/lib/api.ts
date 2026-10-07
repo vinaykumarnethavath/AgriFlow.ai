@@ -619,6 +619,7 @@ export interface ManufacturerPurchase {
     total_cost: number;
     transport_cost: number;
     quality_grade?: string;
+    payment_mode?: string;
     batch_id: string;
     date: string;
 }
@@ -2397,6 +2398,12 @@ export interface MillProcurementRequest {
     farmer_phone: string;
     farmer_location?: string | null;
     notes?: string | null;
+    // Delivery Slot / Gate Pass fields
+    delivery_slot_date?: string | null;
+    delivery_slot_time?: string | null;
+    vehicle_type?: string | null;
+    vehicle_number?: string | null;
+    token_number?: string | null;
     status: 'pending' | 'accepted' | 'rejected' | 'completed';
     offered_price_per_unit?: number | null;
     rejection_reason?: string | null;
@@ -2418,6 +2425,11 @@ export interface MillProcurementRequestCreate {
     moisture_content?: number;
     harvest_date?: string;
     notes?: string;
+    // Delivery Slot fields
+    delivery_slot_date?: string;
+    delivery_slot_time?: string;
+    vehicle_type?: string;
+    vehicle_number?: string;
 }
 
 export const getMillsMarketplace = async (params?: {
@@ -2469,6 +2481,326 @@ export const rejectProcurementRequest = async (
     const response = await api.post(`/manufacturer/procurement-requests/${id}/reject`, data || {});
     return response.data;
 };
+
+
+// ── Feature A: Moisture & Fair Deduction Calculator ─────────────────────────
+
+export interface MoistureCalculatorRequest {
+    crop_name: string;
+    original_weight: number;
+    unit?: string;
+    actual_moisture: number;
+    foreign_matter_pct?: number;
+    damaged_grain_pct?: number;
+    price_per_unit: number;
+    purchase_id?: number;
+    procurement_request_id?: number;
+    save_log?: boolean;
+}
+
+export interface MoistureCalculatorResponse {
+    crop_name: string;
+    standard_moisture: number;
+    actual_moisture: number;
+    original_weight: number;
+    unit: string;
+    moisture_excess: number;
+    weight_deduction_moisture: number;
+    weight_after_moisture: number;
+    foreign_matter_pct: number;
+    foreign_matter_deduction: number;
+    damaged_grain_pct: number;
+    damaged_grain_deduction: number;
+    final_net_weight: number;
+    price_per_unit: number;
+    original_value: number;
+    adjusted_value: number;
+    total_deduction_value: number;
+    deduction_percentage: number;
+    is_fair: boolean;
+    log_id?: number | null;
+}
+
+export const calculateMoistureDeduction = async (
+    data: MoistureCalculatorRequest
+): Promise<MoistureCalculatorResponse> => {
+    const response = await api.post<MoistureCalculatorResponse>('/manufacturer/moisture-calculator', data);
+    return response.data;
+};
+
+export const getMoistureStandards = async (): Promise<{ standards: Record<string, number>; note: string }> => {
+    const response = await api.get('/manufacturer/moisture-standards');
+    return response.data;
+};
+
+
+// ── Feature B: Digital Gate Pass ────────────────────────────────────────────
+
+export interface GatePass {
+    token_number: string;
+    request_id: number;
+    status: string;
+    farmer_name: string;
+    farmer_phone: string;
+    farmer_location?: string | null;
+    crop_name: string;
+    quantity: number;
+    unit: string;
+    quality_grade?: string | null;
+    moisture_content?: number | null;
+    delivery_slot_date?: string | null;
+    delivery_slot_time?: string | null;
+    vehicle_type?: string | null;
+    vehicle_number?: string | null;
+    mill_name: string;
+    mill_phone?: string | null;
+    mill_location: string;
+    agreed_price: number;
+    estimated_total: number;
+    qr_code_data: string;
+    created_at?: string | null;
+    accepted_at?: string | null;
+}
+
+export const getGatePass = async (requestId: number): Promise<{ gate_pass: GatePass }> => {
+    const response = await api.get<{ gate_pass: GatePass }>(`/manufacturer/gate-pass/${requestId}`);
+    return response.data;
+};
+
+
+// ── Feature C: By-Product Batch Tracking ────────────────────────────────────
+
+export interface ByProduct {
+    id: number;
+    batch_id: number;
+    manufacturer_id: number;
+    name: string;
+    quantity: number;
+    unit: string;
+    estimated_value_per_unit: number;
+    total_value: number;
+    sold_to?: string | null;
+    sold_price?: number | null;
+    sold_date?: string | null;
+    status: 'in_stock' | 'sold' | 'disposed';
+    created_at: string;
+}
+
+export interface ByProductCreate {
+    batch_id: number;
+    name: string;
+    quantity: number;
+    unit?: string;
+    estimated_value_per_unit?: number;
+}
+
+export interface ByProductUpdate {
+    sold_to?: string;
+    sold_price?: number;
+    status?: string;
+}
+
+export interface ByProductSummary {
+    period: string;
+    total_by_products: number;
+    total_quantity: number;
+    in_stock_value: number;
+    sold_revenue: number;
+    by_product_breakdown: Array<{
+        name: string;
+        total_qty: number;
+        in_stock_qty: number;
+        sold_qty: number;
+        revenue: number;
+    }>;
+}
+
+export const addByProduct = async (data: ByProductCreate): Promise<ByProduct> => {
+    const response = await api.post<ByProduct>('/manufacturer/production/by-products', data);
+    return response.data;
+};
+
+export const getBatchByProducts = async (batchId: number): Promise<ByProduct[]> => {
+    const response = await api.get<ByProduct[]>(`/manufacturer/production/${batchId}/by-products`);
+    return response.data;
+};
+
+export const getByProductsSummary = async (period = '30d'): Promise<ByProductSummary> => {
+    const response = await api.get<ByProductSummary>('/manufacturer/by-products/summary', { params: { period } });
+    return response.data;
+};
+
+export const updateByProduct = async (id: number, data: ByProductUpdate): Promise<ByProduct> => {
+    const response = await api.patch<ByProduct>(`/manufacturer/by-products/${id}`, data);
+    return response.data;
+};
+
+
+// ── Feature D: Digital Weighment Slip (Parchi) ──────────────────────────────
+
+export interface WeighmentSlip {
+    id: number;
+    purchase_id: number;
+    slip_number: string;
+    gross_weight: number;
+    tare_weight: number;
+    net_weight: number;
+    moisture_pct: number;
+    foreign_matter_pct: number;
+    damaged_grain_pct: number;
+    quality_grade: string;
+    moisture_deduction_kg: number;
+    foreign_matter_deduction_kg: number;
+    final_net_weight: number;
+    price_per_unit: number;
+    total_amount: number;
+    msp_price?: number | null;
+    msp_comparison?: string | null;
+    payment_mode: string;
+    payment_status: string;
+    transaction_ref?: string | null;
+    farmer_name: string;
+    farmer_phone?: string | null;
+    crop_name: string;
+    unit: string;
+    vehicle_number?: string | null;
+    mill_name: string;
+    mill_location?: string | null;
+    created_at: string;
+}
+
+export interface WeighmentSlipCreate {
+    purchase_id: number;
+    gross_weight: number;
+    tare_weight: number;
+    moisture_pct?: number;
+    foreign_matter_pct?: number;
+    damaged_grain_pct?: number;
+    quality_grade?: string;
+    price_per_unit: number;
+    msp_price?: number;
+    payment_mode?: string;
+    vehicle_number?: string;
+}
+
+export const createWeighmentSlip = async (data: WeighmentSlipCreate): Promise<WeighmentSlip> => {
+    const response = await api.post<WeighmentSlip>('/manufacturer/weighment-slip', data);
+    return response.data;
+};
+
+export const getWeighmentSlip = async (purchaseId: number): Promise<WeighmentSlip> => {
+    const response = await api.get<WeighmentSlip>(`/manufacturer/weighment-slip/${purchaseId}`);
+    return response.data;
+};
+
+export const listWeighmentSlips = async (period = '30d'): Promise<WeighmentSlip[]> => {
+    const response = await api.get<WeighmentSlip[]>('/manufacturer/weighment-slips', { params: { period } });
+    return response.data;
+};
+
+export const updateWeighmentSlipPayment = async (
+    slipId: number,
+    data: { payment_status?: string; transaction_ref?: string }
+): Promise<WeighmentSlip> => {
+    const response = await api.patch<WeighmentSlip>(`/manufacturer/weighment-slip/${slipId}/payment`, data);
+    return response.data;
+};
+
+
+// ── Feature E: Small-Farmer Load Pooling ────────────────────────────────────
+
+export interface FarmerLoadPoolMember {
+    id: number;
+    pool_id: number;
+    farmer_id: number;
+    farmer_name: string;
+    farmer_phone?: string | null;
+    quantity: number;
+    unit: string;
+    quality_grade?: string | null;
+    joined_at: string;
+}
+
+export interface FarmerLoadPool {
+    id: number;
+    creator_id: number;
+    creator_name?: string | null;
+    crop_name: string;
+    target_quantity: number;
+    current_quantity: number;
+    unit: string;
+    village: string;
+    mandal?: string | null;
+    district: string;
+    state: string;
+    delivery_date: string;
+    preferred_mill_id?: number | null;
+    preferred_mill_name?: string | null;
+    status: 'open' | 'full' | 'submitted' | 'completed' | 'cancelled';
+    min_quality_grade: string;
+    expected_price_per_unit: number;
+    notes?: string | null;
+    member_count: number;
+    fill_percentage: number;
+    members: FarmerLoadPoolMember[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface FarmerLoadPoolCreate {
+    crop_name: string;
+    target_quantity: number;
+    unit?: string;
+    village: string;
+    mandal?: string;
+    district: string;
+    state: string;
+    delivery_date: string;
+    preferred_mill_id?: number;
+    min_quality_grade?: string;
+    expected_price_per_unit?: number;
+    notes?: string;
+    my_quantity: number;
+}
+
+export interface FarmerLoadPoolJoin {
+    quantity: number;
+    unit?: string;
+    quality_grade?: string;
+}
+
+export const createLoadPool = async (data: FarmerLoadPoolCreate): Promise<FarmerLoadPool> => {
+    const response = await api.post<FarmerLoadPool>('/manufacturer/load-pools', data);
+    return response.data;
+};
+
+export const joinLoadPool = async (poolId: number, data: FarmerLoadPoolJoin): Promise<FarmerLoadPool> => {
+    const response = await api.post<FarmerLoadPool>(`/manufacturer/load-pools/${poolId}/join`, data);
+    return response.data;
+};
+
+export const listLoadPools = async (params?: {
+    status?: string;
+    crop?: string;
+    district?: string;
+    my_pools?: boolean;
+}): Promise<FarmerLoadPool[]> => {
+    const response = await api.get<FarmerLoadPool[]>('/manufacturer/load-pools', { params });
+    return response.data;
+};
+
+export const submitLoadPoolToMill = async (
+    poolId: number
+): Promise<{ ok: boolean; message: string; procurement_request_id: number; pool: FarmerLoadPool }> => {
+    const response = await api.post(`/manufacturer/load-pools/${poolId}/submit`);
+    return response.data;
+};
+
+export const cancelLoadPool = async (poolId: number): Promise<{ ok: boolean; message: string }> => {
+    const response = await api.delete(`/manufacturer/load-pools/${poolId}`);
+    return response.data;
+};
+
 
 export default api;
 

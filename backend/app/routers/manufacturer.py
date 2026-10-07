@@ -4,6 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
 from datetime import datetime, date, timedelta
 import uuid
+import json
 
 from ..database import get_session
 from ..models import (
@@ -15,10 +16,20 @@ from ..models import (
     MillProfile, FarmerProfile,
     MillProcurementRequest, MillProcurementRequestCreate,
     MillProcurementRequestUpdate, MillProcurementRequestRead,
+    # Feature A: Moisture Calculator
+    STANDARD_MOISTURE, MoistureDeductionLog, MoistureCalculatorRequest, MoistureCalculatorResponse,
+    # Feature C: By-Product Tracking
+    ByProduct, ByProductCreate, ByProductUpdate, ByProductRead,
+    # Feature D: Digital Weighment Slip
+    WeighmentSlip, WeighmentSlipCreate, WeighmentSlipRead,
+    # Feature E: Farmer Load Pooling
+    FarmerLoadPool, FarmerLoadPoolMember,
+    FarmerLoadPoolCreate, FarmerLoadPoolJoin, FarmerLoadPoolRead, FarmerLoadPoolMemberRead,
 )
 from ..deps import get_current_user
 from ..utils import get_password_hash
 from .orders import get_user_contact_info
+
 
 router = APIRouter(prefix="/manufacturer", tags=["manufacturer"])
 
@@ -1042,6 +1053,16 @@ async def accept_procurement_request(
     if update_data and update_data.notes:
         req.notes = f"{req.notes or ''} | Note: {update_data.notes}".strip(" |")
 
+    # Update delivery slot fields if provided
+    if update_data and update_data.delivery_slot_date:
+        req.delivery_slot_date = update_data.delivery_slot_date
+    if update_data and update_data.delivery_slot_time:
+        req.delivery_slot_time = update_data.delivery_slot_time
+
+    # Generate gate pass token number on acceptance
+    token = f"TKN-{current_user.id}-{datetime.utcnow().strftime('%y%m%d')}-{uuid.uuid4().hex[:4].upper()}"
+    req.token_number = token
+
     req.status = "accepted"
     req.updated_at = datetime.utcnow()
     session.add(req)
@@ -1117,3 +1138,791 @@ async def reject_procurement_request(
     await session.refresh(req)
     return {"ok": True, "message": "Request declined", "request": MillProcurementRequestRead(**req.dict())}
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature A: Moisture & Fair Deduction Calculator
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/moisture-calculator", response_model=MoistureCalculatorResponse)
+async def calculate_moisture_deduction(
+    data: MoistureCalculatorRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Transparent moisture and quality deduction calculator.
+    Both farmers and mill owners can use this to verify fair pricing.
+    Formula: adjusted_weight = original_weight × (1 - (actual_moisture - standard_moisture) / 100)
+    """
+    crop_key = data.crop_name.strip().lower()
+    standard = STANDARD_MOISTURE.get(crop_key, 14.0)  # Default 14% if crop not found
+
+    # Moisture deduction
+    moisture_excess = max(0, data.actual_moisture - standard)
+    weight_deduction_moisture = round(data.original_weight * (moisture_excess / 100), 4)
+    weight_after_moisture = round(data.original_weight - weight_deduction_moisture, 4)
+
+    # Foreign matter deduction
+    foreign_matter_deduction = round(weight_after_moisture * (data.foreign_matter_pct / 100), 4)
+    weight_after_fm = round(weight_after_moisture - foreign_matter_deduction, 4)
+
+    # Damaged grain deduction
+    damaged_grain_deduction = round(weight_after_fm * (data.damaged_grain_pct / 100), 4)
+    final_net_weight = round(weight_after_fm - damaged_grain_deduction, 4)
+
+    original_value = round(data.original_weight * data.price_per_unit, 2)
+    adjusted_value = round(final_net_weight * data.price_per_unit, 2)
+    total_deduction_value = round(original_value - adjusted_value, 2)
+    deduction_pct = round((total_deduction_value / original_value * 100), 2) if original_value > 0 else 0.0
+
+    log_id = None
+    if data.save_log:
+        log = MoistureDeductionLog(
+            purchase_id=data.purchase_id,
+            procurement_request_id=data.procurement_request_id,
+            crop_name=data.crop_name,
+            original_weight=data.original_weight,
+            unit=data.unit,
+            actual_moisture=data.actual_moisture,
+            standard_moisture=standard,
+            moisture_excess=moisture_excess,
+            weight_deduction=weight_deduction_moisture,
+            adjusted_weight=weight_after_moisture,
+            foreign_matter_pct=data.foreign_matter_pct,
+            foreign_matter_deduction=foreign_matter_deduction,
+            damaged_grain_pct=data.damaged_grain_pct,
+            damaged_grain_deduction=damaged_grain_deduction,
+            final_net_weight=final_net_weight,
+            price_per_unit=data.price_per_unit,
+            total_value=adjusted_value,
+            created_by=current_user.id,
+        )
+        session.add(log)
+        await session.commit()
+        await session.refresh(log)
+        log_id = log.id
+
+    return MoistureCalculatorResponse(
+        crop_name=data.crop_name,
+        standard_moisture=standard,
+        actual_moisture=data.actual_moisture,
+        original_weight=data.original_weight,
+        unit=data.unit,
+        moisture_excess=moisture_excess,
+        weight_deduction_moisture=weight_deduction_moisture,
+        weight_after_moisture=weight_after_moisture,
+        foreign_matter_pct=data.foreign_matter_pct,
+        foreign_matter_deduction=foreign_matter_deduction,
+        damaged_grain_pct=data.damaged_grain_pct,
+        damaged_grain_deduction=damaged_grain_deduction,
+        final_net_weight=final_net_weight,
+        price_per_unit=data.price_per_unit,
+        original_value=original_value,
+        adjusted_value=adjusted_value,
+        total_deduction_value=total_deduction_value,
+        deduction_percentage=deduction_pct,
+        is_fair=True,  # Always fair when using standard formula
+        log_id=log_id,
+    )
+
+
+@router.get("/moisture-standards")
+async def get_moisture_standards(
+    current_user: User = Depends(get_current_user),
+):
+    """Returns industry-standard moisture levels for all supported crops."""
+    return {
+        "standards": {k: v for k, v in STANDARD_MOISTURE.items()},
+        "note": "Values represent maximum safe moisture percentage for storage and processing."
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature B: Digital Gate Pass (built into procurement request flow)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/gate-pass/{request_id}")
+async def get_gate_pass(
+    request_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Returns a digital gate pass for an accepted procurement request.
+    Contains token number, QR code data, slot details, and mill info.
+    Both farmers and mill owners can access this.
+    """
+    req = await session.get(MillProcurementRequest, request_id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    # Only the farmer or the mill owner can view the gate pass
+    if req.farmer_id != current_user.id and req.mill_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this gate pass")
+
+    if req.status != "accepted":
+        raise HTTPException(status_code=400, detail="Gate pass is only available for accepted requests")
+
+    # Fetch mill profile
+    mill_prof = (await session.exec(
+        select(MillProfile).where(MillProfile.user_id == req.mill_id)
+    )).first()
+    mill_user = await session.get(User, req.mill_id)
+
+    mill_name = mill_prof.mill_name if mill_prof else f"Mill #{req.mill_id}"
+    mill_phone = (mill_prof.phone_number or mill_prof.contact_number if mill_prof else None) or (mill_user.phone_number if mill_user else None)
+    location_parts = [p for p in [
+        mill_prof.village if mill_prof else None,
+        mill_prof.mandal if mill_prof else None,
+        mill_prof.district if mill_prof else None,
+        mill_prof.state if mill_prof else None,
+    ] if p]
+    mill_location = ", ".join(location_parts) if location_parts else "Mill Location"
+
+    # QR code data (JSON string that can be encoded into QR)
+    qr_data = json.dumps({
+        "type": "AGRI_GATE_PASS",
+        "token": req.token_number,
+        "request_id": req.id,
+        "farmer": req.farmer_name,
+        "crop": req.crop_name,
+        "quantity": f"{req.quantity} {req.unit}",
+        "mill": mill_name,
+        "slot_date": req.delivery_slot_date,
+        "slot_time": req.delivery_slot_time,
+        "vehicle": req.vehicle_type,
+        "vehicle_no": req.vehicle_number,
+    })
+
+    return {
+        "gate_pass": {
+            "token_number": req.token_number,
+            "request_id": req.id,
+            "status": req.status,
+            # Farmer info
+            "farmer_name": req.farmer_name,
+            "farmer_phone": req.farmer_phone,
+            "farmer_location": req.farmer_location,
+            # Crop info
+            "crop_name": req.crop_name,
+            "quantity": req.quantity,
+            "unit": req.unit,
+            "quality_grade": req.quality_grade,
+            "moisture_content": req.moisture_content,
+            # Delivery slot
+            "delivery_slot_date": req.delivery_slot_date,
+            "delivery_slot_time": req.delivery_slot_time,
+            "vehicle_type": req.vehicle_type,
+            "vehicle_number": req.vehicle_number,
+            # Mill info
+            "mill_name": mill_name,
+            "mill_phone": mill_phone,
+            "mill_location": mill_location,
+            # Pricing
+            "agreed_price": req.offered_price_per_unit or req.expected_price_per_unit,
+            "estimated_total": round(req.quantity * (req.offered_price_per_unit or req.expected_price_per_unit), 2),
+            # QR
+            "qr_code_data": qr_data,
+            "created_at": req.created_at.isoformat() if req.created_at else None,
+            "accepted_at": req.updated_at.isoformat() if req.updated_at else None,
+        }
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature C: By-Product Batch Tracking
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/production/by-products", response_model=ByProductRead)
+async def add_by_product(
+    data: ByProductCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Add a by-product to a production batch (e.g., Rice Bran, Husk, Broken Rice).
+    Mill owners track all outputs from processing, not just the main product.
+    """
+    check_manufacturer_role(current_user)
+
+    batch = await session.get(ProductionBatch, data.batch_id)
+    if not batch or batch.manufacturer_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Production batch not found")
+
+    total_value = round(data.quantity * data.estimated_value_per_unit, 2)
+    by_product = ByProduct(
+        batch_id=data.batch_id,
+        manufacturer_id=current_user.id,
+        name=data.name,
+        quantity=data.quantity,
+        unit=data.unit,
+        estimated_value_per_unit=data.estimated_value_per_unit,
+        total_value=total_value,
+    )
+    session.add(by_product)
+    await session.commit()
+    await session.refresh(by_product)
+    return ByProductRead(**by_product.dict())
+
+
+@router.get("/production/{batch_id}/by-products", response_model=List[ByProductRead])
+async def get_batch_by_products(
+    batch_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """Get all by-products for a specific production batch."""
+    check_manufacturer_role(current_user)
+
+    batch = await session.get(ProductionBatch, batch_id)
+    if not batch or batch.manufacturer_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Production batch not found")
+
+    result = await session.exec(
+        select(ByProduct)
+        .where(ByProduct.batch_id == batch_id)
+        .order_by(ByProduct.created_at.desc())
+    )
+    return [ByProductRead(**bp.dict()) for bp in result.all()]
+
+
+@router.get("/by-products/summary")
+async def get_by_products_summary(
+    period: str = Query("30d"),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Summary of all by-products: total value in stock, total sold, revenue from by-products.
+    Helps mill owners understand the true economics of processing.
+    """
+    check_manufacturer_role(current_user)
+    start = _period_start(period)
+
+    stmt = select(ByProduct).where(ByProduct.manufacturer_id == current_user.id)
+    if start:
+        stmt = stmt.where(ByProduct.created_at >= start)
+    by_products = (await session.exec(stmt)).all()
+
+    in_stock_value = sum(bp.total_value for bp in by_products if bp.status == "in_stock")
+    sold_revenue = sum(bp.sold_price or 0 for bp in by_products if bp.status == "sold")
+    total_quantity = sum(bp.quantity for bp in by_products)
+
+    # Group by name
+    by_name: Dict[str, dict] = {}
+    for bp in by_products:
+        if bp.name not in by_name:
+            by_name[bp.name] = {"name": bp.name, "total_qty": 0.0, "in_stock_qty": 0.0, "sold_qty": 0.0, "revenue": 0.0}
+        by_name[bp.name]["total_qty"] += bp.quantity
+        if bp.status == "in_stock":
+            by_name[bp.name]["in_stock_qty"] += bp.quantity
+        elif bp.status == "sold":
+            by_name[bp.name]["sold_qty"] += bp.quantity
+            by_name[bp.name]["revenue"] += bp.sold_price or 0
+
+    return {
+        "period": period,
+        "total_by_products": len(by_products),
+        "total_quantity": round(total_quantity, 2),
+        "in_stock_value": round(in_stock_value, 2),
+        "sold_revenue": round(sold_revenue, 2),
+        "by_product_breakdown": list(by_name.values()),
+    }
+
+
+@router.patch("/by-products/{by_product_id}")
+async def update_by_product(
+    by_product_id: int,
+    data: ByProductUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """Mark a by-product as sold (record buyer and sale price)."""
+    check_manufacturer_role(current_user)
+
+    bp = await session.get(ByProduct, by_product_id)
+    if not bp or bp.manufacturer_id != current_user.id:
+        raise HTTPException(status_code=404, detail="By-product not found")
+
+    if data.sold_to is not None:
+        bp.sold_to = data.sold_to
+    if data.sold_price is not None:
+        bp.sold_price = data.sold_price
+        bp.sold_date = datetime.utcnow()
+    if data.status is not None:
+        bp.status = data.status
+
+    session.add(bp)
+    await session.commit()
+    await session.refresh(bp)
+    return ByProductRead(**bp.dict())
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature D: Digital Weighment Slip (Parchi)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/weighment-slip", response_model=WeighmentSlipRead)
+async def create_weighment_slip(
+    data: WeighmentSlipCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Generate a digital weighment slip for a purchase.
+    Captures gross weight, tare weight, quality deductions, and MSP comparison.
+    Replaces paper-based 'parchi' system at mill gates.
+    """
+    check_manufacturer_role(current_user)
+
+    purchase = await session.get(ManufacturerPurchase, data.purchase_id)
+    if not purchase or purchase.manufacturer_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+
+    # Calculate weights and deductions
+    net_weight = round(data.gross_weight - data.tare_weight, 4)
+    if net_weight <= 0:
+        raise HTTPException(status_code=400, detail="Net weight must be positive (gross > tare)")
+
+    # Get standard moisture for crop
+    crop_key = purchase.crop_name.strip().lower()
+    standard_moisture = STANDARD_MOISTURE.get(crop_key, 14.0)
+    moisture_excess = max(0, data.moisture_pct - standard_moisture)
+    moisture_deduction = round(net_weight * (moisture_excess / 100), 4)
+    fm_deduction = round((net_weight - moisture_deduction) * (data.foreign_matter_pct / 100), 4)
+    final_net = round(net_weight - moisture_deduction - fm_deduction, 4)
+
+    total_amount = round(final_net * data.price_per_unit, 2)
+
+    # MSP comparison
+    msp_comparison = None
+    if data.msp_price and data.msp_price > 0:
+        diff = data.price_per_unit - data.msp_price
+        if diff >= 0:
+            msp_comparison = f"Above MSP by ₹{abs(diff):,.2f}/{purchase.unit}"
+        else:
+            msp_comparison = f"Below MSP by ₹{abs(diff):,.2f}/{purchase.unit}"
+
+    # Get mill profile for slip metadata
+    mill_prof = (await session.exec(
+        select(MillProfile).where(MillProfile.user_id == current_user.id)
+    )).first()
+    mill_name = mill_prof.mill_name if mill_prof else current_user.full_name or "Processing Unit"
+    loc_parts = [p for p in [
+        mill_prof.village if mill_prof else None,
+        mill_prof.district if mill_prof else None,
+        mill_prof.state if mill_prof else None,
+    ] if p]
+    mill_location = ", ".join(loc_parts) if loc_parts else None
+
+    slip_number = f"WS-{uuid.uuid4().hex[:6].upper()}"
+
+    slip = WeighmentSlip(
+        purchase_id=data.purchase_id,
+        slip_number=slip_number,
+        gross_weight=data.gross_weight,
+        tare_weight=data.tare_weight,
+        net_weight=net_weight,
+        moisture_pct=data.moisture_pct,
+        foreign_matter_pct=data.foreign_matter_pct,
+        damaged_grain_pct=data.damaged_grain_pct,
+        quality_grade=data.quality_grade,
+        moisture_deduction_kg=moisture_deduction,
+        foreign_matter_deduction_kg=fm_deduction,
+        final_net_weight=final_net,
+        price_per_unit=data.price_per_unit,
+        total_amount=total_amount,
+        msp_price=data.msp_price,
+        msp_comparison=msp_comparison,
+        payment_mode=data.payment_mode,
+        farmer_name=purchase.farmer_name,
+        farmer_phone=None,
+        crop_name=purchase.crop_name,
+        unit=purchase.unit,
+        vehicle_number=data.vehicle_number,
+        mill_name=mill_name,
+        mill_location=mill_location,
+        created_by=current_user.id,
+    )
+    session.add(slip)
+    await session.commit()
+    await session.refresh(slip)
+    return WeighmentSlipRead(**slip.dict())
+
+
+@router.get("/weighment-slip/{purchase_id}", response_model=WeighmentSlipRead)
+async def get_weighment_slip(
+    purchase_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """Get the digital weighment slip for a specific purchase."""
+    slip = (await session.exec(
+        select(WeighmentSlip).where(WeighmentSlip.purchase_id == purchase_id)
+    )).first()
+    if not slip:
+        raise HTTPException(status_code=404, detail="Weighment slip not found for this purchase")
+
+    # Both farmer and mill owner can view
+    purchase = await session.get(ManufacturerPurchase, purchase_id)
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    if purchase.manufacturer_id != current_user.id and purchase.farmer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this slip")
+
+    return WeighmentSlipRead(**slip.dict())
+
+
+@router.get("/weighment-slips")
+async def list_weighment_slips(
+    period: str = Query("30d"),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """List all weighment slips for the current mill owner."""
+    check_manufacturer_role(current_user)
+    start = _period_start(period)
+
+    stmt = select(WeighmentSlip).where(WeighmentSlip.created_by == current_user.id)
+    if start:
+        stmt = stmt.where(WeighmentSlip.created_at >= start)
+    stmt = stmt.order_by(WeighmentSlip.created_at.desc())
+
+    slips = (await session.exec(stmt)).all()
+    return [WeighmentSlipRead(**s.dict()) for s in slips]
+
+
+@router.patch("/weighment-slip/{slip_id}/payment")
+async def update_weighment_slip_payment(
+    slip_id: int,
+    body: dict,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """Update payment status on a weighment slip (mark as paid, add transaction ref)."""
+    check_manufacturer_role(current_user)
+    slip = await session.get(WeighmentSlip, slip_id)
+    if not slip or slip.created_by != current_user.id:
+        raise HTTPException(status_code=404, detail="Weighment slip not found")
+
+    if "payment_status" in body:
+        slip.payment_status = body["payment_status"]
+    if "transaction_ref" in body:
+        slip.transaction_ref = body["transaction_ref"]
+
+    session.add(slip)
+    await session.commit()
+    await session.refresh(slip)
+    return WeighmentSlipRead(**slip.dict())
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature E: Small-Farmer Load Pooling (Collective Selling)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/load-pools", response_model=FarmerLoadPoolRead)
+async def create_load_pool(
+    data: FarmerLoadPoolCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Farmer creates a load pool for collective selling.
+    Other nearby farmers can join to combine produce and meet mill minimums.
+    """
+    # Get preferred mill name if ID provided
+    preferred_mill_name = None
+    if data.preferred_mill_id:
+        mill_prof = (await session.exec(
+            select(MillProfile).where(MillProfile.user_id == data.preferred_mill_id)
+        )).first()
+        if not mill_prof:
+            mill_prof = await session.get(MillProfile, data.preferred_mill_id)
+        if mill_prof:
+            preferred_mill_name = mill_prof.mill_name
+
+    pool = FarmerLoadPool(
+        creator_id=current_user.id,
+        crop_name=data.crop_name,
+        target_quantity=data.target_quantity,
+        current_quantity=data.my_quantity,
+        unit=data.unit,
+        village=data.village,
+        mandal=data.mandal,
+        district=data.district,
+        state=data.state,
+        delivery_date=data.delivery_date,
+        preferred_mill_id=data.preferred_mill_id,
+        preferred_mill_name=preferred_mill_name,
+        min_quality_grade=data.min_quality_grade,
+        expected_price_per_unit=data.expected_price_per_unit,
+        notes=data.notes,
+    )
+    session.add(pool)
+    await session.flush()
+
+    # Add creator as first member
+    member = FarmerLoadPoolMember(
+        pool_id=pool.id,
+        farmer_id=current_user.id,
+        farmer_name=current_user.full_name or "Pool Creator",
+        farmer_phone=current_user.phone_number,
+        quantity=data.my_quantity,
+        unit=data.unit,
+        quality_grade=data.min_quality_grade,
+    )
+    session.add(member)
+
+    # Check if pool is already full
+    if pool.current_quantity >= pool.target_quantity:
+        pool.status = "full"
+        session.add(pool)
+
+    await session.commit()
+    await session.refresh(pool)
+    await session.refresh(member)
+
+    fill_pct = round((pool.current_quantity / pool.target_quantity * 100), 1) if pool.target_quantity > 0 else 0.0
+
+    return FarmerLoadPoolRead(
+        **pool.dict(),
+        creator_name=current_user.full_name,
+        member_count=1,
+        fill_percentage=fill_pct,
+        members=[FarmerLoadPoolMemberRead(**member.dict())],
+    )
+
+
+@router.post("/load-pools/{pool_id}/join", response_model=FarmerLoadPoolRead)
+async def join_load_pool(
+    pool_id: int,
+    data: FarmerLoadPoolJoin,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """A farmer joins an existing load pool with their quantity."""
+    pool = await session.get(FarmerLoadPool, pool_id)
+    if not pool:
+        raise HTTPException(status_code=404, detail="Load pool not found")
+    if pool.status not in ("open", "full"):
+        raise HTTPException(status_code=400, detail=f"Pool is {pool.status}, cannot join")
+
+    # Check if already a member
+    existing = (await session.exec(
+        select(FarmerLoadPoolMember)
+        .where(FarmerLoadPoolMember.pool_id == pool_id)
+        .where(FarmerLoadPoolMember.farmer_id == current_user.id)
+    )).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="You have already joined this pool")
+
+    member = FarmerLoadPoolMember(
+        pool_id=pool_id,
+        farmer_id=current_user.id,
+        farmer_name=current_user.full_name or "Farmer",
+        farmer_phone=current_user.phone_number,
+        quantity=data.quantity,
+        unit=data.unit,
+        quality_grade=data.quality_grade,
+    )
+    session.add(member)
+
+    pool.current_quantity += data.quantity
+    if pool.current_quantity >= pool.target_quantity:
+        pool.status = "full"
+    pool.updated_at = datetime.utcnow()
+    session.add(pool)
+
+    await session.commit()
+    await session.refresh(pool)
+
+    # Fetch all members
+    members = (await session.exec(
+        select(FarmerLoadPoolMember).where(FarmerLoadPoolMember.pool_id == pool_id)
+    )).all()
+
+    creator = await session.get(User, pool.creator_id)
+    fill_pct = round((pool.current_quantity / pool.target_quantity * 100), 1) if pool.target_quantity > 0 else 0.0
+
+    return FarmerLoadPoolRead(
+        **pool.dict(),
+        creator_name=creator.full_name if creator else None,
+        member_count=len(members),
+        fill_percentage=fill_pct,
+        members=[FarmerLoadPoolMemberRead(**m.dict()) for m in members],
+    )
+
+
+@router.get("/load-pools", response_model=List[FarmerLoadPoolRead])
+async def list_load_pools(
+    status: Optional[str] = Query(None),
+    crop: Optional[str] = Query(None),
+    district: Optional[str] = Query(None),
+    my_pools: bool = Query(False),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    List available load pools. Farmers see pools in their area.
+    Use my_pools=true to see only pools you created or joined.
+    """
+    if my_pools:
+        # Get pools the user created
+        my_pool_ids_q = select(FarmerLoadPool.id).where(FarmerLoadPool.creator_id == current_user.id)
+        # Get pools the user has joined
+        joined_pool_ids_q = select(FarmerLoadPoolMember.pool_id).where(FarmerLoadPoolMember.farmer_id == current_user.id)
+
+        my_ids = list((await session.exec(my_pool_ids_q)).all())
+        joined_ids = list((await session.exec(joined_pool_ids_q)).all())
+        all_ids = list(set(my_ids + joined_ids))
+
+        if not all_ids:
+            return []
+        stmt = select(FarmerLoadPool).where(FarmerLoadPool.id.in_(all_ids))
+    else:
+        stmt = select(FarmerLoadPool)
+        if status and status != "all":
+            stmt = stmt.where(FarmerLoadPool.status == status)
+        else:
+            # By default show only open pools
+            stmt = stmt.where(FarmerLoadPool.status.in_(["open", "full"]))
+
+    if crop:
+        stmt = stmt.where(func.lower(FarmerLoadPool.crop_name).contains(crop.lower()))
+    if district:
+        stmt = stmt.where(func.lower(FarmerLoadPool.district).contains(district.lower()))
+
+    stmt = stmt.order_by(FarmerLoadPool.created_at.desc())
+    pools = (await session.exec(stmt)).all()
+
+    results = []
+    for pool in pools:
+        members = (await session.exec(
+            select(FarmerLoadPoolMember).where(FarmerLoadPoolMember.pool_id == pool.id)
+        )).all()
+        creator = await session.get(User, pool.creator_id)
+        fill_pct = round((pool.current_quantity / pool.target_quantity * 100), 1) if pool.target_quantity > 0 else 0.0
+
+        results.append(FarmerLoadPoolRead(
+            **pool.dict(),
+            creator_name=creator.full_name if creator else None,
+            member_count=len(members),
+            fill_percentage=fill_pct,
+            members=[FarmerLoadPoolMemberRead(**m.dict()) for m in members],
+        ))
+
+    return results
+
+
+@router.post("/load-pools/{pool_id}/submit")
+async def submit_load_pool_to_mill(
+    pool_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Submit a full load pool as a combined procurement request to the preferred mill.
+    Only the pool creator can submit. The pool must be full or have enough quantity.
+    """
+    pool = await session.get(FarmerLoadPool, pool_id)
+    if not pool:
+        raise HTTPException(status_code=404, detail="Load pool not found")
+    if pool.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the pool creator can submit")
+    if pool.status == "submitted":
+        raise HTTPException(status_code=400, detail="Pool has already been submitted")
+    if not pool.preferred_mill_id:
+        raise HTTPException(status_code=400, detail="No preferred mill selected. Update the pool with a mill first.")
+
+    # Verify mill exists
+    mill_user = await session.get(User, pool.preferred_mill_id)
+    mill_prof = (await session.exec(
+        select(MillProfile).where(MillProfile.user_id == pool.preferred_mill_id)
+    )).first()
+    if not mill_prof:
+        mill_prof = await session.get(MillProfile, pool.preferred_mill_id)
+        if mill_prof:
+            mill_user = await session.get(User, mill_prof.user_id)
+
+    if not mill_prof or not mill_user:
+        raise HTTPException(status_code=404, detail="Preferred mill not found")
+
+    # Fetch pool members for combined farmer info
+    members = (await session.exec(
+        select(FarmerLoadPoolMember).where(FarmerLoadPoolMember.pool_id == pool_id)
+    )).all()
+    member_names = ", ".join([m.farmer_name for m in members])
+
+    # Create a combined procurement request
+    farmer_prof = (await session.exec(
+        select(FarmerProfile).where(FarmerProfile.user_id == current_user.id)
+    )).first()
+    farmer_phone = current_user.phone_number or ""
+    farmer_location = None
+    if farmer_prof:
+        if not farmer_phone and farmer_prof.phone_number:
+            farmer_phone = farmer_prof.phone_number
+        loc_parts = [p for p in [farmer_prof.village, farmer_prof.mandal, farmer_prof.district, farmer_prof.state] if p]
+        farmer_location = ", ".join(loc_parts) if loc_parts else None
+
+    new_req = MillProcurementRequest(
+        mill_id=mill_user.id,
+        farmer_id=current_user.id,
+        crop_name=pool.crop_name,
+        quantity=pool.current_quantity,
+        unit=pool.unit,
+        expected_price_per_unit=pool.expected_price_per_unit,
+        quality_grade=pool.min_quality_grade,
+        farmer_name=f"Pool: {member_names}",
+        farmer_phone=farmer_phone or "Pool Contact",
+        farmer_location=farmer_location or f"{pool.village}, {pool.district}",
+        notes=f"Collective pool #{pool.id} with {len(members)} farmers. {pool.notes or ''}".strip(),
+        delivery_slot_date=pool.delivery_date,
+        status="pending"
+    )
+    session.add(new_req)
+    await session.flush()
+
+    pool.status = "submitted"
+    pool.procurement_request_id = new_req.id
+    pool.updated_at = datetime.utcnow()
+    session.add(pool)
+
+    await session.commit()
+    await session.refresh(pool)
+    await session.refresh(new_req)
+
+    return {
+        "ok": True,
+        "message": f"Pool submitted to {mill_prof.mill_name} with {pool.current_quantity} {pool.unit} from {len(members)} farmers",
+        "procurement_request_id": new_req.id,
+        "pool": FarmerLoadPoolRead(
+            **pool.dict(),
+            creator_name=current_user.full_name,
+            member_count=len(members),
+            fill_percentage=round((pool.current_quantity / pool.target_quantity * 100), 1),
+            members=[FarmerLoadPoolMemberRead(**m.dict()) for m in members],
+        )
+    }
+
+
+@router.delete("/load-pools/{pool_id}")
+async def cancel_load_pool(
+    pool_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """Cancel a load pool. Only creator can cancel. Must be open or full (not submitted)."""
+    pool = await session.get(FarmerLoadPool, pool_id)
+    if not pool:
+        raise HTTPException(status_code=404, detail="Load pool not found")
+    if pool.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the pool creator can cancel")
+    if pool.status in ("submitted", "completed"):
+        raise HTTPException(status_code=400, detail=f"Cannot cancel a {pool.status} pool")
+
+    pool.status = "cancelled"
+    pool.updated_at = datetime.utcnow()
+    session.add(pool)
+    await session.commit()
+    return {"ok": True, "message": "Load pool cancelled"}

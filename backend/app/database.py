@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import app.models  # noqa: F401
+
 # Default to SQLite if no DATABASE_URL is set
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./agrichain.db")
 
@@ -67,10 +69,22 @@ async def init_db():
         "ALTER TABLE mill_profiles ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT TRUE",
         "ALTER TABLE mill_profiles ADD COLUMN IF NOT EXISTS rating FLOAT DEFAULT 4.8",
         "ALTER TABLE chatmessage ADD COLUMN IF NOT EXISTS media_type VARCHAR",
+        "ALTER TABLE mill_procurement_requests ADD COLUMN IF NOT EXISTS delivery_slot_date VARCHAR",
+        "ALTER TABLE mill_procurement_requests ADD COLUMN IF NOT EXISTS delivery_slot_time VARCHAR",
+        "ALTER TABLE mill_procurement_requests ADD COLUMN IF NOT EXISTS vehicle_type VARCHAR",
+        "ALTER TABLE mill_procurement_requests ADD COLUMN IF NOT EXISTS vehicle_number VARCHAR",
+        "ALTER TABLE mill_procurement_requests ADD COLUMN IF NOT EXISTS token_number VARCHAR",
+        "ALTER TABLE manufacturer_purchases ADD COLUMN IF NOT EXISTS payment_mode VARCHAR DEFAULT 'bank_transfer'",
         # Performance Indexes
         "CREATE INDEX IF NOT EXISTS idx_mill_proc_req_mill_id ON mill_procurement_requests(mill_id)",
         "CREATE INDEX IF NOT EXISTS idx_mill_proc_req_farmer_id ON mill_procurement_requests(farmer_id)",
         "CREATE INDEX IF NOT EXISTS idx_mill_proc_req_status ON mill_procurement_requests(status)",
+        "CREATE INDEX IF NOT EXISTS idx_byproducts_batch_id ON by_products(production_batch_id)",
+        "CREATE INDEX IF NOT EXISTS idx_weighment_purchase_id ON weighment_slips(purchase_id)",
+        "CREATE INDEX IF NOT EXISTS idx_load_pools_mill_id ON farmer_load_pools(target_mill_id)",
+        "CREATE INDEX IF NOT EXISTS idx_load_pools_status ON farmer_load_pools(status)",
+        "CREATE INDEX IF NOT EXISTS idx_load_pool_members_pool_id ON farmer_load_pool_members(pool_id)",
+        "CREATE INDEX IF NOT EXISTS idx_load_pool_members_farmer_id ON farmer_load_pool_members(farmer_id)",
         "CREATE INDEX IF NOT EXISTS idx_farmerprofile_user_id ON farmerprofile(user_id)",
         "CREATE INDEX IF NOT EXISTS idx_landrecord_farmer_profile_id ON landrecord(farmer_profile_id)",
         "CREATE INDEX IF NOT EXISTS idx_product_user_id ON product(user_id)",

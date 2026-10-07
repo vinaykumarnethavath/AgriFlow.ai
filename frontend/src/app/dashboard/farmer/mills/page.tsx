@@ -9,19 +9,25 @@ import { Modal } from "@/components/ui/modal";
 import {
     Factory, MapPin, Phone, Star, Search, ArrowRight, ShieldCheck,
     CheckCircle2, Clock, XCircle, RefreshCw, Send, AlertCircle,
-    Copy, Check, Scale
+    Copy, Check, Scale, QrCode, Truck, Calendar, Users, Printer,
+    Sparkles, HelpCircle, FileText, ChevronRight, Calculator
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { QRCodeSVG } from "qrcode.react";
 import {
     getMillsMarketplace,
     createMillProcurementRequest,
     getMyProcurementRequests,
     cancelProcurementRequest,
     getCrops,
+    calculateMoistureDeduction,
+    getGatePass,
     MillMarketplaceItem,
     MillProcurementRequest,
-    Crop
+    Crop,
+    GatePass,
+    MoistureCalculatorResponse
 } from "@/lib/api";
 
 const MILL_CATEGORIES = [
@@ -37,7 +43,7 @@ function MillsMarketplaceContent() {
     const searchParams = useSearchParams();
     const cropIdParam = searchParams.get("cropId");
 
-    const [activeTab, setActiveTab] = useState<"marketplace" | "my_requests">("marketplace");
+    const [activeTab, setActiveTab] = useState<"marketplace" | "my_requests" | "moisture_calc">("marketplace");
     const [mills, setMills] = useState<MillMarketplaceItem[]>([]);
     const [myRequests, setMyRequests] = useState<MillProcurementRequest[]>([]);
     const [crops, setCrops] = useState<Crop[]>([]);
@@ -47,6 +53,7 @@ function MillsMarketplaceContent() {
     const [searchTerm, setSearchTerm] = useState("");
 
     // Modal state for Submitting Offer
+    const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split("T")[0];
     const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
     const [selectedMill, setSelectedMill] = useState<MillMarketplaceItem | null>(null);
     const [submittingOffer, setSubmittingOffer] = useState(false);
@@ -59,8 +66,28 @@ function MillsMarketplaceContent() {
         quality_grade: "Grade A",
         moisture_content: 14.0,
         harvest_date: new Date().toISOString().split("T")[0],
+        delivery_slot_date: tomorrowStr,
+        delivery_slot_time: "Morning (08:00 - 12:00)",
+        vehicle_type: "Tractor Trolley",
+        vehicle_number: "",
         notes: "Ready for direct farm-gate inspection or mill delivery."
     });
+
+    // Gate Pass Modal state
+    const [gatePassModalOpen, setGatePassModalOpen] = useState(false);
+    const [activeGatePass, setActiveGatePass] = useState<GatePass | null>(null);
+    const [loadingGatePass, setLoadingGatePass] = useState(false);
+
+    // Moisture Calculator State
+    const [calcCrop, setCalcCrop] = useState("Paddy");
+    const [calcWeight, setCalcWeight] = useState(100);
+    const [calcUnit, setCalcUnit] = useState("quintal");
+    const [calcMoisture, setCalcMoisture] = useState(16.5);
+    const [calcForeignMatter, setCalcForeignMatter] = useState(1.0);
+    const [calcDamaged, setCalcDamaged] = useState(1.0);
+    const [calcPrice, setCalcPrice] = useState(2300);
+    const [calcResult, setCalcResult] = useState<MoistureCalculatorResponse | null>(null);
+    const [calcLoading, setCalcLoading] = useState(false);
 
     // Modal state for Direct Call / Contact
     const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -74,6 +101,108 @@ function MillsMarketplaceContent() {
         setAlertMessage({ text, type });
         setTimeout(() => setAlertMessage(null), 5000);
     };
+
+    const handleViewGatePass = async (req: MillProcurementRequest) => {
+        setGatePassModalOpen(true);
+        setLoadingGatePass(true);
+        try {
+            const res = await getGatePass(req.id);
+            setActiveGatePass(res.gate_pass);
+        } catch (err) {
+            console.warn("Could not load backend gate pass, building view from request:", err);
+            setActiveGatePass({
+                token_number: req.token_number || `TK-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${req.id.toString().padStart(4, "0")}`,
+                request_id: req.id,
+                status: req.status,
+                farmer_name: req.farmer_name || "Farmer",
+                farmer_phone: req.farmer_phone || "",
+                farmer_location: req.farmer_location || "Farm Gate",
+                crop_name: req.crop_name,
+                quantity: req.quantity,
+                unit: req.unit,
+                quality_grade: req.quality_grade,
+                moisture_content: req.moisture_content,
+                delivery_slot_date: req.delivery_slot_date || req.harvest_date,
+                delivery_slot_time: req.delivery_slot_time || "Morning (08:00 - 12:00)",
+                vehicle_type: req.vehicle_type || "Tractor Trolley",
+                vehicle_number: req.vehicle_number || "TS-TROLLEY",
+                mill_name: req.mill_name || `Mill #${req.mill_id}`,
+                mill_phone: req.mill_phone || null,
+                mill_location: req.mill_location || "Processing Mill Gate",
+                agreed_price: req.offered_price_per_unit || req.expected_price_per_unit,
+                estimated_total: req.quantity * (req.offered_price_per_unit || req.expected_price_per_unit),
+                qr_code_data: JSON.stringify({
+                    token: req.token_number || `TK-${req.id}`,
+                    req_id: req.id,
+                    mill: req.mill_name,
+                    crop: req.crop_name,
+                    qty: req.quantity,
+                    unit: req.unit,
+                    date: req.delivery_slot_date
+                }),
+                created_at: req.created_at,
+                accepted_at: req.updated_at
+            });
+        } finally {
+            setLoadingGatePass(false);
+        }
+    };
+
+    const runMoistureCalculation = async () => {
+        try {
+            setCalcLoading(true);
+            const res = await calculateMoistureDeduction({
+                crop_name: calcCrop,
+                original_weight: Number(calcWeight),
+                unit: calcUnit,
+                actual_moisture: Number(calcMoisture),
+                foreign_matter_pct: Number(calcForeignMatter),
+                damaged_grain_pct: Number(calcDamaged),
+                price_per_unit: Number(calcPrice),
+                save_log: false
+            });
+            setCalcResult(res);
+        } catch (err) {
+            console.error("Moisture calculation error:", err);
+            // Local standard formula fallback:
+            const stdMap: Record<string, number> = { Paddy: 14.0, Wheat: 12.0, Maize: 14.0, Soybean: 12.0, Cotton: 8.5, Mustard: 8.0 };
+            const std = stdMap[calcCrop] || 14.0;
+            const excess = Math.max(0, calcMoisture - std);
+            const moistureDeduction = (calcWeight * excess) / 100;
+            const finalNet = Math.max(0, calcWeight - moistureDeduction);
+            const origVal = calcWeight * calcPrice;
+            const adjVal = finalNet * calcPrice;
+            setCalcResult({
+                crop_name: calcCrop,
+                standard_moisture: std,
+                actual_moisture: calcMoisture,
+                original_weight: calcWeight,
+                unit: calcUnit,
+                moisture_excess: excess,
+                weight_deduction_moisture: moistureDeduction,
+                weight_after_moisture: calcWeight - moistureDeduction,
+                foreign_matter_pct: calcForeignMatter,
+                foreign_matter_deduction: 0,
+                damaged_grain_pct: calcDamaged,
+                damaged_grain_deduction: 0,
+                final_net_weight: finalNet,
+                price_per_unit: calcPrice,
+                original_value: origVal,
+                adjusted_value: adjVal,
+                total_deduction_value: origVal - adjVal,
+                deduction_percentage: calcWeight > 0 ? ((calcWeight - finalNet) / calcWeight) * 100 : 0,
+                is_fair: excess <= 4.0
+            });
+        } finally {
+            setCalcLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === "moisture_calc") {
+            runMoistureCalculation();
+        }
+    }, [activeTab, calcCrop, calcWeight, calcMoisture, calcForeignMatter, calcDamaged, calcPrice, calcUnit]);
 
     // Load Mills, Farmer's Crops, and Sent Requests
     useEffect(() => {
@@ -191,6 +320,10 @@ function MillsMarketplaceContent() {
                 quality_grade: offerForm.quality_grade,
                 moisture_content: offerForm.moisture_content ? Number(offerForm.moisture_content) : undefined,
                 harvest_date: offerForm.harvest_date,
+                delivery_slot_date: offerForm.delivery_slot_date,
+                delivery_slot_time: offerForm.delivery_slot_time,
+                vehicle_type: offerForm.vehicle_type,
+                vehicle_number: offerForm.vehicle_number || undefined,
                 notes: offerForm.notes
             });
 
@@ -318,11 +451,38 @@ function MillsMarketplaceContent() {
                 </div>
             )}
 
+            {/* Load Pooling Banner */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-900 to-slate-900 text-white p-5 shadow-lg border border-blue-800">
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-400 text-amber-950 uppercase tracking-wide">
+                                🚀 New Feature
+                            </span>
+                            <h3 className="font-extrabold text-lg text-white flex items-center gap-2">
+                                <Users className="w-5 h-5 text-amber-300" />
+                                Small Farmers Collective Selling (Load Pooling)
+                            </h3>
+                        </div>
+                        <p className="text-sm text-blue-100/90 max-w-2xl">
+                            Have 10–30 quintals? Combine your produce with neighboring farmers into a full truckload (100+ quintals) to secure direct mill bulk prices and reduce transport expenses by up to 40%!
+                        </p>
+                    </div>
+                    <Link href="/dashboard/farmer/mills/load-pools">
+                        <Button className="bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold shadow-md whitespace-nowrap">
+                            <Users className="w-4 h-4 mr-1.5" />
+                            Explore & Join Pools
+                            <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                    </Link>
+                </div>
+            </div>
+
             {/* Nav Tabs */}
-            <div className="flex items-center gap-3 border-b">
+            <div className="flex items-center gap-2 border-b overflow-x-auto scrollbar-none pb-0.5">
                 <button
                     onClick={() => setActiveTab("marketplace")}
-                    className={`pb-3 px-4 font-semibold text-sm transition-all flex items-center gap-2 border-b-2 ${
+                    className={`pb-3 px-4 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 border-b-2 ${
                         activeTab === "marketplace"
                             ? "border-blue-600 text-blue-600"
                             : "border-transparent text-muted-foreground hover:text-foreground"
@@ -337,7 +497,7 @@ function MillsMarketplaceContent() {
 
                 <button
                     onClick={() => setActiveTab("my_requests")}
-                    className={`pb-3 px-4 font-semibold text-sm transition-all flex items-center gap-2 border-b-2 ${
+                    className={`pb-3 px-4 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 border-b-2 ${
                         activeTab === "my_requests"
                             ? "border-blue-600 text-blue-600"
                             : "border-transparent text-muted-foreground hover:text-foreground"
@@ -350,6 +510,21 @@ function MillsMarketplaceContent() {
                         className="ml-1 text-xs"
                     >
                         {myRequests.length}
+                    </Badge>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab("moisture_calc")}
+                    className={`pb-3 px-4 font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-2 border-b-2 ${
+                        activeTab === "moisture_calc"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                    <Calculator className="w-4 h-4" />
+                    Fair Moisture & Cut Calculator
+                    <Badge variant="outline" className="ml-1 text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                        Fair Trade
                     </Badge>
                 </button>
             </div>
@@ -586,6 +761,28 @@ function MillsMarketplaceContent() {
                                                         </span>
                                                     </div>
 
+                                                    {(req.delivery_slot_date || req.vehicle_number || req.token_number) && (
+                                                        <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                                                            {req.token_number && (
+                                                                <span className="font-mono bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200 font-bold">
+                                                                    Pass #{req.token_number}
+                                                                </span>
+                                                            )}
+                                                            {req.delivery_slot_date && (
+                                                                <span className="flex items-center gap-1 text-muted-foreground bg-muted/60 px-2 py-0.5 rounded">
+                                                                    <Calendar className="w-3 h-3 text-blue-500" />
+                                                                    Slot: {req.delivery_slot_date} {req.delivery_slot_time ? `(${req.delivery_slot_time})` : ""}
+                                                                </span>
+                                                            )}
+                                                            {req.vehicle_type && (
+                                                                <span className="flex items-center gap-1 text-muted-foreground bg-muted/60 px-2 py-0.5 rounded">
+                                                                    <Truck className="w-3 h-3 text-slate-500" />
+                                                                    {req.vehicle_type} {req.vehicle_number ? `(${req.vehicle_number})` : ""}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+
                                                     {req.notes && (
                                                         <p className="text-xs text-muted-foreground italic">
                                                             &quot;{req.notes}&quot;
@@ -622,20 +819,30 @@ function MillsMarketplaceContent() {
                                                         )}
 
                                                         {isAccepted && (
-                                                            <div className="space-y-1 text-right">
-                                                                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 gap-1">
-                                                                    <CheckCircle2 className="w-3.5 h-3.5" /> Deal Accepted
-                                                                </Badge>
-                                                                {req.mill_phone && (
-                                                                    <div>
+                                                            <div className="space-y-2 text-right">
+                                                                <div className="flex items-center justify-end gap-1.5">
+                                                                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 gap-1">
+                                                                        <CheckCircle2 className="w-3.5 h-3.5" /> Deal Accepted
+                                                                    </Badge>
+                                                                </div>
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => handleViewGatePass(req)}
+                                                                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 px-3 shadow-sm flex items-center gap-1.5"
+                                                                    >
+                                                                        <QrCode className="w-3.5 h-3.5" />
+                                                                        Gate Pass & QR
+                                                                    </Button>
+                                                                    {req.mill_phone && (
                                                                         <a
                                                                             href={`tel:${req.mill_phone}`}
-                                                                            className="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-1 justify-end"
+                                                                            className="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-1"
                                                                         >
-                                                                            <Phone className="w-3 h-3" /> Call: {req.mill_phone}
+                                                                            <Phone className="w-3 h-3" /> Call Mill
                                                                         </a>
-                                                                    </div>
-                                                                )}
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         )}
 
@@ -671,6 +878,342 @@ function MillsMarketplaceContent() {
                             </Button>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* TAB 3: FAIR MOISTURE & CUT CALCULATOR */}
+            {activeTab === "moisture_calc" && (
+                <div className="space-y-6">
+                    {/* Header info */}
+                    <div className="bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 text-white p-6 rounded-2xl border border-emerald-800 shadow-md">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                    <Scale className="w-5 h-5 text-emerald-400" />
+                                    <h2 className="text-xl font-extrabold text-white">
+                                        Fair Moisture & Weighbridge Deduction Calculator
+                                    </h2>
+                                    <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs">
+                                        FCI Standards
+                                    </Badge>
+                                </div>
+                                <p className="text-xs text-emerald-100/80 max-w-2xl leading-relaxed">
+                                    Milling companies legally deduct weight when grain moisture exceeds government storage standards. Use this scientific calculator to know your exact fair weight deduction and ensure you are not subjected to arbitrary cuts at the mill gate.
+                                </p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setCalcCrop("Paddy");
+                                    setCalcWeight(100);
+                                    setCalcMoisture(14.0);
+                                    setCalcForeignMatter(1.0);
+                                    setCalcDamaged(1.0);
+                                    setCalcPrice(2300);
+                                }}
+                                className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs whitespace-nowrap"
+                            >
+                                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                                Reset to Base Standard
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        {/* LEFT: Inputs (5 cols) */}
+                        <div className="lg:col-span-5 bg-card p-6 rounded-2xl border shadow-sm space-y-4">
+                            <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+                                <Calculator className="w-4 h-4 text-emerald-600" />
+                                Produce & Moisture Parameters
+                            </h3>
+
+                            <div className="space-y-3.5">
+                                {/* Crop selection */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-foreground mb-1">
+                                        Crop Type
+                                    </label>
+                                    <select
+                                        className="w-full text-sm rounded-xl border border-input bg-background p-2.5 focus:ring-2 focus:ring-emerald-500 font-medium"
+                                        value={calcCrop}
+                                        onChange={(e) => {
+                                            const crop = e.target.value;
+                                            setCalcCrop(crop);
+                                            // Auto-update price estimate and standard moisture
+                                            if (crop === "Paddy") { setCalcMoisture(16.5); setCalcPrice(2300); }
+                                            else if (crop === "Wheat") { setCalcMoisture(13.5); setCalcPrice(2275); }
+                                            else if (crop === "Maize") { setCalcMoisture(15.5); setCalcPrice(2090); }
+                                            else if (crop === "Soybean") { setCalcMoisture(13.0); setCalcPrice(4600); }
+                                            else if (crop === "Mustard") { setCalcMoisture(9.0); setCalcPrice(5650); }
+                                            else if (crop === "Cotton") { setCalcMoisture(9.5); setCalcPrice(7120); }
+                                        }}
+                                    >
+                                        <option value="Paddy">Paddy / Rice (Govt Standard: 14.0%)</option>
+                                        <option value="Wheat">Wheat (Govt Standard: 12.0%)</option>
+                                        <option value="Maize">Maize / Corn (Govt Standard: 14.0%)</option>
+                                        <option value="Soybean">Soybean (Govt Standard: 12.0%)</option>
+                                        <option value="Mustard">Mustard / Rapeseed (Govt Standard: 8.0%)</option>
+                                        <option value="Cotton">Cotton / Kapas (Govt Standard: 8.5%)</option>
+                                        <option value="Chana">Bengal Gram / Chana (Govt Standard: 12.0%)</option>
+                                        <option value="Moong">Green Gram / Moong (Govt Standard: 12.0%)</option>
+                                    </select>
+                                </div>
+
+                                {/* Weight & Unit */}
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-semibold text-foreground mb-1">
+                                            Gross Produce Weight
+                                        </label>
+                                        <Input
+                                            type="number"
+                                            min="1"
+                                            step="0.5"
+                                            value={calcWeight}
+                                            onChange={(e) => setCalcWeight(parseFloat(e.target.value) || 0)}
+                                            className="h-10 text-sm font-semibold"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-foreground mb-1">
+                                            Unit
+                                        </label>
+                                        <select
+                                            className="w-full text-sm rounded-xl border border-input bg-background p-2.5 h-10 font-semibold"
+                                            value={calcUnit}
+                                            onChange={(e) => setCalcUnit(e.target.value)}
+                                        >
+                                            <option value="quintal">Quintal</option>
+                                            <option value="kg">Kg</option>
+                                            <option value="ton">Ton</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Moisture Input with Range Slider */}
+                                <div className="space-y-1.5 p-3 bg-muted/40 rounded-xl border">
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="font-semibold text-foreground">
+                                            Weighbridge Moisture Meter Reading (%)
+                                        </span>
+                                        <span className="font-extrabold text-blue-700 bg-blue-100 px-2 py-0.5 rounded text-sm">
+                                            {calcMoisture}%
+                                        </span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="8"
+                                        max="25"
+                                        step="0.1"
+                                        value={calcMoisture}
+                                        onChange={(e) => setCalcMoisture(parseFloat(e.target.value))}
+                                        className="w-full accent-blue-600 cursor-pointer"
+                                    />
+                                    <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+                                        <span>8% (Dry)</span>
+                                        <span className="text-emerald-600 font-bold">Standard Limit: {calcResult?.standard_moisture || 14}%</span>
+                                        <span className="text-red-500">25% (High Moisture)</span>
+                                    </div>
+                                </div>
+
+                                {/* Agreed Price */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-foreground mb-1">
+                                        Agreed Rate (₹ per {calcUnit})
+                                    </label>
+                                    <Input
+                                        type="number"
+                                        min="100"
+                                        step="10"
+                                        value={calcPrice}
+                                        onChange={(e) => setCalcPrice(parseFloat(e.target.value) || 0)}
+                                        className="h-10 text-sm font-semibold"
+                                    />
+                                </div>
+
+                                {/* Quality parameters (foreign matter & damaged) */}
+                                <div className="grid grid-cols-2 gap-3 pt-1">
+                                    <div>
+                                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                            Foreign Matter / Chaff %
+                                        </label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            max="10"
+                                            step="0.1"
+                                            value={calcForeignMatter}
+                                            onChange={(e) => setCalcForeignMatter(parseFloat(e.target.value) || 0)}
+                                            className="h-9 text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                            Damaged / Discolored %
+                                        </label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            max="15"
+                                            step="0.1"
+                                            value={calcDamaged}
+                                            onChange={(e) => setCalcDamaged(parseFloat(e.target.value) || 0)}
+                                            className="h-9 text-xs"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT: Results & Fair Deduction Analysis (7 cols) */}
+                        <div className="lg:col-span-7 space-y-4">
+                            {calcResult && (
+                                <>
+                                    {/* Status Card */}
+                                    <div
+                                        className={`p-4 rounded-2xl border transition-all ${
+                                            calcResult.moisture_excess <= 0
+                                                ? "bg-emerald-50 border-emerald-200 text-emerald-950"
+                                                : calcResult.moisture_excess <= 4
+                                                ? "bg-blue-50 border-blue-200 text-blue-950"
+                                                : "bg-amber-50 border-amber-200 text-amber-950"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2 mb-1">
+                                            {calcResult.moisture_excess <= 0 ? (
+                                                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                                            ) : (
+                                                <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                                            )}
+                                            <span className="font-bold text-sm">
+                                                {calcResult.moisture_excess <= 0
+                                                    ? "Zero Moisture Deduction! Within Permissible Storage Limit"
+                                                    : `Permissible Scientific Deduction: -${calcResult.moisture_excess.toFixed(1)}% excess moisture`}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs opacity-80 pl-7">
+                                            {calcResult.moisture_excess <= 0
+                                                ? `The actual moisture reading (${calcResult.actual_moisture}%) is at or below the official standard (${calcResult.standard_moisture}%). Mill operator must pay for 100% of the weight without any moisture discount.`
+                                                : `FCI guidelines permit a weight cut equal to the exact excess moisture percentage. Fair deduction is ${calcResult.weight_deduction_moisture.toFixed(2)} ${calcResult.unit}. Any deduction higher than this is unfair.`}
+                                        </p>
+                                    </div>
+
+                                    {/* 4 Financial & Weight Cards */}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        <div className="p-3.5 bg-card rounded-xl border shadow-sm">
+                                            <span className="text-[11px] text-muted-foreground font-semibold block">Standard Limit</span>
+                                            <span className="text-base font-extrabold text-foreground mt-0.5 block">
+                                                {calcResult.standard_moisture}%
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground">FCI storage norm</span>
+                                        </div>
+
+                                        <div className="p-3.5 bg-card rounded-xl border shadow-sm">
+                                            <span className="text-[11px] text-muted-foreground font-semibold block">Moisture Cut</span>
+                                            <span className="text-base font-extrabold text-amber-600 mt-0.5 block">
+                                                -{calcResult.weight_deduction_moisture.toFixed(2)} {calcResult.unit}
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground">
+                                                {calcResult.moisture_excess > 0 ? `+${calcResult.moisture_excess.toFixed(1)}% excess` : "No deduction"}
+                                            </span>
+                                        </div>
+
+                                        <div className="p-3.5 bg-card rounded-xl border shadow-sm">
+                                            <span className="text-[11px] text-muted-foreground font-semibold block">Fair Net Weight</span>
+                                            <span className="text-base font-extrabold text-blue-700 mt-0.5 block">
+                                                {calcResult.final_net_weight.toFixed(2)} {calcResult.unit}
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground">Payable weight</span>
+                                        </div>
+
+                                        <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/40 shadow-sm">
+                                            <span className="text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold block">Fair Payout</span>
+                                            <span className="text-base font-black text-emerald-900 dark:text-emerald-100 mt-0.5 block">
+                                                ₹{Math.round(calcResult.adjusted_value).toLocaleString("en-IN")}
+                                            </span>
+                                            <span className="text-[10px] text-emerald-700">Net payable</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Breakdown Bar & Details */}
+                                    <div className="bg-card p-5 rounded-2xl border shadow-sm space-y-3">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="font-semibold text-muted-foreground">Value Realization</span>
+                                            <span className="font-bold text-foreground">
+                                                {(100 - calcResult.deduction_percentage).toFixed(1)}% of gross value
+                                            </span>
+                                        </div>
+                                        <div className="w-full h-3 bg-muted rounded-full overflow-hidden flex">
+                                            <div
+                                                className="bg-emerald-500 h-full transition-all duration-300"
+                                                style={{ width: `${Math.max(5, 100 - calcResult.deduction_percentage)}%` }}
+                                            />
+                                            <div
+                                                className="bg-amber-400 h-full transition-all duration-300"
+                                                style={{ width: `${Math.min(95, calcResult.deduction_percentage)}%` }}
+                                            />
+                                        </div>
+
+                                        <div className="flex justify-between items-center text-xs pt-1 border-t">
+                                            <span className="text-muted-foreground">Gross Value (Before Deductions):</span>
+                                            <span className="font-semibold text-foreground">₹{Math.round(calcResult.original_value).toLocaleString("en-IN")}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-amber-700 font-medium">Permissible Moisture Deduction Cut:</span>
+                                            <span className="font-bold text-amber-700">-₹{Math.round(calcResult.total_deduction_value).toLocaleString("en-IN")} ({calcResult.deduction_percentage.toFixed(1)}%)</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm font-extrabold pt-1 border-t text-emerald-800 dark:text-emerald-200">
+                                            <span>Scientific Fair Amount Due:</span>
+                                            <span className="text-lg">₹{Math.round(calcResult.adjusted_value).toLocaleString("en-IN")}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Drying Opportunity Tip */}
+                                    {calcResult.moisture_excess > 0 && (
+                                        <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-2xl flex items-start gap-3">
+                                            <Sparkles className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                            <div className="space-y-0.5 text-xs text-amber-950">
+                                                <span className="font-bold block">
+                                                    Actionable Farmer Advisory: Save ₹{Math.round(calcResult.total_deduction_value).toLocaleString("en-IN")} by Pre-Drying
+                                                </span>
+                                                <p className="opacity-90 leading-relaxed">
+                                                    Sun-drying this lot for {calcResult.moisture_excess > 3 ? "1 to 2 days" : "4 to 6 hours"} on a clean tarpaulin will bring moisture from {calcResult.actual_moisture}% to {calcResult.standard_moisture}%, preventing all moisture cuts and putting that ₹{Math.round(calcResult.total_deduction_value).toLocaleString("en-IN")} back in your pocket!
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Government Standards Cheat Sheet */}
+                                    <div className="bg-card p-4 rounded-2xl border shadow-sm space-y-2">
+                                        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                            <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                                            Government (FCI / Agmark) Standard Quality Norms
+                                        </h4>
+                                        <div className="overflow-x-auto text-xs">
+                                            <table className="w-full text-left">
+                                                <thead className="bg-muted/50 text-muted-foreground font-semibold">
+                                                    <tr>
+                                                        <th className="p-2">Crop</th>
+                                                        <th className="p-2">Max Moisture</th>
+                                                        <th className="p-2">Foreign Matter</th>
+                                                        <th className="p-2">Damaged Grain</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-muted">
+                                                    <tr><td className="p-2 font-medium">Paddy / Rice</td><td className="p-2 text-emerald-600 font-bold">14.0%</td><td className="p-2">1.0%</td><td className="p-2">2.0%</td></tr>
+                                                    <tr><td className="p-2 font-medium">Wheat</td><td className="p-2 text-emerald-600 font-bold">12.0%</td><td className="p-2">0.75%</td><td className="p-2">2.0%</td></tr>
+                                                    <tr><td className="p-2 font-medium">Maize</td><td className="p-2 text-emerald-600 font-bold">14.0%</td><td className="p-2">1.0%</td><td className="p-2">1.5%</td></tr>
+                                                    <tr><td className="p-2 font-medium">Soybean</td><td className="p-2 text-emerald-600 font-bold">12.0%</td><td className="p-2">1.0%</td><td className="p-2">2.0%</td></tr>
+                                                    <tr><td className="p-2 font-medium">Mustard</td><td className="p-2 text-emerald-600 font-bold">8.0%</td><td className="p-2">2.0%</td><td className="p-2">2.0%</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -807,6 +1350,69 @@ function MillsMarketplaceContent() {
                             </div>
                         </div>
 
+                        {/* Delivery Slot & Vehicle Booking */}
+                        <div className="p-3.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                                <Truck className="w-4 h-4 text-blue-600" />
+                                Delivery Slot & Vehicle Details (For Gate Pass Booking)
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                        Preferred Delivery Date
+                                    </label>
+                                    <Input
+                                        type="date"
+                                        value={offerForm.delivery_slot_date}
+                                        onChange={(e) => setOfferForm({ ...offerForm, delivery_slot_date: e.target.value })}
+                                        className="h-9 text-xs"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                        Gate Arrival Time Slot
+                                    </label>
+                                    <select
+                                        className="w-full text-xs rounded-lg border border-input bg-background p-2 h-9"
+                                        value={offerForm.delivery_slot_time}
+                                        onChange={(e) => setOfferForm({ ...offerForm, delivery_slot_time: e.target.value })}
+                                    >
+                                        <option value="Morning (08:00 - 12:00)">Morning (08:00 - 12:00)</option>
+                                        <option value="Afternoon (12:00 - 16:00)">Afternoon (12:00 - 16:00)</option>
+                                        <option value="Evening (16:00 - 20:00)">Evening (16:00 - 20:00)</option>
+                                        <option value="Night (20:00 - 00:00)">Night (20:00 - 00:00)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                        Transport Vehicle Type
+                                    </label>
+                                    <select
+                                        className="w-full text-xs rounded-lg border border-input bg-background p-2 h-9"
+                                        value={offerForm.vehicle_type}
+                                        onChange={(e) => setOfferForm({ ...offerForm, vehicle_type: e.target.value })}
+                                    >
+                                        <option value="Tractor Trolley">Tractor Trolley</option>
+                                        <option value="Mini Truck / Tata Ace">Mini Truck / Tata Ace (1-2 Ton)</option>
+                                        <option value="Pickup Truck">Pickup Truck (Bolero / Dost)</option>
+                                        <option value="Medium Truck">Medium Truck (6-Wheeler)</option>
+                                        <option value="Heavy Truck">Heavy Truck (10+ Wheeler)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                        Vehicle Registration Number (Optional)
+                                    </label>
+                                    <Input
+                                        placeholder="e.g. TS08AB1234"
+                                        value={offerForm.vehicle_number}
+                                        onChange={(e) => setOfferForm({ ...offerForm, vehicle_number: e.target.value })}
+                                        className="h-9 text-xs"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Notes */}
                         <div>
                             <label className="block text-xs font-semibold text-foreground mb-1">
@@ -922,6 +1528,131 @@ function MillsMarketplaceContent() {
                         </p>
                     </div>
                 )}
+            </Modal>
+
+            {/* MODAL: DIGITAL GATE PASS & QR */}
+            <Modal
+                isOpen={gatePassModalOpen}
+                onClose={() => setGatePassModalOpen(false)}
+                title="🎫 Mill Delivery Gate Pass & Entry Token"
+            >
+                {loadingGatePass ? (
+                    <div className="p-8 text-center space-y-3">
+                        <RefreshCw className="w-8 h-8 mx-auto text-blue-600 animate-spin" />
+                        <p className="text-sm text-muted-foreground">Generating verified gate pass and security QR code...</p>
+                    </div>
+                ) : activeGatePass ? (
+                    <div className="space-y-4 pt-1">
+                        {/* Status bar */}
+                        <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                <div>
+                                    <span className="text-xs font-bold text-emerald-900 dark:text-emerald-100 block">
+                                        Authorized Gate Entry Pass
+                                    </span>
+                                    <span className="text-[11px] text-emerald-700">Valid for mill weighbridge check-in</span>
+                                </div>
+                            </div>
+                            <Badge className="bg-emerald-600 text-white font-mono text-xs">
+                                PASS ACTIVE
+                            </Badge>
+                        </div>
+
+                        {/* Token Banner & QR Code */}
+                        <div className="bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 p-5 rounded-2xl border text-center space-y-3 shadow-inner">
+                            <div>
+                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest block">
+                                    GATE ENTRY TOKEN NUMBER
+                                </span>
+                                <div className="text-2xl font-black font-mono tracking-wider text-blue-900 dark:text-blue-100 mt-0.5">
+                                    {activeGatePass.token_number}
+                                </div>
+                            </div>
+
+                            {/* Centered QR */}
+                            <div className="flex justify-center p-3 bg-white rounded-xl shadow-sm border w-fit mx-auto">
+                                <QRCodeSVG
+                                    value={activeGatePass.qr_code_data || activeGatePass.token_number}
+                                    size={160}
+                                    level="H"
+                                    includeMargin
+                                />
+                            </div>
+
+                            <p className="text-[11px] text-muted-foreground">
+                                Scan at mill gate scanner or show token number to security weighbridge operator
+                            </p>
+                        </div>
+
+                        {/* Logistics Details Grid */}
+                        <div className="grid grid-cols-2 gap-3 text-xs bg-muted/30 p-4 rounded-xl border">
+                            <div>
+                                <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Farmer</span>
+                                <span className="font-bold text-foreground text-sm">{activeGatePass.farmer_name}</span>
+                                {activeGatePass.farmer_phone && (
+                                    <span className="text-muted-foreground block">{activeGatePass.farmer_phone}</span>
+                                )}
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Destination Mill</span>
+                                <span className="font-bold text-foreground text-sm">{activeGatePass.mill_name}</span>
+                                <span className="text-muted-foreground block">{activeGatePass.mill_location}</span>
+                            </div>
+                            <div className="border-t pt-2">
+                                <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Scheduled Slot</span>
+                                <span className="font-bold text-foreground flex items-center gap-1">
+                                    <Calendar className="w-3 h-3 text-blue-600" />
+                                    {activeGatePass.delivery_slot_date || "Anytime"}
+                                </span>
+                                <span className="text-muted-foreground">{activeGatePass.delivery_slot_time || "Business Hours"}</span>
+                            </div>
+                            <div className="border-t pt-2">
+                                <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Assigned Vehicle</span>
+                                <span className="font-bold text-foreground flex items-center gap-1">
+                                    <Truck className="w-3 h-3 text-slate-600" />
+                                    {activeGatePass.vehicle_type || "Tractor"}
+                                </span>
+                                <span className="text-muted-foreground">{activeGatePass.vehicle_number || "Gate Verification"}</span>
+                            </div>
+                            <div className="border-t pt-2 col-span-2 flex justify-between items-center bg-blue-50/60 p-2.5 rounded-lg border border-blue-100">
+                                <div>
+                                    <span className="text-blue-900 font-bold block text-sm">
+                                        {activeGatePass.quantity} {activeGatePass.unit}s of {activeGatePass.crop_name}
+                                    </span>
+                                    <span className="text-[11px] text-blue-700">
+                                        Rate: ₹{activeGatePass.agreed_price}/{activeGatePass.unit} ({activeGatePass.quality_grade || "Grade A"})
+                                    </span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Estimated Total</span>
+                                    <span className="text-base font-black text-blue-900">
+                                        ₹{activeGatePass.estimated_total.toLocaleString("en-IN")}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex justify-between items-center pt-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.print()}
+                                className="flex items-center gap-1.5 text-xs"
+                            >
+                                <Printer className="w-3.5 h-3.5" /> Print Gate Pass
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={() => setGatePassModalOpen(false)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4"
+                            >
+                                Done
+                            </Button>
+                        </div>
+                    </div>
+                ) : null}
             </Modal>
         </div>
     );

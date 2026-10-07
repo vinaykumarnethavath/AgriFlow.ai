@@ -13,7 +13,10 @@ from app.models.user import User  # Make sure models are loaded
 # Import all models so metadata is complete
 from app.models.farmer import FarmerProfile, LandRecord
 from app.models.shop import ShopProfile
-from app.models.manufacturer import MillProfile, ManufacturerPurchase, ProductionBatch, ManufacturerSale, MillProcurementRequest
+from app.models.manufacturer import (
+    MillProfile, ManufacturerPurchase, ProductionBatch, ManufacturerSale, MillProcurementRequest,
+    MoistureDeductionLog, ByProduct, WeighmentSlip, FarmerLoadPool, FarmerLoadPoolMember
+)
 from app.models.customer import CustomerProfile, Cart, CustomerOrder, CustomerOrderItem
 from app.models.crop import Crop, CropExpense, CropHarvest
 from app.models.trade import Product, ShopOrder, ShopOrderItem, TraceabilityEvent
