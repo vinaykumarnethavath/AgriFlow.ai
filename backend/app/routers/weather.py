@@ -258,11 +258,79 @@ async def geocode_city(name: str = Query(..., min_length=2)):
         return {"results": []}
 
 
+def _build_fallback_forecast(lat: float, lon: float) -> dict:
+    today_dt = datetime.utcnow()
+    daily = []
+    for i in range(7):
+        d = (today_dt + timedelta(days=i)).strftime("%Y-%m-%d")
+        daily.append({
+            "date": d,
+            "temperature_2m": 29.0 + (i % 3),
+            "temperature_2m_max": 33.5 + (i % 2),
+            "temperature_2m_min": 22.0 - (i % 2),
+            "relative_humidity_2m": 62.0,
+            "precipitation": 0.0,
+            "precipitation_sum": 0.0,
+            "windspeed_10m": 12.0,
+            "evapotranspiration": 3.8,
+            "soil_moisture_0_to_1cm": 0.22,
+            "soil_moisture_1_to_3cm": 0.24,
+            "soil_moisture_3_to_9cm": 0.26,
+            "soil_moisture_9_to_27cm": 0.28,
+            "soil_moisture_27_to_81cm": 0.30,
+            "soil_temperature_0cm": 29.0,
+            "soil_temperature_6cm": 28.0,
+            "soil_temperature_18cm": 27.0,
+            "soil_temperature_54cm": 26.0,
+        })
+    current = dict(daily[0])
+    recommendations = _generate_recommendations(current)
+    return {
+        "latitude": lat,
+        "longitude": lon,
+        "elevation": 500,
+        "timezone": "UTC",
+        "current": current,
+        "hourly": {},
+        "daily": daily,
+        "recommendations": recommendations,
+        "source": "simulated_fallback"
+    }
+
+def _build_fallback_historical(lat: float, lon: float, date_str: str) -> dict:
+    current = {
+        "date": date_str,
+        "temperature_2m": 28.0,
+        "temperature_2m_max": 32.0,
+        "temperature_2m_min": 21.0,
+        "relative_humidity_2m": 65.0,
+        "precipitation": 0.0,
+        "precipitation_sum": 0.0,
+        "windspeed_10m": 11.0,
+        "soil_moisture_0_to_7cm": 0.23,
+        "soil_moisture_7_to_28cm": 0.26,
+        "soil_moisture_28_to_100cm": 0.29,
+        "soil_temperature_0_to_7cm": 28.0,
+    }
+    return {
+        "latitude": lat,
+        "longitude": lon,
+        "elevation": 500,
+        "timezone": "UTC",
+        "date": date_str,
+        "current": current,
+        "hourly": {},
+        "daily": [current],
+        "recommendations": _generate_recommendations(current),
+        "source": "simulated_fallback"
+    }
+
+
 @router.get("/forecast")
 async def get_forecast(lat: float = 17.385, lon: float = 78.4867, lang: str = "en"):
     """
     Fetch comprehensive live weather & multi-depth soil moisture data from Open-Meteo Forecast API.
-    Translates recommendations and advisories if lang != 'en'.
+    Translates recommendations and advisories if lang != 'en'. Falls back gracefully if upstream is down.
     """
     cache_key = f"fc:{round(lat, 2)}:{round(lon, 2)}:{lang}"
     cached = _get_cached_weather(cache_key)
@@ -270,7 +338,7 @@ async def get_forecast(lat: float = 17.385, lon: float = 78.4867, lang: str = "e
         return cached
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=8.0) as client:
             resp = await client.get(
                 FORECAST_URL,
                 params={
@@ -282,7 +350,8 @@ async def get_forecast(lat: float = 17.385, lon: float = 78.4867, lang: str = "e
                 }
             )
             if resp.status_code != 200:
-                raise HTTPException(status_code=resp.status_code, detail=f"Open-Meteo error: {resp.text}")
+                print(f"[weather] Open-Meteo returned {resp.status_code}, using resilient fallback.")
+                return _build_fallback_forecast(lat, lon)
             raw = resp.json()
 
         hourly = raw.get("hourly", {})
@@ -353,51 +422,56 @@ async def get_forecast(lat: float = 17.385, lon: float = 78.4867, lang: str = "e
         }
         _set_cached_weather(cache_key, out, ttl=900)
         return out
-    except HTTPException:
-        raise
     except Exception as e:
-        print(f"Weather forecast fetch error: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch forecast: {str(e)}")
+        print(f"[weather] Forecast error ({e}), using resilient fallback.")
+        return _build_fallback_forecast(lat, lon)
 
 
 
 @router.get("/historical")
-async def get_historical(lat: float, lon: float, date: str):
+async def get_historical(
+    lat: float,
+    lon: float,
+    date: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
     """
     Fetch historical weather and soil moisture from ERA5-Land reanalysis dataset via Open-Meteo.
     """
+    target_date = date or start_date or (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
     try:
-        # Validate date format YYYY-MM-DD
-        datetime.strptime(date, "%Y-%m-%d")
+        datetime.strptime(target_date, "%Y-%m-%d")
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+        target_date = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
 
-    cache_key = f"hist:{round(lat, 2)}:{round(lon, 2)}:{date}"
+    cache_key = f"hist:{round(lat, 2)}:{round(lon, 2)}:{target_date}"
     cached = _get_cached_weather(cache_key)
     if cached is not None:
         return cached
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=8.0) as client:
             resp = await client.get(
                 HISTORICAL_URL,
                 params={
                     "latitude": lat,
                     "longitude": lon,
-                    "start_date": date,
-                    "end_date": date,
+                    "start_date": target_date,
+                    "end_date": target_date,
                     "hourly": HOURLY_HISTORICAL_VARS,
                     "timezone": "auto",
                 }
             )
             if resp.status_code != 200:
-                raise HTTPException(status_code=resp.status_code, detail=f"Open-Meteo archive error: {resp.text}")
+                print(f"[weather] Archive returned {resp.status_code}, using resilient fallback.")
+                return _build_fallback_historical(lat, lon, target_date)
             raw = resp.json()
 
         hourly = raw.get("hourly", {})
         daily = _build_daily_summary(hourly)
         current = daily[0] if daily else {}
-        current["date"] = date
+        current["date"] = target_date
 
         recommendations = _generate_recommendations(current)
 
@@ -406,7 +480,7 @@ async def get_historical(lat: float, lon: float, date: str):
             "longitude": raw.get("longitude", lon),
             "elevation": raw.get("elevation", 0),
             "timezone": raw.get("timezone", "UTC"),
-            "date": date,
+            "date": target_date,
             "current": current,
             "daily": daily,
             "recommendations": recommendations,
@@ -414,11 +488,9 @@ async def get_historical(lat: float, lon: float, date: str):
         }
         _set_cached_weather(cache_key, out, ttl=86400 * 7)
         return out
-    except HTTPException:
-        raise
     except Exception as e:
-        print(f"Historical weather error: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch historical data: {str(e)}")
+        print(f"[weather] Historical error ({e}), using resilient fallback.")
+        return _build_fallback_historical(lat, lon, target_date)
 
 
 @router.get("/")

@@ -17,6 +17,34 @@ async def get_latest_block(session: AsyncSession) -> Optional[BlockchainBlock]:
     results = await session.exec(statement)
     return results.first()
 
+def _format_timestamp(ts) -> str:
+    if isinstance(ts, datetime):
+        return ts.strftime("%Y-%m-%dT%H:%M:%S")
+    if isinstance(ts, str):
+        try:
+            return datetime.fromisoformat(ts).strftime("%Y-%m-%dT%H:%M:%S")
+        except Exception:
+            return ts
+    return str(ts)
+
+def _get_timestamp_candidates(ts) -> List[str]:
+    candidates = []
+    if isinstance(ts, datetime):
+        candidates.append(ts.strftime("%Y-%m-%dT%H:%M:%S"))
+        candidates.append(ts.isoformat())
+        candidates.append(ts.strftime("%Y-%m-%d %H:%M:%S"))
+        if ts.microsecond:
+            candidates.append(ts.strftime("%Y-%m-%dT%H:%M:%S.%f"))
+    elif isinstance(ts, str):
+        candidates.append(ts)
+        try:
+            dt = datetime.fromisoformat(ts)
+            candidates.append(dt.strftime("%Y-%m-%dT%H:%M:%S"))
+            candidates.append(dt.isoformat())
+        except Exception:
+            pass
+    return list(dict.fromkeys(candidates))
+
 async def ensure_genesis_block(session: AsyncSession) -> BlockchainBlock:
     """Ensure that the genesis block exists, creating it if necessary."""
     latest = await get_latest_block(session)
@@ -31,12 +59,13 @@ async def ensure_genesis_block(session: AsyncSession) -> BlockchainBlock:
     })
     
     # Create genesis block
-    timestamp_str = datetime.utcnow().isoformat()
+    now = datetime.utcnow().replace(microsecond=0)
+    timestamp_str = _format_timestamp(now)
     block_hash = calculate_hash(0, timestamp_str, "0" * 64, genesis_payload)
     
     genesis = BlockchainBlock(
         block_index=0,
-        timestamp=datetime.fromisoformat(timestamp_str),
+        timestamp=now,
         previous_hash="0" * 64,
         hash=block_hash,
         payload=genesis_payload,
@@ -72,13 +101,14 @@ async def record_ledger_entry(
     payload_str = json.dumps(payload_data, sort_keys=True)
     
     # 4. Create new block hash
-    timestamp_str = datetime.utcnow().isoformat()
+    now = datetime.utcnow().replace(microsecond=0)
+    timestamp_str = _format_timestamp(now)
     block_hash = calculate_hash(next_index, timestamp_str, previous_hash, payload_str)
     
     # 5. Save block
     new_block = BlockchainBlock(
         block_index=next_index,
-        timestamp=datetime.fromisoformat(timestamp_str),
+        timestamp=now,
         previous_hash=previous_hash,
         hash=block_hash,
         payload=payload_str,
@@ -118,16 +148,22 @@ async def verify_blockchain_integrity(session: AsyncSession) -> Tuple[bool, Opti
             if block.previous_hash != "0" * 64:
                 return False, 0, "Genesis block previous hash is invalid."
                 
-        # 3. Recalculate hash and verify correctness
-        computed = calculate_hash(
-            block.block_index,
-            block.timestamp.isoformat() if isinstance(block.timestamp, datetime) else str(block.timestamp),
-            block.previous_hash,
-            block.payload
-        )
+        # 3. Recalculate hash and verify correctness with possible timestamp representations
+        is_hash_valid = False
+        candidates = _get_timestamp_candidates(block.timestamp)
+        for ts_str in candidates:
+            computed = calculate_hash(
+                block.block_index,
+                ts_str,
+                block.previous_hash,
+                block.payload
+            )
+            if block.hash == computed:
+                is_hash_valid = True
+                break
         
         # If computed hash doesn't match saved hash, block is tampered
-        if block.hash != computed:
-            return False, block.block_index, f"Cryptographic integrity failed: Hash mismatch at block {block.block_index}. Saved: {block.hash}, Computed: {computed}"
+        if not is_hash_valid:
+            return False, block.block_index, f"Cryptographic integrity failed: Hash mismatch at block {block.block_index}. Saved: {block.hash}"
             
-    return True, None, "Blockchain ledger integrity fully verified. No tempering detected."
+    return True, None, "Blockchain ledger integrity fully verified. No tampering detected."

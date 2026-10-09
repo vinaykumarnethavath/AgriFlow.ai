@@ -256,7 +256,7 @@ async def _generate_crop_events(
                 crop_id=crop.id,
                 crop_name=crop_name,
                 reminder_days_before=1,
-                is_completed=crop.status != "Growing" or (now - crop.sowing_date).days > 7,
+                is_completed=(crop.status != "Growing") or bool(sowing_date and (datetime.utcnow().date() - sowing_date).days > 7),
                 color=EVENT_COLORS["sowing"],
                 created_at=crop.created_at if hasattr(crop, "created_at") else now,
             ))

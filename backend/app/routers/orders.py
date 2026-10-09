@@ -218,6 +218,28 @@ async def read_shop_orders(
     return result.all()
 
 
+@router.get("/shop/customer-contacts")
+@router.get("/shop-customer-contacts")
+async def get_shop_customer_contacts(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    if current_user.role != "shop":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    stmt = select(ShopOrder.farmer_id).where(ShopOrder.shop_id == current_user.id).distinct()
+    res = await session.exec(stmt)
+    farmer_ids = [fid for fid in res.all() if fid]
+    
+    contacts = []
+    for fid in farmer_ids:
+        info = await get_user_contact_info(session, fid)
+        if info:
+            contacts.append(info)
+    return contacts
+
+
+@router.get("/shop/detailed")
 @router.get("/shop-orders-detailed")
 async def read_shop_orders_detailed(
     current_user: User = Depends(get_current_user),

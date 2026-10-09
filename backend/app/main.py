@@ -20,7 +20,7 @@ app.mount("/static", StaticFiles(directory="uploads"), name="static")
 # CORS configuration
 frontend_url = os.getenv("FRONTEND_URL", "")
 cors_allow_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
-cors_allow_origins_regex = os.getenv("CORS_ALLOW_ORIGINS_REGEX", "").strip()
+cors_allow_origins_regex = os.getenv("CORS_ALLOW_ORIGINS_REGEX", r"^https?://.*\.vercel\.app$").strip()
 cors_allow_credentials_env = os.getenv("CORS_ALLOW_CREDENTIALS", "true")
 
 allow_origins = [
@@ -36,7 +36,7 @@ def _normalize_origin(origin: str) -> str:
 if frontend_url:
     for origin in frontend_url.split(","):
         origin = _normalize_origin(origin)
-        if origin:
+        if origin and origin not in allow_origins:
             allow_origins.append(origin)
 
 if cors_allow_origins:
@@ -45,7 +45,7 @@ if cors_allow_origins:
     else:
         for origin in cors_allow_origins.split(","):
             origin = _normalize_origin(origin)
-            if origin:
+            if origin and origin not in allow_origins:
                 allow_origins.append(origin)
 
 allow_credentials = cors_allow_credentials_env.strip().lower() in {"1", "true", "yes"}
@@ -99,21 +99,18 @@ async def debug_exception_handler(request: Request, exc: Exception):
 
 @app.on_event("startup")
 async def on_startup():
-    async def _init_db_safe():
-        max_retries = 10
-        for attempt in range(1, max_retries + 1):
-            try:
-                await init_db()
-                print(f"[startup] Database initialized successfully on attempt {attempt}")
-                break
-            except Exception as exc:
-                print(f"[startup] init_db attempt {attempt}/{max_retries} failed: {exc}")
-                if attempt == max_retries:
-                    traceback.print_exc()
-                else:
-                    await asyncio.sleep(3)
-
-    asyncio.create_task(_init_db_safe())
+    max_retries = 5
+    for attempt in range(1, max_retries + 1):
+        try:
+            await init_db()
+            print(f"[startup] Database initialized successfully on attempt {attempt}")
+            break
+        except Exception as exc:
+            print(f"[startup] init_db attempt {attempt}/{max_retries} failed: {exc}")
+            if attempt == max_retries:
+                traceback.print_exc()
+            else:
+                await asyncio.sleep(2)
 
 @app.get("/health")
 def health_check():

@@ -60,11 +60,7 @@ from app.models.crop_storage import CropStorage
 from app.models.soil_profile import SoilProfile
 from app.models.emergency_contact import EmergencyContact
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./agrichain.db")
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_async_engine(DATABASE_URL, echo=False, future=True, connect_args={"check_same_thread": False})
-else:
-    engine = create_async_engine(DATABASE_URL, echo=False, future=True)
+from app.database import engine, DATABASE_URL
 
 EMAIL = "jonsnowjonny15@gmail.com"
 PASSWORD = "Test@1234"

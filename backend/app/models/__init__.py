@@ -3,7 +3,8 @@ from .crop import (
     Crop, CropCreate, CropRead, CropUpdate, 
     CropExpense, CropExpenseCreate, CropExpenseRead, CropExpenseWithCrop,
     CropHarvest, CropHarvestCreate, CropHarvestRead,
-    CropSale, CropSaleCreate, CropSaleRead
+    CropSale, CropSaleCreate, CropSaleRead,
+    CropDiagnosis, CropDiagnosisCreate, CropDiagnosisBase
 )
 from .trade import Product, ProductCreate, ProductRead, ShopOrder, ShopOrderCreate, ShopOrderRead, ShopOrderItem, ShopOrderItemBase, TraceabilityEvent, ShopOrderStatusUpdate, BulkProductReceive, ProductBatchReceiveInfo
 from .expense import ShopExpense, ShopExpenseCreate, ShopExpenseRead

@@ -618,7 +618,10 @@ async def call_groq(
     messages.append({"role": "user", "content": question})
 
     candidate_models = [
-        os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),
+        os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "qwen/qwen3.8-27b",
         "openai/gpt-oss-20b",
         "openai/gpt-oss-120b",
     ]

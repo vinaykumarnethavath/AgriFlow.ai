@@ -114,8 +114,8 @@ async def _translate_batch_gemini(texts: list[str], source_lang: str, target_lan
         return None
 
     genai.configure(api_key=api_key)
-    # Available models: gemini-3.5-flash-lite, gemini-3.6-flash, gemini-2.5-flash-lite
-    candidate_models = ["gemini-3.5-flash-lite", "gemini-3.6-flash"]
+    # Production available Gemini models
+    candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
     
     src_name = SUPPORTED_LANGUAGES.get(source_lang, "English")
     tgt_name = SUPPORTED_LANGUAGES.get(target_lang, "Hindi")
@@ -152,7 +152,14 @@ async def _translate_batch_groq(texts: list[str], source_lang: str, target_lang:
     tgt_name = SUPPORTED_LANGUAGES.get(target_lang, "Hindi")
 
     client = AsyncGroq(api_key=groq_api_key)
-    models = ["qwen/qwen3.8-27b", "openai/gpt-oss-20b", "llama-3.3-70b-versatile"]
+    candidate_models = [
+        os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "qwen/qwen3.8-27b",
+        "openai/gpt-oss-20b",
+    ]
+    models = list(dict.fromkeys(candidate_models))
 
     prompt = (
         f"You are a professional agricultural multilingual translator.\n"

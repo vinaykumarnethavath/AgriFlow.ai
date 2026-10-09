@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = rawApiUrl.trim().replace(/^['"]|['"]$/g, '').replace(/\/+$/, '');
 if (process.env.NODE_ENV === 'development') {
     console.log("API Client initialized with baseURL:", API_URL);
 }

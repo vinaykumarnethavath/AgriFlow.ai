@@ -237,6 +237,15 @@ async def get_crop_expenses(
     result = await session.exec(statement)
     return result.all()
 
+def _strip_tz_dict(data: dict) -> dict:
+    cleaned = {}
+    for k, v in data.items():
+        if hasattr(v, "tzinfo") and v.tzinfo is not None:
+            cleaned[k] = v.replace(tzinfo=None)
+        else:
+            cleaned[k] = v
+    return cleaned
+
 @router.post("/crops/{crop_id}/expenses", response_model=CropExpense)
 async def create_crop_expense(
     crop_id: int,
@@ -251,7 +260,8 @@ async def create_crop_expense(
     if crop.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    db_expense = CropExpense(**expense_data.dict(), crop_id=crop_id)
+    exp_dict = _strip_tz_dict(expense_data.dict())
+    db_expense = CropExpense(**exp_dict, crop_id=crop_id)
     session.add(db_expense)
     await session.commit()
     await session.refresh(db_expense)
@@ -283,7 +293,7 @@ async def update_crop_expense(
         raise HTTPException(status_code=403, detail="Not authorized")
         
     # Update fields
-    expense_dict = expense_data.dict(exclude_unset=True)
+    expense_dict = _strip_tz_dict(expense_data.dict(exclude_unset=True))
     for key, value in expense_dict.items():
         setattr(expense, key, value)
         
@@ -346,7 +356,8 @@ async def create_crop_harvest(
     if crop.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    db_harvest = CropHarvest(**harvest_data.dict(), crop_id=crop_id)
+    harv_dict = _strip_tz_dict(harvest_data.dict())
+    db_harvest = CropHarvest(**harv_dict, crop_id=crop_id)
     session.add(db_harvest)
     await session.commit()
     await session.refresh(db_harvest)
@@ -386,7 +397,7 @@ async def update_crop_harvest(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Update fields
-    harvest_dict = harvest_data.dict(exclude_unset=True)
+    harvest_dict = _strip_tz_dict(harvest_data.dict(exclude_unset=True))
     for key, value in harvest_dict.items():
         setattr(harvest, key, value)
         
