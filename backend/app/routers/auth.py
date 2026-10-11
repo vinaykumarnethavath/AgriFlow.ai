@@ -562,3 +562,46 @@ async def login(user_data: UserLogin, session: AsyncSession = Depends(get_sessio
         data={"sub": user.email, "role": user.role.value if hasattr(user.role, "value") else user.role, "id": user.id}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer", "role": user.role, "id": user.id, "full_name": safe_display_name(user)}
+
+class DemoLoginRequest(BaseModel):
+    role: str
+
+@router.post("/demo-login")
+async def demo_login(request: DemoLoginRequest, session: AsyncSession = Depends(get_session)):
+    role_val = request.role.lower()
+    email = f"demo@{role_val}.com"
+    
+    query = select(User).where(User.email == email, User.role == role_val)
+    result = await session.exec(query)
+    user = result.first()
+    
+    if not user:
+        # Create demo user
+        hashed_pwd = get_password_hash("demo123")
+        role_indices = ['farmer', 'shop', 'manufacturer', 'customer', 'expert']
+        phone_suffix = role_indices.index(role_val) if role_val in role_indices else 9
+        
+        user = User(
+            email=email,
+            phone_number=f"000000000{phone_suffix}",
+            full_name=f"Demo {role_val.capitalize()}",
+            role=role_val,
+            is_active=True,
+            hashed_password=hashed_pwd,
+        )
+        session.add(user)
+        try:
+            await session.commit()
+            await session.refresh(user)
+        except sqlalchemy.exc.IntegrityError:
+            await session.rollback()
+            result = await session.exec(query)
+            user = result.first()
+            if not user:
+                raise HTTPException(status_code=500, detail="Failed to create demo user")
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email, "role": user.role.value if hasattr(user.role, "value") else user.role, "id": user.id}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer", "role": user.role, "id": user.id, "full_name": safe_display_name(user)}
