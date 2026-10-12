@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { createPaymentOrder, verifyPayment, getRazorpayConfig } from "@/lib/payment-api";
+import { createPaymentOrder, verifyPayment, getRazorpayConfig, loadRazorpayScript } from "@/lib/payment-api";
 import { Button } from "@/components/ui/button";
 import { CreditCard, Loader2, CheckCircle, XCircle } from "lucide-react";
 
@@ -45,20 +45,6 @@ export default function RazorpayCheckout({
     const [processing, setProcessing] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState<"idle" | "success" | "failed">("idle");
 
-    const loadRazorpayScript = (): Promise<boolean> => {
-        return new Promise((resolve) => {
-            if (window.Razorpay) {
-                resolve(true);
-                return;
-            }
-            const script = document.createElement("script");
-            script.src = "https://checkout.razorpay.com/v1/checkout.js";
-            script.onload = () => resolve(true);
-            script.onerror = () => resolve(false);
-            document.body.appendChild(script);
-        });
-    };
-
     const handlePayment = async () => {
         setProcessing(true);
         setPaymentStatus("idle");
@@ -70,7 +56,7 @@ export default function RazorpayCheckout({
                 throw new Error("Failed to load Razorpay SDK");
             }
 
-            // 2. Get Razorpay key
+            // 2. Get Razorpay key & config
             const config = await getRazorpayConfig();
 
             // 3. Create order on our backend
@@ -86,7 +72,7 @@ export default function RazorpayCheckout({
             const options = {
                 key: config.key_id,
                 amount: Math.round(amount * 100), // paise
-                currency: "INR",
+                currency: config.currency || "INR",
                 name: "AgriChain",
                 description: `Payment for ${paymentFor.replace(/_/g, " ")}`,
                 order_id: order.razorpay_order_id,
@@ -122,8 +108,10 @@ export default function RazorpayCheckout({
                 },
             };
 
-            if (config.key_id.startsWith("rzp_test_placeholder")) {
-                alert("Test Mode: Simulating successful payment...");
+            const isMockMode = config.is_mock || config.key_id.startsWith("rzp_test_placeholder");
+
+            if (isMockMode) {
+                alert("Test Mode Simulation: Simulating successful payment...");
                 options.handler({
                     razorpay_order_id: order.razorpay_order_id,
                     razorpay_payment_id: "pay_dummy_" + Math.random().toString(36).substring(2, 9),
@@ -133,6 +121,12 @@ export default function RazorpayCheckout({
             }
 
             const razorpay = new window.Razorpay(options);
+            razorpay.on("payment.failed", (resp: any) => {
+                console.error("Razorpay test payment failed:", resp.error);
+                setPaymentStatus("failed");
+                setProcessing(false);
+                onFailure?.(resp.error);
+            });
             razorpay.open();
         } catch (error) {
             console.error("Payment error:", error);

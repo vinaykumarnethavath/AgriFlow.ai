@@ -341,7 +341,7 @@ export default function MarketPage() {
 
     const handlePayNow = async (order: Order) => {
         try {
-            const { getRazorpayConfig, createPaymentOrder, verifyPayment } = await import("@/lib/payment-api");
+            const { getRazorpayConfig, createPaymentOrder, verifyPayment, loadRazorpayScript } = await import("@/lib/payment-api");
             const config = await getRazorpayConfig();
             const paymentOrder = await createPaymentOrder({
                 amount: order.final_amount,
@@ -350,13 +350,28 @@ export default function MarketPage() {
                 notes: "Deferred Farmer Payment"
             });
 
+            // Prefill user details if available
+            let prefillInfo: any = {};
+            try {
+                const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+                if (storedUser) {
+                    const parsed = JSON.parse(storedUser);
+                    prefillInfo = {
+                        name: parsed.full_name || "",
+                        email: parsed.email || "",
+                        contact: parsed.phone_number || "",
+                    };
+                }
+            } catch (_) {}
+
             const options = {
                 key: config.key_id,
-                amount: paymentOrder.amount * 100,
-                currency: "INR",
+                amount: Math.round(paymentOrder.amount * 100),
+                currency: config.currency || "INR",
                 name: "AgriChain Market",
                 description: `Payment for Order #${order.id}`,
                 order_id: paymentOrder.razorpay_order_id,
+                prefill: prefillInfo,
                 theme: { color: "#16a34a" },
                 handler: async (response: any) => {
                     try {
@@ -365,34 +380,36 @@ export default function MarketPage() {
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature,
                         });
-                        alert("Payment successful!");
+                        alert("Payment successful! Order updated.");
                         fetchOrders();
-                    } catch (err) {
-                        alert("Payment verification failed.");
+                    } catch (err: any) {
+                        alert(err?.response?.data?.detail || "Payment verification failed.");
                     }
                 }
             };
             
-            if (config.key_id.startsWith("rzp_test_placeholder")) {
+            const isMockMode = config.is_mock || config.key_id.startsWith("rzp_test_placeholder");
+
+            if (isMockMode) {
                 setMockOptions(options);
                 return;
             }
 
-            if (!(window as any).Razorpay) {
-                await new Promise<void>((resolve, reject) => {
-                    const script = document.createElement("script");
-                    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-                    script.onload = () => resolve();
-                    script.onerror = () => reject();
-                    document.body.appendChild(script);
-                });
+            const loaded = await loadRazorpayScript();
+            if (!loaded) {
+                alert("Failed to load Razorpay SDK. Please check your internet connection.");
+                return;
             }
 
             const razorpay = new (window as any).Razorpay(options);
+            razorpay.on("payment.failed", (resp: any) => {
+                console.error("Payment failed:", resp.error);
+                alert(`Payment failed: ${resp.error?.description || "Transaction declined"}`);
+            });
             razorpay.open();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Razorpay initiation failed", error);
-            alert("Could not initialize payment window.");
+            alert(error?.response?.data?.detail || "Could not initialize payment window.");
         }
     };
 

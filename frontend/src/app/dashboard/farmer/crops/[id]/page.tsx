@@ -339,7 +339,7 @@ function CropDetailContent() {
             if (newExpense.payment_mode === "Razorpay" && !editingExpenseId) {
                 const totalCost = calculateTotalCost(newExpense);
                 if (totalCost > 0) {
-                    const { createPaymentOrder, verifyPayment, getRazorpayConfig } = await import("@/lib/payment-api");
+                    const { createPaymentOrder, verifyPayment, getRazorpayConfig, loadRazorpayScript } = await import("@/lib/payment-api");
                     const config = await getRazorpayConfig();
 
                     const paymentOrder = await createPaymentOrder({
@@ -348,20 +348,16 @@ function CropDetailContent() {
                         reference_id: savedExpense?.id,
                     });
 
-                    if (!(window as any).Razorpay) {
-                        await new Promise<void>((resolve, reject) => {
-                            const script = document.createElement("script");
-                            script.src = "https://checkout.razorpay.com/v1/checkout.js";
-                            script.onload = () => resolve();
-                            script.onerror = () => reject();
-                            document.body.appendChild(script);
-                        });
+                    const loaded = await loadRazorpayScript();
+                    if (!loaded) {
+                        alert("Failed to load Razorpay SDK. Please check your network connection.");
+                        return;
                     }
 
                     const options = {
                         key: config.key_id,
                         amount: Math.round(totalCost * 100),
-                        currency: "INR",
+                        currency: config.currency || "INR",
                         name: "AgriChain",
                         description: `Expense: ${newExpense.type || newExpense.category}`,
                         order_id: paymentOrder.razorpay_order_id,
@@ -374,19 +370,25 @@ function CropDetailContent() {
                                     razorpay_signature: response.razorpay_signature,
                                 });
                                 alert("Payment successful!");
-                            } catch (err) {
-                                alert("Payment verification failed.");
+                            } catch (err: any) {
+                                alert(err?.response?.data?.detail || "Payment verification failed.");
                             }
                             fetchData();
                         },
                     };
 
-                    if (config.key_id.startsWith("rzp_test_placeholder")) {
+                    const isMockMode = config.is_mock || config.key_id.startsWith("rzp_test_placeholder");
+
+                    if (isMockMode) {
                         setMockOptions(options);
                         return;
                     }
 
                     const razorpay = new (window as any).Razorpay(options);
+                    razorpay.on("payment.failed", (resp: any) => {
+                        console.error("Payment failed:", resp.error);
+                        alert(`Payment failed: ${resp.error?.description || "Transaction declined"}`);
+                    });
                     razorpay.open();
                 }
             }

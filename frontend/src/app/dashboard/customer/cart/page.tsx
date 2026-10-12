@@ -57,7 +57,7 @@ export default function CartPage() {
             const orderTotal = order.total_amount;
 
             // 2. Now initiate Razorpay payment
-            const { createPaymentOrder, verifyPayment, getRazorpayConfig } = await import("@/lib/payment-api");
+            const { createPaymentOrder, verifyPayment, getRazorpayConfig, loadRazorpayScript } = await import("@/lib/payment-api");
 
             const config = await getRazorpayConfig();
             const paymentOrder = await createPaymentOrder({
@@ -67,25 +67,35 @@ export default function CartPage() {
                 shipping_address: "To be updated",
             });
 
-            // 3. Load Razorpay SDK if needed
-            if (!window.Razorpay) {
-                await new Promise<void>((resolve, reject) => {
-                    const script = document.createElement("script");
-                    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-                    script.onload = () => resolve();
-                    script.onerror = () => reject(new Error("Failed to load Razorpay"));
-                    document.body.appendChild(script);
-                });
+            // 3. Load Razorpay SDK
+            const loaded = await loadRazorpayScript();
+            if (!loaded) {
+                throw new Error("Could not load Razorpay checkout SDK. Please check your internet connection.");
             }
+
+            // Optional user prefill from local storage
+            let prefillInfo: any = {};
+            try {
+                const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+                if (storedUser) {
+                    const parsed = JSON.parse(storedUser);
+                    prefillInfo = {
+                        name: parsed.full_name || "",
+                        email: parsed.email || "",
+                        contact: parsed.phone_number || "",
+                    };
+                }
+            } catch (_) {}
 
             // 4. Open Razorpay popup
             const options = {
                 key: config.key_id,
                 amount: Math.round(orderTotal * 100),
-                currency: "INR",
+                currency: config.currency || "INR",
                 name: "AgriChain",
                 description: `Order #${orderId}`,
                 order_id: paymentOrder.razorpay_order_id,
+                prefill: prefillInfo,
                 theme: { color: "#16a34a" },
                 handler: async (response: any) => {
                     try {
@@ -95,8 +105,8 @@ export default function CartPage() {
                             razorpay_signature: response.razorpay_signature,
                         });
                         router.push("/dashboard/customer/orders");
-                    } catch (err) {
-                        alert("Payment verification failed. Contact support.");
+                    } catch (err: any) {
+                        alert(err?.response?.data?.detail || "Payment verification failed. Please contact support.");
                     } finally {
                         setCheckingOut(false);
                     }
@@ -109,12 +119,19 @@ export default function CartPage() {
                 },
             };
 
-            if (config.key_id.startsWith("rzp_test_placeholder")) {
+            const isMockMode = config.is_mock || config.key_id.startsWith("rzp_test_placeholder");
+
+            if (isMockMode) {
                 setMockOptions(options);
                 return;
             }
 
             const razorpay = new (window as any).Razorpay(options);
+            razorpay.on("payment.failed", (resp: any) => {
+                console.error("Razorpay payment failed:", resp.error);
+                alert(`Payment failed: ${resp.error?.description || "Transaction declined"}`);
+                setCheckingOut(false);
+            });
             razorpay.open();
         } catch (error: any) {
             console.error("Checkout failed:", error);

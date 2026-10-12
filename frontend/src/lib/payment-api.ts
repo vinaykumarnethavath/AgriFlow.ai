@@ -34,9 +34,51 @@ export interface VerifyPaymentRequest {
     razorpay_signature: string;
 }
 
-export const getRazorpayConfig = async () => {
-    const response = await api.get<{ key_id: string }>("/payments/config");
-    return response.data;
+export interface RazorpayConfig {
+    key_id: string;
+    is_mock?: boolean;
+    is_test_mode?: boolean;
+    currency?: string;
+}
+
+export const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+        if (typeof window === "undefined") {
+            resolve(false);
+            return;
+        }
+        if ((window as any).Razorpay) {
+            resolve(true);
+            return;
+        }
+        const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+        if (existing) {
+            existing.addEventListener("load", () => resolve(true));
+            existing.addEventListener("error", () => resolve(false));
+            return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+    });
+};
+
+export const getRazorpayConfig = async (): Promise<RazorpayConfig> => {
+    try {
+        const response = await api.get<RazorpayConfig>("/payments/config");
+        return response.data;
+    } catch (err) {
+        const fallbackKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+        return {
+            key_id: fallbackKey || "rzp_test_placeholder",
+            is_mock: !fallbackKey || fallbackKey.startsWith("rzp_test_placeholder"),
+            is_test_mode: fallbackKey.startsWith("rzp_test_"),
+            currency: "INR",
+        };
+    }
 };
 
 export const createPaymentOrder = async (data: CreatePaymentRequest) => {

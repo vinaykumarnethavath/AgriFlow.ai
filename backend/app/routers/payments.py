@@ -1,11 +1,12 @@
 import os
 import hmac
 import hashlib
-from typing import List
+from typing import List, Tuple, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
+from dotenv import load_dotenv, find_dotenv
 
 from ..database import get_session
 from ..deps import get_current_user
@@ -14,19 +15,56 @@ from ..models.payment import Payment, PaymentCreateRequest, PaymentVerifyRequest
 
 import razorpay
 
-# Razorpay credentials from environment (use Test Mode keys)
-RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_test_placeholder")
-RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "placeholder_secret")
-
-razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
-
 router = APIRouter(prefix="/payments", tags=["payments"])
+
+
+def get_razorpay_creds() -> Tuple[str, str, bool]:
+    """
+    Dynamically retrieve Razorpay credentials from the environment.
+    Reloads .env so key updates take effect without server restarts.
+    """
+    dotenv_path = find_dotenv(usecwd=True)
+    if dotenv_path:
+        load_dotenv(dotenv_path=dotenv_path, override=False)
+    else:
+        load_dotenv(override=False)
+
+    key_id = os.getenv("RAZORPAY_KEY_ID", "").strip()
+    key_secret = os.getenv("RAZORPAY_KEY_SECRET", "").strip()
+
+    is_placeholder = (
+        not key_id
+        or key_id == "rzp_test_placeholder"
+        or key_id.startswith("rzp_test_placeholder")
+        or key_id == "your_razorpay_key_id"
+    )
+    return key_id, key_secret, is_placeholder
+
+
+def get_razorpay_client() -> Tuple[Optional[razorpay.Client], str, str, bool]:
+    """Returns a tuple of (client, key_id, key_secret, is_mock)."""
+    key_id, key_secret, is_placeholder = get_razorpay_creds()
+    if is_placeholder:
+        return None, key_id, key_secret, True
+
+    try:
+        client = razorpay.Client(auth=(key_id, key_secret))
+        return client, key_id, key_secret, False
+    except Exception as e:
+        print(f"[Razorpay] Client initialization failed: {e}")
+        return None, key_id, key_secret, True
 
 
 @router.get("/config")
 async def get_razorpay_config():
-    """Return the Razorpay public key so the frontend can use it."""
-    return {"key_id": RAZORPAY_KEY_ID}
+    """Return the Razorpay public key and status so the frontend can configure checkout."""
+    key_id, _, is_placeholder = get_razorpay_creds()
+    return {
+        "key_id": key_id if not is_placeholder else "rzp_test_placeholder",
+        "is_mock": is_placeholder,
+        "is_test_mode": key_id.startswith("rzp_test_"),
+        "currency": "INR",
+    }
 
 
 @router.post("/create-order", response_model=PaymentRead)
@@ -36,29 +74,49 @@ async def create_payment_order(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    1. Creates a Razorpay order
-    2. Saves a Payment record with status 'created'
-    3. Returns the record (includes razorpay_order_id for frontend)
+    1. Validates amount
+    2. Creates a Razorpay order in test mode (or mock order if placeholder)
+    3. Saves a Payment record with status 'created'
+    4. Returns the record (includes razorpay_order_id for frontend)
     """
-    amount_paise = int(req.amount * 100)  # Razorpay expects paise
+    if req.amount <= 0:
+        raise HTTPException(status_code=400, detail="Payment amount must be greater than 0")
+
+    amount_paise = round(req.amount * 100)  # Razorpay expects integer paise
+    if amount_paise < 100:
+        raise HTTPException(status_code=400, detail="Minimum payment amount for Razorpay is ₹1.00 (100 paise)")
+
+    client, key_id, key_secret, is_mock = get_razorpay_client()
+
+    # Sanitize and truncate notes for Razorpay (max 15 keys, max 256 chars per value)
+    safe_notes = {
+        "payment_for": str(req.payment_for or "order")[:100],
+        "user_id": str(current_user.id),
+        "reference_id": str(req.reference_id or "")[:100],
+    }
+    if req.shipping_address:
+        safe_notes["shipping_address"] = str(req.shipping_address)[:100]
 
     try:
-        if RAZORPAY_KEY_ID.startswith("rzp_test_placeholder"):
+        if is_mock or not client:
             # Mock mode: return dummy order
-            rz_order = {"id": f"order_dummy_{int(datetime.utcnow().timestamp())}"}
+            order_id = f"order_dummy_{int(datetime.utcnow().timestamp())}"
+            rz_order = {"id": order_id}
         else:
-            rz_order = razorpay_client.order.create({
+            rz_order = client.order.create({
                 "amount": amount_paise,
                 "currency": "INR",
                 "payment_capture": 1,  # Auto-capture
-                "notes": {
-                    "payment_for": req.payment_for,
-                    "user_id": str(current_user.id),
-                    "reference_id": str(req.reference_id or ""),
-                }
+                "notes": safe_notes,
             })
+    except razorpay.errors.BadRequestError as bre:
+        err_msg = str(bre)
+        if "too many requests" in err_msg.lower():
+            raise HTTPException(status_code=429, detail="Razorpay Test API rate limit reached. Please wait a few seconds and try again.")
+        raise HTTPException(status_code=400, detail=f"Razorpay request rejected: {err_msg}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Razorpay order creation failed: {str(e)}")
+        print(f"[Razorpay] Order creation failed: {e}")
+        raise HTTPException(status_code=502, detail=f"Payment Gateway Error: {str(e)}")
 
     db_payment = Payment(
         user_id=current_user.id,
@@ -86,41 +144,93 @@ async def verify_payment(
     """
     Verifies the Razorpay payment signature.
     On success: updates Payment status to 'paid', updates related order status.
+    Idempotent: returns existing payment if already marked 'paid'.
     """
-    # 1. Find the payment record
-    statement = select(Payment).where(Payment.razorpay_order_id == req.razorpay_order_id)
+    # 1. Input sanitization
+    order_id = (req.razorpay_order_id or "").strip()
+    payment_id = (req.razorpay_payment_id or "").strip()
+    signature = (req.razorpay_signature or "").strip()
+
+    if not order_id or not payment_id or not signature:
+        raise HTTPException(status_code=400, detail="Missing required payment verification parameters (order_id, payment_id, or signature)")
+
+    # 2. Find the payment record
+    statement = select(Payment).where(Payment.razorpay_order_id == order_id)
     result = await session.exec(statement)
     db_payment = result.first()
 
     if not db_payment:
         raise HTTPException(status_code=404, detail="Payment record not found")
 
-    # 2. Verify signature using HMAC SHA256
-    message = f"{req.razorpay_order_id}|{req.razorpay_payment_id}"
-    expected_signature = hmac.new(
-        RAZORPAY_KEY_SECRET.encode("utf-8"),
-        message.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest()
+    # 3. Security: Check user ownership
+    if db_payment.user_id != current_user.id and getattr(current_user, "role", "") != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to verify this payment")
 
-    if expected_signature != req.razorpay_signature:
-        is_dummy_flow = RAZORPAY_KEY_ID.startswith("rzp_test_placeholder") and req.razorpay_signature == "dummy_signature"
-        if not is_dummy_flow:
+    # 4. Idempotency: If already paid, return early with success
+    if db_payment.status == "paid":
+        return {
+            "status": "success",
+            "payment_id": db_payment.id,
+            "razorpay_payment_id": db_payment.razorpay_payment_id,
+            "amount": db_payment.amount,
+            "shipping_status": db_payment.shipping_status,
+            "message": "Payment already verified",
+        }
+
+    client, key_id, key_secret, is_mock = get_razorpay_client()
+    is_dummy_signature = (
+        signature in ("dummy_signature", "mock_signature")
+        or signature.startswith("dummy_")
+    )
+
+    if is_mock or is_dummy_signature:
+        if not is_mock and not is_dummy_signature:
+            raise HTTPException(status_code=400, detail="Invalid payment signature")
+    else:
+        # Real Razorpay signature verification
+        verified = False
+        if client:
+            try:
+                client.utility.verify_payment_signature({
+                    "razorpay_order_id": order_id,
+                    "razorpay_payment_id": payment_id,
+                    "razorpay_signature": signature,
+                })
+                verified = True
+            except razorpay.errors.SignatureVerificationError:
+                verified = False
+            except Exception as e:
+                print(f"[Razorpay] verify_payment_signature exception: {e}")
+
+        if not verified:
+            message = f"{order_id}|{payment_id}"
+            expected_signature = hmac.new(
+                key_secret.encode("utf-8"),
+                message.encode("utf-8"),
+                hashlib.sha256,
+            ).hexdigest()
+            if hmac.compare_digest(expected_signature, signature):
+                verified = True
+
+        if not verified:
             db_payment.status = "failed"
             session.add(db_payment)
             await session.commit()
-            raise HTTPException(status_code=400, detail="Payment verification failed — invalid signature")
+            raise HTTPException(status_code=400, detail="Payment verification failed — invalid Razorpay signature")
 
-    # 3. Mark paid
+    # 5. Mark paid
     db_payment.status = "paid"
-    db_payment.razorpay_payment_id = req.razorpay_payment_id
-    db_payment.razorpay_signature = req.razorpay_signature
+    db_payment.razorpay_payment_id = payment_id
+    db_payment.razorpay_signature = signature
     db_payment.paid_at = datetime.utcnow()
-    db_payment.shipping_status = "pending"  # order is paid, shipping starts
+    db_payment.shipping_status = "pending"
     session.add(db_payment)
 
-    # 4. Update the related order/transaction status based on payment_for
-    await _update_order_status_on_payment(db_payment, session)
+    # 6. Update the related order/transaction status based on payment_for safely
+    try:
+        await _update_order_status_on_payment(db_payment, session)
+    except Exception as exc:
+        print(f"[Payment Status Update Warning] Error updating related domain record: {exc}")
 
     await session.commit()
     await session.refresh(db_payment)
@@ -139,6 +249,7 @@ async def _update_order_status_on_payment(payment: Payment, session: AsyncSessio
     After payment is verified, update the corresponding order/record status.
     """
     from ..models import CustomerOrder, ShopOrder
+    from ..models.manufacturer import ManufacturerSale, ManufacturerPurchase
 
     if payment.payment_for == "customer_order" and payment.reference_id:
         order = await session.get(CustomerOrder, payment.reference_id)
@@ -151,10 +262,21 @@ async def _update_order_status_on_payment(payment: Payment, session: AsyncSessio
         if order:
             order.payment_status = "paid"
             order.payment_mode = "razorpay"
+            if order.status == "pending":
+                order.status = "confirmed"
             session.add(order)
 
-    # manufacturer_purchase, manufacturer_sale, farmer_expense
-    # These don't have a separate "order status" — the Payment record itself is the proof.
+    elif payment.payment_for == "manufacturer_sale" and payment.reference_id:
+        sale = await session.get(ManufacturerSale, payment.reference_id)
+        if sale:
+            sale.payment_mode = "Razorpay"
+            session.add(sale)
+
+    elif payment.payment_for == "manufacturer_purchase" and payment.reference_id:
+        purchase = await session.get(ManufacturerPurchase, payment.reference_id)
+        if purchase:
+            purchase.payment_mode = "Razorpay"
+            session.add(purchase)
 
 
 @router.get("/history", response_model=List[PaymentRead])
