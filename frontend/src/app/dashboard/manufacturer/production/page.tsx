@@ -10,6 +10,7 @@ import {
     ProductionBatch,
     addByProduct,
     getBatchByProducts,
+    getAllByProducts,
     getByProductsSummary,
     updateByProduct,
     ByProduct,
@@ -74,21 +75,16 @@ export default function ProductionPage() {
 
     const fetchData = async () => {
         try {
-            const [history, products, summary] = await Promise.all([
+            const [history, products, summary, byProducts] = await Promise.all([
                 getProductionHistory(),
                 getMyProducts(),
-                getByProductsSummary("30d").catch(() => null)
+                getByProductsSummary("30d").catch(() => null),
+                getAllByProducts().catch(() => [])
             ]);
             setBatches(history);
             setRawMaterials(products.filter(p => p.category === 'raw_material'));
             if (summary) setByProductsSummary(summary);
-
-            // Fetch by-products for recent batches
-            if (history.length > 0) {
-                const batchPromises = history.slice(0, 10).map(b => getBatchByProducts(b.id).catch(() => []));
-                const results = await Promise.all(batchPromises);
-                setAllByProducts(results.flat());
-            }
+            setAllByProducts(byProducts);
         } catch (error) {
             console.error("Failed to fetch production data:", error);
         } finally {

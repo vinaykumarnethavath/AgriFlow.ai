@@ -59,13 +59,13 @@ export default function ManufacturerDashboard() {
                 getManufacturerStats(),
                 api.get("/manufacturer/profile").catch(() => ({ data: null })),
                 getMillSalesTrend("7d"),
-                getManufacturerSales(),
+                getManufacturerSales(8),
                 getMillAccountingSummary("30d").catch(() => null),
             ]);
             setStats(statsData);
             if (profileRes?.data) setProfile(profileRes.data);
             setSalesTrend(trend);
-            setRecentSales(sales.slice(0, 8));
+            setRecentSales(sales);
             if (accounting) setMonthExpenses(accounting.total_expenses);
         } catch (error) {
             console.error("Failed to fetch dashboard data:", error);

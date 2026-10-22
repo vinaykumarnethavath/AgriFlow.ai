@@ -7,10 +7,10 @@ from datetime import datetime
 class ManufacturerPurchase(SQLModel, table=True):
     __tablename__ = "manufacturer_purchases"
     id: Optional[int] = Field(default=None, primary_key=True)
-    manufacturer_id: int = Field(foreign_key="user.id")
-    farmer_id: Optional[int] = Field(foreign_key="user.id", default=None) # Optional if buying from unknown source
+    manufacturer_id: int = Field(foreign_key="user.id", index=True)
+    farmer_id: Optional[int] = Field(foreign_key="user.id", default=None, index=True) # Optional if buying from unknown source
     farmer_name: str 
-    crop_name: str # e.g. Wheat, Sugarcane
+    crop_name: str = Field(index=True) # e.g. Wheat, Sugarcane
     quantity: float # in kg/tons
     unit: str = "kg"
     price_per_unit: float
@@ -19,16 +19,16 @@ class ManufacturerPurchase(SQLModel, table=True):
     quality_grade: Optional[str] = None # A, B, C
     payment_mode: Optional[str] = Field(default="Cash") # Cash, UPI, Bank Transfer
     batch_id: str # Created automatically -> M-PUR-{id}
-    date: datetime = Field(default_factory=datetime.utcnow)
+    date: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 # 2. Production / Processing Batch
 class ProductionBatch(SQLModel, table=True):
     __tablename__ = "production_batches"
     id: Optional[int] = Field(default=None, primary_key=True)
-    manufacturer_id: int = Field(foreign_key="user.id")
+    manufacturer_id: int = Field(foreign_key="user.id", index=True)
     
     # Input
-    input_product_id: int = Field(foreign_key="product.id") # Raw Material from Inventory
+    input_product_id: int = Field(foreign_key="product.id", index=True) # Raw Material from Inventory
     input_qty: float
     
     # Output
@@ -42,20 +42,20 @@ class ProductionBatch(SQLModel, table=True):
     # Metrics
     efficiency: float # output / input * 100
     
-    batch_number: str # Created automatically -> M-PROD-{id}
-    date: datetime = Field(default_factory=datetime.utcnow)
+    batch_number: str = Field(index=True) # Created automatically -> M-PROD-{id}
+    date: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 # 3. Sales to Market/Shops
 class ManufacturerSale(SQLModel, table=True):
     __tablename__ = "manufacturer_sales"
     id: Optional[int] = Field(default=None, primary_key=True)
-    manufacturer_id: int = Field(foreign_key="user.id")
+    manufacturer_id: int = Field(foreign_key="user.id", index=True)
     
     buyer_type: str # "shop", "customer", "distributor"
-    buyer_id: Optional[int] = Field(foreign_key="user.id", default=None)
+    buyer_id: Optional[int] = Field(foreign_key="user.id", default=None, index=True)
     buyer_name: str
     
-    product_id: int = Field(foreign_key="product.id") # Finished Good from Inventory
+    product_id: int = Field(foreign_key="product.id", index=True) # Finished Good from Inventory
     quantity: float
     selling_price: float # Per unit
     discount: float = 0.0
@@ -63,8 +63,8 @@ class ManufacturerSale(SQLModel, table=True):
     
     payment_mode: str = "cash"
     invoice_id: str # M-INV-{id}
-    delivery_status: str = Field(default="pending")  # pending / dispatched / delivered
-    date: datetime = Field(default_factory=datetime.utcnow)
+    delivery_status: str = Field(default="pending", index=True)  # pending / dispatched / delivered
+    date: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 # Pydantic Models for API
 class ManufacturerPurchaseCreate(SQLModel):
@@ -140,7 +140,7 @@ class MillProfileBase(SQLModel):
     profile_picture_url: Optional[str] = None
 
     # Mill Marketplace Attributes
-    mill_type: Optional[str] = Field(default="Rice Mill")
+    mill_type: Optional[str] = Field(default="Rice Mill", index=True)
     crops_accepted: Optional[str] = Field(default="Paddy, Rice, Wheat")
     price_offered_text: Optional[str] = Field(default="₹2,200 - ₹2,500/Quintal")
     daily_capacity: Optional[str] = Field(default="100 Tons/Day")
@@ -316,7 +316,7 @@ class ByProduct(SQLModel, table=True):
     __tablename__ = "by_products"
     id: Optional[int] = Field(default=None, primary_key=True)
     batch_id: int = Field(foreign_key="production_batches.id", index=True)
-    manufacturer_id: int = Field(foreign_key="user.id")
+    manufacturer_id: int = Field(foreign_key="user.id", index=True)
     name: str  # e.g., Rice Bran, Rice Husk, Broken Rice, Molasses
     quantity: float
     unit: str = "kg"
@@ -325,8 +325,8 @@ class ByProduct(SQLModel, table=True):
     sold_to: Optional[str] = None
     sold_price: Optional[float] = None
     sold_date: Optional[datetime] = None
-    status: str = Field(default="in_stock")  # in_stock, sold, disposed
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    status: str = Field(default="in_stock", index=True)  # in_stock, sold, disposed
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 class ByProductCreate(SQLModel):
     batch_id: int
@@ -403,8 +403,8 @@ class WeighmentSlip(SQLModel, table=True):
     mill_name: str
     mill_location: Optional[str] = None
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    created_by: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    created_by: int = Field(foreign_key="user.id", index=True)
 
 class WeighmentSlipCreate(SQLModel):
     purchase_id: int

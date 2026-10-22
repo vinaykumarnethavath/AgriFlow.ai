@@ -42,6 +42,11 @@ interface MillProfileData {
     account_number?: string;
     ifsc_code?: string;
     full_name?: string;
+    // Marketplace & Procurement
+    mill_type?: string;
+    crops_accepted?: string;
+    price_offered_text?: string;
+    daily_capacity?: string;
 }
 
 function Section({ title, children, extra }: { title: string; children: React.ReactNode; extra?: React.ReactNode }) {
@@ -110,6 +115,8 @@ export default function MillProfilePage() {
         perm_house_no: "", perm_street: "", perm_village: "", perm_mandal: "",
         perm_district: "", perm_state: "", perm_pincode: "",
         bank_name: "", account_number: "", ifsc_code: "", full_name: "",
+        mill_type: "Rice Mill", crops_accepted: "Paddy, Rice, Wheat",
+        price_offered_text: "₹2,200 - ₹2,550/Quintal", daily_capacity: "150 Tons/Day",
     });
 
     useEffect(() => {
@@ -271,6 +278,13 @@ export default function MillProfilePage() {
                         <Field label="Contact Number" name="contact_number" value={form.contact_number} onChange={handleChange} placeholder="e.g. 9876543210" type="tel" />
                         <Field label="Father's Name" name="father_name" value={form.father_name} required onChange={handleChange} placeholder="e.g. Suresh Kumar" />
                         <Field label="Registered Email" name="email" value={user?.email || ""} onChange={() => {}} readOnly />
+                    </Section>
+
+                    <Section title="🌾 Marketplace & Procurement Attributes">
+                        <Field label="Mill Type" name="mill_type" value={form.mill_type} onChange={handleChange} placeholder="e.g. Rice Mill, Flour Mill, Dal Mill, Oil Mill" />
+                        <Field label="Crops Accepted" name="crops_accepted" value={form.crops_accepted} onChange={handleChange} placeholder="e.g. Paddy, Rice, Wheat, Maize" />
+                        <Field label="Indicative Price Offered" name="price_offered_text" value={form.price_offered_text} onChange={handleChange} placeholder="e.g. ₹2,200 - ₹2,550/Quintal" />
+                        <Field label="Daily Milling Capacity" name="daily_capacity" value={form.daily_capacity} onChange={handleChange} placeholder="e.g. 150 Tons/Day" />
                     </Section>
 
                     <Section title="🪪 Personal Identification">

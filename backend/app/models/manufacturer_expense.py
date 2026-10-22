@@ -9,8 +9,8 @@ class ManufacturerExpense(SQLModel, table=True):
     category: str
     amount: float
     description: Optional[str] = None
-    expense_date: date = Field(default_factory=date.today)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    expense_date: date = Field(default_factory=date.today, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 
 class ManufacturerExpenseCreate(SQLModel):

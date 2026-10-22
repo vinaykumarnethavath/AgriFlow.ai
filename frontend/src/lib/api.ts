@@ -669,8 +669,10 @@ export const createPurchase = async (data: Omit<ManufacturerPurchase, "id" | "ma
     return response.data;
 }
 
-export const getPurchases = async () => {
-    const response = await api.get<ManufacturerPurchase[]>("/manufacturer/purchases");
+export const getPurchases = async (limit?: number, skip?: number) => {
+    const response = await api.get<ManufacturerPurchase[]>("/manufacturer/purchases", {
+        params: { ...(limit ? { limit } : {}), ...(skip ? { skip } : {}) }
+    });
     return response.data;
 }
 
@@ -689,8 +691,10 @@ export const createManufacturerSale = async (data: any) => {
     return response.data;
 }
 
-export const getManufacturerSales = async () => {
-    const response = await api.get<ManufacturerSale[]>("/manufacturer/sales");
+export const getManufacturerSales = async (limit?: number, skip?: number) => {
+    const response = await api.get<ManufacturerSale[]>("/manufacturer/sales", {
+        params: { ...(limit ? { limit } : {}), ...(skip ? { skip } : {}) }
+    });
     return response.data;
 }
 
@@ -2618,6 +2622,11 @@ export interface ByProductSummary {
 
 export const addByProduct = async (data: ByProductCreate): Promise<ByProduct> => {
     const response = await api.post<ByProduct>('/manufacturer/production/by-products', data);
+    return response.data;
+};
+
+export const getAllByProducts = async (params?: { batch_id?: number; status?: string }): Promise<ByProduct[]> => {
+    const response = await api.get<ByProduct[]>('/manufacturer/by-products', { params });
     return response.data;
 };
 

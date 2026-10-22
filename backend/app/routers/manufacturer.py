@@ -13,7 +13,7 @@ from ..models import (
     ProductionBatch, ProductionBatchCreate,
     ManufacturerSale, ManufacturerSaleCreate,
     ManufacturerExpense, ManufacturerExpenseCreate,
-    MillProfile, FarmerProfile,
+    MillProfile, FarmerProfile, ShopProfile, CustomerProfile,
     MillProcurementRequest, MillProcurementRequestCreate,
     MillProcurementRequestUpdate, MillProcurementRequestRead,
     # Feature A: Moisture Calculator
@@ -39,7 +39,107 @@ def check_manufacturer_role(user: User):
         raise HTTPException(status_code=403, detail="Not authorized as Manufacturer")
 
 
+async def batch_get_user_contact_info(session: AsyncSession, user_ids: List[int]) -> Dict[int, dict]:
+    """Optimized batch loader for user contact information across roles, avoiding N+1 queries."""
+    if not user_ids:
+        return {}
+
+    unique_ids = list(set(user_ids))
+    users = (await session.exec(select(User).where(User.id.in_(unique_ids)))).all()
+    user_map = {u.id: u for u in users}
+
+    contacts: Dict[int, dict] = {}
+    for uid, u in user_map.items():
+        contacts[uid] = {
+            "id": u.id,
+            "full_name": u.full_name,
+            "phone_number": u.phone_number,
+            "email": u.email,
+            "role": u.role,
+            "address": None,
+            "village": None,
+            "mandal": None,
+            "district": None,
+            "state": None,
+            "profile_picture_url": None,
+        }
+
+    farmer_ids = [uid for uid, u in user_map.items() if u.role == "farmer"]
+    shop_ids = [uid for uid, u in user_map.items() if u.role == "shop"]
+    mill_ids = [uid for uid, u in user_map.items() if u.role == "manufacturer"]
+    customer_ids = [uid for uid, u in user_map.items() if u.role == "customer"]
+
+    if farmer_ids:
+        f_profs = (await session.exec(select(FarmerProfile).where(FarmerProfile.user_id.in_(farmer_ids)))).all()
+        for fp in f_profs:
+            c = contacts.get(fp.user_id)
+            if c:
+                u = user_map[fp.user_id]
+                c["phone_number"] = fp.phone_number or u.phone_number
+                c["profile_picture_url"] = fp.profile_picture_url
+                c["village"] = fp.village
+                c["mandal"] = fp.mandal
+                c["district"] = fp.district
+                c["state"] = fp.state
+                parts = [p for p in [fp.house_no, fp.street, fp.village, fp.mandal, fp.district, fp.state, fp.pincode] if p]
+                c["address"] = ", ".join(parts) if parts else None
+
+    if shop_ids:
+        s_profs = (await session.exec(select(ShopProfile).where(ShopProfile.user_id.in_(shop_ids)))).all()
+        for sp in s_profs:
+            c = contacts.get(sp.user_id)
+            if c:
+                u = user_map[sp.user_id]
+                c["full_name"] = sp.owner_name or u.full_name
+                c["phone_number"] = sp.phone_number or sp.contact_number or u.phone_number
+                c["profile_picture_url"] = sp.profile_picture_url
+                c["village"] = sp.village
+                c["mandal"] = sp.mandal
+                c["district"] = sp.district
+                c["state"] = sp.state
+                if sp.shop_address:
+                    c["address"] = sp.shop_address
+                else:
+                    parts = [p for p in [sp.house_no, sp.street, sp.village, sp.mandal, sp.district, sp.state, sp.pincode] if p]
+                    c["address"] = ", ".join(parts) if parts else None
+
+    if mill_ids:
+        m_profs = (await session.exec(select(MillProfile).where(MillProfile.user_id.in_(mill_ids)))).all()
+        for mp in m_profs:
+            c = contacts.get(mp.user_id)
+            if c:
+                u = user_map[mp.user_id]
+                c["full_name"] = mp.owner_name or u.full_name
+                c["phone_number"] = mp.phone_number or mp.contact_number or u.phone_number
+                c["profile_picture_url"] = mp.profile_picture_url
+                c["village"] = mp.village
+                c["mandal"] = mp.mandal
+                c["district"] = mp.district
+                c["state"] = mp.state
+                parts = [p for p in [mp.house_no, mp.street, mp.village, mp.mandal, mp.district, mp.state, mp.pincode] if p]
+                c["address"] = ", ".join(parts) if parts else None
+
+    if customer_ids:
+        c_profs = (await session.exec(select(CustomerProfile).where(CustomerProfile.user_id.in_(customer_ids)))).all()
+        for cp in c_profs:
+            c = contacts.get(cp.user_id)
+            if c:
+                u = user_map[cp.user_id]
+                c["phone_number"] = cp.phone_number or u.phone_number
+                c["profile_picture_url"] = cp.profile_picture_url
+                c["village"] = cp.village
+                c["mandal"] = cp.mandal
+                c["district"] = cp.district
+                c["state"] = cp.state
+                parts = [p for p in [cp.house_no, cp.street, cp.village, cp.mandal, cp.district, cp.state, cp.pincode] if p]
+                c["address"] = ", ".join(parts) if parts else None
+
+    return contacts
+
+
 def _period_start(period: str) -> Optional[datetime]:
+    if not isinstance(period, str):
+        period = getattr(period, "default", "all")
     now = datetime.utcnow()
     if period == "today":
         return now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -64,41 +164,45 @@ async def get_manufacturer_stats(
     check_manufacturer_role(current_user)
     uid = current_user.id
 
-    # Stock
-    raw_stock = (await session.exec(
-        select(func.sum(Product.quantity))
-        .where(Product.user_id == uid, Product.category == "raw_material")
-    )).first() or 0
+    # 1. Stock grouped by category in single query
+    stock_rows = (await session.exec(
+        select(Product.category, func.sum(Product.quantity))
+        .where(Product.user_id == uid, Product.category.in_(["raw_material", "processed"]))
+        .group_by(Product.category)
+    )).all()
+    stock_map = {cat: (qty or 0) for cat, qty in stock_rows}
+    raw_stock = stock_map.get("raw_material", 0)
+    finished_stock = stock_map.get("processed", 0)
 
-    finished_stock = (await session.exec(
-        select(func.sum(Product.quantity))
-        .where(Product.user_id == uid, Product.category == "processed")
-    )).first() or 0
-
-    # Today
+    # 2. Time boundaries
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    today_purchases = (await session.exec(
-        select(func.sum(ManufacturerPurchase.total_cost))
-        .where(ManufacturerPurchase.manufacturer_id == uid, ManufacturerPurchase.date >= today_start)
-    )).first() or 0.0
-
-    today_sales = (await session.exec(
-        select(func.sum(ManufacturerSale.total_amount))
-        .where(ManufacturerSale.manufacturer_id == uid, ManufacturerSale.date >= today_start)
-    )).first() or 0.0
-
-    # Month
     month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    month_revenue = (await session.exec(
-        select(func.sum(ManufacturerSale.total_amount))
-        .where(ManufacturerSale.manufacturer_id == uid, ManufacturerSale.date >= month_start)
-    )).first() or 0.0
-
-    month_purchases = (await session.exec(
-        select(func.sum(ManufacturerPurchase.total_cost))
+    # 3. Purchases for this month (computes both month and today purchases in 1 query)
+    pur_rows = (await session.exec(
+        select(ManufacturerPurchase.total_cost, ManufacturerPurchase.date)
         .where(ManufacturerPurchase.manufacturer_id == uid, ManufacturerPurchase.date >= month_start)
-    )).first() or 0.0
+    )).all()
+    month_purchases = sum(float(r[0] or 0) for r in pur_rows)
+    today_purchases = sum(float(r[0] or 0) for r in pur_rows if r[1] and r[1] >= today_start)
+
+    # 4. Sales for this month (computes both month revenue and today sales in 1 query)
+    sale_rows = (await session.exec(
+        select(ManufacturerSale.total_amount, ManufacturerSale.date)
+        .where(ManufacturerSale.manufacturer_id == uid, ManufacturerSale.date >= month_start)
+    )).all()
+    month_revenue = sum(float(r[0] or 0) for r in sale_rows)
+    today_sales = sum(float(r[0] or 0) for r in sale_rows if r[1] and r[1] >= today_start)
+
+    # 5. Production batch stats combined
+    batch_stats = (await session.exec(
+        select(
+            func.count(ProductionBatch.id),
+            func.avg(ProductionBatch.efficiency)
+        ).where(ProductionBatch.manufacturer_id == uid)
+    )).first()
+    total_batches = int(batch_stats[0] or 0) if batch_stats else 0
+    avg_efficiency = round(float(batch_stats[1] or 0), 1) if batch_stats else 0.0
 
     month_processing = (await session.exec(
         select(func.sum(ProductionBatch.processing_cost))
@@ -111,18 +215,6 @@ async def get_manufacturer_stats(
     )).first() or 0.0
 
     net_profit = month_revenue - month_purchases - month_processing - month_expenses
-
-    # Production stats
-    total_batches = (await session.exec(
-        select(func.count(ProductionBatch.id))
-        .where(ProductionBatch.manufacturer_id == uid)
-    )).first() or 0
-
-    avg_efficiency_row = (await session.exec(
-        select(func.avg(ProductionBatch.efficiency))
-        .where(ProductionBatch.manufacturer_id == uid)
-    )).first()
-    avg_efficiency = round(float(avg_efficiency_row or 0), 1)
 
     return {
         "raw_stock": raw_stock,
@@ -147,16 +239,16 @@ async def get_sales_trend(
 ):
     check_manufacturer_role(current_user)
     start = _period_start(period)
-    stmt = select(ManufacturerSale).where(ManufacturerSale.manufacturer_id == current_user.id)
+    stmt = select(ManufacturerSale.date, ManufacturerSale.total_amount).where(ManufacturerSale.manufacturer_id == current_user.id)
     if start:
         stmt = stmt.where(ManufacturerSale.date >= start)
     result = await session.exec(stmt)
-    sales = result.all()
+    rows = result.all()
 
     daily: dict = {}
-    for s in sales:
-        day = s.date.strftime("%Y-%m-%d") if hasattr(s.date, "strftime") else str(s.date)[:10]
-        daily[day] = daily.get(day, 0) + float(s.total_amount)
+    for dt, amt in rows:
+        day = dt.strftime("%Y-%m-%d") if hasattr(dt, "strftime") else str(dt)[:10]
+        daily[day] = daily.get(day, 0) + float(amt or 0)
 
     trend = [{"date": d, "sales": round(v, 2)} for d, v in sorted(daily.items())]
     return trend
@@ -212,24 +304,27 @@ async def create_purchase(
 
 @router.get("/purchases")
 async def get_purchases(
+    limit: Optional[int] = Query(None),
+    skip: int = Query(0),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
     check_manufacturer_role(current_user)
-    result = await session.exec(
+    stmt = (
         select(ManufacturerPurchase)
         .where(ManufacturerPurchase.manufacturer_id == current_user.id)
         .order_by(ManufacturerPurchase.date.desc())
     )
+    if isinstance(skip, int) and skip > 0:
+        stmt = stmt.offset(skip)
+    if isinstance(limit, int):
+        stmt = stmt.limit(limit)
+    result = await session.exec(stmt)
     purchases = result.all()
 
-    # Enrich with farmer contact info
-    farmer_ids = list({p.farmer_id for p in purchases if p.farmer_id})
-    farmer_contact_map: Dict[int, dict] = {}
-    for fid in farmer_ids:
-        contact = await get_user_contact_info(session, fid)
-        if contact:
-            farmer_contact_map[fid] = contact
+    # Batch enrich with farmer contact info (O(1) queries instead of O(N))
+    farmer_ids = [p.farmer_id for p in purchases if p.farmer_id]
+    farmer_contact_map = await batch_get_user_contact_info(session, farmer_ids)
 
     enriched = []
     for p in purchases:
@@ -372,24 +467,27 @@ async def create_sale(
 
 @router.get("/sales")
 async def get_sales_history(
+    limit: Optional[int] = Query(None),
+    skip: int = Query(0),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
     check_manufacturer_role(current_user)
-    result = await session.exec(
+    stmt = (
         select(ManufacturerSale)
         .where(ManufacturerSale.manufacturer_id == current_user.id)
         .order_by(ManufacturerSale.date.desc())
     )
+    if isinstance(skip, int) and skip > 0:
+        stmt = stmt.offset(skip)
+    if isinstance(limit, int):
+        stmt = stmt.limit(limit)
+    result = await session.exec(stmt)
     sales = result.all()
 
-    # Enrich with buyer contact info
-    buyer_ids = list({s.buyer_id for s in sales if s.buyer_id})
-    buyer_contact_map: Dict[int, dict] = {}
-    for bid in buyer_ids:
-        contact = await get_user_contact_info(session, bid)
-        if contact:
-            buyer_contact_map[bid] = contact
+    # Batch enrich with buyer contact info (O(1) queries instead of O(N))
+    buyer_ids = [s.buyer_id for s in sales if s.buyer_id]
+    buyer_contact_map = await batch_get_user_contact_info(session, buyer_ids)
 
     enriched = []
     for s in sales:
@@ -446,46 +544,44 @@ async def get_accounting_summary(
     uid = current_user.id
     start = _period_start(period)
 
-    def date_filter(col, s):
-        return col >= s if s else True
-
     # Revenue
     rev_q = select(func.sum(ManufacturerSale.total_amount)).where(ManufacturerSale.manufacturer_id == uid)
     if start:
         rev_q = rev_q.where(ManufacturerSale.date >= start)
-    total_revenue = (await session.exec(rev_q)).first() or 0.0
+    total_revenue = float((await session.exec(rev_q)).first() or 0.0)
 
     # Purchase cost
     pur_q = select(func.sum(ManufacturerPurchase.total_cost)).where(ManufacturerPurchase.manufacturer_id == uid)
     if start:
         pur_q = pur_q.where(ManufacturerPurchase.date >= start)
-    total_purchase_cost = (await session.exec(pur_q)).first() or 0.0
+    total_purchase_cost = float((await session.exec(pur_q)).first() or 0.0)
 
     # Processing cost
     proc_q = select(func.sum(ProductionBatch.processing_cost)).where(ProductionBatch.manufacturer_id == uid)
     if start:
         proc_q = proc_q.where(ProductionBatch.date >= start)
-    total_processing_cost = (await session.exec(proc_q)).first() or 0.0
+    total_processing_cost = float((await session.exec(proc_q)).first() or 0.0)
 
-    # Expenses
-    exp_q = select(ManufacturerExpense).where(ManufacturerExpense.manufacturer_id == uid)
+    # Expenses grouped by category in single DB query
+    exp_q = (
+        select(ManufacturerExpense.category, func.sum(ManufacturerExpense.amount))
+        .where(ManufacturerExpense.manufacturer_id == uid)
+    )
     if start:
         exp_q = exp_q.where(ManufacturerExpense.created_at >= start)
-    expenses = (await session.exec(exp_q)).all()
+    exp_q = exp_q.group_by(ManufacturerExpense.category)
+    exp_rows = (await session.exec(exp_q)).all()
 
-    total_expenses = sum(e.amount for e in expenses)
-    expense_by_category: dict = {}
-    for e in expenses:
-        expense_by_category[e.category] = expense_by_category.get(e.category, 0) + e.amount
+    expense_by_category = {cat: float(amt or 0) for cat, amt in exp_rows}
+    total_expenses = sum(expense_by_category.values())
 
     net_profit = total_revenue - total_purchase_cost - total_processing_cost - total_expenses
 
-    # Order counts
-    sale_q = select(ManufacturerSale).where(ManufacturerSale.manufacturer_id == uid)
+    # Order count directly via count()
+    sc_q = select(func.count(ManufacturerSale.id)).where(ManufacturerSale.manufacturer_id == uid)
     if start:
-        sale_q = sale_q.where(ManufacturerSale.date >= start)
-    all_sales = (await session.exec(sale_q)).all()
-    total_sales_count = len(all_sales)
+        sc_q = sc_q.where(ManufacturerSale.date >= start)
+    total_sales_count = int((await session.exec(sc_q)).first() or 0)
     avg_sale_value = (total_revenue / total_sales_count) if total_sales_count > 0 else 0.0
 
     return {
@@ -589,46 +685,61 @@ async def get_analytics(
         eff_q = eff_q.where(ProductionBatch.date >= start)
     avg_efficiency = round(float((await session.exec(eff_q)).first() or 0), 1)
 
-    # Top crops bought (by total cost)
-    pur_rows_q = select(ManufacturerPurchase).where(ManufacturerPurchase.manufacturer_id == uid)
+    # Top crops bought (by total cost) using SQL aggregation
+    crop_stmt = (
+        select(
+            ManufacturerPurchase.crop_name,
+            func.sum(ManufacturerPurchase.total_cost),
+            func.sum(ManufacturerPurchase.quantity),
+            func.count(ManufacturerPurchase.id)
+        )
+        .where(ManufacturerPurchase.manufacturer_id == uid)
+    )
     if start:
-        pur_rows_q = pur_rows_q.where(ManufacturerPurchase.date >= start)
-    pur_rows = (await session.exec(pur_rows_q)).all()
+        crop_stmt = crop_stmt.where(ManufacturerPurchase.date >= start)
+    crop_stmt = crop_stmt.group_by(ManufacturerPurchase.crop_name).order_by(func.sum(ManufacturerPurchase.total_cost).desc()).limit(10)
+    crop_res = (await session.exec(crop_stmt)).all()
+    top_crops = [
+        {
+            "crop_name": r[0],
+            "total_cost": round(float(r[1] or 0), 2),
+            "total_qty": round(float(r[2] or 0), 2),
+            "count": int(r[3] or 0)
+        }
+        for r in crop_res
+    ]
 
-    crop_map: dict = {}
-    for p in pur_rows:
-        key = p.crop_name
-        if key not in crop_map:
-            crop_map[key] = {"crop_name": key, "total_cost": 0.0, "total_qty": 0.0, "count": 0}
-        crop_map[key]["total_cost"] += float(p.total_cost)
-        crop_map[key]["total_qty"] += float(p.quantity)
-        crop_map[key]["count"] += 1
-    top_crops = sorted(crop_map.values(), key=lambda x: x["total_cost"], reverse=True)[:10]
-
-    # Top products sold (by revenue)
-    sale_rows_q = select(ManufacturerSale).where(ManufacturerSale.manufacturer_id == uid)
+    # Top products sold (by revenue) using SQL aggregation + single batch product name lookup
+    prod_stmt = (
+        select(
+            ManufacturerSale.product_id,
+            func.sum(ManufacturerSale.total_amount),
+            func.sum(ManufacturerSale.quantity),
+            func.count(ManufacturerSale.id)
+        )
+        .where(ManufacturerSale.manufacturer_id == uid)
+    )
     if start:
-        sale_rows_q = sale_rows_q.where(ManufacturerSale.date >= start)
-    sale_rows = (await session.exec(sale_rows_q)).all()
+        prod_stmt = prod_stmt.where(ManufacturerSale.date >= start)
+    prod_stmt = prod_stmt.group_by(ManufacturerSale.product_id).order_by(func.sum(ManufacturerSale.total_amount).desc()).limit(10)
+    prod_res = (await session.exec(prod_stmt)).all()
 
-    # Get product names
-    product_ids = list({s.product_id for s in sale_rows})
-    prod_name_map: dict = {}
-    for pid in product_ids:
-        prod = await session.get(Product, pid)
-        if prod:
-            prod_name_map[pid] = prod.name
+    product_ids = [r[0] for r in prod_res if r[0]]
+    prod_name_map = {}
+    if product_ids:
+        p_rows = (await session.exec(select(Product.id, Product.name).where(Product.id.in_(product_ids)))).all()
+        prod_name_map = {p[0]: p[1] for p in p_rows}
 
-    prod_map: dict = {}
-    for s in sale_rows:
-        pid = s.product_id
-        name = prod_name_map.get(pid, f"Product #{pid}")
-        if pid not in prod_map:
-            prod_map[pid] = {"product_id": pid, "product_name": name, "revenue": 0.0, "units_sold": 0.0, "count": 0}
-        prod_map[pid]["revenue"] += float(s.total_amount)
-        prod_map[pid]["units_sold"] += float(s.quantity)
-        prod_map[pid]["count"] += 1
-    top_products = sorted(prod_map.values(), key=lambda x: x["revenue"], reverse=True)[:10]
+    top_products = [
+        {
+            "product_id": r[0],
+            "product_name": prod_name_map.get(r[0], f"Product #{r[0]}"),
+            "revenue": round(float(r[1] or 0), 2),
+            "units_sold": round(float(r[2] or 0), 2),
+            "count": int(r[3] or 0)
+        }
+        for r in prod_res
+    ]
 
     return {
         "period": period,
@@ -748,11 +859,18 @@ INITIAL_VERIFIED_MILLS = [
     },
 ]
 
+_seed_mills_initialized = False
+
 async def _ensure_seed_mills(session: AsyncSession):
     """Seed sample verified mills if fewer than 2 exist in the database."""
+    global _seed_mills_initialized
+    if _seed_mills_initialized:
+        return
+
     count_stmt = select(func.count(MillProfile.id))
     count = (await session.exec(count_stmt)).first() or 0
     if count >= 3:
+        _seed_mills_initialized = True
         return
 
     pwd_hash = get_password_hash("password123")
@@ -802,6 +920,8 @@ async def _ensure_seed_mills(session: AsyncSession):
         await session.commit()
     except Exception as e:
         await session.rollback()
+    finally:
+        _seed_mills_initialized = True
 
 
 @router.get("/mills/marketplace")
@@ -829,28 +949,38 @@ async def get_mills_marketplace(
             farmer_state = (farmer_prof.state or "").strip().lower()
 
     stmt = select(MillProfile, User).join(User, MillProfile.user_id == User.id)
+
+    # Push filters into SQL WHERE for database-level speed and indexing
+    if isinstance(state, str) and state.lower().strip() != "all":
+        st_pat = f"%{state.lower().strip()}%"
+        stmt = stmt.where(func.lower(MillProfile.state).like(st_pat))
+    if isinstance(district, str) and district.lower().strip() != "all":
+        dt_pat = f"%{district.lower().strip()}%"
+        stmt = stmt.where(func.lower(MillProfile.district).like(dt_pat))
+    if isinstance(mill_type, str) and mill_type.lower().strip() != "all":
+        mt_pat = f"%{mill_type.lower().strip()}%"
+        stmt = stmt.where(func.lower(MillProfile.mill_type).like(mt_pat))
+    if isinstance(crop, str) and crop.lower().strip() != "all":
+        c_pat = f"%{crop.lower().strip()}%"
+        stmt = stmt.where(
+            func.lower(MillProfile.crops_accepted).like(c_pat) |
+            func.lower(MillProfile.mill_name).like(c_pat)
+        )
+    if isinstance(search, str) and search.strip():
+        s = f"%{search.lower().strip()}%"
+        stmt = stmt.where(
+            func.lower(MillProfile.mill_name).like(s) |
+            func.lower(MillProfile.district).like(s) |
+            func.lower(MillProfile.state).like(s) |
+            func.lower(MillProfile.crops_accepted).like(s)
+        )
+
     results = (await session.exec(stmt)).all()
 
     mills_data = []
     for profile, user in results:
-        m_name = (profile.mill_name or "").lower()
         m_dist = (profile.district or "").lower()
         m_state = (profile.state or "").lower()
-        m_type = (getattr(profile, "mill_type", None) or "Modern Processing Mill").lower()
-        m_crops = (getattr(profile, "crops_accepted", None) or "").lower()
-
-        if search:
-            s = search.lower().strip()
-            if not (s in m_name or s in m_dist or s in m_state or s in m_type or s in m_crops):
-                continue
-        if crop and crop.lower().strip() not in m_crops and crop.lower().strip() not in m_name:
-            continue
-        if mill_type and mill_type.lower().strip() not in m_type:
-            continue
-        if state and state.lower().strip() not in m_state:
-            continue
-        if district and district.lower().strip() not in m_dist:
-            continue
 
         # Distance estimation
         dist_str = "12 km"
@@ -1386,6 +1516,25 @@ async def get_batch_by_products(
     return [ByProductRead(**bp.dict()) for bp in result.all()]
 
 
+@router.get("/by-products", response_model=List[ByProductRead])
+async def list_all_by_products(
+    batch_id: Optional[int] = Query(None),
+    status: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """List all by-products for the current manufacturer with optional filtering."""
+    check_manufacturer_role(current_user)
+    stmt = select(ByProduct).where(ByProduct.manufacturer_id == current_user.id)
+    if isinstance(batch_id, int):
+        stmt = stmt.where(ByProduct.batch_id == batch_id)
+    if isinstance(status, str) and status != "all":
+        stmt = stmt.where(ByProduct.status == status)
+    stmt = stmt.order_by(ByProduct.created_at.desc())
+    results = (await session.exec(stmt)).all()
+    return [ByProductRead(**bp.dict()) for bp in results]
+
+
 @router.get("/by-products/summary")
 async def get_by_products_summary(
     period: str = Query("30d"),
@@ -1766,7 +1915,8 @@ async def list_load_pools(
     List available load pools. Farmers see pools in their area.
     Use my_pools=true to see only pools you created or joined.
     """
-    if my_pools:
+    is_my_pools = my_pools is True
+    if is_my_pools:
         # Get pools the user created
         my_pool_ids_q = select(FarmerLoadPool.id).where(FarmerLoadPool.creator_id == current_user.id)
         # Get pools the user has joined
@@ -1781,31 +1931,49 @@ async def list_load_pools(
         stmt = select(FarmerLoadPool).where(FarmerLoadPool.id.in_(all_ids))
     else:
         stmt = select(FarmerLoadPool)
-        if status and status != "all":
+        if isinstance(status, str) and status != "all":
             stmt = stmt.where(FarmerLoadPool.status == status)
         else:
             # By default show only open pools
             stmt = stmt.where(FarmerLoadPool.status.in_(["open", "full"]))
 
-    if crop:
+    if isinstance(crop, str) and crop.strip() and crop.lower() != "all":
         stmt = stmt.where(func.lower(FarmerLoadPool.crop_name).contains(crop.lower()))
-    if district:
+    if isinstance(district, str) and district.strip() and district.lower() != "all":
         stmt = stmt.where(func.lower(FarmerLoadPool.district).contains(district.lower()))
 
     stmt = stmt.order_by(FarmerLoadPool.created_at.desc())
     pools = (await session.exec(stmt)).all()
 
+    pool_ids = [p.id for p in pools if p.id is not None]
+    creator_ids = list({p.creator_id for p in pools if p.creator_id is not None})
+
+    # Batch fetch all members in 1 query
+    member_map: Dict[int, list] = {pid: [] for pid in pool_ids}
+    if pool_ids:
+        all_members = (await session.exec(
+            select(FarmerLoadPoolMember).where(FarmerLoadPoolMember.pool_id.in_(pool_ids))
+        )).all()
+        for m in all_members:
+            if m.pool_id in member_map:
+                member_map[m.pool_id].append(m)
+
+    # Batch fetch all creator names in 1 query
+    creator_map: Dict[int, str] = {}
+    if creator_ids:
+        creators = (await session.exec(
+            select(User.id, User.full_name).where(User.id.in_(creator_ids))
+        )).all()
+        creator_map = {cid: (name or "Farmer") for cid, name in creators}
+
     results = []
     for pool in pools:
-        members = (await session.exec(
-            select(FarmerLoadPoolMember).where(FarmerLoadPoolMember.pool_id == pool.id)
-        )).all()
-        creator = await session.get(User, pool.creator_id)
+        members = member_map.get(pool.id, [])
         fill_pct = round((pool.current_quantity / pool.target_quantity * 100), 1) if pool.target_quantity > 0 else 0.0
 
         results.append(FarmerLoadPoolRead(
             **pool.dict(),
-            creator_name=creator.full_name if creator else None,
+            creator_name=creator_map.get(pool.creator_id, "Farmer"),
             member_count=len(members),
             fill_percentage=fill_pct,
             members=[FarmerLoadPoolMemberRead(**m.dict()) for m in members],
