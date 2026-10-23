@@ -379,6 +379,7 @@ export interface ShopOrderDetailed {
   payment_mode: string;
   payment_status?: string;
   status: string;
+  order_notes?: string;
   created_at: string;
   total_cost: number;
   total_expenses: number;
@@ -403,6 +404,86 @@ export interface ShopOrderDetailed {
 
 export const getShopOrdersDetailed = async () => {
   const response = await api.get<ShopOrderDetailed[]>("/orders/shop-orders-detailed");
+  return response.data;
+};
+
+export interface FarmerOrderItem {
+  product_id?: number;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  image_url?: string;
+  product_image_url?: string;
+  brand?: string;
+  category?: string;
+  manufacturer?: string;
+  main_composition?: string;
+}
+
+export interface FarmerOrder {
+  id: number;
+  shop_id: number;
+  shop_name: string;
+  shop_contact?: ContactInfo;
+  farmer_id?: number;
+  farmer_name?: string;
+  total_amount: number;
+  discount: number;
+  final_amount: number;
+  payment_mode: string;
+  payment_status?: string;
+  payment_id?: string;
+  status: string;
+  order_notes?: string;
+  created_at: string;
+  items?: FarmerOrderItem[];
+}
+
+export const getFarmerOrders = async (): Promise<FarmerOrder[]> => {
+  const response = await api.get<FarmerOrder[]>("/orders/my-orders");
+  return response.data;
+};
+
+export const cancelFarmerOrder = async (orderId: number) => {
+  const response = await api.put(`/orders/${orderId}/status`, { status: "cancelled" });
+  return response.data;
+};
+
+export interface ChatChannelInfo {
+  id: number;
+  name: string;
+  channel_type: "p2p" | "group";
+  location_tag?: string;
+  created_at: string;
+}
+
+export interface ChatMessageItem {
+  id: number;
+  channel_id: number;
+  sender_id: number;
+  sender_name: string;
+  message_text: string;
+  media_url?: string;
+  media_type?: string;
+  sender_role?: string;
+  created_at: string;
+}
+
+export const getOrCreateP2PChat = async (targetUserId: number): Promise<ChatChannelInfo> => {
+  const response = await api.post<ChatChannelInfo>(`/chat/channels/p2p/${targetUserId}`);
+  return response.data;
+};
+
+export const getChannelMessages = async (channelId: number): Promise<ChatMessageItem[]> => {
+  const response = await api.get<ChatMessageItem[]>(`/chat/channels/${channelId}/messages`);
+  return response.data;
+};
+
+export const sendChannelMessage = async (channelId: number, messageText: string): Promise<ChatMessageItem> => {
+  const response = await api.post<ChatMessageItem>(`/chat/channels/${channelId}/messages`, {
+    message_text: messageText,
+  });
   return response.data;
 };
 

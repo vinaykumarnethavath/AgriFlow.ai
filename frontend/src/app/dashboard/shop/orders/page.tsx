@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ContactInfoCard from "@/components/ui/ContactInfoCard";
+import OrderChatModal from "@/components/chat/OrderChatModal";
 import {
     Package, Truck, CheckCircle, Clock, ShoppingCart, CreditCard,
-    TrendingUp, AlertCircle, Wallet, ChevronDown, ChevronUp, X, UserCircle
+    TrendingUp, AlertCircle, Wallet, ChevronDown, ChevronUp, X, UserCircle,
+    MessageSquare
 } from "lucide-react";
 
 export default function ShopOrdersPage() {
@@ -25,6 +27,17 @@ export default function ShopOrdersPage() {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmDiscount, setConfirmDiscount] = useState(0);
     const [confirming, setConfirming] = useState(false);
+
+    // Chat modal with farmer
+    const [chatModalOpen, setChatModalOpen] = useState(false);
+    const [chatTarget, setChatTarget] = useState<{
+        userId: number;
+        name: string;
+        role: string;
+        phone?: string | null;
+        orderId?: number;
+        orderSummary?: string;
+    } | null>(null);
 
     const filteredOrders = useMemo(() => {
         return orders.filter((order) => {
@@ -299,6 +312,27 @@ export default function ShopOrdersPage() {
                                                 </Button>
                                             )}
 
+                                            {/* Direct Chat with Farmer */}
+                                            {selectedOrder.farmer_id && (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setChatTarget({
+                                                            userId: selectedOrder.farmer_id!,
+                                                            name: selectedOrder.farmer_name || `Farmer #${selectedOrder.farmer_id}`,
+                                                            role: "farmer",
+                                                            phone: selectedOrder.farmer_contact?.phone_number,
+                                                            orderId: selectedOrder.id,
+                                                            orderSummary: selectedOrder.items?.map(i => i.product_name).slice(0, 2).join(", "),
+                                                        });
+                                                        setChatModalOpen(true);
+                                                    }}
+                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1.5"
+                                                >
+                                                    <MessageSquare className="w-4 h-4 mr-1" /> Message Farmer
+                                                </Button>
+                                            )}
+
                                             {/* Toggle Customer Details */}
                                             <Button 
                                                 size="sm" 
@@ -357,6 +391,16 @@ export default function ShopOrdersPage() {
                                             contact={selectedOrder.farmer_contact}
                                             label="Customer Details"
                                         />
+                                    )}
+
+                                    {/* Farmer Delivery Instructions / Notes */}
+                                    {selectedOrder.order_notes && (
+                                        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3.5 text-xs text-amber-900 dark:text-amber-200">
+                                            <p className="font-bold uppercase tracking-wider text-[10px] text-amber-800 dark:text-amber-300 mb-1">
+                                                Farmer Delivery Instructions / Special Notes:
+                                            </p>
+                                            <p className="italic font-medium">"{selectedOrder.order_notes}"</p>
+                                        </div>
                                     )}
 
                                     {/* Items Table */}
@@ -528,6 +572,23 @@ export default function ShopOrdersPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Direct P2P Chat Modal with Farmer */}
+            {chatTarget && (
+                <OrderChatModal
+                    isOpen={chatModalOpen}
+                    onClose={() => {
+                        setChatModalOpen(false);
+                        setChatTarget(null);
+                    }}
+                    targetUserId={chatTarget.userId}
+                    targetName={chatTarget.name}
+                    targetRole={chatTarget.role}
+                    targetPhone={chatTarget.phone}
+                    orderId={chatTarget.orderId}
+                    orderSummary={chatTarget.orderSummary}
+                />
             )}
         </div>
     );

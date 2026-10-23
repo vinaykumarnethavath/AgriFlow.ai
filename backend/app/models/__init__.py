@@ -6,7 +6,7 @@ from .crop import (
     CropSale, CropSaleCreate, CropSaleRead,
     CropDiagnosis, CropDiagnosisCreate, CropDiagnosisBase
 )
-from .trade import Product, ProductCreate, ProductRead, ShopOrder, ShopOrderCreate, ShopOrderRead, ShopOrderItem, ShopOrderItemBase, TraceabilityEvent, ShopOrderStatusUpdate, BulkProductReceive, ProductBatchReceiveInfo
+from .trade import Product, ProductCreate, ProductRead, ShopOrder, ShopOrderCreate, ShopOrderRead, ShopOrderItem, ShopOrderItemBase, ShopOrderItemCreate, TraceabilityEvent, ShopOrderStatusUpdate, BulkProductReceive, ProductBatchReceiveInfo
 from .expense import ShopExpense, ShopExpenseCreate, ShopExpenseRead
 from .user_otp import UserOTP
 from .phone_otp import PhoneOTP

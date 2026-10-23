@@ -8,6 +8,7 @@ import api from "@/lib/api";
 import { ContactInfo } from "@/lib/api";
 import ContactInfoCard from "@/components/ui/ContactInfoCard";
 import Link from "next/link";
+import OrderChatModal from "@/components/chat/OrderChatModal";
 import {
     ShoppingCart,
     Search,
@@ -26,7 +27,9 @@ import {
     Store,
     Star,
     ChevronDown,
-    CreditCard
+    CreditCard,
+    Box,
+    MessageSquare
 } from "lucide-react";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
 import { useLanguage } from "@/context/LanguageContext";
@@ -126,6 +129,16 @@ export default function MarketPage() {
     const [paymentMode, setPaymentMode] = useState<"cash" | "razorpay">("razorpay");
     const [mockOptions, setMockOptions] = useState<any>(null);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [orderNotes, setOrderNotes] = useState("");
+    const [chatModalOpen, setChatModalOpen] = useState(false);
+    const [chatTarget, setChatTarget] = useState<{
+        userId: number;
+        name: string;
+        role: string;
+        phone?: string | null;
+        orderId?: number;
+        orderSummary?: string;
+    } | null>(null);
 
     const categories = [
         { id: "all", name: t("marketPage.allProducts", "All Products"), icon: Package },
@@ -317,11 +330,13 @@ export default function MarketPage() {
                     items,
                     payment_mode: paymentMode, // "cash" or "razorpay"
                     discount: 0,
+                    order_notes: orderNotes.trim() || undefined,
                 });
             }
 
             alert(`Order requests sent successfully! Shop owners will review them.`);
             setCart([]);
+            setOrderNotes("");
             setOrderPlaced(true);
             fetchOrders();
             fetchProducts();
@@ -640,7 +655,25 @@ export default function MarketPage() {
                                         </div>
 
                                         {/* Actions */}
-                                        <div className="border-t border-border pt-4 flex gap-3">
+                                        <div className="border-t border-border pt-4 flex gap-3 flex-wrap">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setChatTarget({
+                                                        userId: selectedOrder.shop_id,
+                                                        name: selectedOrder.shop_name || "Shopkeeper",
+                                                        role: "shop",
+                                                        phone: selectedOrder.shop_contact?.phone_number,
+                                                        orderId: selectedOrder.id,
+                                                        orderSummary: selectedOrder.items?.map(i => i.product_name).slice(0, 2).join(", "),
+                                                    });
+                                                    setChatModalOpen(true);
+                                                }}
+                                                className="border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                                            >
+                                                <MessageSquare className="h-4 w-4 mr-1" /> Chat with Shop
+                                            </Button>
                                             {selectedOrder.status === 'pending' && (
                                                 <Button
                                                     size="sm"
@@ -694,10 +727,17 @@ export default function MarketPage() {
 
                 {orderPlaced ? (
                     <Card className="bg-emerald-50 border-emerald-200">
-                        <CardContent className="p-12 text-center">
-                            <CheckCircle className="h-20 w-20 mx-auto text-emerald-500 mb-4" />
+                        <CardContent className="p-12 text-center space-y-4">
+                            <CheckCircle className="h-20 w-20 mx-auto text-emerald-500 mb-2" />
                             <h3 className="text-2xl font-bold text-emerald-800">Order Placed Successfully!</h3>
-                            <p className="text-emerald-600">Your order has been submitted to the shop. You can track it in Order History.</p>
+                            <p className="text-emerald-600 max-w-md mx-auto">Your order has been submitted to the shop. You can track it in My Orders and communicate directly with the shop owner.</p>
+                            <div className="pt-2">
+                                <Link href="/dashboard/farmer/orders">
+                                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5">
+                                        <Box className="w-4 h-4 mr-2" /> Track in My Orders ➜
+                                    </Button>
+                                </Link>
+                            </div>
                         </CardContent>
                     </Card>
                 ) : cart.length === 0 ? (
@@ -808,6 +848,16 @@ export default function MarketPage() {
                                                 </Button>
                                             </div>
                                         </div>
+                                        <div className="mb-4 bg-white/10 dark:bg-zinc-800/50 rounded-lg p-3">
+                                            <p className="text-green-100 text-sm mb-1.5 font-medium">Special Delivery Instructions / Note for Shopkeeper</p>
+                                            <textarea
+                                                value={orderNotes}
+                                                onChange={(e) => setOrderNotes(e.target.value)}
+                                                placeholder="e.g., Deliver near village temple, need 50kg bags, please call before dispatch..."
+                                                rows={2}
+                                                className="w-full p-2.5 rounded-lg text-xs bg-white text-gray-900 dark:bg-zinc-900 dark:text-gray-100 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-green-400 resize-none"
+                                            />
+                                        </div>
                                         <Button
                                             onClick={placeOrder}
                                             disabled={placingOrder}
@@ -837,6 +887,14 @@ export default function MarketPage() {
                     <h1 className="text-2xl font-bold text-foreground">{t("marketPage.title", "Market")}</h1>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Link href="/dashboard/farmer/orders">
+                        <Button
+                            variant="outline"
+                            className="flex items-center gap-2 border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/40 font-semibold"
+                        >
+                            <Box className="h-4 w-4" /> My Orders ({orders.length})
+                        </Button>
+                    </Link>
                     <Button
                         variant="outline"
                         onClick={() => { setShowHistory(true); fetchOrders(); }}
@@ -1014,27 +1072,47 @@ export default function MarketPage() {
                                         </div>
                                     </div>
 
-                                    {/* Add to Cart Button */}
-                                    <Button
-                                        onClick={() => addToCart(product)}
-                                        disabled={product.quantity === 0}
-                                        className={`w-full ${inCart
-                                            ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-300"
-                                            : "bg-green-600 hover:bg-green-700 text-white"
-                                            }`}
-                                    >
-                                        {inCart ? (
-                                            <>
-                                                <CheckCircle className="h-4 w-4 mr-2" />
-                                                {t("marketPage.inCart", "In Cart")} ({inCart.quantity})
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                {t("marketPage.addToCart", "Add to Cart")}
-                                            </>
-                                        )}
-                                    </Button>
+                                    {/* Action Buttons: Chat with Shop + Add to Cart */}
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                setChatTarget({
+                                                    userId: product.user_id,
+                                                    name: product.seller_name || "Shopkeeper",
+                                                    role: "shop",
+                                                    orderSummary: product.name,
+                                                });
+                                                setChatModalOpen(true);
+                                            }}
+                                            className="px-3 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                                            title={`Chat with ${product.seller_name || "Shopkeeper"}`}
+                                        >
+                                            <MessageSquare className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            onClick={() => addToCart(product)}
+                                            disabled={product.quantity === 0}
+                                            className={`flex-1 ${inCart
+                                                ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-300"
+                                                : "bg-green-600 hover:bg-green-700 text-white"
+                                                }`}
+                                        >
+                                            {inCart ? (
+                                                <>
+                                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                                    {t("marketPage.inCart", "In Cart")} ({inCart.quantity})
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Plus className="h-4 w-4 mr-2" />
+                                                    {t("marketPage.addToCart", "Add to Cart")}
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         );
@@ -1086,6 +1164,23 @@ export default function MarketPage() {
                         />
                     </div>
                 </div>
+            )}
+
+            {/* Direct Interactive Chat Modal with Shop Owner */}
+            {chatTarget && (
+                <OrderChatModal
+                    isOpen={chatModalOpen}
+                    onClose={() => {
+                        setChatModalOpen(false);
+                        setChatTarget(null);
+                    }}
+                    targetUserId={chatTarget.userId}
+                    targetName={chatTarget.name}
+                    targetRole={chatTarget.role}
+                    targetPhone={chatTarget.phone}
+                    orderId={chatTarget.orderId}
+                    orderSummary={chatTarget.orderSummary}
+                />
             )}
         </div>
     );

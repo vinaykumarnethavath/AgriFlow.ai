@@ -65,6 +65,7 @@ class ShopOrderBase(SQLModel):
     payment_status: str = "pending" # pending, paid
     payment_id: Optional[str] = None
     status: str = Field(default="completed", index=True) # completed, pending, confirmed, dispatched, cancelled
+    order_notes: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 class ShopOrder(ShopOrderBase, table=True):
@@ -118,6 +119,7 @@ class ShopOrderCreate(SQLModel):
     farmer_id: Optional[int] = None
     discount: float = 0.0
     payment_mode: str = "cash"
+    order_notes: Optional[str] = None
     # Optional expense details captured at point of sale
     expense_transportation: float = 0.0
     expense_labour: float = 0.0

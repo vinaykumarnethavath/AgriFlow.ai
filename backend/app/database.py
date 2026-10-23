@@ -157,6 +157,7 @@ async def init_db():
         # Shop Orders migrations
         "ALTER TABLE shop_orders ADD COLUMN IF NOT EXISTS total_expenses FLOAT DEFAULT 0.0",
         "ALTER TABLE shop_orders ADD COLUMN IF NOT EXISTS profit FLOAT DEFAULT 0.0",
+        "ALTER TABLE shop_orders ADD COLUMN IF NOT EXISTS order_notes VARCHAR",
 
         # Chat and Mill Procurement migrations
         "ALTER TABLE chatmessage ADD COLUMN IF NOT EXISTS media_type VARCHAR",

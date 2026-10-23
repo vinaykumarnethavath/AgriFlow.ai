@@ -161,7 +161,7 @@ async def create_shop_order(
         + order_in.expense_other
     )
 
-    order_status = "pending" if current_user.role == "farmer" else "completed"
+    order_status = "pending" if (current_user.role == "farmer" or current_user.role == UserRole.FARMER) else "completed"
 
     db_order = ShopOrder(
         shop_id=shop_id,
@@ -172,6 +172,7 @@ async def create_shop_order(
         final_amount=final_amount,
         payment_mode=order_in.payment_mode,
         status=order_status,
+        order_notes=order_in.order_notes,
         total_expenses=total_expenses,
     )
     session.add(db_order)
@@ -310,6 +311,7 @@ async def read_shop_orders_detailed(
             "payment_status": order.payment_status,
             "payment_id": order.payment_id,
             "status": order.status,
+            "order_notes": order.order_notes,
             "created_at": order.created_at.isoformat(),
             "total_cost": total_cost,
             "total_expenses": total_expenses,
@@ -460,15 +462,25 @@ async def read_my_orders(
 
     shop_ids = list({o.shop_id for o in orders})
     shop_dict = {}
+    shop_profile_dict = {}
     if shop_ids:
         shop_stmt = select(User).where(User.id.in_(shop_ids))
         shops_res = await session.exec(shop_stmt)
         shop_dict = {s.id: s.full_name for s in shops_res.all()}
 
+        sp_stmt = select(ShopProfile).where(ShopProfile.user_id.in_(shop_ids))
+        sp_res = await session.exec(sp_stmt)
+        shop_profile_dict = {p.user_id: p for p in sp_res.all()}
+
     # Pre-fetch contact info for all unique shop_ids
     shop_contact_map: Dict[int, Optional[Dict]] = {}
     for sid in shop_ids:
-        shop_contact_map[sid] = await get_user_contact_info(session, sid)
+        contact_info = await get_user_contact_info(session, sid)
+        if contact_info:
+            prof = shop_profile_dict.get(sid)
+            if prof and prof.shop_name:
+                contact_info["shop_name"] = prof.shop_name
+        shop_contact_map[sid] = contact_info
 
     product_ids = {item.product_id for order in orders for item in order.items}
     prod_dict = {}
@@ -482,6 +494,7 @@ async def read_my_orders(
         for item in o.items:
             prod = prod_dict.get(item.product_id)
             rich_items.append({
+                "product_id": item.product_id,
                 "product_name": item.product_name,
                 "quantity": item.quantity,
                 "unit_price": item.unit_price,
@@ -489,17 +502,22 @@ async def read_my_orders(
                 "image_url": prod.image_url if prod else None,
                 "product_image_url": prod.product_image_url if prod else None,
                 "brand": prod.brand if prod else None,
+                "category": prod.category if prod else "fertilizer",
                 "manufacturer": prod.manufacturer if prod else None,
                 # Composition for farmers to see
                 "main_composition": prod.main_composition if prod else None,
             })
 
+        prof = shop_profile_dict.get(o.shop_id)
+        s_name = (prof.shop_name if prof and prof.shop_name else None) or shop_dict.get(o.shop_id, "Agri Shop")
+
         rich_orders.append({
             "id": o.id,
             "shop_id": o.shop_id,
-            "shop_name": shop_dict.get(o.shop_id, "Unknown Shop"),
+            "shop_name": s_name,
             "shop_contact": shop_contact_map.get(o.shop_id),
             "farmer_id": o.farmer_id,
+            "farmer_name": o.farmer_name,
             "total_amount": o.total_amount,
             "discount": o.discount,
             "final_amount": o.final_amount,
@@ -507,6 +525,7 @@ async def read_my_orders(
             "payment_status": o.payment_status,
             "payment_id": o.payment_id,
             "status": o.status,
+            "order_notes": o.order_notes,
             "created_at": o.created_at.isoformat(),
             "items": rich_items,
         })
