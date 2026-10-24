@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { resolveDemoApiResponse } from './demoData';
 
 const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const API_URL = rawApiUrl.trim().replace(/^['"]|['"]$/g, '').replace(/\/+$/, '');
@@ -26,10 +27,33 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
+        const isDemo = typeof window !== 'undefined' && (
+            localStorage.getItem('isDemoMode') === 'true' ||
+            localStorage.getItem('token')?.startsWith('demo-token-') ||
+            localStorage.getItem('user')?.includes('"email":"demo@') ||
+            localStorage.getItem('user')?.includes('"demo@')
+        );
+
+        if (isDemo && error.config?.url) {
+            const demoMock = resolveDemoApiResponse(error.config.url, error.config.method);
+            if (demoMock !== null) {
+                return Promise.resolve({
+                    data: demoMock,
+                    status: 200,
+                    statusText: "OK",
+                    headers: {},
+                    config: error.config,
+                });
+            }
+        }
+
         const requestUrl = String(error.config?.url || '');
         const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register') || requestUrl.includes('/auth/send-register-otp') || requestUrl.includes('/auth/forgot-password') || requestUrl.includes('/auth/verify-otp') || requestUrl.includes('/auth/reset-password');
         if (error.response?.status === 401 && typeof window !== 'undefined' && !isAuthRequest) {
+            if (isDemo) {
+                return Promise.reject(error);
+            }
             // Token expired or invalid
             console.warn("Authentication error, redirecting to login");
             localStorage.removeItem('token');

@@ -9,6 +9,7 @@ import { Sprout, Mail, Phone, Store, Factory, ShoppingCart, ShieldCheck, ArrowLe
 import { UserRole } from "@/types";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { DemoButton } from "@/components/DemoButton";
 import { useLanguage } from "@/context/LanguageContext";
 import { PasswordInput } from "@/components/ui/password-input";
 
@@ -208,7 +209,8 @@ export default function RegisterPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4 transition-colors duration-300 relative">
             {/* Top Bar Quick Controls */}
-            <div className="absolute top-4 right-4 flex items-center gap-3 z-10">
+            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                <DemoButton />
                 <LanguageSelector direction="down" />
                 <ThemeToggle />
             </div>

@@ -43,6 +43,7 @@ import {
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
 import { LanguageSelector } from "../LanguageSelector";
+import { DemoButton } from "../DemoButton";
 
 interface SidebarProps {
     isOpen?: boolean;
@@ -178,13 +179,16 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
 
             <div className={cn("pt-3 border-t border-green-800 mt-2 w-full flex flex-col gap-3", !isOpen && "items-center")}>
                 {isOpen && (
-                    <div className="px-1 flex items-center gap-2">
-                        <div className="flex-1">
-                            <LanguageSelector />
+                    <div className="px-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                                <LanguageSelector />
+                            </div>
+                            <div className="shrink-0">
+                                <ThemeToggle />
+                            </div>
                         </div>
-                        <div className="shrink-0">
-                            <ThemeToggle />
-                        </div>
+                        <DemoButton />
                     </div>
                 )}
 

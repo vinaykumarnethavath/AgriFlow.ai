@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLanguage } from "@/context/LanguageContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PasswordInput } from "@/components/ui/password-input";
+import { DemoButton } from "@/components/DemoButton";
 
 type AuthMethod = "email" | "phone";
 
@@ -117,7 +118,8 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300 relative">
-            <div className="absolute top-4 right-4 flex items-center gap-3">
+            <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+                <DemoButton />
                 <LanguageSelector direction="down" />
                 <ThemeToggle />
             </div>
