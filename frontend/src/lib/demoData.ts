@@ -1,4 +1,4 @@
-// AGRIFLOW DEMO DATA — Realistic data for all roles, spanning 5 years (2021-2026)
+// AGRIFLOW DEMO DATA — Complete, realistic synthetic data for all roles, spanning 5 years (2021-2026)
 
 export type DemoRole = "farmer" | "shop" | "manufacturer" | "customer";
 
@@ -11,11 +11,14 @@ function mkDate(y: number, m: number, d: number) {
 
 export const farmerDemoData = {
   profile: {
+    id: 17,
     farmer_id: "FM-2021-00123",
     full_name: "Ravi Kumar Reddy",
     father_husband_name: "Suresh Reddy",
     phone_number: "9876543210",
+    secondary_phone: "9848011223",
     gender: "Male",
+    relation_type: "son_of",
     house_no: "4-5/B",
     street: "Nandanavanam Road",
     village: "Kondapally",
@@ -30,216 +33,704 @@ export const farmerDemoData = {
     account_number: "35420198765",
     ifsc_code: "SBIN0003241",
     land_records: [
-      { serial_number: "KR/2021/001", area: 2.30 },
-      { serial_number: "KR/2021/002", area: 3.10 },
-      { serial_number: "KR/2021/003", area: 1.80 },
+      { id: 1, serial_number: "142/1A", area: 3.10, soil_type: "Black Cotton", irrigation_source: "Borewell + Canal" },
+      { id: 2, serial_number: "142/2B", area: 2.30, soil_type: "Red Loamy", irrigation_source: "Drip Irrigation" },
+      { id: 3, serial_number: "188/4", area: 1.80, soil_type: "Alluvial Clay", irrigation_source: "Lift Irrigation" },
     ],
     profile_picture_url: null,
   },
   crops: [
-    { id: 1, name: "Paddy (BPT-5204)", area: 3.10, sowing_date: mkDate(2026,6,15), expected_harvest_date: mkDate(2026,10,20), status: "growing", notes: "Good germination, requires second dose of urea" },
-    { id: 2, name: "Cotton (Bunny BT)", area: 2.30, sowing_date: mkDate(2026,5,20), expected_harvest_date: mkDate(2026,11,30), status: "growing", notes: "Watch for bollworm attack" },
-    { id: 3, name: "Maize", area: 1.80, sowing_date: mkDate(2026,7,1), expected_harvest_date: mkDate(2026,10,5), status: "harvested", notes: "Yield: 6.2 tons/acre" },
+    {
+      id: 1,
+      name: "Paddy (BPT 5204 Samba Masuri)",
+      area: 3.10,
+      season: "Kharif",
+      variety: "BPT 5204 Certified",
+      crop_type: "Paddy",
+      sowing_date: "2026-06-15T00:00:00",
+      expected_harvest_date: "2026-10-30T00:00:00",
+      status: "Growing",
+      notes: "Excellent vegetative growth. Panicle initiation active. Applied 2nd dose Urea.",
+      expenses_count: 4,
+      total_expenses: 18450
+    },
+    {
+      id: 2,
+      name: "Cotton (Bunny BT Hybrid)",
+      area: 2.30,
+      season: "Kharif",
+      variety: "Bunny BT",
+      crop_type: "Cotton",
+      sowing_date: "2026-05-20T00:00:00",
+      expected_harvest_date: "2026-11-25T00:00:00",
+      status: "Growing",
+      notes: "Second picking scheduled. Pest scouting shows minor bollworm trace.",
+      expenses_count: 3,
+      total_expenses: 14200
+    },
+    {
+      id: 3,
+      name: "Maize (NK-6240 Hybrid)",
+      area: 1.80,
+      season: "Rabi",
+      variety: "NK-6240",
+      crop_type: "Maize",
+      sowing_date: "2026-01-10T00:00:00",
+      expected_harvest_date: "2026-04-20T00:00:00",
+      actual_harvest_date: "2026-04-18T00:00:00",
+      actual_yield: 42.5,
+      selling_price_per_unit: 1890,
+      net_profit: 48600,
+      status: "Harvested",
+      notes: "Harvested and 40 quintals deposited in Kondapally Primary Cold Store.",
+      expenses_count: 2,
+      total_expenses: 9800
+    }
   ],
-  annualYield: years.map((y, i) => ({
-    year: y,
-    paddy: [4.8, 5.1, 5.4, 5.0, 5.8, 4.9][i],
-    cotton: [1.2, 1.4, 1.3, 1.6, 1.5, 1.7][i],
-    maize: [5.5, 5.9, 6.1, 6.0, 6.4, 6.2][i],
-    totalRevenue: [210000, 245000, 268000, 252000, 310000, 285000][i],
-    expenses: [82000, 91000, 98000, 95000, 112000, 104000][i],
-  })),
-  monthlyRevenue: months.map((m, i) => ({
-    month: m,
-    revenue: [12000,8000,18000,22000,35000,28000,14000,9000,38000,45000,32000,24000][i],
-    expenses: [5000,4200,7800,9100,14200,11500,6200,4500,15800,18200,13100,9800][i],
-  })),
-  weather: {
-    location: "Kondapally, Andhra Pradesh",
-    current: { temp: 29, feels_like: 32, humidity: 74, wind_speed: 14, condition: "Partly Cloudy", uv_index: 6, visibility: 8, pressure: 1013, rainfall_today: 2.4 },
-    forecast: [
-      { day: "Today", high: 31, low: 23, condition: "Partly Cloudy", rain_chance: 30 },
-      { day: "Tue", high: 33, low: 24, condition: "Sunny", rain_chance: 5 },
-      { day: "Wed", high: 28, low: 22, condition: "Heavy Rain", rain_chance: 85 },
-      { day: "Thu", high: 26, low: 21, condition: "Rainy", rain_chance: 70 },
-      { day: "Fri", high: 30, low: 23, condition: "Cloudy", rain_chance: 40 },
-      { day: "Sat", high: 32, low: 24, condition: "Sunny", rain_chance: 10 },
-      { day: "Sun", high: 29, low: 22, condition: "Thunderstorm", rain_chance: 90 },
-    ],
-    historical_rainfall: years.map((y, i) => ({ year: y, annual_mm: [890, 1020, 950, 1100, 870, 980][i] })),
-    soil: { moisture: 68, temperature: 27, ph: 6.8, ec: 0.42, nitrogen: 182, phosphorus: 28, potassium: 215 },
+  orders: [
+    {
+      id: 101,
+      shop_id: 10,
+      shop_name: "Krishna Agro Center",
+      shop_contact: {
+        phone: "9848012345",
+        address: "Main Road, Near Bus Stand, Nuzividu, Krishna AP",
+        owner_name: "Venkat Rao Potti",
+        latitude: 16.785,
+        longitude: 80.846
+      },
+      farmer_id: 17,
+      farmer_name: "Ravi Kumar Reddy",
+      total_amount: 8450,
+      discount: 265,
+      final_amount: 8185,
+      payment_mode: "upi",
+      payment_status: "paid",
+      payment_id: "UPI-PAY-98218842",
+      status: "delivered",
+      order_notes: "Delivered to Kondapally field store gate",
+      created_at: "2026-10-12T10:30:00Z",
+      items: [
+        { product_id: 1, product_name: "Urea 46-0-0 (50 kg)", category: "fertilizer", quantity: 5, unit_price: 267, total_price: 1335, subtotal: 1335, unit: "bag", brand: "IFFCO", manufacturer: "IFFCO" },
+        { product_id: 2, product_name: "DAP 18-46-0 (50 kg)", category: "fertilizer", quantity: 4, unit_price: 1350, total_price: 5400, subtotal: 5400, unit: "bag", brand: "Coromandel", manufacturer: "Coromandel" },
+        { product_id: 4, product_name: "Chlorpyriphos 20 EC (1L)", category: "pesticide", quantity: 2, unit_price: 620, total_price: 1240, subtotal: 1240, unit: "bottle", brand: "Dhanuka", manufacturer: "Dhanuka" }
+      ]
+    },
+    {
+      id: 102,
+      shop_id: 10,
+      shop_name: "Krishna Agro Center",
+      shop_contact: {
+        phone: "9848012345",
+        address: "Main Road, Near Bus Stand, Nuzividu, Krishna AP",
+        owner_name: "Venkat Rao Potti",
+        latitude: 16.785,
+        longitude: 80.846
+      },
+      farmer_id: 17,
+      farmer_name: "Ravi Kumar Reddy",
+      total_amount: 4400,
+      discount: 100,
+      final_amount: 4300,
+      payment_mode: "credit",
+      payment_status: "pending",
+      status: "shipped",
+      order_notes: "On delivery truck, driver contact: 9848099881",
+      created_at: "2026-10-21T14:15:00Z",
+      items: [
+        { product_id: 3, product_name: "MOP Potash (50 kg)", category: "fertilizer", quantity: 4, unit_price: 1100, total_price: 4400, subtotal: 4400, unit: "bag", brand: "IPL", manufacturer: "IPL" }
+      ]
+    },
+    {
+      id: 103,
+      shop_id: 10,
+      shop_name: "Krishna Agro Center",
+      shop_contact: {
+        phone: "9848012345",
+        address: "Main Road, Near Bus Stand, Nuzividu, Krishna AP",
+        owner_name: "Venkat Rao Potti"
+      },
+      farmer_id: 17,
+      farmer_name: "Ravi Kumar Reddy",
+      total_amount: 2800,
+      discount: 0,
+      final_amount: 2800,
+      payment_mode: "cash_on_delivery",
+      payment_status: "pending",
+      status: "processing",
+      order_notes: "Packaging inline drip pipes for Block 2",
+      created_at: "2026-10-24T09:00:00Z",
+      items: [
+        { product_id: 7, product_name: "Drip Irrigation Inline Pipe (100m)", category: "equipment", quantity: 1, unit_price: 2800, total_price: 2800, subtotal: 2800, unit: "roll", brand: "Jain Irrigation", manufacturer: "Jain" }
+      ]
+    }
+  ],
+  calendar: [
+    { id: 1, user_id: 17, title: "Paddy Field Inspection (Block 2)", event_type: "spraying", event_date: "2026-10-25", description: "Check water level and panicle emergence", is_completed: false, color: "#22c55e", reminder_days_before: 1 },
+    { id: 2, user_id: 17, title: "Cotton Second Picking", event_type: "harvest", event_date: "2026-10-31", description: "Hire 6 labor team for picking", is_completed: false, color: "#f59e0b", reminder_days_before: 2 },
+    { id: 3, user_id: 17, title: "KCC Loan EMI Due (₹8,500)", event_type: "loan", event_date: "2026-11-15", description: "Debit from SBI savings account", is_completed: false, color: "#ef4444", reminder_days_before: 3 },
+    { id: 4, user_id: 17, title: "Rabi Wheat Nursery Sowing", event_type: "sowing", event_date: "2026-11-22", description: "Prepare seed bed with vermicompost", is_completed: false, color: "#3b82f6", reminder_days_before: 2 },
+    { id: 5, user_id: 17, title: "Canal Water Gate Release", event_type: "irrigation", event_date: "2026-10-27", description: "Irrigate 3.1 acres Paddy Block 1", is_completed: false, color: "#06b6d4", reminder_days_before: 1 }
+  ],
+  storage: {
+    summary: {
+      total_batches: 1,
+      stored_batches: 1,
+      total_bags: 80,
+      total_weight_quintals: 40.0,
+      total_monthly_rent: 480.0,
+      total_rent_accrued: 240.0,
+      est_market_value: 84000.0,
+      available_for_pledge: 40.0
+    },
+    storages: [
+      {
+        id: 1,
+        crop_name: "Maize (Hybrid)",
+        variety: "Hybrid NK-6240",
+        storage_type: "cold_storage",
+        facility_name: "Kondapally Primary Cold Store",
+        location: "Kondapally Industrial Zone, Krishna AP",
+        receipt_number: "KPCS-2026-M-0842",
+        bags_count: 80,
+        weight_quintals: 40.0,
+        bag_weight_kg: 50.0,
+        monthly_rent_per_bag: 6.0,
+        deposit_date: "2026-10-09",
+        expected_release_date: "2026-12-08",
+        status: "stored",
+        target_sell_price_per_quintal: 2100.0,
+        notes: "Holding 40 qtl Maize for December peak price. Current rate: ₹1,890, target: ₹2,100.",
+        created_at: "2026-10-09T08:00:00Z"
+      }
+    ]
   },
-  news: [
-    { id: 1, title: "PM-KISAN 17th Installment Released - Rs.2000 Credited", date: mkDate(2026,10,15), source: "PIB India", category: "Government", summary: "Over 9 crore farmers received their PM-KISAN installment.", urgent: true },
-    { id: 2, title: "Paddy MSP Increased by Rs.117 for Kharif 2026", date: mkDate(2026,9,28), source: "Ministry of Agriculture", category: "MSP", summary: "Cabinet approves new MSP of Rs.2,369 per quintal for paddy.", urgent: false },
-    { id: 3, title: "Heavy Rainfall Alert: Coastal Andhra Pradesh", date: mkDate(2026,10,22), source: "IMD Hyderabad", category: "Weather", summary: "IMD warns of heavy rainfall over coastal districts for next 3 days.", urgent: true },
-    { id: 4, title: "Drip Irrigation Subsidy: 80% for Small Farmers", date: mkDate(2026,10,10), source: "APMC Board", category: "Subsidy", summary: "Government announces enhanced subsidy for micro-irrigation systems.", urgent: false },
-    { id: 5, title: "New Pest Outbreak: Yellow Mosaic Virus in Soybean", date: mkDate(2026,10,5), source: "ICAR", category: "Advisory", summary: "Farmers advised to use resistant varieties and apply recommended pesticides.", urgent: true },
-  ],
-  marketPrices: [
-    { crop: "Paddy (BPT-5204)", market: "Nuzividu APMC", price: 2420, unit: "Rs./Quintal", change: 45, trend: "up" },
-    { crop: "Cotton", market: "Vijayawada", price: 6850, unit: "Rs./Quintal", change: -120, trend: "down" },
-    { crop: "Maize", market: "Guntur APMC", price: 1890, unit: "Rs./Quintal", change: 30, trend: "up" },
-    { crop: "Turmeric", market: "Nizamabad", price: 12400, unit: "Rs./Quintal", change: 380, trend: "up" },
-    { crop: "Red Chilli", market: "Guntur APMC", price: 18200, unit: "Rs./Quintal", change: -250, trend: "down" },
-  ],
-  priceTrend: years.map((y, i) => ({
-    year: y,
-    paddy: [1815,1868,2015,2183,2269,2369][i],
-    cotton: [5726,6025,6380,6110,7020,6850][i],
-    maize: [1462,1526,1635,1750,1870,1890][i],
-  })),
+  insurance: {
+    summary: {
+      total_policies: 2,
+      active_policies: 1,
+      settled_claims_count: 1,
+      total_sum_insured: 510000.0,
+      total_farmer_premium_paid: 5100.0,
+      total_claims_received: 42000.0
+    },
+    policies: [
+      {
+        id: 1,
+        policy_number: "PMFBY-AP-KHARIF-2026-08421",
+        scheme_name: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+        season: "Kharif",
+        crop_year: 2026,
+        crop_name: "Paddy (BPT 5204) & Cotton",
+        sum_insured_per_acre: 60000.0,
+        farmer_share_percent: 2.0,
+        total_premium_paid: 3240.0,
+        total_sum_insured: 324000.0,
+        insured_area_acres: 5.40,
+        insurance_company: "Agriculture Insurance Company of India (AIC)",
+        policy_document_url: null,
+        policy_status: "active",
+        created_at: "2026-06-20T10:00:00Z",
+        claim_status: null
+      },
+      {
+        id: 2,
+        policy_number: "PMFBY-AP-RABI-2025-01994",
+        scheme_name: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+        season: "Rabi",
+        crop_year: 2025,
+        crop_name: "Maize (Hybrid)",
+        sum_insured_per_acre: 60000.0,
+        farmer_share_percent: 1.5,
+        total_premium_paid: 1860.0,
+        total_sum_insured: 186000.0,
+        insured_area_acres: 3.10,
+        insurance_company: "Agriculture Insurance Company of India (AIC)",
+        policy_status: "claim_settled",
+        created_at: "2025-11-15T09:30:00Z",
+        claim_status: "approved",
+        claim_amount: 42000.0,
+        claim_settlement_date: "2026-03-25"
+      }
+    ],
+    guidance: {
+      claim_intimation_window_hours: 72,
+      toll_free_number: "1800-180-1551",
+      required_documents: ["Aadhaar Card", "Land Possession Certificate (Pahani)", "Sowing Certificate", "Bank Passbook Copy", "Geo-tagged Calamity Photos"],
+      local_nodal_officer: "Mandal Agricultural Officer, Nuzividu (Ph: 08656-234567)"
+    }
+  },
   finance: {
     wallet_balance: 84200,
     total_income: 285000,
     total_expenses: 104000,
     pending_payments: 28500,
+    summary: {
+      total_borrowed: 170000.0,
+      total_outstanding: 62000.0,
+      total_repaid: 108000.0,
+      active_loans_count: 1,
+      overdue_loans_count: 0
+    },
     loans: [
-      { id: "KCC-2024-01", type: "Kisan Credit Card", amount: 150000, outstanding: 62000, emi: 8500, due: mkDate(2026,11,15), status: "active" },
-      { id: "ATL-2022-03", type: "Agri-Term Loan", amount: 200000, outstanding: 0, emi: 0, due: mkDate(2024,3,31), status: "closed" },
-    ],
-    insurance: [
-      { id: "PMFBY-2026-K", scheme: "PMFBY Kharif 2026", crop: "Paddy + Cotton", area: 5.40, premium_paid: 3240, sum_insured: 324000, status: "active", expiry: mkDate(2026,12,31) },
-      { id: "PMFBY-2025-R", scheme: "PMFBY Rabi 2025", crop: "Wheat + Maize", area: 3.10, premium_paid: 1860, sum_insured: 186000, status: "claim_settled", claim_amount: 42000 },
+      {
+        id: 1,
+        source_type: "bank",
+        lender_name: "State Bank of India (KCC Agri Branch, Nuzividu)",
+        purpose: "Kisan Credit Card Kharif Crop Loan (Paddy + Cotton)",
+        principal_amount: 150000.0,
+        interest_rate_percent: 7.0,
+        interest_type: "annual",
+        start_date: "2024-05-10",
+        due_date: "2026-11-15",
+        outstanding_amount: 62000.0,
+        status: "active",
+        emi_amount: 8500.0,
+        notes: "3% interest subvention active for timely repayment. Effective rate 4%.",
+        repayments: [
+          { id: 1, loan_id: 1, repayment_amount: 88000.0, repayment_date: "2025-10-15", payment_mode: "bank_transfer", notes: "Post-harvest repayment from Paddy proceeds" }
+        ]
+      },
+      {
+        id: 2,
+        source_type: "fertilizer_shop",
+        lender_name: "Krishna Agro Center",
+        purpose: "Seasonal input credit for DAP & Urea fertilizers",
+        principal_amount: 20000.0,
+        interest_rate_percent: 0.0,
+        interest_type: "flat",
+        start_date: "2026-06-15",
+        due_date: "2026-10-31",
+        outstanding_amount: 0.0,
+        status: "closed",
+        notes: "Fully settled on 2026-10-12 via UPI.",
+        repayments: [
+          { id: 2, loan_id: 2, repayment_amount: 20000.0, repayment_date: "2026-10-12", payment_mode: "upi", notes: "Settled in full" }
+        ]
+      }
     ],
     transactions: [
-      { id: "T001", date: mkDate(2026,10,15), type: "credit", description: "PM-KISAN Installment", amount: 2000 },
-      { id: "T002", date: mkDate(2026,10,12), type: "credit", description: "Paddy Sale - Nuzividu APMC", amount: 48400 },
-      { id: "T003", date: mkDate(2026,10,8), type: "debit", description: "Urea Fertilizer (10 bags)", amount: 5400 },
-      { id: "T004", date: mkDate(2026,9,30), type: "debit", description: "KCC EMI Payment", amount: 8500 },
-      { id: "T005", date: mkDate(2026,9,20), type: "credit", description: "Cotton Sale - Vijayawada", amount: 68500 },
+      { id: "T001", date: mkDate(2026,10,15), type: "credit", description: "PM-KISAN 17th Installment", amount: 2000 },
+      { id: "T002", date: mkDate(2026,10,12), type: "credit", description: "Paddy Sale Advance - Sri Venkateswara Mill", amount: 48400 },
+      { id: "T003", date: mkDate(2026,10,8), type: "debit", description: "Krishna Agro Center - Input Purchase", amount: 8185 },
+      { id: "T004", date: mkDate(2026,9,30), type: "debit", description: "KCC Loan EMI Payment", amount: 8500 },
+      { id: "T005", date: mkDate(2026,9,20), type: "credit", description: "Maize Sale proceeds", amount: 35000 },
     ],
   },
-  soilHealth: {
-    current: { nitrogen: 182, phosphorus: 28, potassium: 215, ph: 6.8, organic_carbon: 0.72, moisture: 68 },
-    history: years.map((y, i) => ({
-      year: y, n: [210,195,188,175,185,182][i], p: [32,30,29,26,27,28][i], k: [220,218,212,205,210,215][i], ph: [6.9,6.8,6.7,6.8,6.9,6.8][i],
-    })),
+  annualPerformanceSummary: {
+    year: 2026,
+    available_years: [2026, 2025, 2024, 2023, 2022, 2021],
+    total_revenue: 285000,
+    total_expenses: 104000,
+    net_profit: 181000,
+    profit_margin_percent: 63.5,
+    total_area_cultivated: 7.20,
+    crops_grown_count: 3,
+    kharif_summary: { revenue: 215000, expenses: 76000, net_profit: 139000, area: 5.40 },
+    rabi_summary: { revenue: 70000, expenses: 28000, net_profit: 42000, area: 1.80 },
+    top_crops: [
+      { name: "Paddy (BPT 5204)", revenue: 145000, expenses: 48000, profit: 97000, yield_quintals: 62.0 },
+      { name: "Cotton (Bunny BT)", revenue: 70000, expenses: 28000, profit: 42000, yield_quintals: 10.5 },
+      { name: "Maize (Hybrid)", revenue: 70000, expenses: 28000, profit: 42000, yield_quintals: 38.0 },
+    ],
+    yoy_growth: {
+      revenue_growth_percent: 12.8,
+      profit_growth_percent: 15.2,
+      expense_change_percent: -4.1
+    }
+  },
+  seasons: {
+    available: ["Kharif 2026", "Rabi 2025-26", "Kharif 2025", "Rabi 2024-25", "Kharif 2024", "Rabi 2023-24"],
+    overviews: [
+      { season: "Kharif 2026", total_revenue: 215000, total_expenses: 76000, net_profit: 139000, total_yield: 72.5, area: 5.40 },
+      { season: "Rabi 2025-26", total_revenue: 70000, total_expenses: 28000, net_profit: 42000, total_yield: 42.5, area: 1.80 },
+      { season: "Kharif 2025", total_revenue: 198000, total_expenses: 74000, net_profit: 124000, total_yield: 68.0, area: 5.40 },
+    ]
+  },
+  millsMarketplace: [
+    {
+      id: 1,
+      mill_name: "Sri Venkateswara Rice & Cotton Mill",
+      type: "Rice",
+      owner_name: "Prasad Babu Reddy",
+      location: "Nuzividu Industrial Estate",
+      district: "Krishna",
+      state: "Andhra Pradesh",
+      distance: "4.8 km",
+      phone: "9700012345",
+      verified: true,
+      rating: 4.8,
+      price_offered: "₹2,420 / Qtl (Paddy)",
+      capacity: "120 Tons/Day",
+      crops_accepted: "Paddy (BPT 5204), Cotton, Maize",
+      license_number: "AP/MILL/2018/00892"
+    },
+    {
+      id: 2,
+      mill_name: "Vijaya Modern Modern Rice Mill",
+      type: "Rice",
+      owner_name: "Koteswara Rao",
+      location: "Gannavaram Road",
+      district: "Krishna",
+      state: "Andhra Pradesh",
+      distance: "12.5 km",
+      phone: "9848077665",
+      verified: true,
+      rating: 4.6,
+      price_offered: "₹2,380 / Qtl (Paddy)",
+      capacity: "80 Tons/Day",
+      crops_accepted: "Paddy (BPT 5204), Paddy (MTU 1010)",
+      license_number: "AP/MILL/2019/00341"
+    },
+    {
+      id: 3,
+      mill_name: "Amaravati Cotton Ginning & Pressing",
+      type: "Cotton",
+      owner_name: "Srinivasa Murthy",
+      location: "Vijayawada Bypass",
+      district: "Krishna",
+      state: "Andhra Pradesh",
+      distance: "21.0 km",
+      phone: "9848099882",
+      verified: true,
+      rating: 4.7,
+      price_offered: "₹6,850 / Qtl (Raw Cotton)",
+      capacity: "200 Bales/Day",
+      crops_accepted: "Cotton (Bunny BT), DCH-32",
+      license_number: "AP/COT/2016/0112"
+    }
+  ],
+  weather: {
+    location: "Kondapally, Andhra Pradesh",
+    temperature: 29.5,
+    condition: "Partly Cloudy",
+    humidity: 72,
+    wind_speed: 12.4,
+    rainfall_mm: 2.4,
+    soil_moisture: 32,
+    current: {
+      temperature_2m: 29.5,
+      relative_humidity_2m: 72,
+      precipitation: 2.4,
+      precipitation_sum: 2.4,
+      windspeed_10m: 12.4,
+      soil_moisture_0_to_1cm: 0.28,
+      soil_moisture_0_to_7cm: 0.32,
+      evapotranspiration: 4.2
+    },
+    daily: [
+      { date: mkDate(2026,10,24), temperature_2m_max: 31, temperature_2m_min: 23, precipitation_sum: 2.4, soil_moisture_0_to_7cm: 0.32, evapotranspiration: 4.2 },
+      { date: mkDate(2026,10,25), temperature_2m_max: 33, temperature_2m_min: 24, precipitation_sum: 0.0, soil_moisture_0_to_7cm: 0.30, evapotranspiration: 4.5 },
+      { date: mkDate(2026,10,26), temperature_2m_max: 28, temperature_2m_min: 22, precipitation_sum: 18.5, soil_moisture_0_to_7cm: 0.38, evapotranspiration: 2.8 },
+      { date: mkDate(2026,10,27), temperature_2m_max: 27, temperature_2m_min: 21, precipitation_sum: 12.0, soil_moisture_0_to_7cm: 0.36, evapotranspiration: 3.1 },
+      { date: mkDate(2026,10,28), temperature_2m_max: 30, temperature_2m_min: 23, precipitation_sum: 4.2, soil_moisture_0_to_7cm: 0.34, evapotranspiration: 3.8 },
+      { date: mkDate(2026,10,29), temperature_2m_max: 32, temperature_2m_min: 24, precipitation_sum: 0.0, soil_moisture_0_to_7cm: 0.31, evapotranspiration: 4.4 },
+      { date: mkDate(2026,10,30), temperature_2m_max: 30, temperature_2m_min: 22, precipitation_sum: 1.5, soil_moisture_0_to_7cm: 0.30, evapotranspiration: 4.1 },
+    ],
+    forecast: [
+      { day: "Today", date: mkDate(2026,10,24), temp: 31, temp_min: 23, condition: "Partly Cloudy", rain_prob: 30, soil_moisture: 32 },
+      { day: "Tue", date: mkDate(2026,10,25), temp: 33, temp_min: 24, condition: "Sunny", rain_prob: 5, soil_moisture: 30 },
+      { day: "Wed", date: mkDate(2026,10,26), temp: 28, temp_min: 22, condition: "Heavy Rain", rain_prob: 85, soil_moisture: 38 },
+      { day: "Thu", date: mkDate(2026,10,27), temp: 27, temp_min: 21, condition: "Rainy", rain_prob: 70, soil_moisture: 36 },
+      { day: "Fri", date: mkDate(2026,10,28), temp: 30, temp_min: 23, condition: "Cloudy", rain_prob: 40, soil_moisture: 34 },
+      { day: "Sat", date: mkDate(2026,10,29), temp: 32, temp_min: 24, condition: "Sunny", rain_prob: 10, soil_moisture: 31 },
+      { day: "Sun", date: mkDate(2026,10,30), temp: 30, temp_min: 22, condition: "Thunderstorm", rain_prob: 60, soil_moisture: 30 },
+    ],
+    alerts: [
+      { type: "warning", title: "Heavy Thunderstorm Alert", message: "Moderate to heavy thunderstorm expected across Krishna district on Wednesday afternoon. Ensure field drainage channels are clear." }
+    ],
+    advice: [
+      "Optimal soil moisture (32%) observed in Block 1 Paddy; postpone planned canal irrigation.",
+      "Spray Chlorpyriphos 20 EC in early morning hours before Wednesday's expected rainfall.",
+      "Check storage warehouse roof seals at Kondapally Cold Store ahead of rains."
+    ],
     recommendations: [
-      "Apply 55 kg/acre urea in split doses for paddy",
-      "Add organic matter (FYM 4 tons/acre) before next sowing",
-      "Potassium levels optimal - no additional input needed",
-      "Monitor pH - slightly acidic, consider lime application",
-    ],
+      { icon: "💧", type: "info", title: "Optimal Soil Moisture", text: "Soil moisture is in the optimal range (32%) for paddy vegetative growth." },
+      { icon: "⛈️", type: "warning", title: "Upcoming Cyclone Rain", text: "Avoid nitrogen top-dressing 24 hours before Wednesday rain to prevent nutrient leaching." }
+    ]
   },
-  calendar: [
-    { date: mkDate(2026,10,25), event: "Paddy Field Inspection (Block-2)", type: "inspection" },
-    { date: mkDate(2026,10,28), event: "KCC EMI Due (Rs.8,500)", type: "payment" },
-    { date: mkDate(2026,11,1), event: "Cotton Second Picking", type: "harvest" },
-    { date: mkDate(2026,11,5), event: "APMC Market Visit - Nuzividu", type: "market" },
-    { date: mkDate(2026,11,15), event: "Rabi Sowing - Wheat (Block-3)", type: "sowing" },
+  marketPrices: [
+    {
+      crop_name: "Paddy (BPT-5204)",
+      market_price: 2420,
+      change: 45,
+      trend: "up",
+      nearest_mandi: "Nuzividu APMC",
+      msp: 2369,
+      msp_comparison: "above",
+      markets: [
+        { market_name: "Nuzividu APMC", distance_km: 4.2, price: 2420, change: 45, trend: "up" },
+        { market_name: "Vijayawada Mandi", distance_km: 18.5, price: 2450, change: 60, trend: "up" },
+        { market_name: "Guntur Yard", distance_km: 42.0, price: 2390, change: -10, trend: "down" }
+      ]
+    },
+    {
+      crop_name: "Cotton",
+      market_price: 6850,
+      change: -120,
+      trend: "down",
+      nearest_mandi: "Vijayawada",
+      msp: 6620,
+      msp_comparison: "above",
+      markets: [
+        { market_name: "Vijayawada", distance_km: 18.5, price: 6850, change: -120, trend: "down" },
+        { market_name: "Guntur APMC", distance_km: 42.0, price: 6920, change: -80, trend: "down" }
+      ]
+    },
+    {
+      crop_name: "Maize",
+      market_price: 1890,
+      change: 30,
+      trend: "up",
+      nearest_mandi: "Guntur APMC",
+      msp: 2090,
+      msp_comparison: "below",
+      markets: [
+        { market_name: "Guntur APMC", distance_km: 42.0, price: 1890, change: 30, trend: "up" },
+        { market_name: "Nuzividu APMC", distance_km: 4.2, price: 1870, change: 25, trend: "up" }
+      ]
+    },
+    {
+      crop_name: "Chilli (Teja)",
+      market_price: 18200,
+      change: -250,
+      trend: "down",
+      nearest_mandi: "Guntur Yard",
+      msp: 0,
+      msp_comparison: "n/a",
+      markets: [
+        { market_name: "Guntur Yard", distance_km: 42.0, price: 18200, change: -250, trend: "down" },
+        { market_name: "Khammam Mandi", distance_km: 85.0, price: 18450, change: -180, trend: "down" }
+      ]
+    }
   ],
-  community: {
-    posts: [
-      { id: 1, author: "Suresh Naidu", role: "Farmer", content: "Anyone else seeing pink bollworm in cotton this season?", time: "2h ago", likes: 14, replies: 8 },
-      { id: 2, author: "Anjali Devi", role: "Agronomist", content: "Reminder: Spray Chlorpyriphos 20 EC for bollworm. Do it in early morning.", time: "5h ago", likes: 32, replies: 12 },
-      { id: 3, author: "Ravi Kumar", role: "Farmer", content: "Sold 20 quintals of paddy at Nuzividu APMC - got Rs.2,420/quintal. Good rates!", time: "1d ago", likes: 45, replies: 22 },
-    ],
+  news: [
+    { id: 1, category: "scheme", title: "PM-KISAN 17th Installment Released: ₹2,000 Credited Directly", summary: "Over 9.26 crore beneficiary farmers received the 17th installment of PM-KISAN directly in their Aadhaar-seeded bank accounts.", source: "PIB Ministry of Agriculture", verified: true, date: "2026-10-15T00:00:00Z" },
+    { id: 2, category: "market", title: "Cabinet Approves Paddy MSP Hike to ₹2,369/Quintal for Kharif", summary: "Minimum Support Price for Paddy Common increased by ₹117/qtl, offering farmers an assured 50% margin over all-India weighted average cost of production.", source: "Cabinet Committee on Economic Affairs", verified: true, date: "2026-09-28T00:00:00Z" },
+    { id: 3, category: "alert", title: "Heavy Rainfall & Cyclone Advisory for Coastal Andhra Pradesh", summary: "IMD Hyderabad forecasts moderate to heavy thunderstorm rains with wind speeds 40-50 kmph over Krishna, Guntur and West Godavari.", source: "IMD Hyderabad", verified: true, date: "2026-10-22T00:00:00Z" },
+    { id: 4, category: "tip", title: "Pink Bollworm Scouting Guidelines for Kharif Cotton Growers", summary: "Agricultural scientists advise monitoring 20 green bolls per acre for rosette flowers and exit holes before spraying Chlorpyriphos 20 EC.", source: "ICAR Cotton Research Station", verified: true, date: "2026-10-05T00:00:00Z" },
+    { id: 5, category: "technology", title: "Subsidized Solar Drip Irrigation Schemes Open for Krishna District", summary: "AP Micro Irrigation Project announces 80% subsidy for small and marginal farmers installing inline drip equipment.", source: "APMIP Vijayawada", verified: true, date: "2026-10-10T00:00:00Z" }
+  ],
+  recommendations: {
+    bestCrop: {
+      crop_name: "Paddy (BPT 5204 Samba Masuri)",
+      icon: "🌾",
+      variety: "BPT 5204 Certified",
+      target_season: "Kharif 2026",
+      expected_profit_per_acre: 31200,
+      expected_yield_per_acre: 20.0,
+      estimated_cost_per_acre: 17200,
+      estimated_revenue_per_acre: 48400,
+      confidence_score: 96,
+      headline: "Top Recommended Crop: High APMC Mandi Premium & Proven 5-Yr Field Performance",
+      reason: "Consistently delivered 20+ qtl/acre over past 4 seasons with steady APMC rates above ₹2,400/qtl. Soil pH 6.8 is ideal.",
+      past_profit_factor: "+18% average net margin over last 3 years in Block 1 & 2.",
+      market_trend_factor: "High demand across Krishna & Guntur mills for export-quality slender grain.",
+      weather_factor: "Monsoon rainfall forecast matches early tillering stage water requirements.",
+      alternatives: [
+        { crop_name: "Maize (Hybrid NK-6240)", variety: "NK-6240", expected_profit_per_acre: 27000, confidence_score: 91, tag: "Low Water" },
+        { crop_name: "Bunny BT Cotton", variety: "Bunny BT", expected_profit_per_acre: 18200, confidence_score: 84, tag: "High Value" }
+      ]
+    },
+    crops: [
+      { crop_name: "Maize (Hybrid NK-6240)", reason: "High demand expected in poultry feed mills this winter; prices projected at ₹2,100/qtl (+11% vs MSP).", confidence_score: 94, type: "market" },
+      { crop_name: "Chickpea / Bengal Gram", reason: "Ideal nitrogen-fixing rotation crop following Kharif Paddy. Restores soil NPK naturally.", confidence_score: 88, type: "rotation" },
+      { crop_name: "Sesame (Till)", reason: "Low water requirement suited for residual moisture in Block 3.", confidence_score: 82, type: "general" }
+    ]
   },
-  orders: [
-    { id: "ORD-001", item: "DAP Fertilizer (50kg x 5 bags)", shop: "Krishna Agro Center", date: mkDate(2026,10,10), amount: 6750, status: "delivered" },
-    { id: "ORD-002", item: "Chlorpyriphos 20 EC (1L x 3)", shop: "Reddy Agri Inputs", date: mkDate(2026,10,18), amount: 1890, status: "out_for_delivery" },
-    { id: "ORD-003", item: "Sprinkler Set (2 acres)", shop: "Jyothi Farm Equipment", date: mkDate(2026,10,22), amount: 12500, status: "processing" },
+  plots: [
+    { id: 1, plot_name: "Block 1 (North Field)", area_acres: 3.10, soil_type: "Black Cotton", current_crop: "Paddy (BPT 5204)", status: "Optimal" },
+    { id: 2, plot_name: "Block 2 (South Field)", area_acres: 2.30, soil_type: "Red Loamy", current_crop: "Cotton (Bunny BT)", status: "Good" },
+    { id: 3, plot_name: "Block 3 (Canal Gate)", area_acres: 1.80, soil_type: "Alluvial Clay", current_crop: "Maize (NK-6240)", status: "Optimal" }
   ],
+  reportMeta: {
+    crops_count: 3,
+    total_area_acres: 7.20,
+    total_yield_quintals: 62.5,
+    total_cost: 104000,
+    total_revenue: 285000,
+    net_profit: 181000,
+    eligible_uses: ["Bank KCC Loan Renewal", "Crop Insurance PMFBY Claim Verification", "APMC Mandi Direct Trade Certification"]
+  }
 };
 
 export const shopDemoData = {
   profile: {
+    id: 10,
     shop_name: "Krishna Agro Center",
     owner_name: "Venkat Rao Potti",
+    father_name: "Subba Rao Potti",
     license_no: "AP/AGR/2019/04521",
+    license_number: "AP/AGR/2019/04521",
     gst: "37AAAPV1234C1Z5",
     phone: "9848012345",
+    contact_number: "9848012345",
     email: "krishna.agro@gmail.com",
     address: "Main Road, Near Bus Stand, Nuzividu, Krishna Dist., AP 521111",
+    village: "Nuzividu",
+    district: "Krishna",
+    state: "Andhra Pradesh",
+    pincode: "521111",
     established: 2018,
-    rating: 4.7,
+    rating: 4.8,
     total_customers: 1842,
   },
   inventory: [
-    { id: 1, name: "Urea (50 kg bag)", category: "Fertilizer", stock: 245, unit_price: 267, reorder_level: 100, supplier: "IFFCO", low_stock: false },
-    { id: 2, name: "DAP (50 kg bag)", category: "Fertilizer", stock: 88, unit_price: 1350, reorder_level: 50, supplier: "IFFCO", low_stock: false },
-    { id: 3, name: "MOP (50 kg bag)", category: "Fertilizer", stock: 62, unit_price: 1100, reorder_level: 40, supplier: "IPL", low_stock: false },
-    { id: 4, name: "Chlorpyriphos 20 EC (1L)", category: "Pesticide", stock: 156, unit_price: 620, reorder_level: 60, supplier: "Dhanuka", low_stock: false },
-    { id: 5, name: "BPT-5204 Paddy Seed (5kg)", category: "Seeds", stock: 420, unit_price: 185, reorder_level: 150, supplier: "AP Seeds", low_stock: false },
-    { id: 6, name: "Cotton Bunny BT (450g)", category: "Seeds", stock: 35, unit_price: 740, reorder_level: 50, supplier: "Rasi Seeds", low_stock: true },
-    { id: 7, name: "Drip Emitter (16mm x 100m)", category: "Equipment", stock: 18, unit_price: 2800, reorder_level: 20, supplier: "Jain Irrigation", low_stock: true },
+    { id: 1, name: "Urea 46-0-0 (50 kg)", short_name: "Urea", category: "fertilizer", stock: 245, quantity: 245, unit_price: 267, price: 267, cost_price: 240, reorder_level: 100, supplier: "IFFCO", brand: "IFFCO", manufacturer: "IFFCO", unit: "bag", low_stock: false, status: "active" },
+    { id: 2, name: "DAP 18-46-0 (50 kg)", short_name: "DAP", category: "fertilizer", stock: 88, quantity: 88, unit_price: 1350, price: 1350, cost_price: 1200, reorder_level: 50, supplier: "Coromandel", brand: "Coromandel", manufacturer: "Coromandel", unit: "bag", low_stock: false, status: "active" },
+    { id: 3, name: "MOP Potash (50 kg)", short_name: "MOP", category: "fertilizer", stock: 62, quantity: 62, unit_price: 1100, price: 1100, cost_price: 980, reorder_level: 40, supplier: "IPL", brand: "IPL", manufacturer: "IPL", unit: "bag", low_stock: false, status: "active" },
+    { id: 4, name: "Chlorpyriphos 20 EC (1L)", short_name: "Chlorpyriphos", category: "pesticide", stock: 156, quantity: 156, unit_price: 620, price: 620, cost_price: 510, reorder_level: 60, supplier: "Dhanuka", brand: "Dhanuka", manufacturer: "Dhanuka", unit: "bottle", low_stock: false, status: "active" },
+    { id: 5, name: "BPT-5204 Certified Seed (5kg)", short_name: "BPT-5204", category: "seeds", stock: 420, quantity: 420, unit_price: 185, price: 185, cost_price: 145, reorder_level: 150, supplier: "AP State Seeds", brand: "AP Seeds", manufacturer: "APSSC", unit: "packet", low_stock: false, status: "active" },
+    { id: 6, name: "Cotton Bunny BT Seeds (450g)", short_name: "Bunny BT", category: "seeds", stock: 35, quantity: 35, unit_price: 740, price: 740, cost_price: 640, reorder_level: 50, supplier: "Rasi Seeds", brand: "Rasi", manufacturer: "Rasi", unit: "packet", low_stock: true, status: "active" },
+    { id: 7, name: "Drip Irrigation Inline Pipe (100m)", short_name: "Drip 16mm", category: "equipment", stock: 18, quantity: 18, unit_price: 2800, price: 2800, cost_price: 2300, reorder_level: 20, supplier: "Jain Irrigation", brand: "Jain", manufacturer: "Jain", unit: "roll", low_stock: true, status: "active" },
   ],
-  salesSummary: { today: 18420, this_week: 94500, this_month: 362800, this_year: 3840000 },
-  annualSales: years.map((y, i) => ({
-    year: y,
-    revenue: [2100000, 2480000, 2920000, 3150000, 3620000, 3840000][i],
-    profit: [420000, 496000, 584000, 630000, 724000, 768000][i],
-    orders: [1840, 2120, 2450, 2680, 3050, 3240][i],
-    customers: [820, 960, 1140, 1320, 1580, 1842][i],
-  })),
-  monthlySales: months.map((m, i) => ({
-    month: m,
-    revenue: [182000,145000,210000,295000,380000,342000,268000,195000,320000,415000,362000,226000][i],
-    profit: [36400,29000,42000,59000,76000,68400,53600,39000,64000,83000,72400,45200][i],
-  })),
-  recentOrders: [
-    { id: "SO-2842", farmer: "Ravi Kumar Reddy", items: "DAP x5, Urea x10", total: 8185, date: mkDate(2026,10,22), status: "delivered" },
-    { id: "SO-2843", farmer: "Lakshmi Devi", items: "BPT-5204 Seed x20", total: 6800, date: mkDate(2026,10,22), status: "processing" },
-    { id: "SO-2844", farmer: "Srinivas Rao", items: "Cotton Bunny BT x8", total: 6400, date: mkDate(2026,10,21), status: "delivered" },
+  orders: [
+    {
+      id: 101,
+      order_id: 101,
+      farmer_id: 17,
+      farmer_name: "Ravi Kumar Reddy",
+      farmer_phone: "9876543210",
+      total_amount: 8450,
+      discount: 265,
+      final_amount: 8185,
+      payment_mode: "upi",
+      payment_status: "paid",
+      status: "delivered",
+      order_notes: "Delivered to Kondapally field store",
+      created_at: "2026-10-12T10:30:00Z",
+      items: [
+        { product_name: "Urea 46-0-0 (50 kg)", quantity: 5, unit_price: 267, subtotal: 1335 },
+        { product_name: "DAP 18-46-0 (50 kg)", quantity: 4, unit_price: 1350, subtotal: 5400 },
+        { product_name: "Chlorpyriphos 20 EC (1L)", quantity: 2, unit_price: 620, subtotal: 1240 }
+      ]
+    },
+    {
+      id: 102,
+      order_id: 102,
+      farmer_id: 17,
+      farmer_name: "Ravi Kumar Reddy",
+      farmer_phone: "9876543210",
+      total_amount: 4400,
+      discount: 100,
+      final_amount: 4300,
+      payment_mode: "credit",
+      payment_status: "pending",
+      status: "shipped",
+      order_notes: "On delivery truck",
+      created_at: "2026-10-21T14:15:00Z",
+      items: [
+        { product_name: "MOP Potash (50 kg)", quantity: 4, unit_price: 1100, subtotal: 4400 }
+      ]
+    },
+    {
+      id: 103,
+      order_id: 103,
+      farmer_id: 201,
+      farmer_name: "Suresh Naidu",
+      farmer_phone: "9876501234",
+      total_amount: 5920,
+      discount: 120,
+      final_amount: 5800,
+      payment_mode: "cash",
+      payment_status: "paid",
+      status: "delivered",
+      created_at: "2026-10-23T11:00:00Z",
+      items: [
+        { product_name: "Cotton Bunny BT Seeds (450g)", quantity: 8, unit_price: 740, subtotal: 5920 }
+      ]
+    }
   ],
-  accounting: {
-    total_receivables: 48500,
-    total_payables: 125000,
-    gst_payable: 18420,
-    bank_balance: 284000,
+  salesTrend: [
+    { date: "2026-10-18", sales: 24500, order_count: 5 },
+    { date: "2026-10-19", sales: 31200, order_count: 7 },
+    { date: "2026-10-20", sales: 28400, order_count: 6 },
+    { date: "2026-10-21", sales: 42100, order_count: 9 },
+    { date: "2026-10-22", sales: 38600, order_count: 8 },
+    { date: "2026-10-23", sales: 45900, order_count: 11 },
+    { date: "2026-10-24", sales: 18420, order_count: 4 }
+  ],
+  analytics: {
+    today_sales: 18420,
+    total_sales: 3840000,
+    total_orders: 3240,
+    total_customers: 1842,
+    pending_orders: 3,
+    low_stock_items: 2,
+    revenue_growth: 14.5
   },
+  revenueReport: {
+    total_revenue: 3840000,
+    total_cost: 3072000,
+    gross_profit: 768000,
+    margin_percent: 20.0
+  },
+  customers: [
+    { id: 17, name: "Ravi Kumar Reddy", village: "Kondapally", total_purchases: 84500, orders_count: 14, last_order: "2026-10-24", credit_due: 4300 },
+    { id: 201, name: "Suresh Naidu", village: "Gannavaram", total_purchases: 42000, orders_count: 8, last_order: "2026-10-23", credit_due: 0 },
+    { id: 202, name: "Koteswara Rao", village: "Vuyyuru", total_purchases: 68000, orders_count: 11, last_order: "2026-10-20", credit_due: 12500 }
+  ]
 };
 
 export const manufacturerDemoData = {
   profile: {
-    mill_name: "Sri Venkateswara Rice and Cotton Mill",
+    id: 18,
+    mill_name: "Sri Venkateswara Rice & Cotton Mill",
     owner_name: "Prasad Babu Reddy",
+    father_name: "Venkata Narayana Reddy",
     license_no: "AP/MILL/2018/00892",
+    license_number: "AP/MILL/2018/00892",
     gst: "37BBBPV5678D1Z2",
     capacity: "120 tons/day",
     location: "Nuzividu Industrial Estate, Krishna Dist., AP",
+    district: "Krishna",
+    state: "Andhra Pradesh",
+    pincode: "521111",
     established: 2017,
     employees: 48,
     certifications: ["FSSAI", "ISO 9001:2015", "APEDA"],
   },
-  annualProduction: years.map((y, i) => ({
-    year: y,
-    rice_tons: [2800, 3200, 3850, 4100, 4620, 4980][i],
-    cotton_tons: [820, 940, 1050, 1120, 1280, 1350][i],
-    revenue: [14500000, 17200000, 20800000, 22400000, 26100000, 28500000][i],
-    profit: [2900000, 3440000, 4160000, 4480000, 5220000, 5700000][i],
-  })),
-  monthlyProduction: months.map((m, i) => ({
-    month: m,
-    rice: [280,240,185,210,380,420,360,295,440,520,465,320][i],
-    cotton: [0,0,0,0,0,80,140,180,210,250,220,160][i],
-    revenue: [1450000,1240000,960000,1100000,1980000,2200000,2620000,2480000,3100000,3680000,3240000,2850000][i],
-  })),
+  stats: {
+    total_procurement_tons: 4980,
+    milling_capacity_tpd: 120,
+    active_batches: 4,
+    finished_goods_value: 17580000,
+    monthly_sales: 3240000,
+    efficiency_ratio: 68.5
+  },
+  salesTrend: [
+    { date: "2026-10-18", sales: 460000 },
+    { date: "2026-10-19", sales: 720000 },
+    { date: "2026-10-20", sales: 704000 },
+    { date: "2026-10-21", sales: 880000 },
+    { date: "2026-10-22", sales: 460000 },
+    { date: "2026-10-23", sales: 1250000 },
+    { date: "2026-10-24", sales: 940000 }
+  ],
+  purchases: [
+    { id: 1, po_number: "PO-2026-1021", date: "2026-10-20", supplier: "Farmer Pool - Nuzividu", commodity: "Paddy BPT-5204", quantity: 80, unit: "tons", rate: 2420, total_amount: 1936000, status: "received" },
+    { id: 2, po_number: "PO-2026-1022", date: "2026-10-18", supplier: "APMC Vijayawada", commodity: "Raw Cotton", quantity: 25, unit: "tons", rate: 6850, total_amount: 1712500, status: "in_transit" },
+    { id: 3, po_number: "PO-2026-1023", date: "2026-10-15", supplier: "Ravi Kumar Reddy", commodity: "Paddy BPT-5204", quantity: 20, unit: "tons", rate: 2420, total_amount: 484000, status: "received" },
+  ],
+  sales: [
+    { id: 1, invoice_no: "SL-3421", date: "2026-10-22", buyer_name: "Reliance Fresh (Vijayawada)", product_name: "Boiled Rice (25kg bag)", quantity: 500, unit: "bags", rate: 920, total_amount: 460000, status: "delivered" },
+    { id: 2, invoice_no: "SL-3422", date: "2026-10-20", buyer_name: "DMart Hyderabad", product_name: "Raw Rice (25kg bag)", quantity: 800, unit: "bags", rate: 880, total_amount: 704000, status: "processing" },
+    { id: 3, invoice_no: "SL-3423", date: "2026-10-18", buyer_name: "Export - Dubai (Gulf Traders)", product_name: "Cotton Lint Grade A", quantity: 20, unit: "tons", rate: 138000, total_amount: 2760000, status: "dispatched" },
+  ],
   inventory: {
     raw_materials: [
-      { item: "Paddy (BPT-5204)", quantity: 420, unit: "tons", value: 8820000 },
-      { item: "Raw Cotton", quantity: 85, unit: "tons", value: 5610000 },
+      { item: "Paddy (BPT-5204)", quantity: 420, unit: "tons", value: 10164000 },
+      { item: "Raw Cotton", quantity: 85, unit: "tons", value: 5822500 },
       { item: "Packaging Material", quantity: 12000, unit: "bags", value: 480000 },
     ],
     finished_goods: [
-      { item: "Boiled Rice (25kg bag)", quantity: 8400, unit: "bags", value: 7980000 },
-      { item: "Raw Rice (25kg bag)", quantity: 3200, unit: "bags", value: 2880000 },
-      { item: "Cotton Lint (Grade A)", quantity: 48, unit: "tons", value: 6720000 },
+      { item: "Boiled Rice (25kg bag)", quantity: 8400, unit: "bags", value: 7728000 },
+      { item: "Raw Rice (25kg bag)", quantity: 3200, unit: "bags", value: 2816000 },
+      { item: "Cotton Lint (Grade A)", quantity: 48, unit: "tons", value: 6624000 },
     ],
   },
-  purchases: [
-    { id: "PO-1021", date: mkDate(2026,10,20), supplier: "Farmer Pool - Nuzividu", commodity: "Paddy BPT-5204", quantity: 80, unit: "tons", rate: 2100, total: 168000, status: "received" },
-    { id: "PO-1022", date: mkDate(2026,10,18), supplier: "APMC Vijayawada", commodity: "Raw Cotton", quantity: 25, unit: "tons", rate: 6600, total: 165000, status: "in_transit" },
-    { id: "PO-1023", date: mkDate(2026,10,15), supplier: "Ravi Kumar Reddy", commodity: "Paddy BPT-5204", quantity: 18, unit: "tons", rate: 2150, total: 38700, status: "received" },
-  ],
-  sales: [
-    { id: "SL-3421", date: mkDate(2026,10,22), buyer: "Reliance Fresh (Vijayawada)", product: "Boiled Rice 25kg", qty: 500, rate: 920, total: 460000, status: "delivered" },
-    { id: "SL-3422", date: mkDate(2026,10,20), buyer: "DMart Hyderabad", product: "Raw Rice 25kg", qty: 800, rate: 880, total: 704000, status: "processing" },
-    { id: "SL-3423", date: mkDate(2026,10,18), buyer: "Export - Dubai", product: "Cotton Lint Grade A", qty: 20, rate: 138000, total: 2760000, status: "shipped" },
-  ],
   production: {
-    current_batch: { id: "BT-2026-108", commodity: "Paddy", input_tons: 120, expected_output_tons: 82, status: "running" },
+    current_batch: { id: "BT-2026-108", commodity: "Paddy", input_tons: 120, expected_output_tons: 82.2, status: "running", start_time: "2026-10-24T06:00:00Z" },
     efficiency: { milling_ratio: 68.5, rejection_rate: 1.2, energy_per_ton: 42 },
   },
   intelligence: {
@@ -248,214 +739,79 @@ export const manufacturerDemoData = {
       { product: "Raw Rice", next_month_tons: 310, confidence: 82, trend: "stable" },
     ],
     price_intelligence: [
-      { commodity: "Paddy", recommended_buy_price: 2080, current_market: 2100, suggestion: "Buy now - prices expected to rise by Rs.120 next month" },
-      { commodity: "Cotton", recommended_buy_price: 6400, current_market: 6600, suggestion: "Wait 2 weeks - surplus from Vidarbha expected to lower rates" },
+      { commodity: "Paddy", recommended_buy_price: 2420, current_market: 2450, suggestion: "Procure directly from Nuzividu farmer cluster before November mandi peak." },
+      { commodity: "Cotton", recommended_buy_price: 6800, current_market: 6850, suggestion: "Steady ginning margin at ₹6,850/qtl." },
     ],
   },
+  accounting: {
+    total_revenue: 28500000,
+    total_expenses: 22800000,
+    net_profit: 5700000,
+    receivables: 3450000,
+    payables: 2180000
+  }
 };
 
 export const customerDemoData = {
   profile: {
+    id: 19,
     full_name: "Priya Sharma",
+    father_name: "Ramesh Sharma",
     email: "priya.sharma@gmail.com",
-    phone: "9900112233",
-    address: "Flat 402, Green Valley Apartments, KPHB Colony, Hyderabad 500085",
-    member_since: "2022-03-15",
-    tier: "Gold",
-    total_orders: 142,
-    total_spent: 84500,
-    saved_amount: 12600,
+    phone_number: "9900112233",
+    house_no: "Flat 402",
+    street: "Green Valley Apartments, KPHB Colony",
+    village: "Kukatpally",
+    mandal: "Kukatpally",
+    district: "Hyderabad",
+    state: "Telangana",
+    country: "India",
+    pincode: "500085",
     loyalty_points: 2840,
-  },
-  marketplace: {
-    featured: [
-      { id: 1, name: "Organic Sona Masoori Rice (5kg)", seller: "Sri Venkateswara Mill", price: 390, mrp: 450, discount: 13, rating: 4.8, reviews: 1842, organic: true, in_stock: true },
-      { id: 2, name: "Cold-Pressed Groundnut Oil (1L)", seller: "Rayalaseema Natural Foods", price: 285, mrp: 320, discount: 11, rating: 4.6, reviews: 924, organic: true, in_stock: true },
-      { id: 3, name: "Turmeric Powder (500g)", seller: "Nizamabad Spice Traders", price: 145, mrp: 180, discount: 19, rating: 4.9, reviews: 3210, organic: true, in_stock: true },
-      { id: 4, name: "A2 Desi Cow Ghee (500ml)", seller: "GIR Organic Farm", price: 680, mrp: 800, discount: 15, rating: 4.7, reviews: 2100, organic: true, in_stock: true },
-      { id: 5, name: "Jaggery Powder (1kg)", seller: "Nellore Sweet Mill", price: 95, mrp: 120, discount: 21, rating: 4.5, reviews: 680, organic: false, in_stock: true },
-    ],
-    categories: ["Rice and Grains", "Oils", "Spices", "Dairy", "Pulses", "Vegetables", "Fruits", "Organic"],
+    saved_addresses: [
+      { id: 1, label: "Home", address: "Flat 402, Green Valley Apartments, KPHB Colony, Hyderabad 500085", is_default: true }
+    ]
   },
   orders: [
-    { id: "CO-8821", date: mkDate(2026,10,20), items: "Sona Masoori Rice 5kg x2, Groundnut Oil 1L x3", total: 1635, status: "out_for_delivery", expected: mkDate(2026,10,24) },
-    { id: "CO-8789", date: mkDate(2026,10,10), items: "Turmeric 500g x2, Desi Ghee 500ml x1", total: 970, status: "delivered", delivered_on: mkDate(2026,10,13) },
-    { id: "CO-8742", date: mkDate(2026,9,25), items: "Jaggery 1kg x5, Raw Honey 250ml x2", total: 1060, status: "delivered", delivered_on: mkDate(2026,9,28) },
+    {
+      id: 101,
+      total_amount: 1450,
+      status: "delivered",
+      created_at: "2026-10-18T14:30:00Z",
+      items: [
+        { product_id: 1, product_name: "BPT-5204 Samba Masuri Rice (25kg)", quantity: 1, unit_price: 1250, subtotal: 1250, image_url: "/placeholder.png" },
+        { product_id: 3, product_name: "Organic Turmeric Powder (500g)", quantity: 1, unit_price: 200, subtotal: 200, image_url: "/placeholder.png" }
+      ]
+    },
+    {
+      id: 102,
+      total_amount: 980,
+      status: "shipped",
+      created_at: "2026-10-22T10:15:00Z",
+      items: [
+        { product_id: 2, product_name: "Cold-Pressed Groundnut Oil (5L)", quantity: 1, unit_price: 980, subtotal: 980, image_url: "/placeholder.png" }
+      ]
+    }
   ],
-  spendingHistory: years.map((y, i) => ({
-    year: y,
-    amount: [8400, 11200, 14800, 16200, 18600, 15300][i],
-    orders: [18, 24, 32, 35, 40, 33][i],
-  })),
-  monthlySpending: months.map((m, i) => ({
-    month: m,
-    amount: [1200,800,950,1100,1800,1400,1100,900,1600,2100,1500,1050][i],
-  })),
   cart: [
-    { id: 1, name: "Organic Sona Masoori Rice (5kg)", price: 390, qty: 2, seller: "Sri Venkateswara Mill" },
-    { id: 2, name: "Turmeric Powder (500g)", price: 145, qty: 3, seller: "Nizamabad Spice Traders" },
+    { id: 1, product_id: 1, product_name: "BPT-5204 Samba Masuri Rice (25kg)", quantity: 1, unit_price: 1250, total_price: 1250 },
+    { id: 2, product_id: 3, product_name: "Organic Turmeric Powder (500g)", quantity: 2, unit_price: 200, total_price: 400 }
   ],
   smartBuying: {
     price_alerts: [
-      { product: "Groundnut Oil 1L", target_price: 260, current_price: 285, status: "monitoring" },
-      { product: "Basmati Rice 5kg", target_price: 480, current_price: 510, status: "monitoring" },
+      { product: "Samba Masuri Rice", current_price: 1250, target_price: 1180, notification_active: true },
+      { product: "Cold-Pressed Groundnut Oil", current_price: 980, target_price: 920, notification_active: true }
     ],
-    recommendations: [
-      { product: "Rice Bran Oil 1L", reason: "Price dropped 18% this week - lowest in 6 months", deal_score: 92 },
-      { product: "Wheat Atta 10kg", reason: "Stock offered directly by mill - 22% below market", deal_score: 88 },
-    ],
+    savings_this_year: 12600,
+    verified_farm_sources: 18
   },
+  marketplace: [
+    { id: 1, name: "BPT-5204 Samba Masuri Rice (25kg)", category: "grains", price: 1250, unit: "bag", stock: 150, rating: 4.9, farm_source: "Kondapally Farmers Pool (Krishna AP)", verified: true, image_url: "/placeholder.png" },
+    { id: 2, name: "Cold-Pressed Pure Groundnut Oil (5L)", category: "processed", price: 980, unit: "tin", stock: 85, rating: 4.8, farm_source: "Sri Venkateswara Oil Mill", verified: true, image_url: "/placeholder.png" },
+    { id: 3, name: "Organic Farm Turmeric Powder (500g)", category: "organic", price: 200, unit: "packet", stock: 320, rating: 4.9, farm_source: "Nizamabad Organic Cluster", verified: true, image_url: "/placeholder.png" },
+    { id: 4, name: "Farm Fresh Sweet Corn (Pack of 6)", category: "fresh", price: 120, unit: "pack", stock: 60, rating: 4.7, farm_source: "Ravi Kumar Reddy Fields", verified: true, image_url: "/placeholder.png" }
+  ]
 };
-
-export interface DemoRoleConfig {
-  id: DemoRole;
-  label: string;
-  subtitle: string;
-  icon: string;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-  gradient: string;
-  features: {
-    name: string;
-    icon: string;
-    href: string;
-    description: string;
-  }[];
-  demoUser: {
-    id: number;
-    full_name: string;
-    role: string;
-    email?: string;
-    phone_number?: string;
-  };
-  stats: { label: string; value: string; icon: string }[];
-}
-
-export const DEMO_ROLE_CONFIGS: DemoRoleConfig[] = [
-  {
-    id: "farmer",
-    label: "Farmer",
-    subtitle: "Ravi Kumar Reddy · 7.2 Acres · AP",
-    icon: "🌾",
-    color: "text-green-700 dark:text-green-400",
-    bgColor: "bg-green-50 dark:bg-green-950/40",
-    borderColor: "border-green-200 dark:border-green-800",
-    gradient: "from-green-500 to-emerald-600",
-    demoUser: { id: 1001, full_name: "Ravi Kumar Reddy", role: "farmer", phone_number: "9876543210" },
-    stats: [
-      { label: "Land Holding", value: "7.2 Acres", icon: "🌍" },
-      { label: "Active Crops", value: "3 Crops", icon: "🌱" },
-      { label: "Annual Income", value: "Rs.2.85L", icon: "💰" },
-      { label: "Paddy Yield", value: "4.9 T/Acre", icon: "📈" },
-    ],
-    features: [
-      { name: "Dashboard", icon: "🏠", href: "/dashboard/farmer", description: "Live overview: weather, crops, wallet and news" },
-      { name: "Farmer Profile", icon: "👤", href: "/dashboard/farmer/profile", description: "Farmer ID, land records, Aadhaar and bank details" },
-      { name: "Weather and Soil", icon: "⛅", href: "/dashboard/farmer/weather", description: "7-day forecast + live soil NPK readings" },
-      { name: "News and Alerts", icon: "📰", href: "/dashboard/farmer/news", description: "Government schemes, weather alerts and advisories" },
-      { name: "Community and Chats", icon: "💬", href: "/dashboard/farmer/community", description: "Peer chat with farmers and agronomists" },
-      { name: "Annual Summary (5-Yr Data)", icon: "📅", href: "/dashboard/farmer/annual-summary", description: "5-year crop yield, revenue and expense history" },
-      { name: "Analytics and Trends", icon: "📈", href: "/dashboard/farmer/analytics", description: "Yield comparisons and production trends" },
-      { name: "Season Comparison", icon: "🌾", href: "/dashboard/farmer/season-comparison", description: "Kharif vs Rabi performance across seasons" },
-      { name: "My Crops", icon: "🌱", href: "/dashboard/farmer/crops", description: "Paddy, Cotton and Maize with AI health status" },
-      { name: "Market Prices", icon: "📊", href: "/dashboard/farmer/market-prices", description: "Real-time APMC prices + 5-year price trends" },
-      { name: "Finance and Loans", icon: "🏦", href: "/dashboard/farmer/finance", description: "Wallet, KCC loans, PMFBY crop insurance" },
-      { name: "Soil and Nutrition", icon: "🧪", href: "/dashboard/farmer/nutrition", description: "NPK analysis + fertilizer recommendations" },
-      { name: "Farm Calendar", icon: "🗓️", href: "/dashboard/farmer/calendar", description: "Upcoming sowings, sprayings and harvest events" },
-      { name: "My Orders", icon: "📦", href: "/dashboard/farmer/orders", description: "Seeds, fertilizers and input deliveries tracker" },
-      { name: "Buy Inputs", icon: "🛒", href: "/dashboard/farmer/market", description: "Fertilizers and seeds from nearby agro shops" },
-      { name: "Sell to Mills", icon: "🏭", href: "/dashboard/farmer/mills", description: "Pool crops and get direct mill rates" },
-      { name: "Warehouse and Storage", icon: "🏬", href: "/dashboard/farmer/storage", description: "Cold storage booking and receipt financing" },
-      { name: "Learning Hub", icon: "🎥", href: "/dashboard/farmer/learning", description: "Video tutorials on modern high-yield farming" },
-      { name: "Emergency SOS", icon: "🚨", href: "/dashboard/farmer/emergency", description: "Instant emergency assistance for crop disease" },
-      { name: "Settings", icon: "⚙️", href: "/dashboard/farmer/settings", description: "Account security, language and notification settings" },
-    ],
-  },
-  {
-    id: "shop",
-    label: "Shop Owner",
-    subtitle: "Krishna Agro Center · Nuzividu, AP",
-    icon: "🏪",
-    color: "text-blue-700 dark:text-blue-400",
-    bgColor: "bg-blue-50 dark:bg-blue-950/40",
-    borderColor: "border-blue-200 dark:border-blue-800",
-    gradient: "from-blue-500 to-cyan-600",
-    demoUser: { id: 1002, full_name: "Venkat Rao Potti", role: "shop", phone_number: "9848012345" },
-    stats: [
-      { label: "Annual Revenue", value: "Rs.38.4L", icon: "💹" },
-      { label: "Products", value: "7 Items", icon: "📦" },
-      { label: "Customers", value: "1,842", icon: "👥" },
-      { label: "Rating", value: "4.7 Stars", icon: "⭐" },
-    ],
-    features: [
-      { name: "Dashboard", icon: "🏠", href: "/dashboard/shop", description: "Today's sales, low stock alerts and pending orders" },
-      { name: "Inventory", icon: "📦", href: "/dashboard/shop/inventory", description: "7 product categories with reorder alerts" },
-      { name: "Orders and Dispatch", icon: "📋", href: "/dashboard/shop/orders", description: "Manage customer orders and delivery status" },
-      { name: "Customers Directory", icon: "👥", href: "/dashboard/shop/customers", description: "Active farmer database and purchase history" },
-      { name: "Sales Analytics (5-Yr Trends)", icon: "📈", href: "/dashboard/shop/analytics", description: "5-year revenue trends and product performance" },
-      { name: "Crop Calendar Demand", icon: "📅", href: "/dashboard/shop/crop-calendar", description: "Forecast input demand based on crop seasons" },
-      { name: "Accounting and GST", icon: "🧾", href: "/dashboard/shop/accounting", description: "GST filing, receivables, payables and P and L" },
-      { name: "Product Discovery", icon: "💡", href: "/dashboard/shop/discovery", description: "New products, brand deals and schemes" },
-      { name: "Shop Profile", icon: "⚙️", href: "/dashboard/shop/profile", description: "Manage shop details, licenses and certifications" },
-    ],
-  },
-  {
-    id: "manufacturer",
-    label: "Mill Owner",
-    subtitle: "Sri Venkateswara Rice and Cotton Mill",
-    icon: "🏭",
-    color: "text-amber-700 dark:text-amber-400",
-    bgColor: "bg-amber-50 dark:bg-amber-950/40",
-    borderColor: "border-amber-200 dark:border-amber-800",
-    gradient: "from-amber-500 to-orange-600",
-    demoUser: { id: 1003, full_name: "Prasad Babu Reddy", role: "manufacturer", phone_number: "9700012345" },
-    stats: [
-      { label: "Annual Revenue", value: "Rs.2.85Cr", icon: "💰" },
-      { label: "Production", value: "4,980 T/yr", icon: "⚙️" },
-      { label: "Employees", value: "48 Staff", icon: "👷" },
-      { label: "Efficiency", value: "68.5%", icon: "📊" },
-    ],
-    features: [
-      { name: "Dashboard", icon: "🏠", href: "/dashboard/manufacturer", description: "Daily production status, revenue and operational alerts" },
-      { name: "Procurement and Purchases", icon: "🚜", href: "/dashboard/manufacturer/purchases", description: "Buy paddy and cotton directly from farmers and APMC" },
-      { name: "Production and Batches", icon: "⚙️", href: "/dashboard/manufacturer/production", description: "Batch management, milling efficiency and output" },
-      { name: "Inventory Management", icon: "📦", href: "/dashboard/manufacturer/inventory", description: "Raw material silos and finished goods tracking" },
-      { name: "B2B Sales and Dispatches", icon: "📤", href: "/dashboard/manufacturer/sales", description: "Wholesale sales to retailers, chains and exporters" },
-      { name: "Orders Fulfillment", icon: "📋", href: "/dashboard/manufacturer/orders", description: "Commercial order tracking and dispatch schedules" },
-      { name: "Analytics (5-Yr History)", icon: "📈", href: "/dashboard/manufacturer/analytics", description: "5-year milling output and revenue growth trends" },
-      { name: "AI Market Intelligence", icon: "🧠", href: "/dashboard/manufacturer/intelligence", description: "AI demand forecasting and procurement price signals" },
-      { name: "Accounting and Financials", icon: "🧾", href: "/dashboard/manufacturer/accounting", description: "P and L balance sheet, GST invoices and statements" },
-      { name: "Mill Profile", icon: "⚙️", href: "/dashboard/manufacturer/profile", description: "Mill capacity, ISO/FSSAI certifications and settings" },
-    ],
-  },
-  {
-    id: "customer",
-    label: "Buyer",
-    subtitle: "Priya Sharma · Gold Member · Hyderabad",
-    icon: "🛍️",
-    color: "text-purple-700 dark:text-purple-400",
-    bgColor: "bg-purple-50 dark:bg-purple-950/40",
-    borderColor: "border-purple-200 dark:border-purple-800",
-    gradient: "from-purple-500 to-pink-600",
-    demoUser: { id: 1004, full_name: "Priya Sharma", role: "customer", email: "priya.sharma@gmail.com" },
-    stats: [
-      { label: "Total Orders", value: "142 Orders", icon: "📦" },
-      { label: "Total Spent", value: "Rs.84,500", icon: "💳" },
-      { label: "Money Saved", value: "Rs.12,600", icon: "🎉" },
-      { label: "Loyalty Points", value: "2,840 pts", icon: "⭐" },
-    ],
-    features: [
-      { name: "Home and Feed", icon: "🏠", href: "/dashboard/customer", description: "Personalized feed with farm deals and recommendations" },
-      { name: "Farm Marketplace", icon: "🛒", href: "/dashboard/customer/marketplace", description: "Buy 100% organic food directly from farms and mills" },
-      { name: "Products Catalog", icon: "🌾", href: "/dashboard/customer/products", description: "Browse verified rice, oils, pulses, honey and spices" },
-      { name: "Shopping Cart", icon: "🛍️", href: "/dashboard/customer/cart", description: "Review selected items and instant checkout" },
-      { name: "My Orders and Tracking", icon: "📦", href: "/dashboard/customer/orders", description: "Live dispatch and doorstep delivery tracking" },
-      { name: "Smart Buying", icon: "🧠", href: "/dashboard/customer/smart-buying", description: "AI-powered price drop alerts and lowest-rate alerts" },
-      { name: "Customer Profile", icon: "⚙️", href: "/dashboard/customer/profile", description: "Delivery addresses, loyalty points and preferences" },
-    ],
-  },
-];
 
 export function getDemoDataByRole(role: DemoRole) {
   switch (role) {
@@ -468,7 +824,7 @@ export function getDemoDataByRole(role: DemoRole) {
 }
 
 export function resolveDemoApiResponse(url: string, method: string = "get"): any {
-  const cleanUrl = url.split("?")[0].toLowerCase();
+  const cleanUrl = url.split("?")[0].toLowerCase().trim();
 
   // Auth demo endpoints
   if (cleanUrl.includes("/auth/demo-login")) {
@@ -476,7 +832,7 @@ export function resolveDemoApiResponse(url: string, method: string = "get"): any
       access_token: "demo-token-active",
       token_type: "bearer",
       role: "farmer",
-      id: 1001,
+      id: 17,
       full_name: "Ravi Kumar Reddy",
     };
   }
@@ -491,26 +847,83 @@ export function resolveDemoApiResponse(url: string, method: string = "get"): any
   if (cleanUrl.includes("/crops") || cleanUrl.includes("/crops/")) {
     return farmerDemoData.crops;
   }
+  if (cleanUrl.includes("/weather/forecast") || cleanUrl.includes("/weather/soil-forecast")) {
+    return farmerDemoData.weather;
+  }
   if (cleanUrl.includes("/weather")) {
     return farmerDemoData.weather;
   }
   if (cleanUrl.includes("/news")) {
     return farmerDemoData.news;
   }
-  if (cleanUrl.includes("/market-prices") || cleanUrl.includes("/prices")) {
+  if (cleanUrl.includes("/market/prices") || cleanUrl.includes("/market-prices") || cleanUrl.includes("/prices")) {
     return farmerDemoData.marketPrices;
   }
   if (cleanUrl.includes("/orders/my-orders") || (cleanUrl.includes("/orders") && !cleanUrl.includes("/shop") && !cleanUrl.includes("/customer") && !cleanUrl.includes("/manufacturer"))) {
     return farmerDemoData.orders;
   }
-  if (cleanUrl.includes("/farmer/finance") || cleanUrl.includes("/finance")) {
+  if (cleanUrl.includes("/storage/summary")) {
+    return farmerDemoData.storage.summary;
+  }
+  if (cleanUrl.includes("/storage/records") || cleanUrl.includes("/storage")) {
+    return farmerDemoData.storage.storages;
+  }
+  if (cleanUrl.includes("/insurance/summary")) {
+    return farmerDemoData.insurance.summary;
+  }
+  if (cleanUrl.includes("/insurance/guidance") || cleanUrl.includes("/pmfby")) {
+    return farmerDemoData.insurance.guidance;
+  }
+  if (cleanUrl.includes("/insurance/policies") || cleanUrl.includes("/insurance")) {
+    return farmerDemoData.insurance.policies;
+  }
+  if (cleanUrl.includes("/finance/summary")) {
+    return farmerDemoData.finance.summary;
+  }
+  if (cleanUrl.includes("/finance/loans")) {
+    return farmerDemoData.finance.loans;
+  }
+  if (cleanUrl.includes("/finance")) {
     return farmerDemoData.finance;
+  }
+  if (cleanUrl.includes("/calendar/events") || cleanUrl.includes("/farm-events")) {
+    return farmerDemoData.calendar;
+  }
+  if (cleanUrl.includes("/analytics/annual-summary") || cleanUrl.includes("/annual-summary")) {
+    return farmerDemoData.annualPerformanceSummary;
+  }
+  if (cleanUrl.includes("/analytics/annual-summary-years") || cleanUrl.includes("/annual-summary-years")) {
+    return [2026, 2025, 2024, 2023, 2022, 2021];
+  }
+  if (cleanUrl.includes("/seasons/available") || cleanUrl.includes("/available-seasons")) {
+    return farmerDemoData.seasons.available;
+  }
+  if (cleanUrl.includes("/seasons/overview") || cleanUrl.includes("/seasons-overview")) {
+    return farmerDemoData.seasons.overviews;
+  }
+  if (cleanUrl.includes("/recommendations/best-crop")) {
+    return farmerDemoData.recommendations.bestCrop;
+  }
+  if (cleanUrl.includes("/recommendations/crop") || cleanUrl.includes("/crop-recommendations")) {
+    return farmerDemoData.recommendations.crops;
+  }
+  if (cleanUrl.includes("/reports/preview-meta")) {
+    return farmerDemoData.reportMeta;
+  }
+  if (cleanUrl.includes("/manufacturer/mills/marketplace") || cleanUrl.includes("/mills")) {
+    return farmerDemoData.millsMarketplace;
+  }
+  if (cleanUrl.includes("/manufacturer/procurement-requests/my") || cleanUrl.includes("/procurement-requests/my")) {
+    return [];
+  }
+  if (cleanUrl.includes("/plots") || cleanUrl.includes("/nutrition/plots")) {
+    return farmerDemoData.plots;
   }
   if (cleanUrl.includes("/farmer/crop-health") || cleanUrl.includes("health")) {
     return [
       { crop_id: 1, status: "healthy", notes: "Optimal growth, leaf color normal" },
       { crop_id: 2, status: "monitor", notes: "Bollworm alert in Krishna district, inspect flowers" },
-      { crop_id: 3, status: "healthy", notes: "Harvested with 6.2 tons yield" },
+      { crop_id: 3, status: "healthy", notes: "Harvested with 42.5 quintals yield" },
     ];
   }
   if (cleanUrl.includes("/ai-suggestion") || cleanUrl.includes("suggestion")) {
@@ -521,21 +934,21 @@ export function resolveDemoApiResponse(url: string, method: string = "get"): any
       crop: "Paddy (BPT-5204)",
     };
   }
-  if (cleanUrl.includes("/community/channels") || cleanUrl.includes("/community/channel")) {
+  if (cleanUrl.includes("/chat/channels") || cleanUrl.includes("/community/channels")) {
     return [
-      { id: 1, name: "AP Paddy Growers Group", channel_type: "group", location_tag: "Krishna, AP", created_at: "2024-01-01", last_message: "Sold 20 quintals at Nuzividu APMC today!", last_message_time: "2026-10-24T18:30:00" },
-      { id: 2, name: "Cotton Pest Management", channel_type: "group", location_tag: "Andhra Pradesh", created_at: "2024-02-01", last_message: "Spray Chlorpyriphos 20 EC in early morning", last_message_time: "2026-10-24T16:15:00" },
+      { id: 1, name: "Krishna District Paddy Farmers", channel_type: "group", location_tag: "Krishna, AP", created_at: "2024-01-01", last_message: "Sold 20 quintals at Nuzividu APMC today!", last_message_time: "2026-10-24T18:30:00" },
+      { id: 2, name: "Cotton Pest Alert & Advisory", channel_type: "group", location_tag: "Andhra Pradesh", created_at: "2024-02-01", last_message: "Spray Chlorpyriphos 20 EC in early morning", last_message_time: "2026-10-24T16:15:00" },
       { id: 3, name: "Agronomist Dr. Anjali", channel_type: "p2p", location_tag: "Nuzividu KVK", created_at: "2024-03-01", last_message: "Your soil pH of 6.8 is excellent for paddy.", last_message_time: "2026-10-23T11:00:00" },
     ];
   }
-  if (cleanUrl.includes("/community/messages") || cleanUrl.includes("/messages")) {
+  if (cleanUrl.includes("/chat/channels/") && cleanUrl.includes("/messages")) {
     return [
-      { id: 101, channel_id: 1, sender_id: 201, sender_name: "Suresh Naidu", sender_role: "farmer", message_text: "Anyone else seeing pink bollworm in cotton this season?", created_at: "2026-10-24T16:00:00" },
-      { id: 102, channel_id: 1, sender_id: 301, sender_name: "Dr. Anjali (Agronomist)", sender_role: "expert", message_text: "Reminder: Spray Chlorpyriphos 20 EC for bollworm. Do it in early morning.", created_at: "2026-10-24T17:30:00" },
-      { id: 103, channel_id: 1, sender_id: 1001, sender_name: "Ravi Kumar Reddy", sender_role: "farmer", message_text: "Sold 20 quintals of paddy at Nuzividu APMC - got Rs.2,420/quintal. Good rates!", created_at: "2026-10-24T18:30:00" },
+      { id: 101, channel_id: 1, sender_id: 10, sender_name: "Venkat Rao (Krishna Agro)", sender_role: "shop", message_text: "Fresh stock of IFFCO Urea and DAP available at subsidized rates today. Limit 5 bags per farmer.", created_at: "2026-10-24T10:00:00Z" },
+      { id: 102, channel_id: 1, sender_id: 17, sender_name: "Ravi Kumar Reddy", sender_role: "farmer", message_text: "Thanks Venkat garu, picked up 5 bags this morning. Good quality.", created_at: "2026-10-24T12:30:00Z" },
+      { id: 103, channel_id: 1, sender_id: 301, sender_name: "Dr. Anjali (Agronomist)", sender_role: "expert", message_text: "Yellow mosaic and pink bollworm warnings issued for Guntur and Krishna. Spray Chlorpyriphos in early morning hours only.", created_at: "2026-10-24T14:00:00Z" },
     ];
   }
-  if (cleanUrl.includes("/community/farmers") || cleanUrl.includes("/farmers")) {
+  if (cleanUrl.includes("/chat/farmers") || cleanUrl.includes("/community/farmers")) {
     return [
       { id: 201, full_name: "Suresh Naidu", village: "Gannavaram", district: "Krishna", primary_crop: "Cotton", phone_number: "9876501234" },
       { id: 202, full_name: "Koteswara Rao", village: "Vuyyuru", district: "Krishna", primary_crop: "Paddy", phone_number: "9876505678" },
@@ -547,26 +960,34 @@ export function resolveDemoApiResponse(url: string, method: string = "get"): any
   if (cleanUrl.includes("/shop/profile") || cleanUrl === "/shop/profile/") {
     return shopDemoData.profile;
   }
-  if (cleanUrl.includes("/shop/inventory") || cleanUrl.includes("/products/shop")) {
+  if (cleanUrl.includes("/shop/inventory") || cleanUrl.includes("/products/shop") || cleanUrl.includes("/products/")) {
     return shopDemoData.inventory;
   }
-  if (cleanUrl.includes("/shop/orders") || cleanUrl.includes("/shop/sales")) {
-    return shopDemoData.recentOrders;
+  if (cleanUrl.includes("/orders/shop-orders") || cleanUrl.includes("/shop/orders") || cleanUrl.includes("/shop/sales")) {
+    return shopDemoData.orders;
   }
-  if (cleanUrl.includes("/shop/analytics")) {
-    return shopDemoData.annualSales;
+  if (cleanUrl.includes("/analytics/sales-trend") || cleanUrl.includes("/sales-trend")) {
+    return shopDemoData.salesTrend;
+  }
+  if (cleanUrl.includes("/analytics/shop") || cleanUrl.includes("/shop/analytics")) {
+    return shopDemoData.analytics;
+  }
+  if (cleanUrl.includes("/analytics/revenue-report") || cleanUrl.includes("/revenue-report")) {
+    return shopDemoData.revenueReport;
   }
   if (cleanUrl.includes("/shop/customers") || cleanUrl.includes("/customers")) {
-    return [
-      { id: 1, name: "Ravi Kumar Reddy", village: "Kondapally", total_purchases: 84500, orders_count: 14, last_order: "2026-10-22" },
-      { id: 2, name: "Lakshmi Devi", village: "Agiripalli", total_purchases: 42000, orders_count: 8, last_order: "2026-10-20" },
-      { id: 3, name: "Srinivas Rao", village: "Musunuru", total_purchases: 68000, orders_count: 11, last_order: "2026-10-18" },
-    ];
+    return shopDemoData.customers;
   }
 
   // Manufacturer endpoints
   if (cleanUrl.includes("/manufacturer/profile")) {
     return manufacturerDemoData.profile;
+  }
+  if (cleanUrl.includes("/manufacturer/stats")) {
+    return manufacturerDemoData.stats;
+  }
+  if (cleanUrl.includes("/manufacturer/sales-trend")) {
+    return manufacturerDemoData.salesTrend;
   }
   if (cleanUrl.includes("/manufacturer/production") || cleanUrl.includes("/production")) {
     return manufacturerDemoData.production;
@@ -580,11 +1001,11 @@ export function resolveDemoApiResponse(url: string, method: string = "get"): any
   if (cleanUrl.includes("/manufacturer/sales")) {
     return manufacturerDemoData.sales;
   }
+  if (cleanUrl.includes("/manufacturer/accounting/summary")) {
+    return manufacturerDemoData.accounting;
+  }
   if (cleanUrl.includes("/manufacturer/intelligence") || cleanUrl.includes("/intelligence")) {
     return manufacturerDemoData.intelligence;
-  }
-  if (cleanUrl.includes("/manufacturer/analytics")) {
-    return manufacturerDemoData.annualProduction;
   }
 
   // Customer endpoints
@@ -600,8 +1021,8 @@ export function resolveDemoApiResponse(url: string, method: string = "get"): any
   if (cleanUrl.includes("/customer/smart-buying") || cleanUrl.includes("/smart-buying")) {
     return customerDemoData.smartBuying;
   }
-  if (cleanUrl.includes("/marketplace") || cleanUrl.includes("/products")) {
-    return customerDemoData.marketplace.featured;
+  if (cleanUrl.includes("/customer/marketplace") || cleanUrl.includes("/marketplace")) {
+    return customerDemoData.marketplace;
   }
 
   return null;

@@ -5,6 +5,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { DemoButton } from "@/components/DemoButton";
+import { DemoBanner } from "@/components/demo/DemoBanner";
 import { ChatBot } from "@/components/ChatBot";
 import { VoiceAssistant } from "@/components/VoiceAssistant";
 
@@ -25,6 +26,7 @@ export default function DashboardLayout({
                     <LanguageSelector direction="down" />
                     <ThemeToggle />
                 </div>
+                <DemoBanner />
                 {children}
             </div>
             <ChatBot />

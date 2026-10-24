@@ -26,7 +26,26 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        const isDemo = typeof window !== 'undefined' && (
+            localStorage.getItem('isDemoMode') === 'true' ||
+            localStorage.getItem('token')?.startsWith('demo-token-') ||
+            localStorage.getItem('user')?.includes('"email":"demo@') ||
+            localStorage.getItem('user')?.includes('"demo@')
+        );
+
+        if (isDemo && response.config?.url) {
+            const data = response.data;
+            const isEmpty = data === null || data === undefined || (Array.isArray(data) && data.length === 0);
+            if (isEmpty) {
+                const demoMock = resolveDemoApiResponse(response.config.url, response.config.method);
+                if (demoMock !== null) {
+                    response.data = demoMock;
+                }
+            }
+        }
+        return response;
+    },
     async (error) => {
         const isDemo = typeof window !== 'undefined' && (
             localStorage.getItem('isDemoMode') === 'true' ||
