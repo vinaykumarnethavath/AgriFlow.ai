@@ -576,13 +576,13 @@ export const shopDemoData = {
     total_customers: 1842,
   },
   inventory: [
-    { id: 1, name: "Urea 46-0-0 (50 kg)", short_name: "Urea", category: "fertilizer", stock: 245, quantity: 245, unit_price: 267, price: 267, cost_price: 240, reorder_level: 100, supplier: "IFFCO", brand: "IFFCO", manufacturer: "IFFCO", unit: "bag", low_stock: false, status: "active" },
-    { id: 2, name: "DAP 18-46-0 (50 kg)", short_name: "DAP", category: "fertilizer", stock: 88, quantity: 88, unit_price: 1350, price: 1350, cost_price: 1200, reorder_level: 50, supplier: "Coromandel", brand: "Coromandel", manufacturer: "Coromandel", unit: "bag", low_stock: false, status: "active" },
-    { id: 3, name: "MOP Potash (50 kg)", short_name: "MOP", category: "fertilizer", stock: 62, quantity: 62, unit_price: 1100, price: 1100, cost_price: 980, reorder_level: 40, supplier: "IPL", brand: "IPL", manufacturer: "IPL", unit: "bag", low_stock: false, status: "active" },
-    { id: 4, name: "Chlorpyriphos 20 EC (1L)", short_name: "Chlorpyriphos", category: "pesticide", stock: 156, quantity: 156, unit_price: 620, price: 620, cost_price: 510, reorder_level: 60, supplier: "Dhanuka", brand: "Dhanuka", manufacturer: "Dhanuka", unit: "bottle", low_stock: false, status: "active" },
-    { id: 5, name: "BPT-5204 Certified Seed (5kg)", short_name: "BPT-5204", category: "seeds", stock: 420, quantity: 420, unit_price: 185, price: 185, cost_price: 145, reorder_level: 150, supplier: "AP State Seeds", brand: "AP Seeds", manufacturer: "APSSC", unit: "packet", low_stock: false, status: "active" },
-    { id: 6, name: "Cotton Bunny BT Seeds (450g)", short_name: "Bunny BT", category: "seeds", stock: 35, quantity: 35, unit_price: 740, price: 740, cost_price: 640, reorder_level: 50, supplier: "Rasi Seeds", brand: "Rasi", manufacturer: "Rasi", unit: "packet", low_stock: true, status: "active" },
-    { id: 7, name: "Drip Irrigation Inline Pipe (100m)", short_name: "Drip 16mm", category: "equipment", stock: 18, quantity: 18, unit_price: 2800, price: 2800, cost_price: 2300, reorder_level: 20, supplier: "Jain Irrigation", brand: "Jain", manufacturer: "Jain", unit: "roll", low_stock: true, status: "active" },
+    { id: 1, user_id: 1, seller_name: "Krishna Agro Center", name: "Urea 46-0-0 (50 kg)", short_name: "Urea", category: "fertilizer", stock: 245, quantity: 245, unit_price: 267, price: 267, cost_price: 240, reorder_level: 100, supplier: "IFFCO", brand: "IFFCO", manufacturer: "IFFCO", unit: "bag", low_stock: false, status: "active" },
+    { id: 2, user_id: 1, seller_name: "Krishna Agro Center", name: "DAP 18-46-0 (50 kg)", short_name: "DAP", category: "fertilizer", stock: 88, quantity: 88, unit_price: 1350, price: 1350, cost_price: 1200, reorder_level: 50, supplier: "Coromandel", brand: "Coromandel", manufacturer: "Coromandel", unit: "bag", low_stock: false, status: "active" },
+    { id: 3, user_id: 1, seller_name: "Krishna Agro Center", name: "MOP Potash (50 kg)", short_name: "MOP", category: "fertilizer", stock: 62, quantity: 62, unit_price: 1100, price: 1100, cost_price: 980, reorder_level: 40, supplier: "IPL", brand: "IPL", manufacturer: "IPL", unit: "bag", low_stock: false, status: "active" },
+    { id: 4, user_id: 1, seller_name: "Krishna Agro Center", name: "Chlorpyriphos 20 EC (1L)", short_name: "Chlorpyriphos", category: "pesticide", stock: 156, quantity: 156, unit_price: 620, price: 620, cost_price: 510, reorder_level: 60, supplier: "Dhanuka", brand: "Dhanuka", manufacturer: "Dhanuka", unit: "bottle", low_stock: false, status: "active" },
+    { id: 5, user_id: 1, seller_name: "Krishna Agro Center", name: "BPT-5204 Certified Seed (5kg)", short_name: "BPT-5204", category: "seeds", stock: 420, quantity: 420, unit_price: 185, price: 185, cost_price: 145, reorder_level: 150, supplier: "AP State Seeds", brand: "AP Seeds", manufacturer: "APSSC", unit: "packet", low_stock: false, status: "active" },
+    { id: 6, user_id: 1, seller_name: "Krishna Agro Center", name: "Cotton Bunny BT Seeds (450g)", short_name: "Bunny BT", category: "seeds", stock: 35, quantity: 35, unit_price: 740, price: 740, cost_price: 640, reorder_level: 50, supplier: "Rasi Seeds", brand: "Rasi", manufacturer: "Rasi", unit: "packet", low_stock: true, status: "active" },
+    { id: 7, user_id: 1, seller_name: "Krishna Agro Center", name: "Drip Irrigation Inline Pipe (100m)", short_name: "Drip 16mm", category: "equipment", stock: 18, quantity: 18, unit_price: 2800, price: 2800, cost_price: 2300, reorder_level: 20, supplier: "Jain Irrigation", brand: "Jain", manufacturer: "Jain", unit: "roll", low_stock: true, status: "active" },
   ],
   orders: [
     {
@@ -859,8 +859,90 @@ export function resolveDemoApiResponse(url: string, method: string = "get"): any
   if (cleanUrl.includes("/market/prices") || cleanUrl.includes("/market-prices") || cleanUrl.includes("/prices")) {
     return farmerDemoData.marketPrices;
   }
+
+  // Orders endpoints
+  if ((cleanUrl === "/orders" || cleanUrl === "/orders/") && method.toLowerCase() === "post") {
+    const newId = Date.now();
+    const newOrder: any = {
+      id: newId,
+      order_id: newId,
+      shop_id: 1,
+      shop_name: "Krishna Agro Center",
+      shop_contact: {
+        phone: "9848012345",
+        address: "Main Road, Near Bus Stand, Nuzividu, Krishna AP",
+        owner_name: "Venkat Rao Potti",
+        latitude: 16.785,
+        longitude: 80.846
+      },
+      farmer_id: 17,
+      farmer_name: "Ravi Kumar Reddy",
+      farmer_phone: "9876543210",
+      total_amount: 2700,
+      discount: 0,
+      final_amount: 2700,
+      payment_mode: "cash",
+      payment_status: "pending",
+      status: "pending",
+      order_notes: "Farmer fertilizer order",
+      created_at: new Date().toISOString(),
+      items: [
+        { product_id: 2, product_name: "DAP 18-46-0 (50 kg)", category: "fertilizer", quantity: 2, unit_price: 1350, total_price: 2700, subtotal: 2700, unit: "bag", brand: "Coromandel", manufacturer: "Coromandel" }
+      ]
+    };
+    (farmerDemoData.orders as any[]).unshift(newOrder);
+    (shopDemoData.orders as any[]).unshift(newOrder);
+    return newOrder;
+  }
+  if (cleanUrl.includes("/orders/") && cleanUrl.includes("/status")) {
+    const parts = cleanUrl.split("/");
+    const idIdx = parts.indexOf("orders") + 1;
+    const targetId = parseInt(parts[idIdx], 10);
+    const order = (farmerDemoData.orders as any[]).find(o => o.id === targetId || o.order_id === targetId);
+    if (order) {
+      order.status = "confirmed";
+    }
+    const shopOrder = (shopDemoData.orders as any[]).find(o => o.id === targetId || o.order_id === targetId);
+    if (shopOrder) {
+      shopOrder.status = "confirmed";
+    }
+    return { message: "Status updated successfully" };
+  }
   if (cleanUrl.includes("/orders/my-orders") || (cleanUrl.includes("/orders") && !cleanUrl.includes("/shop") && !cleanUrl.includes("/customer") && !cleanUrl.includes("/manufacturer"))) {
     return farmerDemoData.orders;
+  }
+
+  // Payment endpoints (Razorpay test integration)
+  if (cleanUrl.includes("/payments/config")) {
+    return {
+      key_id: "rzp_test_Tmtg2ZhDpl58fH",
+      is_mock: false,
+      is_test_mode: true,
+      currency: "INR",
+    };
+  }
+  if (cleanUrl.includes("/payments/create-order")) {
+    return {
+      id: Date.now(),
+      user_id: 17,
+      razorpay_order_id: `order_rzp_${Date.now()}`,
+      amount: 2700,
+      currency: "INR",
+      status: "created",
+      payment_for: "shop_order",
+      reference_id: 101,
+      shipping_address: null,
+      notes: "Farmer Payment",
+      created_at: new Date().toISOString(),
+      paid_at: null,
+    };
+  }
+  if (cleanUrl.includes("/payments/verify")) {
+    const pendingOrder = farmerDemoData.orders.find(o => o.payment_status !== "paid");
+    if (pendingOrder) {
+      pendingOrder.payment_status = "paid";
+    }
+    return { status: "success", message: "Payment verified successfully" };
   }
   if (cleanUrl.includes("/storage/summary")) {
     return farmerDemoData.storage.summary;

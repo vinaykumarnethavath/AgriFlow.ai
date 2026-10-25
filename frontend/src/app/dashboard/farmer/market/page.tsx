@@ -308,12 +308,16 @@ function MarketPageContent() {
 
     const placeOrder = async () => {
         if (placingOrder) return;
+        if (!cart || cart.length === 0) {
+            alert("Your cart is empty. Please add items before requesting an order.");
+            return;
+        }
         setPlacingOrder(true);
         try {
             // Group cart items by shop (user_id)
             const shopGroups: Record<number, CartItem[]> = {};
             for (const item of cart) {
-                const shopId = item.product.user_id;
+                const shopId = item.product.user_id || 1;
                 if (!shopGroups[shopId]) shopGroups[shopId] = [];
                 shopGroups[shopId].push(item);
             }
@@ -325,8 +329,9 @@ function MarketPageContent() {
                     let remainingQty = item.quantity;
                     for (const batch of relatedBatches) {
                         if (remainingQty <= 0) break;
-                        const qtyToTake = Math.min(batch.quantity, remainingQty);
-                        if (qtyToTake > 0) {
+                        const avail = typeof batch.quantity === "number" && batch.quantity > 0 ? batch.quantity : remainingQty;
+                        const qtyToTake = Math.min(avail, remainingQty);
+                        if (qtyToTake > 0 && batch.id) {
                             items.push({
                                 product_id: batch.id,
                                 quantity: qtyToTake
@@ -334,6 +339,22 @@ function MarketPageContent() {
                             remainingQty -= qtyToTake;
                         }
                     }
+                    // Fallback: if remainingQty > 0 or batches had no positive quantities, add base product
+                    if (remainingQty > 0 && item.product.id) {
+                        const existingIdx = items.findIndex(it => it.product_id === item.product.id);
+                        if (existingIdx >= 0) {
+                            items[existingIdx].quantity += remainingQty;
+                        } else {
+                            items.push({
+                                product_id: item.product.id,
+                                quantity: remainingQty
+                            });
+                        }
+                    }
+                }
+
+                if (items.length === 0) {
+                    throw new Error("Could not prepare items for the order. Please try re-adding the product to cart.");
                 }
 
                 await api.post("/orders/", {
@@ -355,7 +376,18 @@ function MarketPageContent() {
             fetchProducts();
         } catch (error: any) {
             console.error("Failed to request order:", error);
-            alert(error?.response?.data?.detail || "Failed to request order. Please try again.");
+            const detail = error?.response?.data?.detail;
+            let errorMessage = "Failed to request order. Please try again.";
+            if (typeof detail === "string") {
+                errorMessage = detail;
+            } else if (Array.isArray(detail)) {
+                errorMessage = detail.map((d: any) => d.msg || JSON.stringify(d)).join(", ");
+            } else if (error?.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error?.message) {
+                errorMessage = error.message;
+            }
+            alert(errorMessage);
         } finally {
             setPlacingOrder(false);
         }

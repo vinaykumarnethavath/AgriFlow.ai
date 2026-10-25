@@ -5,7 +5,7 @@ from sqlmodel import select
 from sqlalchemy.orm import selectinload
 
 from ..database import get_session
-from ..models import ShopOrder, ShopOrderCreate, ShopOrderRead, ShopOrderItem, Product, User, ShopOrderStatusUpdate
+from ..models import ShopOrder, ShopOrderCreate, ShopOrderRead, ShopOrderItem, Product, User, UserRole, ShopOrderStatusUpdate
 from ..models.expense import ShopExpense
 from ..models.farmer import FarmerProfile
 from ..models.shop import ShopProfile
@@ -161,7 +161,8 @@ async def create_shop_order(
         + order_in.expense_other
     )
 
-    order_status = "pending" if (current_user.role == "farmer" or current_user.role == UserRole.FARMER) else "completed"
+    user_role_str = str(getattr(current_user, "role", "")).lower()
+    order_status = "pending" if ("farmer" in user_role_str) else "completed"
 
     db_order = ShopOrder(
         shop_id=shop_id,
