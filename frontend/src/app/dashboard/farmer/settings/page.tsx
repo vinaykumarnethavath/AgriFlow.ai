@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import EmergencyContactsCard from "@/components/info/EmergencyContactsCard";
 import { 
     User, 
     Sprout, 
@@ -27,7 +30,8 @@ import {
     Eye,
     EyeOff,
     Check,
-    Loader2
+    Loader2,
+    Landmark
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -103,17 +107,28 @@ const TABS = [
     { id: "land", label: "Farm & Land Records", icon: Sprout },
     { id: "location", label: "Farm Location", icon: MapPin },
     { id: "banking", label: "Bank & Subsidies", icon: CreditCard },
+    { id: "finance", label: "Finance & Storage", icon: Landmark },
+    { id: "emergency", label: "Emergency SOS", icon: PhoneCall },
     { id: "preferences", label: "Preferences & Alerts", icon: Bell },
     { id: "security", label: "Account Security", icon: Lock },
 ] as const;
 
 type TabId = typeof TABS[number]["id"];
 
-export default function FarmerSettingsPage() {
+function FarmerSettingsContent() {
     const { user, logout } = useAuth();
     const { locale, setLocale, t } = useLanguage();
+    const searchParams = useSearchParams();
     
     const [activeTab, setActiveTab] = useState<TabId>("personal");
+
+    useEffect(() => {
+        const tabParam = searchParams?.get("tab");
+        if (tabParam && TABS.some(t => t.id === tabParam)) {
+            setActiveTab(tabParam as TabId);
+        }
+    }, [searchParams]);
+
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
@@ -1173,6 +1188,102 @@ export default function FarmerSettingsPage() {
                 </div>
             )}
 
+            {/* Tab: Finance & Storage */}
+            {activeTab === "finance" && (
+                <div className="space-y-6">
+                    <Card className="shadow-xs border-emerald-500/20">
+                        <CardHeader>
+                            <CardTitle className="text-xl flex items-center gap-2">
+                                <Landmark className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                Finance, KCC Loans & Storage Hub
+                            </CardTitle>
+                            <CardDescription>
+                                Access your Kisan Credit Card bank limits, PMFBY crop insurance policies, cold storage receipts, and farm fiscal reports.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <Link href="/dashboard/farmer/finance?tab=credit" className="block group">
+                                    <div className="p-4 rounded-xl border border-border bg-card hover:border-emerald-500/50 hover:bg-emerald-50/20 transition-all h-full">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                                <CreditCard className="w-5 h-5" />
+                                            </span>
+                                            <h4 className="font-bold text-foreground text-sm group-hover:text-emerald-600 transition-colors">KCC & Farm Loans</h4>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Track Kisan Credit Card bank limits, interest subventions & repayment schedules</p>
+                                    </div>
+                                </Link>
+                                <Link href="/dashboard/farmer/finance?tab=storage" className="block group">
+                                    <div className="p-4 rounded-xl border border-border bg-card hover:border-blue-500/50 hover:bg-blue-50/20 transition-all h-full">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                                <Layers className="w-5 h-5" />
+                                            </span>
+                                            <h4 className="font-bold text-foreground text-sm group-hover:text-blue-600 transition-colors">Cold Storage & Warehousing</h4>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">e-NWR warehouse receipts, slot reservation & preservation monitoring</p>
+                                    </div>
+                                </Link>
+                                <Link href="/dashboard/farmer/finance?tab=insurance" className="block group">
+                                    <div className="p-4 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-purple-50/20 transition-all h-full">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="p-2 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                                                <ShieldCheck className="w-5 h-5" />
+                                            </span>
+                                            <h4 className="font-bold text-foreground text-sm group-hover:text-purple-600 transition-colors">PMFBY Crop Insurance</h4>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Coverage certificates, claim tracking & localized calamity reports</p>
+                                    </div>
+                                </Link>
+                                <Link href="/dashboard/farmer/finance?tab=season-comparison" className="block group">
+                                    <div className="p-4 rounded-xl border border-border bg-card hover:border-amber-500/50 hover:bg-amber-50/20 transition-all h-full">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                                                <Sparkles className="w-5 h-5" />
+                                            </span>
+                                            <h4 className="font-bold text-foreground text-sm group-hover:text-amber-600 transition-colors">Season Comparison</h4>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Audit input expenses, market realisations & yield delta across seasons</p>
+                                    </div>
+                                </Link>
+                                <Link href="/dashboard/farmer/finance?tab=annual-summary" className="block group">
+                                    <div className="p-4 rounded-xl border border-border bg-card hover:border-indigo-500/50 hover:bg-indigo-50/20 transition-all h-full">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                                                <Building2 className="w-5 h-5" />
+                                            </span>
+                                            <h4 className="font-bold text-foreground text-sm group-hover:text-indigo-600 transition-colors">Annual Financial Summary</h4>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Consolidated fiscal year reports and profit/loss statements</p>
+                                    </div>
+                                </Link>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Tab: Emergency SOS */}
+            {activeTab === "emergency" && (
+                <div className="space-y-6">
+                    <Card className="border-red-500/25 shadow-xs">
+                        <CardHeader>
+                            <CardTitle className="text-xl flex items-center gap-2 text-red-600 dark:text-red-400">
+                                <PhoneCall className="w-5 h-5 text-red-600 dark:text-red-400" />
+                                Emergency SOS & Rapid Farm Hotlines
+                            </CardTitle>
+                            <CardDescription>
+                                24/7 direct dial contacts for electrical shock, pesticide poisoning, veterinary emergencies, and farm distress.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <EmergencyContactsCard />
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
             {/* Tab 5: Preferences & Alerts */}
             {activeTab === "preferences" && (
                 <div className="space-y-6">
@@ -1478,5 +1589,13 @@ export default function FarmerSettingsPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function FarmerSettingsPage() {
+    return (
+        <React.Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading settings...</div>}>
+            <FarmerSettingsContent />
+        </React.Suspense>
     );
 }

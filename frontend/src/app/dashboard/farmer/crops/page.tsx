@@ -8,10 +8,11 @@ import { useLanguage } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import { ArrowLeft, Plus, Sprout, ArrowRight, Stethoscope, LineChart, FileDown } from "lucide-react";
+import { ArrowLeft, Plus, Sprout, ArrowRight, Stethoscope, LineChart, FileDown, ChevronDown, Lightbulb, Factory } from "lucide-react";
 import ExportReportModal from "@/components/info/ExportReportModal";
 import BestCropRecommendationCard from "@/components/info/BestCropRecommendationCard";
 import CropRecommendationWidget from "@/components/info/CropRecommendationWidget";
+import MillsMarketplace from "../mills/page";
 
 export default function CropsListPage() {
     const router = useRouter();
@@ -20,6 +21,8 @@ export default function CropsListPage() {
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isExportReportOpen, setIsExportReportOpen] = useState(false);
+    const [showRecommendations, setShowRecommendations] = useState(false);
+    const [showMillSelling, setShowMillSelling] = useState(false);
 
     // Add Crop State
     const [isAddCropOpen, setIsAddCropOpen] = useState(false);
@@ -325,20 +328,52 @@ export default function CropsListPage() {
                 </div>
             </div>
 
-            {/* AI Crop Recommendations & Smart Insights */}
-            <div className="space-y-4">
-                <BestCropRecommendationCard
-                    onSelectCrop={(cropName, variety, season) => {
-                        setNewCrop(prev => ({
-                            ...prev,
-                            name: cropName,
-                            variety: variety || "",
-                            season: season || "Kharif",
-                        }));
-                        setIsAddCropOpen(true);
-                    }}
-                />
-                <CropRecommendationWidget />
+            {/* AI Crop Recommendations & Smart Insights (Collapsible View/Hide) */}
+            <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs">
+                <button
+                    type="button"
+                    onClick={() => setShowRecommendations(!showRecommendations)}
+                    className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+                >
+                    <div className="flex items-center gap-3">
+                        <span className="p-2 rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
+                            <Lightbulb className="h-5 w-5" />
+                        </span>
+                        <div>
+                            <h3 className="font-bold text-foreground text-sm sm:text-base flex items-center gap-2">
+                                Smart & Best Crop Recommendations
+                                <span className="text-[11px] font-normal px-2 py-0.5 rounded-full bg-green-500/10 text-green-700 dark:text-green-300">
+                                    AI Insights
+                                </span>
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                                High-profit suggestions and season-based crop advisory
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted border border-border text-foreground">
+                            {showRecommendations ? "Hide Insights" : "View Insights"}
+                        </span>
+                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showRecommendations ? "rotate-180" : ""}`} />
+                    </div>
+                </button>
+                {showRecommendations && (
+                    <div className="p-4 border-t border-border space-y-4 animate-in fade-in duration-200">
+                        <BestCropRecommendationCard
+                            onSelectCrop={(cropName, variety, season) => {
+                                setNewCrop(prev => ({
+                                    ...prev,
+                                    name: cropName,
+                                    variety: variety || "",
+                                    season: season || "Kharif",
+                                }));
+                                setIsAddCropOpen(true);
+                            }}
+                        />
+                        <CropRecommendationWidget />
+                    </div>
+                )}
             </div>
 
             {/* Harvested/Sold Crops Section */}
@@ -538,6 +573,43 @@ export default function CropsListPage() {
                         ))
                     )}
                 </div>
+            </div>
+
+            {/* Mill Selling & Load Pooling (Collapsible View/Hide) */}
+            <div className="rounded-2xl border border-amber-500/25 bg-card overflow-hidden shadow-xs mt-8">
+                <button
+                    type="button"
+                    onClick={() => setShowMillSelling(!showMillSelling)}
+                    className="w-full flex items-center justify-between p-4 bg-amber-500/5 hover:bg-amber-500/10 transition-colors text-left"
+                >
+                    <div className="flex items-center gap-3">
+                        <span className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                            <Factory className="h-5 w-5" />
+                        </span>
+                        <div>
+                            <h3 className="font-bold text-foreground text-sm sm:text-base flex items-center gap-2">
+                                Mill Selling & Load Pooling
+                                <span className="text-[11px] font-normal px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200">
+                                    Direct to Mills
+                                </span>
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                                Sell harvested crops directly to verified mills & join freight pooling
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-200">
+                            {showMillSelling ? "Hide Mill Selling" : "View Mill Selling"}
+                        </span>
+                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showMillSelling ? "rotate-180" : ""}`} />
+                    </div>
+                </button>
+                {showMillSelling && (
+                    <div className="p-4 border-t border-border animate-in fade-in duration-200">
+                        <MillsMarketplace />
+                    </div>
+                )}
             </div>
 
             {/* Harvest Modal */}

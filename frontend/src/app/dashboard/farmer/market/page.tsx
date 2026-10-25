@@ -8,6 +8,7 @@ import api from "@/lib/api";
 import { ContactInfo } from "@/lib/api";
 import ContactInfoCard from "@/components/ui/ContactInfoCard";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import OrderChatModal from "@/components/chat/OrderChatModal";
 import {
     ShoppingCart,
@@ -29,7 +30,8 @@ import {
     ChevronDown,
     CreditCard,
     Box,
-    MessageSquare
+    MessageSquare,
+    Truck
 } from "lucide-react";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
 import { useLanguage } from "@/context/LanguageContext";
@@ -108,9 +110,10 @@ const COMMON_SHORT_NAMES: Record<string, string> = {
     "Potash": "Potash / MOP",
 };
 
-export default function MarketPage() {
+function MarketPageContent() {
     const { user } = useAuth();
     const { t } = useLanguage();
+    const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -118,6 +121,13 @@ export default function MarketPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [showHistory, setShowHistory] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+    useEffect(() => {
+        if (searchParams?.get("tab") === "orders") {
+            setShowHistory(true);
+            setShowCart(false);
+        }
+    }, [searchParams]);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [selectedShop, setSelectedShop] = useState<number | null>(null);
@@ -334,18 +344,15 @@ export default function MarketPage() {
                 });
             }
 
-            alert(`Order requests sent successfully! Shop owners will review them.`);
+            alert(`Order requests sent successfully! The shop owner will review and confirm your order.`);
             setCart([]);
             setOrderNotes("");
-            setOrderPlaced(true);
+            setOrderPlaced(false);
+            setShowCart(false);
+            setShowHistory(true);
+            setPaymentMode("cash");
             fetchOrders();
             fetchProducts();
-            setTimeout(() => {
-                setOrderPlaced(false);
-                setShowCart(false);
-                setPaymentMode("cash");
-            }, 3000);
-
         } catch (error: any) {
             console.error("Failed to request order:", error);
             alert(error?.response?.data?.detail || "Failed to request order. Please try again.");
@@ -403,16 +410,10 @@ export default function MarketPage() {
                 }
             };
             
-            const isMockMode = config.is_mock || config.key_id.startsWith("rzp_test_placeholder");
-
-            if (isMockMode) {
-                setMockOptions(options);
-                return;
-            }
-
             const loaded = await loadRazorpayScript();
             if (!loaded) {
-                alert("Failed to load Razorpay SDK. Please check your internet connection.");
+                // Fallback to mock popup only if script failed to load from CDN
+                setMockOptions(options);
                 return;
             }
 
@@ -684,17 +685,34 @@ export default function MarketPage() {
                                                     <Trash2 className="h-4 w-4 mr-1" /> Cancel Order
                                                 </Button>
                                             )}
-                                            {selectedOrder.status === "confirmed" && selectedOrder.payment_mode === "razorpay" && selectedOrder.payment_status !== "paid" && (
+                                            {selectedOrder.status === "confirmed" && selectedOrder.payment_status !== "paid" && (
                                                 <Button
                                                     size="sm"
                                                     onClick={() => handlePayNow(selectedOrder)}
-                                                    className="bg-green-600 hover:bg-green-700 text-white shadow-xs"
+                                                    className="bg-green-600 hover:bg-green-700 text-white shadow-xs font-semibold"
                                                 >
-                                                    <CreditCard className="h-4 w-4 mr-1" /> Pay Now — ₹{selectedOrder.final_amount.toLocaleString()}
+                                                    <CreditCard className="h-4 w-4 mr-1" /> Pay with Razorpay — ₹{selectedOrder.final_amount.toLocaleString()}
                                                 </Button>
                                             )}
-                                            {selectedOrder.payment_status === "paid" && (
-                                                <span className="text-sm text-green-700 dark:text-green-400 font-bold bg-green-100 dark:bg-green-950/60 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-800">Paid ✅</span>
+                                            {selectedOrder.status === "pending" && (
+                                                <span className="text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 px-3 py-1.5 rounded-full border border-amber-300 dark:border-amber-800 flex items-center gap-1.5">
+                                                    <Clock className="w-3.5 h-3.5" /> Waiting for Shopkeeper to Confirm
+                                                </span>
+                                            )}
+                                            {selectedOrder.status === "confirmed" && selectedOrder.payment_status === "paid" && (
+                                                <span className="text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-950/70 dark:text-green-300 px-3 py-1.5 rounded-full border border-green-300 dark:border-green-800 flex items-center gap-1.5">
+                                                    <CheckCircle className="w-3.5 h-3.5 text-green-600" /> Paid ✅ Awaiting Dispatch
+                                                </span>
+                                            )}
+                                            {selectedOrder.status === "dispatched" && (
+                                                <span className="text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 px-3 py-1.5 rounded-full border border-purple-300 dark:border-purple-800 flex items-center gap-1.5">
+                                                    <Truck className="w-3.5 h-3.5 text-purple-600" /> Dispatched 🚚 Out for Delivery
+                                                </span>
+                                            )}
+                                            {selectedOrder.status === "completed" && (
+                                                <span className="text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 px-3 py-1.5 rounded-full border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5">
+                                                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Delivered & Completed
+                                                </span>
                                             )}
                                         </div>
                                     </CardContent>
@@ -886,25 +904,40 @@ export default function MarketPage() {
                     </Link>
                     <h1 className="text-2xl font-bold text-foreground">{t("marketPage.title", "Market")}</h1>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Link href="/dashboard/farmer/orders">
-                        <Button
-                            variant="outline"
-                            className="flex items-center gap-2 border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/40 font-semibold"
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <div className="flex bg-muted p-1 rounded-xl border border-border">
+                        <button
+                            onClick={() => { setShowHistory(false); setShowCart(false); }}
+                            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+                                !showHistory && !showCart
+                                    ? "bg-background text-foreground shadow-xs font-bold"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
                         >
-                            <Box className="h-4 w-4" /> My Orders ({orders.length})
-                        </Button>
-                    </Link>
+                            <Store className="h-3.5 w-3.5" />
+                            Browse Catalog
+                        </button>
+                        <button
+                            onClick={() => { setShowHistory(true); setShowCart(false); fetchOrders(); }}
+                            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+                                showHistory
+                                    ? "bg-background text-foreground shadow-xs font-bold"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            <Box className="h-3.5 w-3.5" />
+                            My Orders
+                            {orders.length > 0 && (
+                                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-green-500/15 text-green-700 dark:text-green-300 text-[10px]">
+                                    {orders.length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+
                     <Button
-                        variant="outline"
-                        onClick={() => { setShowHistory(true); fetchOrders(); }}
-                        className="flex items-center gap-2 border-gray-300 text-foreground"
-                    >
-                        <History className="h-4 w-4" /> {t("marketPage.orderHistory", "Order History")}
-                    </Button>
-                    <Button
-                        onClick={() => setShowCart(true)}
-                        className="bg-green-600 hover:bg-green-700 text-white relative"
+                        onClick={() => { setShowCart(true); setShowHistory(false); }}
+                        className={`relative ${showCart ? "bg-green-700" : "bg-green-600 hover:bg-green-700"} text-white`}
                     >
                         <ShoppingCart className="h-4 w-4 mr-2" />
                         {t("marketPage.cart", "Cart")}
@@ -1183,5 +1216,13 @@ export default function MarketPage() {
                 />
             )}
         </div>
+    );
+}
+
+export default function MarketPage() {
+    return (
+        <React.Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading market...</div>}>
+            <MarketPageContent />
+        </React.Suspense>
     );
 }

@@ -119,13 +119,6 @@ export default function CartPage() {
                 },
             };
 
-            const isMockMode = config.is_mock || config.key_id.startsWith("rzp_test_placeholder");
-
-            if (isMockMode) {
-                setMockOptions(options);
-                return;
-            }
-
             const razorpay = new (window as any).Razorpay(options);
             razorpay.on("payment.failed", (resp: any) => {
                 console.error("Razorpay payment failed:", resp.error);

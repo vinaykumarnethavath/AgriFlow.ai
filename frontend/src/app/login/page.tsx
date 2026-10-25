@@ -57,6 +57,10 @@ export default function LoginPage() {
             const { data } = await api.post("/auth/login", payload);
             const user = { id: data.id, email, role: data.role, full_name: data.full_name || "User" };
             localStorage.setItem("user", JSON.stringify(user));
+            localStorage.removeItem("isDemoMode");
+            localStorage.removeItem("demoRole");
+            sessionStorage.removeItem("demoMode");
+            sessionStorage.removeItem("demoRole");
             login(data.access_token, data.role);
             router.push(`/dashboard/${data.role}`);
         } catch (err: any) {
@@ -88,6 +92,10 @@ export default function LoginPage() {
             const { data } = await api.post("/auth/login", payload);
             const user = { id: data.id, phone_number: phone, role: data.role, full_name: data.full_name || "User" };
             localStorage.setItem("user", JSON.stringify(user));
+            localStorage.removeItem("isDemoMode");
+            localStorage.removeItem("demoRole");
+            sessionStorage.removeItem("demoMode");
+            sessionStorage.removeItem("demoRole");
             login(data.access_token, data.role);
             router.push(`/dashboard/${data.role}`);
         } catch (err: any) {
@@ -104,6 +112,10 @@ export default function LoginPage() {
             const { data } = await api.post("/auth/demo-login", { role });
             const user = { id: data.id, email: `demo@${role}.com`, role: data.role, full_name: data.full_name || "User" };
             localStorage.setItem("user", JSON.stringify(user));
+            localStorage.setItem("isDemoMode", "true");
+            localStorage.setItem("demoRole", role);
+            sessionStorage.setItem("demoMode", "true");
+            sessionStorage.setItem("demoRole", role);
             login(data.access_token, data.role);
             router.push(`/dashboard/${data.role}`);
         } catch (err: any) {

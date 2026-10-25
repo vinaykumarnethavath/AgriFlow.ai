@@ -43,7 +43,6 @@ import {
 import { ThemeToggle } from "../ThemeToggle";
 import { Button } from "../ui/button";
 import { LanguageSelector } from "../LanguageSelector";
-import { DemoButton } from "../DemoButton";
 
 interface SidebarProps {
     isOpen?: boolean;
@@ -70,17 +69,13 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
                 return [
                     { name: t("sidebar.dashboard"), href: "/dashboard/farmer", icon: LayoutDashboard },
                     { name: t("sidebar.myCrops"), href: "/dashboard/farmer/crops", icon: Sprout },
-                    { name: t("sidebar.sellToMills", "Mill Selling & Pooling"), href: "/dashboard/farmer/mills", icon: Factory },
-                    { name: t("sidebar.nutrition", "Soil & Nutrition"), href: "/dashboard/farmer/nutrition", icon: Droplets },
-                    { name: t("sidebar.financeStorage", "Finance & Storage"), href: "/dashboard/farmer/finance", icon: Landmark },
                     { name: t("sidebar.buyFertilizers"), href: "/dashboard/farmer/market", icon: ShoppingBag },
-                    { name: t("sidebar.orders", "Orders"), href: "/dashboard/farmer/orders", icon: Box },
                     { name: t("sidebar.marketPrices"), href: "/dashboard/farmer/market-prices", icon: TrendingUp },
                     { name: t("sidebar.weather"), href: "/dashboard/farmer/weather", icon: Sun },
                     { name: t("sidebar.farmerNews", "Farmer News"), href: "/dashboard/farmer/news", icon: PackageSearch },
                     { name: t("sidebar.communityHub", "Community Hub"), href: "/dashboard/farmer/community", icon: MessageSquare },
+                    { name: t("sidebar.nutrition", "Soil & Nutrition"), href: "/dashboard/farmer/nutrition", icon: Droplets },
                     { name: t("sidebar.learning", "Learning Hub"), href: "/dashboard/farmer/learning", icon: Video },
-                    { name: t("sidebar.emergency", "Emergency SOS"), href: "/dashboard/farmer/emergency", icon: PhoneCall },
                     { name: t("common.settings", "Settings"), href: "/dashboard/farmer/settings", icon: Settings },
                 ];
             case UserRole.SHOP:
@@ -188,7 +183,6 @@ const Sidebar = ({ isOpen = true, setIsOpen }: SidebarProps) => {
                                 <ThemeToggle />
                             </div>
                         </div>
-                        <DemoButton />
                     </div>
                 )}
 
