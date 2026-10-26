@@ -705,3 +705,130 @@ graph TD
 2. Fellow village farmers browse active pools and pledge small lots (10–25 quintals each).
 3. Real-time fill percentage gauges update as farmers join.
 4. Once filled, the pool organizer dispatches the aggregated bulk load directly to the mill, securing industrial tier prices and avoiding middleman commissions.
+
+---
+
+## 15. Farmer-to-Shop Order Lifecycle, Razorpay Payment & State Machine Architecture
+
+This subsystem governs the commercial input supply chain between Smallholder Farmers and Agri-Input Dealers / Fertilizer Retailers. It implements a deterministic Finite State Machine (FSM), inventory auto-reservation with instant rollback, Razorpay payment verification gating before dispatch, and customizable shop auto-confirmation rules with low-stock buffer safety thresholds.
+
+### 1. Finite State Machine (FSM) Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending: Farmer places order (Cart persisted until submit, stock reserved)
+    
+    pending --> confirmed: Shop confirms (Manual review OR Auto-confirm rules)
+    pending --> rejected: Shop declines (Terminal: stock restored to products)
+    pending --> cancelled: Farmer cancels (Terminal: stock restored to products)
+    
+    confirmed --> cancelled: Farmer cancels (Permitted BEFORE dispatch; stock restored)
+    confirmed --> dispatched: Shop dispatches (STRICT GUARD: payment_status == 'paid')
+    
+    dispatched --> completed: Shop/Farmer marks delivered (Terminal: finalized)
+    
+    rejected --> [*]: Terminal (Stock Restored)
+    cancelled --> [*]: Terminal (Stock Restored)
+    completed --> [*]: Terminal (Success)
+```
+
+### 2. End-to-End Component Architecture
+
+```mermaid
+graph TD
+    subgraph ClientViews ["Frontend Client Tier (Next.js 16 + React)"]
+        UI_FarmerMarket["Farmer Input Market\n(/dashboard/farmer/market)\n(Persistent localStorage Cart)"]
+        UI_FarmerOrders["Farmer Order Tracker\n(/dashboard/farmer/orders)\n(Razorpay Pay Now Button)"]
+        UI_ShopOrders["Shop Order Manager\n(/dashboard/shop/orders)\n(Confirm/Reject/Dispatch Triage)"]
+        UI_ShopSettings["Shop Order Settings Modal\n(Auto-confirm mode & low-stock buffer)"]
+    end
+
+    subgraph APIRouters ["FastAPI API Router Tier"]
+        R_Orders["Orders Router (/api/orders)\nPOST /api/orders\nGET /api/orders/my-orders\nPATCH /api/orders/{id}/status"]
+        R_Payments["Payments Router (/api/payments)\nPOST /razorpay/create-order\nPOST /razorpay/verify"]
+        R_ShopSettings["Shop Settings Router (/api/shop-settings)\nGET /shop-settings\nPUT /shop-settings"]
+    end
+
+    subgraph StateLogic ["State Transition & Guard Engines"]
+        Eng_FSM["Order State Machine Engine\n(Validates permitted role transitions)"]
+        Eng_Buffer["Low-Stock Buffer Evaluator\n(Forces manual confirm if stock <= buffer)"]
+        Eng_PayGate["Dispatch Payment Guard\n(Blocks dispatch unless payment_status = 'paid')"]
+        Eng_StockRollback["Inventory Restocking Engine\n(Restores stock on cancel / reject)"]
+    end
+
+    subgraph DataPersistence ["PostgreSQL Relational Layer"]
+        DB_Orders[("shop_orders\n(status, payment_mode, payment_status)")]
+        DB_Items[("shop_order_items\n(product_id, quantity, unit_price)")]
+        DB_Settings[("shop_order_settings\n(auto_confirm_mode, low_stock_buffer)")]
+        DB_Payments[("payments\n(razorpay_order_id, razorpay_payment_id, signature)")]
+        DB_Products[("products\n(quantity, price, in_stock)")]
+    end
+
+    subgraph ExternalPayment ["External Payment Gateway"]
+        Ext_Razorpay["Razorpay Payments Gateway\n(UPI, NetBanking, Cards, QR)"]
+    end
+
+    UI_FarmerMarket --> R_Orders
+    UI_FarmerOrders --> R_Payments
+    UI_ShopOrders --> R_Orders
+    UI_ShopSettings --> R_ShopSettings
+
+    R_Orders --> Eng_FSM
+    Eng_FSM --> Eng_Buffer
+    Eng_FSM --> Eng_PayGate
+    Eng_FSM --> Eng_StockRollback
+
+    Eng_Buffer --> DB_Settings
+    Eng_PayGate --> DB_Payments
+    Eng_StockRollback --> DB_Products
+    Eng_FSM --> DB_Orders
+    Eng_FSM --> DB_Items
+
+    R_Payments --> Ext_Razorpay
+```
+
+### 3. State Transition Matrix & Security Rules
+
+| Current Status | Next Permitted Status | Permitted Actor | Pre-Condition / Guard Rule | Inventory Stock Effect |
+|---|---|---|---|---|
+| `[*] (Cart)` | `pending` | Farmer | Items in stock; cart verified | Product `quantity` deducted by ordered quantity |
+| `pending` | `confirmed` | Shop Owner or System | Manual click OR Auto-Confirm rule (Stock > buffer) | Stock remains reserved |
+| `pending` | `rejected` | Shop Owner | Shop declines due to shortage/distance | **Stock Restored**: `quantity += ordered_qty` |
+| `pending` | `cancelled` | Farmer | Farmer changes mind before shop action | **Stock Restored**: `quantity += ordered_qty` |
+| `confirmed` | `dispatched` | Shop Owner | **STRICT**: `payment_status == 'paid'` (Online verified or COD agreed) | Stock permanently relieved |
+| `confirmed` | `cancelled` | Farmer | Permitted **only prior to dispatch** | **Stock Restored**: `quantity += ordered_qty` |
+| `dispatched` | `completed` | Shop Owner / Farmer | Carrier delivery confirmed | Terminal state: Final ledger commit |
+| `dispatched` | `cancelled` | *Forbidden* | **Blocked**: Goods are already in transit | N/A (Cannot cancel once dispatched) |
+
+### 4. Payment Modes & Dispatch Gating Logic
+
+#### A. Razorpay Online Flow
+1. **Order Initiation**: Farmer chooses `payment_mode = "razorpay"`. Order is created in `status = "pending"` with `payment_status = "pending"`.
+2. **Shop Confirmation**: Shop confirms order (manual or auto-confirm). Status becomes `confirmed`.
+3. **Checkout Gating**: In Farmer Orders page, the "Pay Now with Razorpay" button becomes active.
+4. **Order Token Generation**: Frontend invokes `POST /api/payments/razorpay/create-order` to generate a tamper-proof Razorpay `order_id`.
+5. **Gateway Modal**: Farmer pays securely via UPI (Google Pay, PhonePe, Paytm), NetBanking, or Debit/Credit Card.
+6. **HMAC-SHA256 Signature Verification**: Backend receives `razorpay_payment_id` and `razorpay_signature`. Verifies signature:
+   $$\text{Signature} = \text{HMAC-SHA256}(\text{order\_id} + "|" + \text{payment\_id}, \text{RAZORPAY\_KEY\_SECRET})$$
+7. **Payment Confirmation**: Upon valid signature, `payment_status` is updated to `"paid"` and payment ID recorded.
+8. **Dispatch Unlock**: Shop Orders dashboard validates `payment_status == "paid"` and unlocks the "Dispatch Order" button.
+
+#### B. Cash on Delivery (COD) Flow
+1. Farmer selects `payment_mode = "cash"`.
+2. Order is created in `status = "pending"` with `payment_status = "pending"`.
+3. Shop confirms order.
+4. Shop collects payment or reaches customer agreement, manually flags `payment_status = "paid"`, and proceeds to dispatch.
+
+### 5. Shop Auto-Confirmation & Low-Stock Buffer Rules
+
+Dealers can configure how incoming orders are processed via `ShopOrderSettings`:
+
+- **Manual Review Mode (`manual`)**:
+  Default setting. Every order remains in `pending` until shop personnel explicitly review and click "Confirm" or "Reject".
+- **Auto-Confirm All Orders (`auto_all`)**:
+  All incoming farmer orders are automatically marked `confirmed` upon arrival, unless overridden by the buffer rule below.
+- **Auto-Confirm Whitelisted Farmers (`auto_selected`)**:
+  Only farmers in the shop's trusted regular customer whitelist (`auto_confirm_farmer_ids`) are auto-confirmed. Others queue as `pending`.
+- **Low-Stock Buffer Safety Override**:
+  Regardless of auto-confirm mode, if ANY item in an incoming order has available inventory $\le \text{low\_stock\_buffer}$ (default: 5 units), the auto-confirm engine is bypassed. The order is forced into `pending` for manual triage to prevent stockouts and overselling.
+
