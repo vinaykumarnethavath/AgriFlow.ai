@@ -1,4 +1,5 @@
 from typing import List, Optional, Dict
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
@@ -178,7 +179,22 @@ async def create_shop_order(
         total_expenses=total_expenses,
     )
     session.add(db_order)
-    await session.commit()
+    try:
+        await session.commit()
+    except Exception as exc:
+        err_msg = str(exc).lower()
+        if "timezone information" in err_msg:
+            await session.rollback()
+            db_order.created_at = datetime.now(timezone.utc)
+            session.add(db_order)
+            await session.commit()
+        elif "offset-naive" in err_msg:
+            await session.rollback()
+            db_order.created_at = datetime.utcnow()
+            session.add(db_order)
+            await session.commit()
+        else:
+            raise exc
     await session.refresh(db_order)
 
     for item in db_items:
@@ -196,7 +212,28 @@ async def create_shop_order(
         )
         session.add(expense)
 
-    await session.commit()
+    try:
+        await session.commit()
+    except Exception as exc:
+        err_msg = str(exc).lower()
+        if "timezone information" in err_msg and (total_expenses > 0 or order_in.expense_notes):
+            await session.rollback()
+            for item in db_items:
+                item.order_id = db_order.id
+                session.add(item)
+            expense.created_at = datetime.now(timezone.utc)
+            session.add(expense)
+            await session.commit()
+        elif "offset-naive" in err_msg and (total_expenses > 0 or order_in.expense_notes):
+            await session.rollback()
+            for item in db_items:
+                item.order_id = db_order.id
+                session.add(item)
+            expense.created_at = datetime.utcnow()
+            session.add(expense)
+            await session.commit()
+        else:
+            raise exc
 
     statement = select(ShopOrder).where(ShopOrder.id == db_order.id).options(selectinload(ShopOrder.items))
     result = await session.exec(statement)

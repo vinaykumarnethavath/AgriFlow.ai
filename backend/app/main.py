@@ -89,15 +89,30 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         safe_errors.append(safe_err)
         
     print(f"\n[422 ERROR] {safe_errors}")
-    return JSONResponse(status_code=422, content={"detail": safe_errors})
+    origin = request.headers.get("origin")
+    headers = {}
+    if origin:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Headers"] = "*"
+        headers["Access-Control-Allow-Methods"] = "*"
+    return JSONResponse(status_code=422, content={"detail": safe_errors}, headers=headers)
 
 @app.exception_handler(Exception)
 async def debug_exception_handler(request: Request, exc: Exception):
     print(f"\nERROR: Server Error: {exc}")
     traceback.print_exc()
+    origin = request.headers.get("origin")
+    headers = {}
+    if origin:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Headers"] = "*"
+        headers["Access-Control-Allow-Methods"] = "*"
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal Server Error", "error": str(exc)},
+        headers=headers,
     )
 
 @app.on_event("startup")

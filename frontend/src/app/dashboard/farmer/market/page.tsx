@@ -387,7 +387,7 @@ function MarketPageContent() {
                         order_notes: orderNotes.trim() || undefined,
                     });
                 } catch (firstErr: any) {
-                    const isNetwork = firstErr?.message?.toLowerCase().includes("network") || !firstErr?.response;
+                    const isNetwork = firstErr?.code === "ERR_NETWORK" || (firstErr?.message && firstErr.message.toLowerCase().includes("network error"));
                     if (isNetwork) {
                         console.warn("First order attempt failed with network issue, retrying in 1.2s...");
                         await new Promise(r => setTimeout(r, 1200));
@@ -420,14 +420,18 @@ function MarketPageContent() {
         } catch (error: any) {
             console.error("Failed to request order:", error);
             // CART IS INTENTIONALLY PRESERVED SO USER NEVER LOSES THEIR PRODUCTS
-            const isNetwork = error?.message?.toLowerCase().includes("network") || !error?.response;
+            const isNetwork = error?.code === "ERR_NETWORK" || (error?.message && error.message.toLowerCase().includes("network error"));
             if (isNetwork) {
                 alert("Network Connection Error: Could not reach the server. Don't worry, your items remain safely in your cart! Please check your internet connection and try tapping 'Request Order' again.");
             } else {
                 const detail = error?.response?.data?.detail;
+                const backendErr = error?.response?.data?.error;
                 let errorMessage = "Failed to request order. Please try again.";
                 if (typeof detail === "string") {
                     errorMessage = detail;
+                    if (backendErr && typeof backendErr === "string") {
+                        errorMessage += `: ${backendErr.slice(0, 150)}`;
+                    }
                 } else if (Array.isArray(detail)) {
                     errorMessage = detail.map((d: any) => d.msg || JSON.stringify(d)).join(", ");
                 } else if (error?.response?.data?.message) {
