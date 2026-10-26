@@ -30,6 +30,7 @@ allow_origins = [
     "http://127.0.0.1:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
+    "https://agri-flow-ai.vercel.app",
 ]
 
 def _normalize_origin(origin: str) -> str:

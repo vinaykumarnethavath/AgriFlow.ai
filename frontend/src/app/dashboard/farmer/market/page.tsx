@@ -116,11 +116,32 @@ function MarketPageContent() {
     const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
-    const [cart, setCart] = useState<CartItem[]>([]);
+    const [cart, setCart] = useState<CartItem[]>(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const saved = localStorage.getItem("agri_farmer_cart");
+                if (saved) return JSON.parse(saved);
+            } catch (_) {}
+        }
+        return [];
+    });
     const [showCart, setShowCart] = useState(false);
     const [orders, setOrders] = useState<Order[]>([]);
     const [showHistory, setShowHistory] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+    // Save cart to localStorage whenever it changes
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            try {
+                if (cart && cart.length > 0) {
+                    localStorage.setItem("agri_farmer_cart", JSON.stringify(cart));
+                } else {
+                    localStorage.removeItem("agri_farmer_cart");
+                }
+            } catch (_) {}
+        }
+    }, [cart]);
 
     useEffect(() => {
         if (searchParams?.get("tab") === "orders") {
@@ -357,16 +378,38 @@ function MarketPageContent() {
                     throw new Error("Could not prepare items for the order. Please try re-adding the product to cart.");
                 }
 
-                await api.post("/orders/", {
-                    items,
-                    payment_mode: paymentMode, // "cash" or "razorpay"
-                    discount: 0,
-                    order_notes: orderNotes.trim() || undefined,
-                });
+                // Attempt placing order with 1-second auto-retry on transient network glitch
+                try {
+                    await api.post("/orders/", {
+                        items,
+                        payment_mode: paymentMode, // "cash" or "razorpay"
+                        discount: 0,
+                        order_notes: orderNotes.trim() || undefined,
+                    });
+                } catch (firstErr: any) {
+                    const isNetwork = firstErr?.message?.toLowerCase().includes("network") || !firstErr?.response;
+                    if (isNetwork) {
+                        console.warn("First order attempt failed with network issue, retrying in 1.2s...");
+                        await new Promise(r => setTimeout(r, 1200));
+                        await api.post("/orders/", {
+                            items,
+                            payment_mode: paymentMode,
+                            discount: 0,
+                            order_notes: orderNotes.trim() || undefined,
+                        });
+                    } else {
+                        throw firstErr;
+                    }
+                }
             }
 
             alert(`Order requests sent successfully! The shop owner will review and confirm your order.`);
             setCart([]);
+            if (typeof window !== "undefined") {
+                try {
+                    localStorage.removeItem("agri_farmer_cart");
+                } catch (_) {}
+            }
             setOrderNotes("");
             setOrderPlaced(false);
             setShowCart(false);
@@ -376,18 +419,24 @@ function MarketPageContent() {
             fetchProducts();
         } catch (error: any) {
             console.error("Failed to request order:", error);
-            const detail = error?.response?.data?.detail;
-            let errorMessage = "Failed to request order. Please try again.";
-            if (typeof detail === "string") {
-                errorMessage = detail;
-            } else if (Array.isArray(detail)) {
-                errorMessage = detail.map((d: any) => d.msg || JSON.stringify(d)).join(", ");
-            } else if (error?.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            } else if (error?.message) {
-                errorMessage = error.message;
+            // CART IS INTENTIONALLY PRESERVED SO USER NEVER LOSES THEIR PRODUCTS
+            const isNetwork = error?.message?.toLowerCase().includes("network") || !error?.response;
+            if (isNetwork) {
+                alert("Network Connection Error: Could not reach the server. Don't worry, your items remain safely in your cart! Please check your internet connection and try tapping 'Request Order' again.");
+            } else {
+                const detail = error?.response?.data?.detail;
+                let errorMessage = "Failed to request order. Please try again.";
+                if (typeof detail === "string") {
+                    errorMessage = detail;
+                } else if (Array.isArray(detail)) {
+                    errorMessage = detail.map((d: any) => d.msg || JSON.stringify(d)).join(", ");
+                } else if (error?.response?.data?.message) {
+                    errorMessage = error.response.data.message;
+                } else if (error?.message) {
+                    errorMessage = error.message;
+                }
+                alert(errorMessage);
             }
-            alert(errorMessage);
         } finally {
             setPlacingOrder(false);
         }
@@ -869,37 +918,47 @@ function MarketPageContent() {
                             ))}
                         </div>
 
-                        <Card className="bg-gradient-to-r from-green-600 to-emerald-700 border-none shadow-xl">
+                        <Card className="bg-gradient-to-r from-green-600 to-emerald-700 border-none shadow-xl text-white">
                             <CardContent className="p-6">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <p className="text-green-100 text-sm">Total Amount</p>
-                                        <p className="text-4xl font-bold text-white">₹{cartTotal.toLocaleString()}</p>
-                                        <p className="text-green-200 text-sm">{cartItemCount} item(s) • {Object.keys(
-                                            cart.reduce((acc, item) => ({ ...acc, [item.product.user_id]: true }), {} as Record<number, boolean>)
-                                        ).length} shop(s)</p>
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                                    <div className="lg:col-span-4 space-y-2">
+                                        <p className="text-green-100 text-sm font-medium">Total Order Amount</p>
+                                        <p className="text-4xl font-extrabold text-white">₹{cartTotal.toLocaleString()}</p>
+                                        <p className="text-green-200 text-xs">
+                                            {cartItemCount} item(s) • {Object.keys(
+                                                cart.reduce((acc, item) => ({ ...acc, [item.product.user_id || 1]: true }), {} as Record<number, boolean>)
+                                            ).length} shop(s)
+                                        </p>
+                                        <p className="text-green-100/80 text-xs mt-3 leading-relaxed">
+                                            🔒 Items remain safely saved in your cart even if you refresh or lose internet connection.
+                                        </p>
                                     </div>
-                                        <div className="mb-4 bg-white/10 dark:bg-zinc-800/50 rounded-lg p-3">
-                                            <p className="text-green-100 text-sm mb-2 font-medium">Payment Mode</p>
-                                            <div className="flex gap-2">
+
+                                    <div className="lg:col-span-8 space-y-4">
+                                        <div className="bg-white/10 dark:bg-zinc-800/50 rounded-xl p-3.5 backdrop-blur-xs">
+                                            <p className="text-green-100 text-xs font-bold uppercase tracking-wider mb-2">Payment Mode</p>
+                                            <div className="flex gap-2.5">
                                                 <Button
+                                                    type="button"
                                                     variant={paymentMode === "razorpay" ? "default" : "outline"}
                                                     onClick={() => setPaymentMode("razorpay")}
-                                                    className={`flex-1 ${paymentMode === "razorpay" ? "bg-white dark:bg-zinc-900 text-green-700 hover:bg-gray-100" : "bg-transparent text-white border-green-400 hover:bg-green-700 hover:text-white"}`}
+                                                    className={`flex-1 py-2.5 font-semibold text-xs ${paymentMode === "razorpay" ? "bg-white dark:bg-zinc-900 text-green-700 dark:text-green-300 hover:bg-gray-100 shadow-sm" : "bg-transparent text-white border-green-400 hover:bg-green-700 hover:text-white"}`}
                                                 >
-                                                    <CreditCard className="w-4 h-4 mr-2" /> Pay Online
+                                                    <CreditCard className="w-4 h-4 mr-2" /> Pay Online (Razorpay)
                                                 </Button>
                                                 <Button
+                                                    type="button"
                                                     variant={paymentMode === "cash" ? "default" : "outline"}
                                                     onClick={() => setPaymentMode("cash")}
-                                                    className={`flex-1 ${paymentMode === "cash" ? "bg-white dark:bg-zinc-900 text-green-700 hover:bg-gray-100" : "bg-transparent text-white border-green-400 hover:bg-green-700 hover:text-white"}`}
+                                                    className={`flex-1 py-2.5 font-semibold text-xs ${paymentMode === "cash" ? "bg-white dark:bg-zinc-900 text-green-700 dark:text-green-300 hover:bg-gray-100 shadow-sm" : "bg-transparent text-white border-green-400 hover:bg-green-700 hover:text-white"}`}
                                                 >
                                                     Cash on Delivery
                                                 </Button>
                                             </div>
                                         </div>
-                                        <div className="mb-4 bg-white/10 dark:bg-zinc-800/50 rounded-lg p-3">
-                                            <p className="text-green-100 text-sm mb-1.5 font-medium">Special Delivery Instructions / Note for Shopkeeper</p>
+
+                                        <div className="bg-white/10 dark:bg-zinc-800/50 rounded-xl p-3.5 backdrop-blur-xs">
+                                            <p className="text-green-100 text-xs font-bold uppercase tracking-wider mb-1.5">Special Delivery Instructions / Note for Shopkeeper</p>
                                             <textarea
                                                 value={orderNotes}
                                                 onChange={(e) => setOrderNotes(e.target.value)}
@@ -908,13 +967,15 @@ function MarketPageContent() {
                                                 className="w-full p-2.5 rounded-lg text-xs bg-white text-gray-900 dark:bg-zinc-900 dark:text-gray-100 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-green-400 resize-none"
                                             />
                                         </div>
+
                                         <Button
                                             onClick={placeOrder}
                                             disabled={placingOrder}
-                                            className="w-full bg-white dark:bg-zinc-900 text-green-700 hover:bg-green-50 font-bold px-8 py-6 text-lg"
+                                            className="w-full bg-white dark:bg-zinc-900 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-zinc-800 font-bold px-8 py-5 text-base shadow-lg transition-transform active:scale-[0.99] disabled:opacity-70"
                                         >
-                                            {placingOrder ? "Processing..." : "Request Order"}
+                                            {placingOrder ? "Processing Order..." : "Request Order"}
                                         </Button>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

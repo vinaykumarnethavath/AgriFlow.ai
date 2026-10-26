@@ -96,6 +96,7 @@ async def get_user_contact_info(session: AsyncSession, user_id: int) -> Optional
 
     return contact
 
+@router.post("", response_model=ShopOrderRead)
 @router.post("/", response_model=ShopOrderRead)
 async def create_shop_order(
     order_in: ShopOrderCreate,
