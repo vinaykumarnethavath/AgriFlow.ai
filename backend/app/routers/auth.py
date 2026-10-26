@@ -510,9 +510,19 @@ async def login(user_data: UserLogin, session: AsyncSession = Depends(get_sessio
             raise HTTPException(status_code=401, detail="No account found for this phone number")
 
         if len(users) > 1 and not user_data.role:
-            raise HTTPException(status_code=400, detail="Multiple accounts found. Please select a role.")
-
-        user = users[0]
+            matched_user = None
+            for candidate in users:
+                if verify_password(user_data.password, candidate.hashed_password):
+                    matched_user = candidate
+                    break
+            if matched_user:
+                user = matched_user
+            else:
+                role_order = ["farmer", "shop", "manufacturer", "customer"]
+                users_sorted = sorted(users, key=lambda u: role_order.index(u.role.value if hasattr(u.role, "value") else str(u.role)) if (u.role.value if hasattr(u.role, "value") else str(u.role)) in role_order else 99)
+                user = users_sorted[0]
+        else:
+            user = users[0]
 
         if not verify_password(user_data.password, user.hashed_password):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect phone number or password")
@@ -544,12 +554,19 @@ async def login(user_data: UserLogin, session: AsyncSession = Depends(get_sessio
 
     # If role not provided but multiple users exist (ambiguous)
     if len(users) > 1 and not user_data.role:
-        raise HTTPException(
-            status_code=400,
-            detail="Multiple accounts found. Please select a role.",
-        )
-
-    user = users[0]
+        matched_user = None
+        for candidate in users:
+            if verify_password(user_data.password, candidate.hashed_password):
+                matched_user = candidate
+                break
+        if matched_user:
+            user = matched_user
+        else:
+            role_order = ["farmer", "shop", "manufacturer", "customer"]
+            users_sorted = sorted(users, key=lambda u: role_order.index(u.role.value if hasattr(u.role, "value") else str(u.role)) if (u.role.value if hasattr(u.role, "value") else str(u.role)) in role_order else 99)
+            user = users_sorted[0]
+    else:
+        user = users[0]
 
     if not verify_password(user_data.password, user.hashed_password):
         raise HTTPException(

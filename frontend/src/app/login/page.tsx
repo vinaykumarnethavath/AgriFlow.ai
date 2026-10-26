@@ -21,12 +21,12 @@ export default function LoginPage() {
     // Email login state
     const emailRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
-    const [roleState, setRoleState] = useState<string>("");
+    const [roleState, setRoleState] = useState<string>(UserRole.FARMER);
 
     // Phone login state
     const [phone, setPhone] = useState("");
     const [phonePassword, setPhonePassword] = useState("");
-    const [phoneRole, setPhoneRole] = useState("");
+    const [phoneRole, setPhoneRole] = useState(UserRole.FARMER);
 
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -34,6 +34,87 @@ export default function LoginPage() {
     const { login } = useAuth();
     const router = useRouter();
     const { t } = useLanguage();
+
+    const LOCAL_ACCOUNTS = [
+        {
+            role: UserRole.FARMER,
+            label: "Farmer",
+            icon: Sprout,
+            email: "demo@farmer.com",
+            phone: "9876543210",
+            pass: "demo123",
+            name: "Ravi Kumar Reddy",
+            color: "text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300"
+        },
+        {
+            role: UserRole.SHOP,
+            label: "Shop",
+            icon: Store,
+            email: "demo@shop.com",
+            phone: "9848012345",
+            pass: "demo123",
+            name: "Venkat Rao Potti",
+            color: "text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300"
+        },
+        {
+            role: UserRole.MANUFACTURER,
+            label: "Mill",
+            icon: Factory,
+            email: "demo@manufacturer.com",
+            phone: "9700012345",
+            pass: "demo123",
+            name: "Prasad Babu Reddy",
+            color: "text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300"
+        },
+        {
+            role: UserRole.CUSTOMER,
+            label: "Buyer",
+            icon: ShoppingCart,
+            email: "demo@customer.com",
+            phone: "9900112233",
+            pass: "demo123",
+            name: "Priya Sharma",
+            color: "text-purple-700 bg-purple-50 border-purple-200 hover:bg-purple-100 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300"
+        }
+    ];
+
+    const handleQuickLogin = async (acc: typeof LOCAL_ACCOUNTS[0]) => {
+        setError("");
+        setLoading(true);
+        try {
+            const payload = authMethod === "email" 
+                ? { email: acc.email, password: acc.pass, role: acc.role }
+                : { phone_number: acc.phone, password: acc.pass, role: acc.role };
+
+            const { data } = await api.post("/auth/login", payload);
+            const user = { id: data.id, email: acc.email, phone_number: acc.phone, role: data.role, full_name: data.full_name || acc.name };
+            localStorage.setItem("user", JSON.stringify(user));
+            localStorage.removeItem("isDemoMode");
+            localStorage.removeItem("demoRole");
+            sessionStorage.removeItem("demoMode");
+            sessionStorage.removeItem("demoRole");
+            login(data.access_token, data.role);
+            router.push(`/dashboard/${data.role}`);
+        } catch (err: any) {
+            handleAutoFill(acc);
+            const errorMessage = err.response?.data?.detail || err.message || "Quick login failed";
+            setError(errorMessage);
+            setLoading(false);
+        }
+    };
+
+    const handleAutoFill = (acc: typeof LOCAL_ACCOUNTS[0]) => {
+        setError("");
+        if (authMethod === "email") {
+            if (emailRef.current) emailRef.current.value = acc.email;
+            if (passwordRef.current) passwordRef.current.value = acc.pass;
+            setRoleState(acc.role);
+        } else {
+            setPhone(acc.phone);
+            setPhonePassword(acc.pass);
+            setPhoneRole(acc.role);
+        }
+    };
 
     // ── Email Login ───────────────────────────────────────────────────────────
     const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -252,6 +333,55 @@ export default function LoginPage() {
                             </div>
                         </form>
                     )}
+
+                    {/* ── LOCALHOST DEMO & TEST ACCOUNTS HELPER ── */}
+                    <div className="mt-3 pt-3 border-t border-border">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                Local Demo & Test Accounts
+                            </span>
+                            <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
+                                Pwd: <strong className="text-foreground">demo123</strong> or <strong className="text-foreground">Test@1234</strong>
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                            {LOCAL_ACCOUNTS.map((acc) => (
+                                <div
+                                    key={acc.role}
+                                    className={`p-2 rounded-lg border text-left flex flex-col justify-between transition-all ${acc.color}`}
+                                >
+                                    <div className="flex items-center justify-between mb-0.5">
+                                        <div className="flex items-center gap-1.5">
+                                            <acc.icon className="h-3.5 w-3.5 shrink-0" />
+                                            <span className="text-xs font-bold">{acc.label}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-[10px] opacity-80 font-mono truncate mb-1.5">
+                                        {authMethod === "email" ? acc.email : acc.phone}
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleQuickLogin(acc)}
+                                            disabled={loading}
+                                            className="flex-1 py-1 px-1.5 bg-foreground text-background text-[10px] font-bold rounded shadow-xs hover:opacity-90 transition-opacity text-center cursor-pointer"
+                                        >
+                                            Quick Login
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAutoFill(acc)}
+                                            className="py-1 px-1.5 border border-current text-[10px] font-semibold rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                                            title="Fill form inputs"
+                                        >
+                                            Fill
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
             </div>
