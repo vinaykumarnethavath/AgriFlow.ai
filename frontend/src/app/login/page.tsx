@@ -35,7 +35,9 @@ export default function LoginPage() {
     const router = useRouter();
     const { t } = useLanguage();
 
-    const LOCAL_ACCOUNTS = [
+    const [accountSet, setAccountSet] = useState<"demo" | "jonsnow">("demo");
+
+    const DEMO_ACCOUNTS_LIST = [
         {
             role: UserRole.FARMER,
             label: "Farmer",
@@ -78,7 +80,52 @@ export default function LoginPage() {
         }
     ];
 
-    const handleQuickLogin = async (acc: typeof LOCAL_ACCOUNTS[0]) => {
+    const JONSNOW_ACCOUNTS_LIST = [
+        {
+            role: UserRole.FARMER,
+            label: "Farmer",
+            icon: Sprout,
+            email: "jonsnowjonny15@gmail.com",
+            phone: "9999900001",
+            pass: "Test@1234",
+            name: "Jon Snow (Farmer)",
+            color: "text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300"
+        },
+        {
+            role: UserRole.SHOP,
+            label: "Shop",
+            icon: Store,
+            email: "jonsnowjonny15@gmail.com",
+            phone: "9999900002",
+            pass: "Test@1234",
+            name: "Jon Snow (Shop)",
+            color: "text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300"
+        },
+        {
+            role: UserRole.MANUFACTURER,
+            label: "Mill",
+            icon: Factory,
+            email: "jonsnowjonny15@gmail.com",
+            phone: "9999900003",
+            pass: "Test@1234",
+            name: "Jon Snow (Mill)",
+            color: "text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300"
+        },
+        {
+            role: UserRole.CUSTOMER,
+            label: "Buyer",
+            icon: ShoppingCart,
+            email: "jonsnowjonny15@gmail.com",
+            phone: "9999900004",
+            pass: "Test@1234",
+            name: "Jon Snow (Customer)",
+            color: "text-purple-700 bg-purple-50 border-purple-200 hover:bg-purple-100 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300"
+        }
+    ];
+
+    const activeAccounts = accountSet === "demo" ? DEMO_ACCOUNTS_LIST : JONSNOW_ACCOUNTS_LIST;
+
+    const handleQuickLogin = async (acc: typeof DEMO_ACCOUNTS_LIST[0]) => {
         setError("");
         setLoading(true);
         try {
@@ -103,7 +150,7 @@ export default function LoginPage() {
         }
     };
 
-    const handleAutoFill = (acc: typeof LOCAL_ACCOUNTS[0]) => {
+    const handleAutoFill = (acc: typeof DEMO_ACCOUNTS_LIST[0]) => {
         setError("");
         if (authMethod === "email") {
             if (emailRef.current) emailRef.current.value = acc.email;
@@ -336,19 +383,40 @@ export default function LoginPage() {
 
                     {/* ── LOCALHOST DEMO & TEST ACCOUNTS HELPER ── */}
                     <div className="mt-3 pt-3 border-t border-border">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1.5">
                             <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                                 <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                Local Demo & Test Accounts
+                                Local Test Accounts
+                            </span>
+                            <div className="flex rounded-md border border-border p-0.5 bg-muted/40 text-[10px]">
+                                <button
+                                    type="button"
+                                    onClick={() => setAccountSet("demo")}
+                                    className={`px-2 py-0.5 rounded font-bold transition-all ${accountSet === "demo" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"}`}
+                                >
+                                    Demo Set
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAccountSet("jonsnow")}
+                                    className={`px-2 py-0.5 rounded font-bold transition-all ${accountSet === "jonsnow" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"}`}
+                                >
+                                    Jon Snow Set
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] text-muted-foreground">
+                                {accountSet === "demo" ? "Pre-configured demo users" : "Original seed accounts (Jon Snow)"}
                             </span>
                             <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
-                                Pwd: <strong className="text-foreground">demo123</strong> or <strong className="text-foreground">Test@1234</strong>
+                                Pwd: <strong className="text-foreground">{accountSet === "demo" ? "demo123" : "Test@1234"}</strong>
                             </span>
                         </div>
                         <div className="grid grid-cols-2 gap-1.5">
-                            {LOCAL_ACCOUNTS.map((acc) => (
+                            {activeAccounts.map((acc) => (
                                 <div
-                                    key={acc.role}
+                                    key={`${acc.role}-${acc.email}`}
                                     className={`p-2 rounded-lg border text-left flex flex-col justify-between transition-all ${acc.color}`}
                                 >
                                     <div className="flex items-center justify-between mb-0.5">
