@@ -107,15 +107,14 @@ async def create_shop_order(
     """
     Create a new multi-item order with optional expense tracking.
     """
-    buyer_id = None
-    buyer_name = None
-    if current_user.role == "farmer":
-        buyer_id = current_user.id
-        buyer_name = current_user.full_name
-    elif order_in.farmer_id:
-        buyer_id = order_in.farmer_id
-        farmer_user = await session.get(User, order_in.farmer_id)
-        buyer_name = farmer_user.full_name if farmer_user else None
+    user_role_str = str(getattr(current_user, "role", "")).lower()
+    order_status = "pending" if ("farmer" in user_role_str or "customer" in user_role_str or "shop" not in user_role_str) else "completed"
+
+    buyer_id = order_in.farmer_id or current_user.id
+    buyer_name = current_user.full_name
+    if "shop" in user_role_str and not order_in.farmer_id:
+        buyer_id = None
+        buyer_name = "Walk-in Customer"
 
     total_amount = 0.0
     db_items = []
@@ -127,15 +126,21 @@ async def create_shop_order(
             raise HTTPException(status_code=404, detail=f"Product {item_in.product_id} not found")
 
         if product.quantity < item_in.quantity:
-            raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name}")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Not enough stock for {product.name} (Available: {product.quantity}, Requested: {item_in.quantity})"
+            )
 
         if shop_id is None:
             shop_id = product.user_id
         elif shop_id != product.user_id:
             raise HTTPException(status_code=400, detail="Cannot mix products from different shops in one order")
 
-        product.quantity -= item_in.quantity
-        session.add(product)
+        # If direct completed sale (walk-in POS at counter), deduct stock immediately.
+        # If pending farmer order request, stock is deducted when shop confirms the order!
+        if order_status == "completed":
+            product.quantity -= item_in.quantity
+            session.add(product)
 
         item_total = product.price * item_in.quantity
         total_amount += item_total
@@ -162,9 +167,6 @@ async def create_shop_order(
         + order_in.expense_labour
         + order_in.expense_other
     )
-
-    user_role_str = str(getattr(current_user, "role", "")).lower()
-    order_status = "pending" if ("farmer" in user_role_str) else "completed"
 
     db_order = ShopOrder(
         shop_id=shop_id,
@@ -404,12 +406,12 @@ async def update_order_status(
             raise HTTPException(status_code=403, detail="Not authorized to modify this order")
         if update_data.status and update_data.status != "cancelled":
             raise HTTPException(status_code=403, detail="Farmers can only transition orders to cancelled")
-        if order.status != "pending":
-            raise HTTPException(status_code=400, detail="Cannot cancel an order that is no longer pending")
+        if order.status not in ("pending", "confirmed"):
+            raise HTTPException(status_code=400, detail="Cannot cancel an order that has already been dispatched or completed")
 
     # Update Status if provided
     if update_data.status:
-        valid_statuses = ["pending", "confirmed", "dispatched", "completed", "cancelled"]
+        valid_statuses = ["pending", "confirmed", "dispatched", "completed", "cancelled", "rejected"]
         if update_data.status not in valid_statuses:
             raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
 
@@ -420,19 +422,46 @@ async def update_order_status(
                 detail="Cannot dispatch order without receiving payment first. Please mark payment as received."
             )
 
-        # QUANTITY RESTORATION LOGIC
-        if update_data.status == "cancelled" and order.status != "cancelled":
+        # INVENTORY DEDUCTION & RESTORATION LOGIC
+        # 1. Pending -> Confirmed: shop owner confirms farmer order request -> check stock & deduct quantity
+        if update_data.status == "confirmed" and order.status == "pending":
+            for item in order.items:
+                product = await session.get(Product, item.product_id)
+                if not product or product.quantity < item.quantity:
+                    prod_name = product.name if product else f"Product #{item.product_id}"
+                    avail = product.quantity if product else 0
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Cannot confirm order: Not enough stock for {prod_name} (Available: {avail}, Requested: {item.quantity})"
+                    )
+            for item in order.items:
+                product = await session.get(Product, item.product_id)
+                if product:
+                    product.quantity -= item.quantity
+                    session.add(product)
+
+        # 2. Confirmed/Dispatched/Completed -> Cancelled/Rejected: restore stock to inventory
+        elif update_data.status in ("cancelled", "rejected") and order.status in ("confirmed", "dispatched", "completed"):
             for item in order.items:
                 product = await session.get(Product, item.product_id)
                 if product:
                     product.quantity += item.quantity
                     session.add(product)
-        elif update_data.status != "cancelled" and order.status == "cancelled":
+
+        # 3. Cancelled/Rejected -> Confirmed/Dispatched/Completed: re-check stock and deduct
+        elif order.status in ("cancelled", "rejected") and update_data.status in ("confirmed", "dispatched", "completed"):
+            for item in order.items:
+                product = await session.get(Product, item.product_id)
+                if not product or product.quantity < item.quantity:
+                    prod_name = product.name if product else f"Product #{item.product_id}"
+                    avail = product.quantity if product else 0
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Cannot reopen order: Not enough stock for {prod_name} (Available: {avail}, Needed: {item.quantity})"
+                    )
             for item in order.items:
                 product = await session.get(Product, item.product_id)
                 if product:
-                    if product.quantity < item.quantity:
-                        raise HTTPException(status_code=400, detail="Not enough stock to restore order")
                     product.quantity -= item.quantity
                     session.add(product)
 
@@ -490,12 +519,28 @@ async def read_my_orders(
 ):
     statement = (
         select(ShopOrder)
-        .where(ShopOrder.farmer_id == current_user.id)
+        .where(
+            (ShopOrder.farmer_id == current_user.id) |
+            ((ShopOrder.farmer_id == None) & (ShopOrder.farmer_name == current_user.full_name))
+        )
         .options(selectinload(ShopOrder.items))
         .order_by(ShopOrder.created_at.desc())
     )
     result = await session.exec(statement)
     orders = result.all()
+
+    # Self-heal legacy orders with missing farmer_id
+    need_commit = False
+    for o in orders:
+        if o.farmer_id is None:
+            o.farmer_id = current_user.id
+            session.add(o)
+            need_commit = True
+    if need_commit:
+        try:
+            await session.commit()
+        except Exception:
+            await session.rollback()
 
     rich_orders = []
 

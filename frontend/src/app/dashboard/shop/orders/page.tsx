@@ -151,6 +151,7 @@ export default function ShopOrdersPage() {
             case "dispatched": return <Badge className="bg-cyan-100 text-cyan-700 hover:bg-cyan-200">Dispatched</Badge>;
             case "completed": return <Badge className="bg-green-100 text-green-700 hover:bg-green-200">Completed</Badge>;
             case "cancelled": return <Badge className="bg-red-100 text-red-700 hover:bg-red-200">Cancelled</Badge>;
+            case "rejected": return <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-200">Rejected</Badge>;
             default: return <Badge variant="outline">{status}</Badge>;
         }
     };
@@ -194,6 +195,7 @@ export default function ShopOrdersPage() {
                                     <option value="dispatched">Dispatched</option>
                                     <option value="completed">Completed</option>
                                     <option value="cancelled">Cancelled</option>
+                                    <option value="rejected">Rejected</option>
                                 </select>
                             </div>
                         </CardHeader>
@@ -226,7 +228,7 @@ export default function ShopOrdersPage() {
                                                     {/* Payment status mini-pill */}
                                                     {order.payment_status === "paid"
                                                         ? <span className="text-xs mt-0.5 px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Paid</span>
-                                                        : order.status !== "cancelled"
+                                                        : order.status !== "cancelled" && order.status !== "rejected"
                                                             ? <span className="text-xs mt-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
                                                                 {order.payment_mode === "cash" ? "Cash Pending" : "Unpaid"}
                                                               </span>
@@ -265,7 +267,7 @@ export default function ShopOrdersPage() {
                                             {/* PENDING: Show Decline + Confirm */}
                                             {selectedOrder.status === "pending" && (
                                                 <>
-                                                    <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, "cancelled")} className="bg-red-600 hover:bg-red-700">
+                                                    <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, "rejected")} className="bg-red-600 hover:bg-red-700">
                                                         Decline
                                                     </Button>
                                                     <Button size="sm" onClick={openConfirmModal} className="bg-indigo-600 hover:bg-indigo-700">

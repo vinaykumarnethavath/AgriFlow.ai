@@ -8,7 +8,7 @@ import api from "@/lib/api";
 import { ContactInfo } from "@/lib/api";
 import ContactInfoCard from "@/components/ui/ContactInfoCard";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import OrderChatModal from "@/components/chat/OrderChatModal";
 import {
     ShoppingCart,
@@ -31,7 +31,9 @@ import {
     CreditCard,
     Box,
     MessageSquare,
-    Truck
+    Truck,
+    RefreshCw,
+    X
 } from "lucide-react";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
 import { useLanguage } from "@/context/LanguageContext";
@@ -113,6 +115,7 @@ const COMMON_SHORT_NAMES: Record<string, string> = {
 function MarketPageContent() {
     const { user } = useAuth();
     const { t } = useLanguage();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -127,6 +130,7 @@ function MarketPageContent() {
     });
     const [showCart, setShowCart] = useState(false);
     const [orders, setOrders] = useState<Order[]>([]);
+    const [ordersLoading, setOrdersLoading] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -147,8 +151,21 @@ function MarketPageContent() {
         if (searchParams?.get("tab") === "orders") {
             setShowHistory(true);
             setShowCart(false);
+            fetchOrders();
         }
     }, [searchParams]);
+
+    // Background polling while on orders tab to track shop confirmations
+    useEffect(() => {
+        if (!showHistory) return;
+        const timer = setInterval(() => {
+            if (typeof document !== "undefined" && document.hidden) return;
+            api.get("/orders/my-orders")
+                .then(res => setOrders(res.data))
+                .catch(() => {});
+        }, 8000);
+        return () => clearInterval(timer);
+    }, [showHistory]);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [selectedShop, setSelectedShop] = useState<number | null>(null);
@@ -242,11 +259,14 @@ function MarketPageContent() {
     };
 
     const fetchOrders = async () => {
+        setOrdersLoading(true);
         try {
             const response = await api.get("/orders/my-orders");
             setOrders(response.data);
         } catch (error) {
             console.error("Failed to fetch orders:", error);
+        } finally {
+            setOrdersLoading(false);
         }
     };
 
@@ -381,6 +401,7 @@ function MarketPageContent() {
                 // Attempt placing order with 1-second auto-retry on transient network glitch
                 try {
                     await api.post("/orders/", {
+                        farmer_id: user?.id,
                         items,
                         payment_mode: paymentMode, // "cash" or "razorpay"
                         discount: 0,
@@ -415,6 +436,7 @@ function MarketPageContent() {
             setShowCart(false);
             setShowHistory(true);
             setPaymentMode("cash");
+            router.replace("/dashboard/farmer/market?tab=orders");
             fetchOrders();
             fetchProducts();
         } catch (error: any) {
@@ -471,7 +493,7 @@ function MarketPageContent() {
                 }
             } catch (_) {}
 
-            const options = {
+            const options: any = {
                 key: config.key_id,
                 amount: Math.round(paymentOrder.amount * 100),
                 currency: config.currency || "INR",
@@ -480,6 +502,30 @@ function MarketPageContent() {
                 order_id: paymentOrder.razorpay_order_id,
                 prefill: prefillInfo,
                 theme: { color: "#16a34a" },
+                config: {
+                    display: {
+                        blocks: {
+                            upi: {
+                                name: "Pay via UPI (GPay / PhonePe / Paytm / QR)",
+                                instruments: [
+                                    { method: "upi" }
+                                ]
+                            },
+                            other: {
+                                name: "Cards, Netbanking & Wallets",
+                                instruments: [
+                                    { method: "card" },
+                                    { method: "netbanking" },
+                                    { method: "wallet" }
+                                ]
+                            }
+                        },
+                        sequence: ["block.upi", "block.other"],
+                        preferences: {
+                            show_default_blocks: true
+                        }
+                    }
+                },
                 handler: async (response: any) => {
                     try {
                         await verifyPayment({
@@ -545,6 +591,7 @@ function MarketPageContent() {
             case "dispatched": return "bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800";
             case "pending": return "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800";
             case "cancelled": return "bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800";
+            case "rejected": return "bg-red-100 text-red-800 dark:bg-red-950/80 dark:text-red-300 border border-red-200 dark:border-red-800";
             default: return "bg-muted text-muted-foreground border border-border";
         }
     };
@@ -563,18 +610,41 @@ function MarketPageContent() {
     if (showHistory) {
         return (
             <div className="space-y-4 p-2">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => { 
+                                setShowHistory(false); 
+                                setSelectedOrder(null); 
+                                router.replace("/dashboard/farmer/market");
+                            }}
+                            className="flex items-center gap-2 border-border text-foreground bg-card hover:bg-muted"
+                        >
+                            <ArrowLeft className="h-4 w-4" /> Back to Shopping
+                        </Button>
+                        <h1 className="text-3xl font-bold text-foreground">Order History</h1>
+                    </div>
                     <Button
                         variant="outline"
-                        onClick={() => { setShowHistory(false); setSelectedOrder(null); }}
-                        className="flex items-center gap-2 border-border text-foreground bg-card hover:bg-muted"
+                        size="sm"
+                        onClick={fetchOrders}
+                        disabled={ordersLoading}
+                        className="flex items-center gap-1.5 border-border text-muted-foreground hover:text-foreground"
                     >
-                        <ArrowLeft className="h-4 w-4" /> Back to Shopping
+                        <RefreshCw className={`h-4 w-4 ${ordersLoading ? "animate-spin text-green-600" : ""}`} />
+                        <span>Refresh Orders</span>
                     </Button>
-                    <h1 className="text-3xl font-bold text-foreground">Order History</h1>
                 </div>
 
-                {orders.length === 0 ? (
+                {ordersLoading ? (
+                    <Card className="border-dashed border-2 border-border bg-card">
+                        <CardContent className="p-12 text-center">
+                            <div className="animate-spin rounded-full h-10 w-10 border-4 border-green-500 border-t-transparent mx-auto mb-3"></div>
+                            <p className="text-muted-foreground font-medium">Loading your orders...</p>
+                        </CardContent>
+                    </Card>
+                ) : orders.length === 0 ? (
                     <Card className="border-dashed border-2 border-border bg-card">
                         <CardContent className="p-12 text-center">
                             <History className="h-16 w-16 mx-auto text-muted-foreground/40 mb-4" />
@@ -760,7 +830,7 @@ function MarketPageContent() {
                                             >
                                                 <MessageSquare className="h-4 w-4 mr-1" /> Chat with Shop
                                             </Button>
-                                            {selectedOrder.status === 'pending' && (
+                                            {(selectedOrder.status === 'pending' || selectedOrder.status === 'confirmed') && (
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
@@ -769,6 +839,11 @@ function MarketPageContent() {
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-1" /> Cancel Order
                                                 </Button>
+                                            )}
+                                            {selectedOrder.status === "rejected" && (
+                                                <span className="text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 px-3 py-1.5 rounded-full border border-rose-300 dark:border-rose-800 flex items-center gap-1.5">
+                                                    <X className="w-3.5 h-3.5 text-rose-600" /> Rejected by Shopkeeper
+                                                </span>
                                             )}
                                             {selectedOrder.status === "confirmed" && selectedOrder.payment_status !== "paid" && (
                                                 <Button
@@ -1004,7 +1079,11 @@ function MarketPageContent() {
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                     <div className="flex bg-muted p-1 rounded-xl border border-border">
                         <button
-                            onClick={() => { setShowHistory(false); setShowCart(false); }}
+                            onClick={() => { 
+                                setShowHistory(false); 
+                                setShowCart(false); 
+                                router.replace("/dashboard/farmer/market");
+                            }}
                             className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
                                 !showHistory && !showCart
                                     ? "bg-background text-foreground shadow-xs font-bold"
@@ -1015,7 +1094,12 @@ function MarketPageContent() {
                             Browse Catalog
                         </button>
                         <button
-                            onClick={() => { setShowHistory(true); setShowCart(false); fetchOrders(); }}
+                            onClick={() => { 
+                                setShowHistory(true); 
+                                setShowCart(false); 
+                                router.replace("/dashboard/farmer/market?tab=orders");
+                                fetchOrders(); 
+                            }}
                             className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
                                 showHistory
                                     ? "bg-background text-foreground shadow-xs font-bold"

@@ -88,7 +88,7 @@ export default function CartPage() {
             } catch (_) {}
 
             // 4. Open Razorpay popup
-            const options = {
+            const options: any = {
                 key: config.key_id,
                 amount: Math.round(orderTotal * 100),
                 currency: config.currency || "INR",
@@ -97,6 +97,30 @@ export default function CartPage() {
                 order_id: paymentOrder.razorpay_order_id,
                 prefill: prefillInfo,
                 theme: { color: "#16a34a" },
+                config: {
+                    display: {
+                        blocks: {
+                            upi: {
+                                name: "Pay via UPI (GPay / PhonePe / Paytm / QR)",
+                                instruments: [
+                                    { method: "upi" }
+                                ]
+                            },
+                            other: {
+                                name: "Cards, Netbanking & Wallets",
+                                instruments: [
+                                    { method: "card" },
+                                    { method: "netbanking" },
+                                    { method: "wallet" }
+                                ]
+                            }
+                        },
+                        sequence: ["block.upi", "block.other"],
+                        preferences: {
+                            show_default_blocks: true
+                        }
+                    }
+                },
                 handler: async (response: any) => {
                     try {
                         await verifyPayment({

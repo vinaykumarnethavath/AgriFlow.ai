@@ -1004,7 +1004,7 @@ export default function FarmerDashboard() {
                         <ShoppingBag className="h-4 w-4 mr-1" /> {t('sidebar.buyFertilizers')}
                     </Button>
                 </Link>
-                <Link href="/dashboard/farmer/orders">
+                <Link href="/dashboard/farmer/market?tab=orders">
                     <Button size="sm" variant="outline" className="border-emerald-300 text-emerald-800 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 rounded-full font-bold shadow-xs">
                         <Box className="h-4 w-4 mr-1 text-emerald-600" /> {t('sidebar.orders', 'My Orders')}
                     </Button>
@@ -1361,7 +1361,7 @@ export default function FarmerDashboard() {
                                 <ShoppingBag className="h-3.5 w-3.5 mr-1" /> {t('market.browseShop', 'Buy Fertilizer')}
                             </Button>
                         </Link>
-                        <Link href="/dashboard/farmer/orders">
+                        <Link href="/dashboard/farmer/market?tab=orders">
                             <Button variant="ghost" size="sm" className="text-emerald-700 hover:bg-emerald-50 text-xs font-semibold">
                                 {t('common.viewAll', 'View All')} ({recentOrders.length}) <ArrowRight className="h-3 w-3 ml-1" />
                             </Button>
@@ -1422,7 +1422,7 @@ export default function FarmerDashboard() {
                                             <span className="text-[11px] text-muted-foreground">
                                                 {new Date(ord.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                             </span>
-                                            <Link href="/dashboard/farmer/orders">
+                                            <Link href="/dashboard/farmer/market?tab=orders">
                                                 <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40">
                                                     Track <ArrowRight className="h-3 w-3 ml-1" />
                                                 </Button>
