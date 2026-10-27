@@ -193,7 +193,7 @@ export default function LearningHubPage() {
         sectionTitle = "Watch History";
     } else {
         // Normal feed mode with category filtering
-        let sourceVideos = data.videos;
+        const sourceVideos = data.videos;
         displayVideos = sourceVideos.filter(v => {
             const matchesCategory = activeCategory === "All" || v.category === activeCategory;
             const matchesLocalSearch = !searchQuery ||
