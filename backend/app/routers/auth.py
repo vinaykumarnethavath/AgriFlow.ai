@@ -593,6 +593,16 @@ async def demo_login(request: DemoLoginRequest, session: AsyncSession = Depends(
     user = result.first()
     
     if not user:
+        # Trigger comprehensive 5-year demo data seeding
+        try:
+            from ..seed_5year_demo import seed_5year_data
+            await seed_5year_data()
+            result = await session.exec(query)
+            user = result.first()
+        except Exception as e:
+            print(f"[demo_login] seed_5year_data error: {e}")
+
+    if not user:
         # Create demo user
         hashed_pwd = get_password_hash("demo123")
         role_indices = ['farmer', 'shop', 'manufacturer', 'customer', 'expert']
