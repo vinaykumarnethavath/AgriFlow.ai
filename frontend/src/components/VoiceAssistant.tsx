@@ -6,12 +6,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Mic, MicOff, X, Volume2, VolumeX, Loader2,
     CheckCircle2, AlertCircle, Navigation, ArrowRight,
-    Sparkles, Languages, Send, Keyboard
+    Sparkles, Languages, Send, Keyboard, Clock, RefreshCw
 } from "lucide-react";
 import { useLanguage, LANGUAGES } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useVoiceCommand, VoiceStatus } from "@/hooks/useVoiceCommand";
-import { processVoiceCommand, executeVoiceAction, VoiceExecutionResult, VoiceMessage } from "@/lib/voiceActionHandler";
+import {
+    processVoiceCommand,
+    executeVoiceAction,
+    VoiceExecutionResult,
+    VoiceMessage,
+    getVoiceSession,
+    clearVoiceSession,
+    VoiceTaskSession
+} from "@/lib/voiceActionHandler";
 import { LargeWaveform } from "@/components/voice/VoiceWaveform";
 import { VoiceCommandChips } from "@/components/voice/VoiceCommandChip";
 
@@ -19,76 +27,28 @@ import { VoiceCommandChips } from "@/components/voice/VoiceCommandChip";
 
 const STATUS_LABELS: Record<string, Record<VoiceStatus, string>> = {
     en: {
-        idle: "Tap the microphone or type a command",
-        listening: "Listening... Speak now",
-        processing: "AI is thinking...",
+        idle: "Tap microphone or type a command",
+        listening: "Listening... (Speaks through pauses)",
+        processing: "Processing command...",
         speaking: "Speaking...",
         error: "Something went wrong",
         unsupported: "Voice not supported in this browser",
     },
     hi: {
         idle: "माइक्रोफ़ोन दबाएँ या कमांड टाइप करें",
-        listening: "सुन रहा हूँ... बोलिए",
-        processing: "AI सोच रहा है...",
+        listening: "सुन रहा हूँ... बोलिए (रुकने पर भी सुनता रहेगा)",
+        processing: "कमांड प्रोसेस हो रही है...",
         speaking: "बोल रहा हूँ...",
         error: "कुछ गलत हो गया",
         unsupported: "इस ब्राउज़र में वॉइस उपलब्ध नहीं है",
     },
     te: {
         idle: "మైక్రోఫోన్ నొక్కండి లేదా కమాండ్ టైప్ చేయండి",
-        listening: "వింటున్నాను... చెప్పండి",
-        processing: "AI ఆలోచిస్తోంది...",
+        listening: "వింటున్నాను... చెప్పండి (ఆగుతూ మాట్లాడవచ్చు)",
+        processing: "ప్రాసెస్ చేస్తోంది...",
         speaking: "చెబుతున్నాను...",
         error: "ఏదో తప్పు జరిగింది",
         unsupported: "ఈ బ్రౌజర్‌లో వాయిస్ అందుబాటులో లేదు",
-    },
-    ta: {
-        idle: "மைக்ரோஃபோனை அழுத்தவும் அல்லது கட்டளையை தட்டச்சு செய்யவும்",
-        listening: "கேட்கிறது... பேசுங்கள்",
-        processing: "AI சிந்திக்கிறது...",
-        speaking: "பேசுகிறது...",
-        error: "ஏதோ தவறு நடந்தது",
-        unsupported: "இந்த உலாவியில் குரல் ஆதரவு இல்லை",
-    },
-    kn: {
-        idle: "ಮೈಕ್ರೋಫೋನ್ ಒತ್ತಿರಿ ಅಥವಾ ಆಜ್ಞೆಯನ್ನು ಟೈಪ್ ಮಾಡಿ",
-        listening: "ಕೇಳುತ್ತಿದೆ... ಮಾತನಾಡಿ",
-        processing: "AI ಯೋಚಿಸುತ್ತಿದೆ...",
-        speaking: "ಮಾತನಾಡುತ್ತಿದೆ...",
-        error: "ಏನೋ ತಪ್ಪಾಗಿದೆ",
-        unsupported: "ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಧ್ವನಿ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ",
-    },
-    mr: {
-        idle: "मायक्रोफोन दाबा किंवा कमांड टाईप करा",
-        listening: "ऐकत आहे... बोला",
-        processing: "AI विचार करत आहे...",
-        speaking: "बोलत आहे...",
-        error: "काहीतरी चूक झाली",
-        unsupported: "या ब्राउझरमध्ये व्हॉइस उपलब्ध नाही",
-    },
-    bn: {
-        idle: "মাইক্রোফোন টিপুন বা কমান্ড টাইপ করুন",
-        listening: "শুনছি... বলুন",
-        processing: "AI চিন্তা করছে...",
-        speaking: "বলছি...",
-        error: "কিছু ভুল হয়েছে",
-        unsupported: "এই ব্রাউজারে ভয়েস সমর্থিত নয়",
-    },
-    gu: {
-        idle: "માઇક્રોફોન દબાવો અથવા આદેશ લખો",
-        listening: "સાંભળી રહ્યો છું... બોલો",
-        processing: "AI વિચારી રહ્યું છે...",
-        speaking: "બોલી રહ્યું છે...",
-        error: "કંઈક ખોટું થયું",
-        unsupported: "આ બ્રાઉઝરમાં અવાજ સપોર્ટેડ નથી",
-    },
-    pa: {
-        idle: "ਮਾਈਕ੍ਰੋਫੋਨ ਦਬਾਓ ਜਾਂ ਕਮਾਂਡ ਟਾਈਪ ਕਰੋ",
-        listening: "ਸੁਣ ਰਿਹਾ ਹਾਂ... ਬੋਲੋ",
-        processing: "AI ਸੋਚ ਰਿਹਾ ਹੈ...",
-        speaking: "ਬੋਲ ਰਿਹਾ ਹਾਂ...",
-        error: "ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ",
-        unsupported: "ਇਸ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਵੌਇਸ ਉਪਲਬਧ ਨਹੀਂ ਹੈ",
     },
 };
 
@@ -112,10 +72,21 @@ export function VoiceAssistant() {
     const [history, setHistory] = useState<VoiceMessage[]>([]);
     const [textInput, setTextInput] = useState("");
     const [showTextInput, setShowTextInput] = useState(false);
+    const [activeSession, setActiveSession] = useState<VoiceTaskSession | null>(null);
+
     const processedRef = useRef(false);
     const textInputRef = useRef<HTMLInputElement>(null);
+    const userId = user?.id || "guest";
 
-    // Process transcript when speech recognition ends
+    // Load active session from sessionStorage
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const sess = getVoiceSession(userId);
+            setActiveSession(sess);
+        }
+    }, [userId, isOpen]);
+
+    // Process transcript when speech recognition enters 'processing'
     useEffect(() => {
         if (voice.status === "processing" && !processedRef.current) {
             processedRef.current = true;
@@ -131,43 +102,62 @@ export function VoiceAssistant() {
         }
     }, [voice.status, voice.transcript, voice.interimTranscript]);
 
-    // ── Core: Send command to AI backend ──────────────────────────────────────
+    // ── Core: Process Voice Command ──────────────────────────────────────────
 
     const handleCommand = async (text: string) => {
         setIsExecuting(true);
         setResult(null);
 
         try {
-            // 1. Send to backend AI for parsing
-            const action = await processVoiceCommand(text, pathname, locale, history);
+            // 1. Send to multi-turn intent processor
+            const action = await processVoiceCommand(text, pathname, locale, history, userId);
+            setActiveSession(action.activeSession || null);
 
-            // 2. Execute the parsed action
+            // 2. Execute the action
             const execResult = await executeVoiceAction(action, {
                 router,
                 setLocale,
             });
 
             setResult(execResult);
+            setActiveSession(execResult.activeSession || null);
 
-            // Update conversation history
+            // Update local history
             setHistory(prev => [
                 ...prev,
                 { role: "user", content: text },
                 { role: "assistant", content: execResult.message || action.response_text }
             ]);
 
-            // 3. Speak the response
+            // 3. Auto-continue listening if more slots are required
+            const shouldAutoListen = execResult.requiresFollowup || action.requires_followup;
+
             if (execResult.message) {
-                voice.speak(execResult.message);
+                voice.speak(execResult.message, () => {
+                    if (shouldAutoListen) {
+                        // Automatically re-activate mic so user can answer hands-free!
+                        setTimeout(() => {
+                            processedRef.current = false;
+                            voice.startListening(true);
+                        }, 400);
+                    }
+                });
             } else {
-                voice.setStatus("idle");
+                if (shouldAutoListen) {
+                    setTimeout(() => {
+                        processedRef.current = false;
+                        voice.startListening(true);
+                    }, 400);
+                } else {
+                    voice.setStatus("idle");
+                }
             }
 
-            // 4. Navigate if needed (delay for TTS to start)
-            if (execResult.navigateTo) {
+            // 4. Navigate if needed
+            if (execResult.navigateTo && !shouldAutoListen) {
                 setTimeout(() => {
                     router.push(execResult.navigateTo!);
-                }, 1500);
+                }, 1600);
             }
         } catch (err: any) {
             console.error("[Voice] Processing failed:", err);
@@ -186,8 +176,8 @@ export function VoiceAssistant() {
         setResult(null);
         setTextInput("");
         setShowTextInput(false);
-        setHistory([]);
         processedRef.current = false;
+        setActiveSession(getVoiceSession(userId));
     };
 
     const handleClose = () => {
@@ -197,14 +187,13 @@ export function VoiceAssistant() {
         setResult(null);
         setTextInput("");
         setShowTextInput(false);
-        setHistory([]);
         voice.setStatus("idle");
         processedRef.current = false;
     };
 
     const handleMicClick = () => {
         if (voice.status === "listening") {
-            voice.stopListening();
+            voice.holdToFinish();
         } else {
             setResult(null);
             setTextInput("");
@@ -231,17 +220,16 @@ export function VoiceAssistant() {
         handleCommand(command);
     };
 
-    const handleRetry = () => {
+    const handleResetActiveTask = () => {
+        clearVoiceSession(userId);
+        setActiveSession(null);
         setResult(null);
-        setTextInput("");
-        processedRef.current = false;
         voice.resetTranscript();
         voice.setStatus("idle");
     };
 
     const currentLang = LANGUAGES.find((l) => l.code === locale);
 
-    // Show for all roles (not just farmer)
     if (!user) return null;
 
     return (
@@ -253,24 +241,24 @@ export function VoiceAssistant() {
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
-                        whileHover={{ scale: 1.1 }}
+                        whileHover={{ scale: 1.08 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleOpen}
                         id="voice-assistant-fab"
                         className="
                             fixed bottom-6 right-24 z-50
                             h-14 w-14 rounded-full
-                            bg-gradient-to-br from-emerald-500 to-green-600
-                            text-white shadow-lg shadow-green-500/30
+                            bg-emerald-600
+                            text-white shadow-xl shadow-emerald-900/20
                             flex items-center justify-center
-                            hover:shadow-xl hover:shadow-green-500/40
-                            transition-shadow duration-300
-                            border-2 border-white/20
+                            hover:bg-emerald-700
+                            transition-all duration-200
+                            border border-white/20
                         "
                         aria-label="Open Voice Assistant"
                     >
                         <Mic className="h-6 w-6" />
-                        <span className="absolute inset-0 rounded-full animate-ping bg-green-400/30" />
+                        <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20 pointer-events-none" />
                     </motion.button>
                 )}
             </AnimatePresence>
@@ -289,39 +277,39 @@ export function VoiceAssistant() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            className="absolute inset-0 bg-black/60 backdrop-blur-xs"
                             onClick={handleClose}
                         />
 
-                        {/* Modal Panel */}
+                        {/* Modal Panel (Utilitarian 1px hairline border, high contrast) */}
                         <motion.div
-                            initial={{ y: 100, opacity: 0, scale: 0.95 }}
+                            initial={{ y: 80, opacity: 0, scale: 0.96 }}
                             animate={{ y: 0, opacity: 1, scale: 1 }}
-                            exit={{ y: 100, opacity: 0, scale: 0.95 }}
-                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            exit={{ y: 80, opacity: 0, scale: 0.96 }}
+                            transition={{ type: "spring", damping: 26, stiffness: 320 }}
                             className="
                                 relative w-full max-w-md mx-4 mb-4 sm:mb-0
-                                rounded-3xl overflow-hidden
-                                bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900
-                                border border-white/10
-                                shadow-2xl shadow-black/50
+                                rounded-2xl overflow-hidden
+                                bg-slate-900 text-slate-100
+                                border border-slate-700/80
+                                shadow-2xl shadow-black/80
                             "
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-between px-5 pt-5 pb-2">
-                                <div className="flex items-center gap-2">
-                                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center">
-                                        <Sparkles className="h-4 w-4 text-white" />
+                            <div className="flex items-center justify-between px-5 pt-4 pb-2 border-b border-slate-800">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="h-8 w-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                                        <Sparkles className="h-4 w-4" />
                                     </div>
                                     <div>
-                                        <h3 className="text-white font-semibold text-sm">
-                                            AI Voice Assistant
+                                        <h3 className="font-semibold text-sm text-slate-100">
+                                            Voice Assistant Co-Pilot
                                         </h3>
-                                        <div className="flex items-center gap-1 text-[10px] text-white/50">
+                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
                                             <Languages className="h-3 w-3" />
                                             <span>{currentLang?.nativeName || "English"}</span>
-                                            <span className="mx-1">•</span>
-                                            <span className="text-emerald-400">Powered by Groq AI</span>
+                                            <span>•</span>
+                                            <span className="text-emerald-400 font-mono">Continuous 6s Buffer</span>
                                         </div>
                                     </div>
                                 </div>
@@ -331,51 +319,91 @@ export function VoiceAssistant() {
                                             setShowTextInput(!showTextInput);
                                             setTimeout(() => textInputRef.current?.focus(), 100);
                                         }}
-                                        className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                                        title="Type a command"
+                                        className="h-8 w-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors text-slate-300"
+                                        title="Type command"
                                     >
-                                        <Keyboard className="h-4 w-4 text-white/70" />
+                                        <Keyboard className="h-4 w-4" />
                                     </button>
                                     <button
                                         onClick={handleClose}
-                                        className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                                        className="h-8 w-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors text-slate-300"
                                     >
-                                        <X className="h-4 w-4 text-white/70" />
+                                        <X className="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Status Label */}
-                            <div className="px-5 py-2">
-                                <p className="text-center text-white/60 text-xs font-medium">
-                                    {isExecuting
-                                        ? (locale === "te" ? "AI ఆలోచిస్తోంది..." : locale === "hi" ? "AI सोच रहा है..." : "AI is thinking...")
-                                        : getStatusLabel(locale, voice.status)}
-                                </p>
+                            {/* Active Task Context Bar (Slot Memory) */}
+                            {activeSession?.pendingIntent && (
+                                <div className="px-5 py-2 bg-emerald-950/40 border-b border-emerald-800/40 flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <span className="font-bold text-emerald-400 uppercase text-[10px] tracking-wide">
+                                            Active Task:
+                                        </span>
+                                        <span className="text-slate-200">
+                                            {activeSession.pendingIntent.replace("_", " ")}
+                                            {activeSession.slots.cropName && ` · Crop: ${activeSession.slots.cropName}`}
+                                            {activeSession.slots.amount && ` · ₹${activeSession.slots.amount}`}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={handleResetActiveTask}
+                                        className="text-[10px] text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-0.5"
+                                        title="Cancel active task"
+                                    >
+                                        <RefreshCw className="h-2.5 w-2.5" />
+                                        <span>Reset</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Status Label & Countdown */}
+                            <div className="px-5 pt-3 pb-1">
+                                <div className="flex items-center justify-between text-xs text-slate-400">
+                                    <span>
+                                        {isExecuting ? "Processing intent..." : getStatusLabel(locale, voice.status)}
+                                    </span>
+                                    {voice.status === "listening" && (
+                                        <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-400">
+                                            <Clock className="h-3 w-3" />
+                                            <span>Hold / Tap to Finish</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Pause countdown bar */}
+                                {voice.status === "listening" && (
+                                    <div className="w-full bg-slate-800 h-1 rounded-full mt-2 overflow-hidden">
+                                        <div
+                                            className="bg-emerald-500 h-full transition-all duration-100"
+                                            style={{ width: `${voice.pauseCountdown}%` }}
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             {/* Waveform */}
-                            <div className="px-5">
+                            <div className="px-5 py-2">
                                 <LargeWaveform status={isExecuting ? "processing" : voice.status} />
                             </div>
 
-                            {/* Live Transcript */}
-                            <div className="px-5 min-h-[48px] flex items-center justify-center">
-                                {(voice.transcript || voice.interimTranscript) && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 max-w-full"
-                                    >
-                                        <p className="text-white/90 text-sm text-center leading-relaxed">
+                            {/* Live Transcript Buffer */}
+                            <div className="px-5 min-h-[46px] flex items-center justify-center">
+                                {(voice.transcript || voice.interimTranscript) ? (
+                                    <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl px-4 py-2 w-full text-center">
+                                        <p className="text-slate-100 text-sm leading-relaxed">
                                             {voice.transcript}
                                             {voice.interimTranscript && (
-                                                <span className="text-white/50 italic ml-1">
+                                                <span className="text-slate-400 italic ml-1">
                                                     {voice.interimTranscript}
                                                 </span>
                                             )}
                                         </p>
-                                    </motion.div>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-slate-500 italic text-center">
+                                        Speak naturally. You can pause without losing your command.
+                                    </p>
                                 )}
                             </div>
 
@@ -383,32 +411,32 @@ export function VoiceAssistant() {
                             <AnimatePresence>
                                 {result && (
                                     <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
+                                        initial={{ opacity: 0, y: 15 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: 20 }}
-                                        className="mx-5 mt-2 mb-1"
+                                        exit={{ opacity: 0, y: 15 }}
+                                        className="mx-5 mt-2"
                                     >
                                         <div className={`
-                                            rounded-2xl p-4 border
+                                            rounded-xl p-3.5 border text-xs
                                             ${result.success
-                                                ? "bg-emerald-500/10 border-emerald-500/20"
-                                                : "bg-red-500/10 border-red-500/20"
+                                                ? "bg-emerald-950/30 border-emerald-500/30 text-emerald-200"
+                                                : "bg-rose-950/30 border-rose-500/30 text-rose-200"
                                             }
                                         `}>
                                             <div className="flex items-start gap-2.5">
                                                 {result.success ? (
-                                                    <CheckCircle2 className="h-5 w-5 text-emerald-400 mt-0.5 shrink-0" />
+                                                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
                                                 ) : (
-                                                    <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />
+                                                    <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
                                                 )}
-                                                <p className="text-white/80 text-sm leading-relaxed">
+                                                <p className="leading-relaxed flex-1 font-sans">
                                                     {result.message}
                                                 </p>
                                             </div>
                                             {result.navigateTo && (
-                                                <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-emerald-300/70">
+                                                <div className="mt-2 flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono">
                                                     <Navigation className="h-3 w-3" />
-                                                    <span>Navigating to {result.navigateTo}...</span>
+                                                    <span>Navigating: {result.navigateTo}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -416,7 +444,7 @@ export function VoiceAssistant() {
                                 )}
                             </AnimatePresence>
 
-                            {/* Text Input (toggled via keyboard button) */}
+                            {/* Text Input Toggle */}
                             <AnimatePresence>
                                 {showTextInput && (
                                     <motion.div
@@ -431,96 +459,54 @@ export function VoiceAssistant() {
                                                 type="text"
                                                 value={textInput}
                                                 onChange={(e) => setTextInput(e.target.value)}
-                                                placeholder={
-                                                    locale === "te" ? "మీ కమాండ్ టైప్ చేయండి..."
-                                                    : locale === "hi" ? "अपना कमांड टाइप करें..."
-                                                    : "Type your command..."
-                                                }
-                                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                                placeholder="Type your command..."
+                                                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-emerald-500"
                                                 disabled={isExecuting}
                                             />
                                             <button
                                                 type="submit"
                                                 disabled={!textInput.trim() || isExecuting}
-                                                className="bg-emerald-500 hover:bg-emerald-600 text-white p-2.5 rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center shrink-0"
+                                                className="bg-emerald-600 hover:bg-emerald-500 text-white p-2.5 rounded-xl disabled:opacity-50 transition-colors shrink-0"
                                             >
-                                                {isExecuting ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <Send className="h-4 w-4" />
-                                                )}
+                                                {isExecuting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                             </button>
                                         </form>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            {/* Error + Fallback Input */}
-                            {voice.error && !showTextInput && (
-                                <div className="mx-5 mt-2 mb-1 space-y-3">
-                                    <div className="rounded-2xl p-3 bg-red-500/10 border border-red-500/20">
-                                        <div className="flex items-center gap-2">
-                                            <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-                                            <p className="text-red-300/80 text-xs">{voice.error}</p>
-                                        </div>
-                                    </div>
-                                    {!result && (
-                                        <form onSubmit={handleTextSubmit} className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={textInput}
-                                                onChange={(e) => setTextInput(e.target.value)}
-                                                placeholder="Type your command instead..."
-                                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500/50"
-                                            />
-                                            <button
-                                                type="submit"
-                                                disabled={!textInput.trim() || isExecuting}
-                                                className="bg-emerald-500 hover:bg-emerald-600 text-white p-2 rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center"
-                                            >
-                                                {isExecuting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                                            </button>
-                                        </form>
-                                    )}
-                                </div>
-                            )}
-
                             {/* Quick Command Chips */}
                             {(voice.status === "idle" || voice.status === "error") && !result && !isExecuting && (
-                                <div className="px-5 pb-1">
+                                <div className="px-5 pt-2 pb-1">
                                     <VoiceCommandChips onCommand={handleChipCommand} />
                                 </div>
                             )}
 
-                            {/* Action Buttons */}
-                            <div className="flex items-center justify-center gap-4 px-5 py-5">
-                                {/* Speaker toggle */}
+                            {/* Main Mic Controls */}
+                            <div className="flex items-center justify-center gap-4 px-5 py-4">
                                 {voice.status === "speaking" && (
-                                    <motion.button
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
+                                    <button
                                         onClick={voice.stopSpeaking}
-                                        className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                                        className="h-10 w-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors"
+                                        title="Stop audio"
                                     >
-                                        <VolumeX className="h-5 w-5 text-white/70" />
-                                    </motion.button>
+                                        <VolumeX className="h-4 w-4" />
+                                    </button>
                                 )}
 
-                                {/* Main Mic Button */}
                                 <motion.button
-                                    whileTap={{ scale: 0.9 }}
+                                    whileTap={{ scale: 0.92 }}
                                     onClick={handleMicClick}
                                     disabled={isExecuting || voice.status === "unsupported"}
                                     className={`
-                                        h-16 w-16 rounded-full
-                                        flex items-center justify-center
-                                        transition-all duration-300 relative
-                                        disabled:opacity-50 disabled:cursor-not-allowed
+                                        h-16 w-16 rounded-full flex items-center justify-center transition-all duration-200 relative
+                                        disabled:opacity-50
                                         ${voice.status === "listening"
-                                            ? "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/40"
-                                            : "bg-gradient-to-br from-emerald-400 to-green-600 hover:from-emerald-500 hover:to-green-700 shadow-lg shadow-green-500/30"
+                                            ? "bg-rose-600 hover:bg-rose-500 shadow-lg shadow-rose-900/40 text-white"
+                                            : "bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900/40 text-white"
                                         }
                                     `}
+                                    title={voice.status === "listening" ? "Tap to finish immediately" : "Tap to speak"}
                                 >
                                     {isExecuting ? (
                                         <Loader2 className="h-7 w-7 text-white animate-spin" />
@@ -529,43 +515,23 @@ export function VoiceAssistant() {
                                     ) : (
                                         <Mic className="h-7 w-7 text-white" />
                                     )}
-
-                                    {voice.status === "listening" && (
-                                        <span className="absolute inset-0 rounded-full animate-ping bg-red-400/30" />
-                                    )}
                                 </motion.button>
 
-                                {/* Retry button */}
-                                {(result || voice.status === "error") && (
-                                    <motion.button
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        onClick={handleRetry}
-                                        className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                                    >
-                                        <ArrowRight className="h-5 w-5 text-white/70 rotate-[-90deg]" />
-                                    </motion.button>
-                                )}
-
-                                {/* Replay audio */}
                                 {result?.message && voice.status === "idle" && (
-                                    <motion.button
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
+                                    <button
                                         onClick={() => voice.speak(result.message)}
-                                        className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                                        className="h-10 w-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors"
+                                        title="Replay audio"
                                     >
-                                        <Volume2 className="h-5 w-5 text-white/70" />
-                                    </motion.button>
+                                        <Volume2 className="h-4 w-4" />
+                                    </button>
                                 )}
                             </div>
 
-                            {/* Footer */}
-                            <div className="pb-4 px-5">
-                                <p className="text-center text-white/30 text-[10px]">
-                                    {voice.isSupported
-                                        ? "Powered by Groq AI • Speak in any Indian language"
-                                        : "⚠️ Please use Chrome or Edge for voice features"}
+                            {/* Footer Notice */}
+                            <div className="pb-3 px-5 text-center">
+                                <p className="text-[10px] text-slate-400 font-mono">
+                                    Pause-tolerant session · Zero PII leaves your device
                                 </p>
                             </div>
                         </motion.div>

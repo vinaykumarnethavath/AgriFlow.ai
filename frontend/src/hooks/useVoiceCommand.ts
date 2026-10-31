@@ -70,17 +70,19 @@ export interface VoiceCommandState {
     interimTranscript: string;
     error: string | null;
     confidence: number;
+    pauseCountdown: number; // 0 to 100 percentage of silence remaining before auto-submit
 }
 
 export interface UseVoiceCommandReturn extends VoiceCommandState {
-    startListening: () => void;
+    startListening: (appendMode?: boolean) => void;
     stopListening: () => void;
     cancelListening: () => void;
-    speak: (text: string) => void;
+    speak: (text: string, onFinish?: () => void) => void;
     stopSpeaking: () => void;
     isSupported: boolean;
     setStatus: (status: VoiceStatus) => void;
     resetTranscript: () => void;
+    holdToFinish: () => void;
 }
 
 // ── Language Code Mapping ────────────────────────────────────────────────────
@@ -112,9 +114,11 @@ function isSpeechSynthesisSupported(): boolean {
     return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────────────
+// ── Hook Parameters ──────────────────────────────────────────────────────────
 
-const SILENCE_TIMEOUT_MS = 3000; // Auto-stop after 3s of silence
+// Extended silence window to 6000ms (6 seconds) so user can pause & think without getting cut off
+const SILENCE_TIMEOUT_MS = 6000;
+const COUNTDOWN_INTERVAL_MS = 100;
 
 export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn {
     const [status, setStatus] = useState<VoiceStatus>("idle");
@@ -122,13 +126,25 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
     const [interimTranscript, setInterimTranscript] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [confidence, setConfidence] = useState(0);
+    const [pauseCountdown, setPauseCountdown] = useState(100);
 
     const recognitionRef = useRef<SpeechRecognition | null>(null);
     const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
     const synthUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+    const accumulatedTextRef = useRef<string>("");
+    const onSpeakFinishRef = useRef<(() => void) | null>(null);
 
     const SpeechRecognitionClass = getSpeechRecognition();
     const isSupported = !!SpeechRecognitionClass && isSpeechSynthesisSupported();
+
+    // Cleanup timers
+    const clearTimers = useCallback(() => {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+        silenceTimerRef.current = null;
+        countdownTimerRef.current = null;
+    }, []);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -136,30 +152,37 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
             if (recognitionRef.current) {
                 try { recognitionRef.current.abort(); } catch { /* ignore */ }
             }
-            if (silenceTimerRef.current) {
-                clearTimeout(silenceTimerRef.current);
-            }
+            clearTimers();
             if (isSpeechSynthesisSupported()) {
                 window.speechSynthesis.cancel();
             }
         };
-    }, []);
+    }, [clearTimers]);
 
-    // Reset silence timer
+    // Reset silence timer with progressive countdown
     const resetSilenceTimer = useCallback(() => {
-        if (silenceTimerRef.current) {
-            clearTimeout(silenceTimerRef.current);
-        }
+        clearTimers();
+        setPauseCountdown(100);
+
+        const startTime = Date.now();
+        countdownTimerRef.current = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const remainingFraction = Math.max(0, 1 - (elapsed / SILENCE_TIMEOUT_MS));
+            setPauseCountdown(Math.round(remainingFraction * 100));
+        }, COUNTDOWN_INTERVAL_MS);
+
         silenceTimerRef.current = setTimeout(() => {
-            // Auto-stop after silence
+            clearTimers();
+            setPauseCountdown(0);
+            // Gracefully stop recognition to trigger onend and processing
             if (recognitionRef.current) {
                 try { recognitionRef.current.stop(); } catch { /* ignore */ }
             }
         }, SILENCE_TIMEOUT_MS);
-    }, []);
+    }, [clearTimers]);
 
-    // Start listening
-    const startListening = useCallback(() => {
+    // Start listening (supports appendMode for multi-turn accumulation)
+    const startListening = useCallback((appendMode: boolean = false) => {
         if (!SpeechRecognitionClass) {
             setStatus("unsupported");
             setError("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
@@ -171,10 +194,14 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
             window.speechSynthesis.cancel();
         }
 
-        setTranscript("");
+        if (!appendMode) {
+            setTranscript("");
+            accumulatedTextRef.current = "";
+        }
         setInterimTranscript("");
         setError(null);
         setConfidence(0);
+        setPauseCountdown(100);
 
         const recognition = new SpeechRecognitionClass();
         recognition.lang = LOCALE_TO_SPEECH_LANG[locale] || "en-IN";
@@ -204,26 +231,33 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
                 }
             }
 
-            setTranscript(finalText.trim());
+            const prefix = accumulatedTextRef.current ? accumulatedTextRef.current + " " : "";
+            const combinedFinal = (prefix + finalText).trim();
+
+            setTranscript(combinedFinal);
             if (bestConfidence > 0) setConfidence(bestConfidence);
             setInterimTranscript(interimText);
         };
 
         recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+            clearTimers();
 
             switch (event.error) {
                 case "not-allowed":
                     setError("Microphone access denied. Please allow microphone permissions.");
                     break;
                 case "no-speech":
-                    setError("No speech detected. Please try again.");
+                    // If we already had spoken words in buffer, proceed with them
+                    if (transcript.trim() || accumulatedTextRef.current.trim()) {
+                        setStatus("processing");
+                        return;
+                    }
+                    setError("No speech detected. Please tap mic and speak.");
                     break;
                 case "network":
                     setError("Network error. Please check your connection.");
                     break;
                 case "aborted":
-                    // User cancelled — not an error
                     return;
                 default:
                     setError(`Speech recognition error: ${event.error}`);
@@ -232,10 +266,9 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
         };
 
         recognition.onend = () => {
-            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+            clearTimers();
             recognitionRef.current = null;
 
-            // Only transition to processing if we have a transcript and not in error state
             setStatus((prev) => {
                 if (prev === "error") return "error";
                 return "processing";
@@ -250,46 +283,58 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
             setError("Failed to start speech recognition. Please try again.");
             setStatus("error");
         }
-    }, [SpeechRecognitionClass, locale, resetSilenceTimer]);
+    }, [SpeechRecognitionClass, locale, resetSilenceTimer, clearTimers, transcript]);
 
-    // Stop listening gracefully (lets final result come through)
-    const stopListening = useCallback(() => {
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    // Force finish listening immediately without waiting for silence timer
+    const holdToFinish = useCallback(() => {
+        clearTimers();
+        setPauseCountdown(0);
         if (recognitionRef.current) {
             try { recognitionRef.current.stop(); } catch { /* ignore */ }
         }
-    }, []);
+    }, [clearTimers]);
 
-    // Cancel listening (aborts without processing)
+    // Stop listening gracefully
+    const stopListening = useCallback(() => {
+        clearTimers();
+        if (recognitionRef.current) {
+            try { recognitionRef.current.stop(); } catch { /* ignore */ }
+        }
+    }, [clearTimers]);
+
+    // Cancel listening completely
     const cancelListening = useCallback(() => {
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        clearTimers();
         if (recognitionRef.current) {
             try { recognitionRef.current.abort(); } catch { /* ignore */ }
             recognitionRef.current = null;
         }
+        accumulatedTextRef.current = "";
         setStatus("idle");
         setTranscript("");
         setInterimTranscript("");
         setError(null);
-    }, []);
+        setPauseCountdown(100);
+    }, [clearTimers]);
 
-    // Text-to-Speech
+    // Text-to-Speech with optional onFinish callback (crucial for auto-listening on follow-up)
     const speak = useCallback(
-        (text: string) => {
+        (text: string, onFinish?: () => void) => {
             if (!isSpeechSynthesisSupported()) {
                 setStatus("idle");
+                if (onFinish) onFinish();
                 return;
             }
 
             window.speechSynthesis.cancel();
             setStatus("speaking");
+            onSpeakFinishRef.current = onFinish || null;
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = LOCALE_TO_SPEECH_LANG[locale] || "en-IN";
-            utterance.rate = 0.9;
-            utterance.pitch = 1;
+            utterance.rate = 0.95;
+            utterance.pitch = 1.0;
 
-            // Try to find a voice that matches the locale
             const voices = window.speechSynthesis.getVoices();
             const langCode = LOCALE_TO_SPEECH_LANG[locale] || "en-IN";
             const matchingVoice = voices.find(
@@ -301,10 +346,20 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
 
             utterance.onend = () => {
                 setStatus("idle");
+                if (onSpeakFinishRef.current) {
+                    const cb = onSpeakFinishRef.current;
+                    onSpeakFinishRef.current = null;
+                    cb();
+                }
             };
 
             utterance.onerror = () => {
                 setStatus("idle");
+                if (onSpeakFinishRef.current) {
+                    const cb = onSpeakFinishRef.current;
+                    onSpeakFinishRef.current = null;
+                    cb();
+                }
             };
 
             synthUtteranceRef.current = utterance;
@@ -313,20 +368,21 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
         [locale]
     );
 
-    // Stop speaking
     const stopSpeaking = useCallback(() => {
         if (isSpeechSynthesisSupported()) {
             window.speechSynthesis.cancel();
         }
+        onSpeakFinishRef.current = null;
         setStatus("idle");
     }, []);
 
-    // Reset transcript without changing status
     const resetTranscript = useCallback(() => {
         setTranscript("");
         setInterimTranscript("");
+        accumulatedTextRef.current = "";
         setError(null);
         setConfidence(0);
+        setPauseCountdown(100);
     }, []);
 
     return {
@@ -335,6 +391,7 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
         interimTranscript,
         error,
         confidence,
+        pauseCountdown,
         startListening,
         stopListening,
         cancelListening,
@@ -343,5 +400,6 @@ export function useVoiceCommand(locale: SupportedLocale): UseVoiceCommandReturn 
         isSupported,
         setStatus,
         resetTranscript,
+        holdToFinish,
     };
 }
