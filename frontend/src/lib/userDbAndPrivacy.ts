@@ -86,9 +86,9 @@ export function queryLocalUserDatabase(
     // ── Farmer Local Database Answers ──
     if (role === "farmer") {
         const crops = farmerDemoData.crops || [];
-        const totalExpenses = crops.reduce((sum, c) => sum + (c.total_expenses || 0), 0);
-        const loans = farmerDemoData.loans || [];
-        const activeLoansTotal = loans.reduce((sum, l) => sum + (l.current_outstanding || l.principal_amount || 0), 0);
+        const totalExpenses = crops.reduce((sum: number, c: any) => sum + (c.total_expenses || c.total_cost || 0), 0);
+        const loans: any[] = (farmerDemoData as any).finance?.loans || (farmerDemoData as any).loans || [];
+        const activeLoansTotal = loans.reduce((sum: number, l: any) => sum + (l.current_outstanding || l.outstanding_amount || l.principal_amount || 0), 0);
 
         if (q.includes("expense") || q.includes("spent") || q.includes("खर्च") || q.includes("ఖర్చు")) {
             const cropBreakdown = crops.map(c => `• **${c.name}**: ₹${(c.total_expenses || 0).toLocaleString('en-IN')}`).join("\n");
@@ -195,7 +195,7 @@ export function queryLocalUserDatabase(
 
     // ── Mill / Manufacturer Local Database Answers ──
     if (role === "manufacturer") {
-        const batches = manufacturerDemoData.batches || [];
+        const batches: any[] = (manufacturerDemoData as any).batches || ((manufacturerDemoData as any).production?.current_batch ? [(manufacturerDemoData as any).production.current_batch] : []);
         const purchases = manufacturerDemoData.purchases || [];
 
         if (q.includes("batch") || q.includes("production") || q.includes("milling")) {
