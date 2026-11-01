@@ -489,27 +489,147 @@ def _get_crop_term(crop: str, lang: str) -> str:
 
 
 def build_learning_categories(
-    crop_names: List[str],
+    crop_names: Optional[List[str]] = None,
     season: Optional[str] = None,
     language: str = "hi",
-) -> List[Dict[str, str]]:
+    farmer_context: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, Any]]:
     """
-    Build targeted agricultural search queries tailored to farmer's language, crops, and season.
-    Constructs high-yield queries using proven terminology for each supported language.
+    Build targeted agricultural search queries tailored to farmer's language, crops,
+    growth stages, soil profile, health alerts, and real-time weather conditions.
     """
     current_year = datetime.now().year
-    categories = []
+    categories: List[Dict[str, Any]] = []
+    crop_names = crop_names or []
 
-    # 1. Dedicated crop cultivation guides
-    if crop_names:
+    # Stage native labels
+    stage_labels = {
+        "Sowing & Seedling": {"te": "విత్తన లేదా నాటు దశ", "hi": "बुवाई अवस्था", "ta": "விதைப்பு நிலை"},
+        "Vegetative": {"te": "శాఖీయ పెరుగుదల దశ", "hi": "बढ़वार अवस्था", "ta": "வளர்ச்சி நிலை"},
+        "Flowering": {"te": "పూత మరియు పొట్ట దశ", "hi": "फूल और बालियां अवस्था", "ta": "பூக்கும் நிலை"},
+        "Ripening": {"te": "గింజ పక్వ దశ", "hi": "दाना भराव अवस्था", "ta": "முதிர்வு நிலை"},
+        "Harvest": {"te": "కోత మరియు నిల్వ", "hi": "कटाई और भंडारण", "ta": "அறுவடை நிலை"},
+    }
+
+    # Extract signals from farmer_context if available
+    crops_info = []
+    soil_labels = []
+    health_alerts = []
+    weather_alert = None
+
+    if farmer_context:
+        crops_info = farmer_context.get("crops", [])
+        soil_labels = farmer_context.get("soil_labels", [])
+        health_alerts = farmer_context.get("health_alerts", [])
+        weather_alert = farmer_context.get("weather_alert")
+        if not crop_names and crops_info:
+            crop_names = [c["name"] for c in crops_info if "name" in c]
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # 1. 🚨 HIGH PRIORITY: Crop Health & Pest Alerts
+    # ─────────────────────────────────────────────────────────────────────────
+    if health_alerts:
+        for alert in health_alerts[:2]:
+            c_name = alert.get("crop_name", "Crop")
+            crop_term = _get_crop_term(c_name, language)
+            c_status = alert.get("status", "issue")
+            notes = alert.get("notes", "")
+
+            if language == "en":
+                pest_q = f"{c_name} pest disease management organic spray remedy {current_year}"
+            elif language == "te":
+                pest_q = f"{crop_term} పురుగులు తెగుళ్ల నివారణ మందులు telugu {current_year}"
+            elif language == "hi":
+                pest_q = f"{crop_term} कीट रोग नियंत्रण स्प्रे दवा hindi {current_year}"
+            elif language == "ta":
+                pest_q = f"{crop_term} பூச்சி நோய் கட்டுப்பாடு மருந்து tamil"
+            else:
+                pest_q = f"{c_name} pest disease control treatment"
+
+            categories.append({
+                "category": f"Pest Alert: {c_name}",
+                "emoji": "🚨",
+                "query": pest_q,
+                "context_tag": f"Pest Alert · {c_name}",
+                "recommendation_reason": f"Active {c_status} alert detected on your {c_name} plot ({notes[:40]}...)" if notes else f"Active {c_status} alert on {c_name}",
+                "relevance_score": 98,
+            })
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # 2. 🌦️ HIGH PRIORITY: Real-Time Weather Advisory
+    # ─────────────────────────────────────────────────────────────────────────
+    if weather_alert:
+        w_type = weather_alert.get("type", "weather")
+        w_title = weather_alert.get("title", "Weather Advisory")
+        w_advisory = weather_alert.get("advisory", "Advisory for current weather condition")
+
+        if w_type == "rain_alert":
+            if language == "en":
+                w_query = f"farming tips heavy rain waterlogging field drainage crop protection {current_year}"
+            elif language == "te":
+                w_query = f"భారీ వర్షాలు పంటల రక్షణ నీటి మురుగు కాలువలు telugu {current_year}"
+            elif language == "hi":
+                w_query = f"भारी बारिश से फसल की सुरक्षा जल निकासी hindi {current_year}"
+            else:
+                w_query = "heavy rainfall agriculture field drainage crop protection"
+        else:
+            if language == "en":
+                w_query = f"heat stress summer irrigation crop protection farming {current_year}"
+            elif language == "te":
+                w_query = f"ఎండ తీవ్రత పంటలకు నీటి యాజమాన్యం telugu {current_year}"
+            elif language == "hi":
+                w_query = f"अधिक तापमान फसल सिंचाई प्रबंधन गर्मी hindi {current_year}"
+            else:
+                w_query = "heat stress agriculture irrigation tips"
+
+        categories.append({
+            "category": "Weather Advisory",
+            "emoji": "🌦️",
+            "query": w_query,
+            "context_tag": f"Weather · {w_title}",
+            "recommendation_reason": w_advisory,
+            "relevance_score": 96,
+        })
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # 3. 🌱 CONTEXT-AWARE: Crop Growth Stage Specific Guides
+    # ─────────────────────────────────────────────────────────────────────────
+    if crops_info:
+        for c in crops_info[:2]:
+            c_name = c.get("name", "Crop")
+            c_stage = c.get("stage", "Vegetative")
+            c_days = c.get("days_elapsed", 45)
+            crop_term = _get_crop_term(c_name, language)
+            stage_trans = stage_labels.get(c_stage, {}).get(language, c_stage)
+
+            if language == "en":
+                stage_query = f"{c_name} {c_stage} stage care fertilizer pest irrigation tips {current_year}"
+            elif language == "te":
+                stage_query = f"{crop_term} {stage_trans} యాజమాన్యం ఎరువులు telugu {current_year}"
+            elif language == "hi":
+                stage_query = f"{crop_term} {stage_trans} में खाद और देखभाल kheti hindi {current_year}"
+            elif language == "ta":
+                stage_query = f"{crop_term} {stage_trans} பராமரிப்பு tamil {current_year}"
+            else:
+                stage_query = f"{c_name} {c_stage} stage farming tips"
+
+            categories.append({
+                "category": f"{c_name} ({c_stage})",
+                "emoji": "🌱",
+                "query": stage_query,
+                "context_tag": f"{c_name} · {c_stage} Stage",
+                "recommendation_reason": f"Your {c_name} is currently at Day {c_days} ({c_stage} Stage)",
+                "relevance_score": 94,
+            })
+    elif crop_names:
         for crop in crop_names[:2]:
             crop_term = _get_crop_term(crop, language)
             if language == "en":
-                query = f"{crop_term} farming cultivation complete guide tutorial"
+                query = f"{crop_term} farming cultivation complete guide tutorial {current_year}"
             elif language == "te":
-                query = f"{crop_term} సాగు పద్ధతులు farming guide telugu"
+                query = f"{crop_term} సాగు పద్ధతులు farming guide telugu {current_year}"
             elif language == "hi":
-                query = f"{crop_term} की खेती कैसे करें farming guide hindi"
+                query = f"{crop_term} की खेती कैसे करें farming guide hindi {current_year}"
             elif language == "ta":
                 query = f"{crop_term} விவசாயம் farming guide tamil"
             else:
@@ -519,30 +639,69 @@ def build_learning_categories(
                 "category": "My Crops",
                 "emoji": "🌾",
                 "query": query,
+                "context_tag": f"My Crops · {crop}",
+                "recommendation_reason": f"Cultivation guide for your active {crop} crop",
+                "relevance_score": 90,
             })
 
-        # 2. Fertilizer & Nutrition
-        crops_str = " ".join([_get_crop_term(c, language) for c in crop_names[:2]])
+    # ─────────────────────────────────────────────────────────────────────────
+    # 4. 🧪 CONTEXT-AWARE: Soil Management for Farmer's Soil Types
+    # ─────────────────────────────────────────────────────────────────────────
+    if soil_labels:
+        primary_soil = soil_labels[0]
+        soil_term_te = "నల్లరేగడి నేలలో" if "Black" in primary_soil else "ఎర్ర నేలల్లో"
+        soil_term_hi = "काली मिट्टी में" if "Black" in primary_soil else "लाल दोमट मिट्टी में"
+
         if language == "en":
-            fert_query = f"{' '.join(crop_names[:2])} fertilizer management NPK dosage guide"
+            soil_query = f"{primary_soil} management water drainage fertilizer crop yield {current_year}"
         elif language == "te":
-            fert_query = f"{crops_str} ఎరువుల యాజమాన్యం fertilizer management telugu"
+            soil_query = f"{soil_term_te} పంటల సాగు నీటి యాజమాన్యం ఎరువులు telugu"
         elif language == "hi":
-            fert_query = f"{crops_str} खाद उर्वरक NPK प्रबंधन fertilizer hindi"
+            soil_query = f"{soil_term_hi} खेती जल निकासी उर्वरक प्रबंधन kheti hindi"
         elif language == "ta":
-            fert_query = f"{crops_str} உரம் மேலாண்மை fertilizer tamil"
+            soil_query = f"{primary_soil} soil management agriculture tamil"
         else:
-            fert_query = f"{' '.join(crop_names[:2])} fertilizer NPK dosage management"
+            soil_query = f"{primary_soil} soil management crop yield"
 
         categories.append({
-            "category": "Fertilizers & Nutrition",
+            "category": "Soil Management",
             "emoji": "🧪",
-            "query": fert_query,
+            "query": soil_query,
+            "context_tag": f"Soil Care · {primary_soil}",
+            "recommendation_reason": f"Tailored specifically for your {primary_soil} plots",
+            "relevance_score": 88,
         })
 
-        # 3. Pest & Disease Control
+    # ─────────────────────────────────────────────────────────────────────────
+    # 5. 🧪 Fertilizers & Nutrition
+    # ─────────────────────────────────────────────────────────────────────────
+    crops_str = " ".join([_get_crop_term(c, language) for c in crop_names[:2]]) if crop_names else "crops"
+    if language == "en":
+        fert_query = f"{' '.join(crop_names[:2])} fertilizer management NPK dosage guide" if crop_names else "crop fertilizer NPK micronutrients dosage guide"
+    elif language == "te":
+        fert_query = f"{crops_str} ఎరువుల యాజమాన్యం fertilizer management telugu"
+    elif language == "hi":
+        fert_query = f"{crops_str} खाद उर्वरक NPK प्रबंधन fertilizer hindi"
+    elif language == "ta":
+        fert_query = f"{crops_str} உரம் மேலாண்மை fertilizer tamil"
+    else:
+        fert_query = f"{' '.join(crop_names[:2])} fertilizer NPK dosage management" if crop_names else "crop fertilizer management"
+
+    categories.append({
+        "category": "Fertilizers & Nutrition",
+        "emoji": "🧪",
+        "query": fert_query,
+        "context_tag": "Nutrient Care",
+        "recommendation_reason": "Optimized NPK and micronutrient dosage for yield boost",
+        "relevance_score": 84,
+    })
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # 6. 🐛 Pest & Disease Control (General / Preventive if no active alert)
+    # ─────────────────────────────────────────────────────────────────────────
+    if not health_alerts:
         if language == "en":
-            pest_query = f"{' '.join(crop_names[:2])} pest disease control organic spray solution"
+            pest_query = f"{' '.join(crop_names[:2])} pest disease control organic spray solution" if crop_names else "crop pest disease organic spray solution"
         elif language == "te":
             pest_query = f"{crops_str} పురుగులు తెగుళ్ల నివారణ pest control telugu"
         elif language == "hi":
@@ -550,15 +709,20 @@ def build_learning_categories(
         elif language == "ta":
             pest_query = f"{crops_str} பூச்சி நோய் கட்டுப்பாடு pest control tamil"
         else:
-            pest_query = f"{' '.join(crop_names[:2])} pest and disease control spray"
+            pest_query = f"{' '.join(crop_names[:2])} pest and disease control spray" if crop_names else "crop pest and disease control spray"
 
         categories.append({
             "category": "Pest & Disease Control",
             "emoji": "🐛",
             "query": pest_query,
+            "context_tag": "Pest Defense",
+            "recommendation_reason": "Preventive natural and organic pest protection guides",
+            "relevance_score": 82,
         })
 
-    # 4. Market & Mandi Price Intelligence
+    # ─────────────────────────────────────────────────────────────────────────
+    # 7. 📈 Market & Mandi Price Intelligence
+    # ─────────────────────────────────────────────────────────────────────────
     if language == "en":
         mandi_query = f"agriculture market price mandi tips farmer India {current_year}"
     elif language == "te":
@@ -574,9 +738,14 @@ def build_learning_categories(
         "category": "Market & Mandi",
         "emoji": "📈",
         "query": mandi_query,
+        "context_tag": "Mandi Rates",
+        "recommendation_reason": f"Real-time mandi market rates and selling strategies ({current_year})",
+        "relevance_score": 79,
     })
 
-    # 5. Government Schemes & Subsidies
+    # ─────────────────────────────────────────────────────────────────────────
+    # 8. 🏛️ Government Schemes & Subsidies
+    # ─────────────────────────────────────────────────────────────────────────
     if language == "en":
         scheme_query = f"farmer government scheme subsidy apply agriculture India {current_year}"
     elif language == "te":
@@ -592,28 +761,14 @@ def build_learning_categories(
         "category": "Government Schemes",
         "emoji": "🏛️",
         "query": scheme_query,
+        "context_tag": "Govt Subsidies",
+        "recommendation_reason": "Direct subsidy application guides and financial assistance schemes",
+        "relevance_score": 76,
     })
 
-    # 6. Profitable New Crops
-    season_tag = f" {season}" if season else ""
-    if language == "en":
-        crops_query = f"most profitable cash crops to grow India{season_tag} high income farming"
-    elif language == "te":
-        crops_query = f"లాభసాటి పంటలు profitable crops cultivation telugu {current_year}"
-    elif language == "hi":
-        crops_query = f"सबसे ज्यादा फायदा देने वाली फसलें profitable crops kheti {current_year} hindi"
-    elif language == "ta":
-        crops_query = f"அதிக லாபம் தரும் பயிர்கள் profitable crops tamil {current_year}"
-    else:
-        crops_query = f"most profitable crops high income farming India {current_year}"
-
-    categories.append({
-        "category": "New Crops to Grow",
-        "emoji": "🌱",
-        "query": crops_query,
-    })
-
-    # 7. Smart Farming & Automation
+    # ─────────────────────────────────────────────────────────────────────────
+    # 9. 🎓 Smart Farming & Automation
+    # ─────────────────────────────────────────────────────────────────────────
     if language == "en":
         smart_query = "smart modern agriculture technology drip irrigation automated farming guide"
     elif language == "te":
@@ -629,24 +784,9 @@ def build_learning_categories(
         "category": "Smart Farming",
         "emoji": "🎓",
         "query": smart_query,
-    })
-
-    # 8. Expert Advice
-    if language == "en":
-        expert_query = f"agriculture university expert advice scientist farming tips India {current_year}"
-    elif language == "te":
-        expert_query = f"వ్యవసాయ శాస్త్రవేత్తల సలహాలు agriculture scientist expert tips telugu"
-    elif language == "hi":
-        expert_query = f"कृषि वैज्ञानिक सलाह krishi expert scientist advice tips hindi"
-    elif language == "ta":
-        expert_query = f"விவசாய விஞ்ஞானி ஆலோசனை agriculture scientist expert advice tamil"
-    else:
-        expert_query = f"agriculture expert scientist advice farmer tips {current_year}"
-
-    categories.append({
-        "category": "Expert Talks",
-        "emoji": "👨‍🌾",
-        "query": expert_query,
+        "context_tag": "Smart AgriTech",
+        "recommendation_reason": "Drip irrigation, solar pumps, and drone automation for labor savings",
+        "relevance_score": 73,
     })
 
     return categories

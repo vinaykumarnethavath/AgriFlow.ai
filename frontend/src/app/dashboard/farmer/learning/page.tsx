@@ -19,6 +19,10 @@ import {
     Mic,
     Heart,
     History,
+    Sprout,
+    FlaskConical,
+    ShieldAlert,
+    CloudSun,
 } from "lucide-react";
 import api from "@/lib/api";
 
@@ -32,6 +36,33 @@ interface YouTubeVideo {
     channel: string;
     description: string;
     view_count: string;
+    context_tag?: string;
+    recommendation_reason?: string;
+    relevance_score?: number;
+}
+
+interface FarmerContextSummary {
+    farmer_state?: string;
+    preferred_language?: string;
+    crops?: Array<{
+        name: string;
+        stage?: string;
+        progress_percent?: number;
+        days_elapsed?: number;
+        variety?: string;
+        stage_description?: string;
+    }>;
+    soil_labels?: string[];
+    health_alerts?: Array<{
+        crop_name: string;
+        status: string;
+        notes?: string;
+    }>;
+    weather_alert?: {
+        type: string;
+        title: string;
+        advisory: string;
+    };
 }
 
 interface LearningResponse {
@@ -40,6 +71,25 @@ interface LearningResponse {
     videos: YouTubeVideo[];
     personalized_for: string[];
     language: string;
+    farmer_context_summary?: FarmerContextSummary;
+}
+
+function getContextBadgeStyle(tag?: string) {
+    if (!tag) return { bg: "bg-zinc-800/80", text: "text-gray-300", border: "border-zinc-700" };
+    const lower = tag.toLowerCase();
+    if (lower.includes("pest") || lower.includes("alert")) {
+        return { bg: "bg-red-500/20", text: "text-red-400", border: "border-red-500/40" };
+    }
+    if (lower.includes("weather") || lower.includes("rain") || lower.includes("heat")) {
+        return { bg: "bg-amber-500/20", text: "text-amber-400", border: "border-amber-500/40" };
+    }
+    if (lower.includes("soil")) {
+        return { bg: "bg-indigo-500/20", text: "text-indigo-400", border: "border-indigo-500/40" };
+    }
+    if (lower.includes("stage") || lower.includes("paddy") || lower.includes("cotton") || lower.includes("crop")) {
+        return { bg: "bg-emerald-500/20", text: "text-emerald-400", border: "border-emerald-500/40" };
+    }
+    return { bg: "bg-rose-500/20", text: "text-rose-400", border: "border-rose-500/40" };
 }
 
 interface SearchResponse {
@@ -204,9 +254,9 @@ export default function LearningHubPage() {
         });
     }
 
-    // Pick "For You" — top 4 videos from crop-related categories
-    const forYouVideos = data.videos
-        .filter(v => ["My Crops", "Fertilizers & Nutrition", "Pest & Disease Control"].includes(v.category))
+    // Pick "For You" — ranked by AI relevance score based on farmer's crops, stage, soil & weather
+    const forYouVideos = [...data.videos]
+        .sort((a, b) => (b.relevance_score || 80) - (a.relevance_score || 80))
         .slice(0, 4);
 
     const showForYou = viewMode === "feed" && activeCategory === "All" && !searchQuery && searchResults === null && forYouVideos.length > 0;
@@ -224,7 +274,7 @@ export default function LearningHubPage() {
                             {t("sidebar.learning", "Agri Learning Hub")}
                         </h1>
                         <p className="text-muted-foreground mt-1.5 text-xs font-medium">
-                            Curated video guides personalized for your farm — crop tips, fertilizer advice, and expert talks.
+                            Context-aware video guides synchronized with your active crops, growth stages, soil profile & weather alerts.
                         </p>
                     </div>
                 </div>
@@ -237,6 +287,110 @@ export default function LearningHubPage() {
                     {refreshing ? "Refreshing..." : "Get Fresh Videos"}
                 </button>
             </div>
+
+            {/* Live Farm Context & Personalization Bar */}
+            {data.farmer_context_summary && (
+                <div className="bg-gradient-to-r from-emerald-950/30 via-zinc-900/50 to-amber-950/20 backdrop-blur-xl p-5 rounded-2xl border border-emerald-500/20 shadow-sm space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+                        <div className="flex items-center gap-2">
+                            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                                Active Farm Intelligence Signals
+                            </span>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground font-medium">
+                            Tailored for {data.farmer_context_summary.farmer_state || "Your Farm"} · {data.videos.length} Personalized Guides
+                        </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                        {/* Active Crops with Stages */}
+                        {data.farmer_context_summary.crops?.map((crop, idx) => (
+                            <button
+                                key={`ctx-crop-${idx}`}
+                                onClick={() => {
+                                    const matchingCategory = data.categories.find(c => c.toLowerCase().includes(crop.name.toLowerCase()));
+                                    if (matchingCategory) {
+                                        setActiveCategory(matchingCategory);
+                                    } else {
+                                        setSearchQuery(crop.name);
+                                    }
+                                }}
+                                className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition-all"
+                                title={`Stage: ${crop.stage || "Active"} (${crop.days_elapsed || 0} days elapsed)`}
+                            >
+                                <Sprout className="h-3.5 w-3.5 text-emerald-400" />
+                                <span>{crop.name}</span>
+                                {crop.stage && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-400/20 text-emerald-200">
+                                        {crop.stage} Stage
+                                    </span>
+                                )}
+                            </button>
+                        ))}
+
+                        {/* Soil Types */}
+                        {data.farmer_context_summary.soil_labels?.map((soil, idx) => (
+                            <button
+                                key={`ctx-soil-${idx}`}
+                                onClick={() => {
+                                    const matchingCategory = data.categories.find(c => c.toLowerCase().includes("soil"));
+                                    if (matchingCategory) {
+                                        setActiveCategory(matchingCategory);
+                                    } else {
+                                        setSearchQuery(soil);
+                                    }
+                                }}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold transition-all"
+                                title="Click to view soil management guides"
+                            >
+                                <FlaskConical className="h-3.5 w-3.5 text-indigo-400" />
+                                <span>{soil}</span>
+                            </button>
+                        ))}
+
+                        {/* Health / Pest Alert */}
+                        {data.farmer_context_summary.health_alerts?.map((alert, idx) => (
+                            <button
+                                key={`ctx-alert-${idx}`}
+                                onClick={() => {
+                                    const matchingCategory = data.categories.find(c => c.toLowerCase().includes("pest") || c.toLowerCase().includes(alert.crop_name.toLowerCase()));
+                                    if (matchingCategory) {
+                                        setActiveCategory(matchingCategory);
+                                    } else {
+                                        setSearchQuery(`${alert.crop_name} pest`);
+                                    }
+                                }}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold transition-all animate-pulse"
+                                title={alert.notes || `Alert on ${alert.crop_name}`}
+                            >
+                                <ShieldAlert className="h-3.5 w-3.5 text-red-400" />
+                                <span>{alert.crop_name} Monitor</span>
+                            </button>
+                        ))}
+
+                        {/* Weather Alert */}
+                        {data.farmer_context_summary.weather_alert && (
+                            <button
+                                key="ctx-weather"
+                                onClick={() => {
+                                    const matchingCategory = data.categories.find(c => c.toLowerCase().includes("weather"));
+                                    if (matchingCategory) {
+                                        setActiveCategory(matchingCategory);
+                                    } else {
+                                        setSearchQuery("weather advisory");
+                                    }
+                                }}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold transition-all"
+                                title={data.farmer_context_summary.weather_alert.advisory}
+                            >
+                                <CloudSun className="h-3.5 w-3.5 text-amber-400" />
+                                <span>{data.farmer_context_summary.weather_alert.title}</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
 
 
@@ -469,6 +623,11 @@ export default function LearningHubPage() {
                                             <PlayCircle className="h-8 w-8 text-white fill-white/20" />
                                         </div>
                                     </div>
+                                    {video.context_tag && (
+                                        <div className={`absolute top-3 left-3 backdrop-blur-md text-[11px] font-bold px-2.5 py-1 rounded-lg border shadow-md ${getContextBadgeStyle(video.context_tag).bg} ${getContextBadgeStyle(video.context_tag).text} ${getContextBadgeStyle(video.context_tag).border}`}>
+                                            {video.context_tag}
+                                        </div>
+                                    )}
                                     {video.duration && (
                                         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-lg border border-white/10">
                                             {video.duration}
@@ -479,6 +638,12 @@ export default function LearningHubPage() {
                                     <h3 className="text-white text-base font-bold line-clamp-2 drop-shadow-md leading-tight group-hover:text-amber-400 transition-colors">
                                         {video.title}
                                     </h3>
+                                    {video.recommendation_reason && (
+                                        <p className="text-amber-300/90 text-xs font-medium mt-1.5 line-clamp-1 flex items-center gap-1.5">
+                                            <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                                            {video.recommendation_reason}
+                                        </p>
+                                    )}
                                     <p className="text-white/80 text-xs font-medium mt-2 flex items-center gap-1.5">
                                         <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                                         {video.channel}
@@ -549,12 +714,21 @@ export default function LearningHubPage() {
                                     )}
                                 </div>
                                 <div className="p-5 pt-3">
-                                    <div className="flex items-center justify-between gap-2 mb-2">
-                                        <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-3 py-1 rounded-full border border-rose-100 dark:border-rose-900/50">
-                                            {video.emoji && <span className="text-xs">{video.emoji}</span>}
-                                            <Tag className="h-3 w-3" />
-                                            {video.category}
-                                        </span>
+                                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                            {video.context_tag ? (
+                                                <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${getContextBadgeStyle(video.context_tag).bg} ${getContextBadgeStyle(video.context_tag).text} ${getContextBadgeStyle(video.context_tag).border}`}>
+                                                    {video.emoji && <span className="text-xs">{video.emoji}</span>}
+                                                    {video.context_tag}
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-3 py-1 rounded-full border border-rose-100 dark:border-rose-900/50">
+                                                    {video.emoji && <span className="text-xs">{video.emoji}</span>}
+                                                    <Tag className="h-3 w-3" />
+                                                    {video.category}
+                                                </span>
+                                            )}
+                                        </div>
                                         {video.view_count && (
                                             <span className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">
                                                 <Eye className="h-3 w-3" />
@@ -562,9 +736,15 @@ export default function LearningHubPage() {
                                             </span>
                                         )}
                                     </div>
-                                    <h3 className="font-bold text-base text-foreground line-clamp-2 leading-snug mb-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                                    <h3 className="font-bold text-base text-foreground line-clamp-2 leading-snug mb-2 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
                                         {video.title}
                                     </h3>
+                                    {video.recommendation_reason && (
+                                        <p className="text-xs line-clamp-1 mb-3 flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                                            <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                                            {video.recommendation_reason}
+                                        </p>
+                                    )}
                                     <div className="flex items-center gap-2 text-sm mt-auto pt-2.5 border-t border-gray-100 dark:border-zinc-800">
                                         <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
                                             <span className="text-[10px] text-white font-bold">{video.channel.charAt(0)}</span>

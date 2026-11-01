@@ -10134,5 +10134,206 @@ export function resolveDemoApiResponse(url: string, method: string = "get"): any
     return customerDemoData.marketplace;
   }
 
+
+  // ==================== LEARNING HUB ENDPOINTS ====================
+  if (cleanUrl.includes("/learning/videos") || cleanUrl === "/learning/videos") {
+    return {
+      categories: [
+        "Pest Alert: Cotton",
+        "Paddy (Flowering)",
+        "Cotton (Vegetative)",
+        "Soil Management",
+        "Weather Advisory",
+        "Fertilizers & Nutrition",
+        "Market & Mandi",
+        "Government Schemes",
+        "Smart Farming"
+      ],
+      category_emojis: {
+        "Pest Alert: Cotton": "🚨",
+        "Paddy (Flowering)": "🌱",
+        "Cotton (Vegetative)": "🌱",
+        "Soil Management": "🧪",
+        "Weather Advisory": "🌦️",
+        "Fertilizers & Nutrition": "🧪",
+        "Market & Mandi": "📈",
+        "Government Schemes": "🏛️",
+        "Smart Farming": "🎓"
+      },
+      videos: [
+        {
+          id: "LH5ay10RTGY",
+          title: "Cotton Pink Bollworm & Whitefly Complete Organic Spray Solutions",
+          thumbnail: "https://img.youtube.com/vi/LH5ay10RTGY/hqdefault.jpg",
+          category: "Pest Alert: Cotton",
+          emoji: "🚨",
+          duration: "13:40",
+          channel: "Organic Farming Hub",
+          description: "Biological and neem-based spray formulations for controlling pink bollworm and sucking pests in cotton.",
+          view_count: "4.5L",
+          context_tag: "Pest Alert · Cotton",
+          recommendation_reason: "Active monitor alert for pink bollworm detected on your Cotton plot",
+          relevance_score: 98
+        },
+        {
+          id: "dQw4w9WgXcQ",
+          title: "Paddy Flowering & Panicle Stage: Essential Water & Nutrient Care",
+          thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+          category: "Paddy (Flowering)",
+          emoji: "🌱",
+          duration: "14:20",
+          channel: "Agriculture India",
+          description: "Panicle initiation management, avoiding moisture stress during flowering, and boron application for grain filling.",
+          view_count: "2.5L",
+          context_tag: "Paddy · Flowering Stage",
+          recommendation_reason: "Your Paddy crop is at Day 62 (Flowering & Panicle Stage)",
+          relevance_score: 95
+        },
+        {
+          id: "T-s0V1pCkgs",
+          title: "Black Cotton Soil: Aeration, Drainage & Waterlogging Prevention",
+          thumbnail: "https://img.youtube.com/vi/T-s0V1pCkgs/hqdefault.jpg",
+          category: "Soil Management",
+          emoji: "🧪",
+          duration: "16:30",
+          channel: "ICAR Official",
+          description: "Expert ICAR scientists discuss managing heavy clay and black cotton soils during monsoon to prevent root rot.",
+          view_count: "1.5L",
+          context_tag: "Soil Care · Black Cotton",
+          recommendation_reason: "Tailored for your Plot 1 (Black Cotton Soil) drainage profile",
+          relevance_score: 92
+        },
+        {
+          id: "3LopI4YeC4I",
+          title: "Pre-Monsoon & Heavy Rainfall Farm Advisory: Drainage & Spray Timing",
+          thumbnail: "https://img.youtube.com/vi/3LopI4YeC4I/hqdefault.jpg",
+          category: "Weather Advisory",
+          emoji: "🌦️",
+          duration: "12:15",
+          channel: "Kisan Weather Bulletin",
+          description: "Precautions to take before heavy rains, delaying foliar applications and clearing drainage channels.",
+          view_count: "3.1L",
+          context_tag: "Weather · Rain Advisory",
+          recommendation_reason: "Precipitation forecast in your mandal within the next 48 hours",
+          relevance_score: 90
+        },
+        {
+          id: "wJnBTPUQS5A",
+          title: "NPK Fertilizer Management – Complete Dosage & Secondary Micronutrient Guide",
+          thumbnail: "https://img.youtube.com/vi/wJnBTPUQS5A/hqdefault.jpg",
+          category: "Fertilizers & Nutrition",
+          emoji: "🧪",
+          duration: "09:50",
+          channel: "Agri Doctor",
+          description: "Understanding NPK ratios, zinc and sulphur replenishment, and split application timing.",
+          view_count: "1.8L",
+          context_tag: "Nutrient Care · NPK",
+          recommendation_reason: "Nutrient balance dosage recommended for active vegetative crops",
+          relevance_score: 85
+        },
+        {
+          id: "m1oX_-3bMA0",
+          title: "Mandi Prices Explained – How to Get the Best Rate & Direct Buyer Sales",
+          thumbnail: "https://img.youtube.com/vi/m1oX_-3bMA0/hqdefault.jpg",
+          category: "Market & Mandi",
+          emoji: "📈",
+          duration: "08:15",
+          channel: "Kisan Mitra",
+          description: "Tips to track APMC e-NAM rates, moisture deductions, and bargaining with mill procurement agents.",
+          view_count: "2.1L",
+          context_tag: "Mandi Intelligence",
+          recommendation_reason: "Current mandi trade rates for Cotton & Paddy in Krishna APMC",
+          relevance_score: 82
+        },
+        {
+          id: "mUyDhQ4jC0o",
+          title: "Government Subsidy Schemes for Farmers 2026 – Solar Pumps & Drip Subsidies",
+          thumbnail: "https://img.youtube.com/vi/mUyDhQ4jC0o/hqdefault.jpg",
+          category: "Government Schemes",
+          emoji: "🏛️",
+          duration: "11:05",
+          channel: "Kisan Updates",
+          description: "PM-KUSUM solar pump subsidy and 90% micro-irrigation state subsidies with online application steps.",
+          view_count: "8.1L",
+          context_tag: "Govt Subsidies",
+          recommendation_reason: "State and central subsidy opportunities matching your farm area",
+          relevance_score: 80
+        },
+        {
+          id: "J2kHSSFA4NU",
+          title: "Top 10 Most Profitable High-Yield Cash Crops in India 2026",
+          thumbnail: "https://img.youtube.com/vi/J2kHSSFA4NU/hqdefault.jpg",
+          category: "Smart Farming",
+          emoji: "🎓",
+          duration: "12:45",
+          channel: "Smart Farming India",
+          description: "Discover high-yield horticultural and pulse crops with steady market demand.",
+          view_count: "5.8L",
+          context_tag: "Crop Diversification",
+          recommendation_reason: "Profitable crop rotation recommendations for post-Kharif season",
+          relevance_score: 78
+        }
+      ],
+      personalized_for: ["Paddy", "Cotton", "Red Gram", "Chillies"],
+      language: "te",
+      farmer_context_summary: {
+        farmer_state: "Andhra Pradesh",
+        preferred_language: "te",
+        crops: [
+          { name: "Paddy", stage: "Flowering", days_elapsed: 62, variety: "BPT 5204" },
+          { name: "Cotton", stage: "Vegetative", days_elapsed: 48, variety: "Bt Cotton RCH-659" },
+          { name: "Red Gram", stage: "Vegetative", days_elapsed: 35, variety: "LRG-41" },
+          { name: "Chillies", stage: "Flowering", days_elapsed: 70, variety: "Teja" }
+        ],
+        soil_labels: ["Black Cotton Soil", "Red Loamy Soil", "Alluvial Clay"],
+        health_alerts: [
+          { crop_name: "Cotton", status: "monitor", notes: "Pink bollworm monitor alert on Plot 1" }
+        ],
+        weather_alert: {
+          type: "rain_alert",
+          title: "Heavy Rain Forecast",
+          advisory: "Expected rainfall > 15mm in 48 hours. Check drainage channels."
+        }
+      }
+    };
+  }
+
+  if (cleanUrl.includes("/learning/search")) {
+    return {
+      query: "farming",
+      language: "te",
+      videos: [
+        {
+          id: "LH5ay10RTGY",
+          title: "Cotton Pink Bollworm & Whitefly Complete Organic Spray Solutions",
+          thumbnail: "https://img.youtube.com/vi/LH5ay10RTGY/hqdefault.jpg",
+          category: "Pest Alert: Cotton",
+          emoji: "🚨",
+          duration: "13:40",
+          channel: "Organic Farming Hub",
+          description: "Biological and neem-based spray formulations for controlling pink bollworm.",
+          view_count: "4.5L",
+          context_tag: "Pest Alert · Cotton",
+          recommendation_reason: "Top matching result for your farm search query",
+          relevance_score: 95
+        },
+        {
+          id: "dQw4w9WgXcQ",
+          title: "Paddy Flowering & Panicle Stage: Essential Water & Nutrient Care",
+          thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+          category: "Paddy (Flowering)",
+          emoji: "🌱",
+          duration: "14:20",
+          channel: "Agriculture India",
+          description: "Panicle initiation management, avoiding moisture stress during flowering.",
+          view_count: "2.5L",
+          context_tag: "Paddy · Flowering Stage",
+          recommendation_reason: "Top matching result for your farm search query",
+          relevance_score: 90
+        }
+      ]
+    };
+  }
+
   return null;
 }
