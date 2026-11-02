@@ -178,6 +178,33 @@ The farmer's experience is designed to be a complete farm management system, org
     - Aggregates small 10–25 quintal harvests into full commercial truckloads (100–150 quintals).
     - Live pool fill progress gauges, member pledge tracker, target mill assignments, and 1-click organizer submission for bulk premium procurement.
 
+#### **N. Context-Aware Learning Hub & Video Recommendation Engine**
+1. **Multi-Factor Input Telemetry**:
+    - **Weather & 7-Day Forecast**: Current temperature, rain probability, extreme alerts (heatwave > 38°C, heavy rainfall > 15mm).
+    - **Crops & Mathematical Growth Stage**: Dynamic estimation using sowing and harvest timeline calculations.
+    - **Soil Profile & Plot Chemistry**: Integrates plot soil textures (Black, Alluvial, Red, Sandy Loam) and N-P-K nutrient status.
+    - **Crop Health & Disease Logs**: Feeds active pathologies, leaf blight alerts, and pest damage states.
+2. **Key Design Decisions**:
+    - **Decision 1: Server-Side Context Aggregation with Client Override Option**:
+        - **Choice**: The backend `/learning/videos` and `/learning/context` endpoints autonomously read the authenticated farmer's `Crop`, `SoilProfile`, `CropHealthStatus`, and cached `Weather` data directly from the database and internal services.
+        - **Why**: Keeps the frontend lightweight and secure. The frontend simply asks for "my recommendations" and the server computes the exact agricultural stage without sending bulky payloads back and forth.
+        - **Fallback**: The endpoint also accepts optional query parameters (`crop_names`, `soil_type`, `weather_alert`) for testing or client-side overrides.
+    - **Decision 2: Contextual Stage Calculator**:
+        - **Choice**: Implement an automated Growth Stage Estimator:
+          $$\text{Progress } \% = \frac{\text{Current Date} - \text{Sowing Date}}{\text{Harvest Date} - \text{Sowing Date}} \times 100$$
+          - **0% – 20%**: *Sowing & Seedling* (Germination, initial root development, seedling treatment)
+          - **21% – 50%**: *Vegetative Growth* (Tillering, branch growth, nitrogen boost, weed control)
+          - **51% – 75%**: *Flowering & Reproductive* (Panicle initiation, boll formation, micronutrients, pest defense)
+          - **76% – 100%**: *Grain Filling & Pre-Harvest* (Moisture control, ripening, harvest preparation)
+          - **> 100%**: *Harvest & Storage* (Threshing, moisture testing, grain storage, mandi sales)
+    - **Decision 3: Dynamic Category Prioritization & Badging**:
+        - Instead of static categories, categories dynamically reorder based on real-time field urgency:
+          - **🚨 Urgent Priority**: If `CropHealthStatus` has active disease/pest issues $\rightarrow$ Category #1 becomes **Crop Health Emergency** (e.g., *Cotton Pink Bollworm Control*).
+          - **🌦️ Weather Alert**: If upcoming 48h precipitation $> 15\text{mm}$ or temperature $> 38^\circ\text{C}$ $\rightarrow$ Category #2 becomes **Weather Advisory**.
+          - **🌱 Current Growth Stage**: Category #3 becomes **Stage-Specific Guide** (e.g., *Paddy Flowering Care*).
+          - **🧪 Soil Specifics**: Category #4 becomes **Soil Management** (e.g., *Black Cotton Soil Drainage & Nutrients*).
+          - **Standard Modules**: Fertilizers, Mandi Intelligence, Government Schemes, Smart Tech.
+
 ---
 
 ### 🏪 2. Shop Role (Retail & Logistics)
@@ -356,7 +383,7 @@ The Agri Assistant is a role-aware AI companion that provides hyper-localized ad
 AgriFlow AI is committed to continuous evolution. Our roadmap focuses on community empowerment, precision agriculture, and cross-role intelligence.
 
 #### **A. Advanced AI & Multilingual Support**
-1. **AI Crop Health**: Deep-learning based **disease diagnosis** via mobile photos, providing instant treatment and pesticide recommendations *(Implemented with Groq Llama 3.2 Vision)*.
+1. **AI Crop Health**: Deep-learning based **disease diagnosis** via mobile photos, providing instant treatment and pesticide recommendations *(Implemented with Google Gemini 3.8 Flash Vision)*.
 2. **Multilingual Expansion**: Native support for **Regional Indian Languages** (Hindi, Telugu, Tamil, Kannada, Marathi, Gujarati, Punjabi, Bengali) *(Implemented across full UI)*.
 3. **Voice Interface**: Voice-to-action features for farmers to log expenses or check prices without typing *(Implemented with real-time audio wave feedback)*.
 

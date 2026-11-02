@@ -594,27 +594,29 @@ const ARCHITECTURE_DATA: FeatureArch[] = [
     id: "learning",
     category: "farmer",
     name: "Learning Hub & Multilingual Tutorial Videos",
-    moduleScope: "Multilingual Agricultural Video Tutorials",
-    description: "Agricultural video guides with language filtering (Hindi, Telugu, Tamil, English), smart search, and player modal.",
+    moduleScope: "Multi-Factor Farm Context & Video Recommendation Engine",
+    description: "Hyper-personalized agricultural video intelligence driven by a multi-factor telemetry pipeline (Weather, Growth Stage %, Soil Chemistry, and Health Urgencies). Features server-side context aggregation, mathematical crop stage estimation, dynamic priority reordering, and YouTube Data API v3 fallback.",
     icon: Globe,
     flow: [
-      { title: "Learning Hub UI", type: "ui", desc: "Farmer selects language tab (Hindi/Telugu/Tamil) and types crop query" },
-      { title: "Learning Router", type: "api", desc: "GET /api/learning/videos?query=...&language=..." },
-      { title: "YouTube Data API", type: "external", desc: "Queries YouTube Data API v3 for high-relevance farming tutorials" },
-      { title: "Curated Fallback Engine", type: "logic", desc: "Returns expert agricultural playlist if quota is exhausted" },
-      { title: "Browser Player Modal", type: "ui", desc: "Streams responsive YouTube video embed with chapter controls" },
-      { title: "Local Storage Cache", type: "ui", desc: "Saves liked videos and watch history locally in browser" },
+      { title: "Multi-Factor Inputs", type: "logic", desc: "Aggregates 4 telemetry streams: Weather forecast, Active crops & sowing dates, Soil N-P-K profiles, and Crop Health diagnoses" },
+      { title: "Aggregated Farm Context Engine", type: "api", desc: "GET /learning/context executes server-side aggregation and computes growth stage % without bulky client payloads" },
+      { title: "Contextual Stage Calculator", type: "logic", desc: "Applies (Current - Sowing)/(Harvest - Sowing) * 100 to categorize crops into Sowing, Vegetative, Flowering, Grain Filling, or Harvest" },
+      { title: "Context-Aware Query Builder", type: "logic", desc: "Synthesizes tailored queries (e.g. Cotton Pink Bollworm, Paddy Flowering Care, Black Cotton Soil Drainage)" },
+      { title: "Weighted Relevance Scorer", type: "external", desc: "Queries YouTube Data API v3, sorts with dynamic weights, and falls back to curated offline agriculture playlists" },
+      { title: "Tailored Learning Hub UI", type: "ui", desc: "Dynamically reorders categories by urgency (🚨 Emergency -> 🌦️ Weather -> 🌱 Stage -> 🧪 Soil) and displays reason badges" },
     ],
     backendRoutes: [
-      "GET /api/learning/videos",
-      "GET /api/learning/categories",
+      "GET /learning/context",
+      "GET /learning/videos",
+      "GET /learning/categories",
     ],
-    dbTables: [],
-    externalServices: ["YouTube Data API v3"],
+    dbTables: ["crops", "soil_profiles", "crop_diagnoses", "farm_events"],
+    externalServices: ["YouTube Data API v3", "Open-Meteo Weather API"],
     interlinks: [
-      "Farmer dashboard quick tips widget",
-      "Crop disease diagnosis remedy video link",
-      "Multilingual translation selector",
+      "Decision 1: Server-Side Context Aggregation (lightweight frontend)",
+      "Decision 2: Growth Stage Estimator Mathematical Formula",
+      "Decision 3: Dynamic Category Prioritization & Reason Badges",
+      "Farmer dashboard context pills & video playback modal",
     ],
   },
 ];
@@ -622,9 +624,10 @@ const ARCHITECTURE_DATA: FeatureArch[] = [
 export default function ArchitecturePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [activeFeatureId, setActiveFeatureId] = useState<string>("order_lifecycle");
+  const [activeFeatureId, setActiveFeatureId] = useState<string>("learning");
   const [activeOrderStateId, setActiveOrderStateId] = useState<string>("pending");
   const [orderViewTab, setOrderViewTab] = useState<"state_machine" | "pipeline">("state_machine");
+  const [learningViewTab, setLearningViewTab] = useState<"multi_factor" | "pipeline">("multi_factor");
 
   const categories = [
     { id: "all", label: "All Systems", count: ARCHITECTURE_DATA.length },
@@ -705,8 +708,20 @@ export default function ArchitecturePage() {
             />
           </div>
 
-          {/* Quick jump to State Machine */}
-          <div className="flex justify-center pt-1">
+          {/* Quick jump pills */}
+          <div className="flex flex-wrap justify-center gap-2 pt-1">
+            <button
+              onClick={() => {
+                setSelectedCategory("farmer");
+                setActiveFeatureId("learning");
+                setLearningViewTab("multi_factor");
+              }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-green-500/10 hover:bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/30 transition-all shadow-sm"
+            >
+              <Globe className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+              <span>Multi-Factor Pipeline: <strong>Learning Hub & Decisions</strong></span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
             <button
               onClick={() => {
                 setSelectedCategory("commerce");
@@ -1116,6 +1131,323 @@ export default function ArchitecturePage() {
                   </div>
                 </div>
               </div>
+            ) : activeFeature.id === "learning" && learningViewTab === "multi_factor" ? (
+              <div className="space-y-6">
+                {/* Proposed Multi-Factor Pipeline Main Container */}
+                <div className="p-6 rounded-2xl border border-border bg-card shadow-sm space-y-6">
+                  {/* Top Bar with Tab Switch */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                        <Globe className="h-4 w-4 text-green-500" />
+                        <span>Proposed Multi-Factor Pipeline & Context Engine</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Autonomous server-side telemetry aggregation mapping field conditions to personalized video tutorials.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/60 border border-border text-xs shrink-0">
+                      <button
+                        onClick={() => setLearningViewTab("multi_factor")}
+                        className="px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 bg-card shadow-sm text-foreground border border-border"
+                      >
+                        <Globe className="h-3.5 w-3.5 text-green-500" /> Multi-Factor Pipeline
+                      </button>
+                      <button
+                        onClick={() => setLearningViewTab("pipeline")}
+                        className="px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <GitFork className="h-3.5 w-3.5 text-blue-500" /> Pipeline Flow
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Visual Diagram: Proposed Multi-Factor Pipeline matching user image */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                      <span className="uppercase tracking-wider text-muted-foreground">Proposed Multi-Factor Pipeline</span>
+                      <span className="text-[11px] font-normal text-muted-foreground">4 Telemetry Streams • Real-Time Dynamic Prioritization</span>
+                    </div>
+
+                    {/* Dark/Card Container Matching User Diagram */}
+                    <div className="p-5 rounded-xl border border-border bg-muted/30 dark:bg-card/60 space-y-4">
+                      {/* Top 4 Input Blocks */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="p-3.5 rounded-xl bg-card border border-border shadow-sm space-y-1 text-center">
+                          <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400">
+                            <CloudSun className="h-3.5 w-3.5" /> Weather & 7-Day Forecast
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">Rainfall volume (mm), heatwaves &gt; 38°C, spray advisory</p>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-card border border-border shadow-sm space-y-1 text-center">
+                          <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            <Sprout className="h-3.5 w-3.5" /> Crops + Growth Stage
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">Sowing/Harvest dates, calculated stage % (Seedling to Harvest)</p>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-card border border-border shadow-sm space-y-1 text-center">
+                          <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                            <Database className="h-3.5 w-3.5" /> Plots + Soil Profiles
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">Soil texture (Black, Alluvial, Red), N-P-K & pH chemistry</p>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-card border border-border shadow-sm space-y-1 text-center">
+                          <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400">
+                            <AlertTriangle className="h-3.5 w-3.5" /> Crop Health & Pest Status
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">Active leaf blights, pest attacks & urgent treatment alerts</p>
+                        </div>
+                      </div>
+
+                      {/* Convergence Connector */}
+                      <div className="flex justify-center">
+                        <div className="flex flex-col items-center">
+                          <div className="h-4 w-px bg-border" />
+                          <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
+
+                      {/* Step 1: Aggregated Farm Context Engine */}
+                      <div className="max-w-md mx-auto p-3.5 rounded-xl bg-card border border-green-500/40 shadow-sm text-center space-y-1">
+                        <span className="text-xs font-mono font-bold uppercase px-2 py-0.5 rounded bg-green-500/10 text-green-600">
+                          Server-Side Aggregation
+                        </span>
+                        <h4 className="text-sm font-bold text-foreground">Aggregated Farm Context Engine</h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          FastAPI endpoint (<code className="text-foreground font-mono">/learning/context</code>) consolidates farmer profile, crops, soil & weather
+                        </p>
+                      </div>
+
+                      {/* Connector with label */}
+                      <div className="flex flex-col items-center justify-center space-y-1 py-0.5">
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-muted border border-border text-muted-foreground">
+                          Rich Context Signals ↓
+                        </span>
+                        <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                      </div>
+
+                      {/* Step 2: Context-Aware Query Builder */}
+                      <div className="max-w-md mx-auto p-3.5 rounded-xl bg-card border border-border shadow-sm text-center space-y-1">
+                        <h4 className="text-sm font-bold text-foreground">Context-Aware Query Builder</h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Generates targeted search vectors based on stage, soil type, weather risks & active pathologies
+                        </p>
+                      </div>
+
+                      {/* Connector with label */}
+                      <div className="flex flex-col items-center justify-center space-y-1 py-0.5">
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-muted border border-border text-muted-foreground">
+                          Personalized Stage, Soil, Weather & Health Queries ↓
+                        </span>
+                        <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                      </div>
+
+                      {/* Step 3: Weighted Relevance Scorer */}
+                      <div className="max-w-md mx-auto p-3.5 rounded-xl bg-card border border-border shadow-sm text-center space-y-1">
+                        <h4 className="text-sm font-bold text-foreground">Weighted Relevance Scorer</h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Ranks YouTube Data API v3 results by contextual relevance with offline agricultural playlist fallback
+                        </p>
+                      </div>
+
+                      {/* Connector with label */}
+                      <div className="flex flex-col items-center justify-center space-y-1 py-0.5">
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-muted border border-border text-muted-foreground">
+                          Badged & Reasoned Videos ↓
+                        </span>
+                        <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                      </div>
+
+                      {/* Step 4: Tailored Learning Hub UI */}
+                      <div className="max-w-md mx-auto p-3.5 rounded-xl bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-teal-500/10 border border-green-500/40 shadow-sm text-center space-y-1">
+                        <h4 className="text-sm font-bold text-green-700 dark:text-green-300">Tailored Learning Hub UI</h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Dynamic category pills, context reason badges ("Recommended for your Flowering Cotton"), and responsive video modal
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Key Design Decisions Detailed Cards */}
+                <div className="p-6 rounded-2xl border border-border bg-card shadow-sm space-y-6">
+                  <div className="flex items-center justify-between pb-3 border-b border-border">
+                    <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                      <ShieldCheck className="h-4 w-4 text-green-500" />
+                      4. Key Design Decisions
+                    </div>
+                    <span className="text-xs font-mono text-muted-foreground">Production Agronomic Architecture</span>
+                  </div>
+
+                  {/* Decision 1 */}
+                  <div className="p-4 rounded-xl bg-muted/20 border border-border space-y-2.5">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
+                        <span className="h-5 w-5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[10px] font-mono">
+                          1
+                        </span>
+                        Decision 1: Server-Side Context Aggregation with Client Override Option
+                      </h4>
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-700 dark:text-blue-300">
+                        Zero Bulky Payloads
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs text-muted-foreground">
+                      <div className="p-3 rounded-lg bg-card border border-border space-y-1">
+                        <span className="font-bold text-foreground block">Choice</span>
+                        <p className="text-[11px] leading-relaxed">
+                          The backend <code className="text-foreground font-mono">/learning/videos</code> endpoint autonomously reads the authenticated farmer's Crop, SoilProfile, CropHealthStatus, and cached Weather data directly from the database and internal services.
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-card border border-border space-y-1">
+                        <span className="font-bold text-foreground block">Why</span>
+                        <p className="text-[11px] leading-relaxed">
+                          Keeps the frontend lightweight and secure. The frontend simply asks for "my recommendations" and the server computes the exact agricultural stage without sending bulky payloads back and forth.
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-card border border-border space-y-1">
+                        <span className="font-bold text-foreground block">Fallback</span>
+                        <p className="text-[11px] leading-relaxed">
+                          The endpoint also accepts optional query parameters (<code className="text-foreground font-mono">crop_names</code>, <code className="text-foreground font-mono">soil_type</code>, <code className="text-foreground font-mono">weather_alert</code>) for testing or client-side overrides.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Decision 2 */}
+                  <div className="p-4 rounded-xl bg-muted/20 border border-border space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
+                        <span className="h-5 w-5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-[10px] font-mono">
+                          2
+                        </span>
+                        Decision 2: Contextual Stage Calculator
+                      </h4>
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                        Growth Stage Estimator
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-card border border-emerald-500/30 space-y-1">
+                      <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 block">
+                        Mathematical Formula:
+                      </span>
+                      <div className="font-mono text-xs bg-muted/50 p-2 rounded border border-border text-foreground">
+                        Progress % = ((Current Date - Sowing Date) / (Harvest Date - Sowing Date)) * 100
+                      </div>
+                    </div>
+
+                    {/* 5 Growth Stages Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs">
+                      <div className="p-2.5 rounded-lg bg-card border border-border space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-foreground text-[11px]">Sowing & Seedling</span>
+                          <span className="font-mono text-[10px] text-green-600 font-bold">0% – 20%</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight">Germination, initial root development, seedling treatment</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-card border border-border space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-foreground text-[11px]">Vegetative Growth</span>
+                          <span className="font-mono text-[10px] text-emerald-600 font-bold">21% – 50%</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight">Tillering, branch growth, nitrogen boost, weed control</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-card border border-border space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-foreground text-[11px]">Flowering & Repro</span>
+                          <span className="font-mono text-[10px] text-amber-600 font-bold">51% – 75%</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight">Panicle initiation, boll formation, micronutrients, pest defense</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-card border border-border space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-foreground text-[11px]">Grain Filling</span>
+                          <span className="font-mono text-[10px] text-purple-600 font-bold">76% – 100%</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight">Moisture control, ripening, harvest preparation</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-card border border-border space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-foreground text-[11px]">Harvest & Storage</span>
+                          <span className="font-mono text-[10px] text-rose-600 font-bold">&gt; 100%</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight">Threshing, moisture testing, grain storage, mandi sales</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Decision 3 */}
+                  <div className="p-4 rounded-xl bg-muted/20 border border-border space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
+                        <span className="h-5 w-5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center text-[10px] font-mono">
+                          3
+                        </span>
+                        Decision 3: Dynamic Category Prioritization & Badging
+                      </h4>
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                        Urgency-Based Ordering
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Instead of fixed categories, categories dynamically reorder based on field urgency:
+                    </p>
+
+                    <div className="space-y-2 text-xs">
+                      <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-950 dark:text-rose-200 flex items-start gap-2.5">
+                        <span className="text-sm shrink-0">🚨</span>
+                        <div>
+                          <strong className="block text-foreground font-bold">Category #1 — Urgent Priority (Crop Health Emergency)</strong>
+                          <p className="text-[11px] text-muted-foreground">If CropHealthStatus has issue → Category #1 becomes 🚨 Crop Health Emergency (e.g., Cotton Pink Bollworm Control).</p>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-950 dark:text-blue-200 flex items-start gap-2.5">
+                        <span className="text-sm shrink-0">🌦️</span>
+                        <div>
+                          <strong className="block text-foreground font-bold">Category #2 — Weather Alert (Weather Advisory)</strong>
+                          <p className="text-[11px] text-muted-foreground">If upcoming 48h precipitation &gt; 15mm or temperature &gt; 38°C → Category #2 becomes 🌦️ Weather Advisory.</p>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 dark:text-emerald-200 flex items-start gap-2.5">
+                        <span className="text-sm shrink-0">🌱</span>
+                        <div>
+                          <strong className="block text-foreground font-bold">Category #3 — Current Growth Stage (Stage-Specific Guide)</strong>
+                          <p className="text-[11px] text-muted-foreground">Category #3 becomes 🌱 Stage-Specific Guide (e.g., Paddy Flowering Care).</p>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-950 dark:text-amber-200 flex items-start gap-2.5">
+                        <span className="text-sm shrink-0">🧪</span>
+                        <div>
+                          <strong className="block text-foreground font-bold">Category #4 — Soil Specifics (Soil Management)</strong>
+                          <p className="text-[11px] text-muted-foreground">Category #4 becomes 🧪 Soil Management (e.g., Black Cotton Soil Drainage & Nutrients).</p>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-muted/40 border border-border text-foreground flex items-start gap-2.5">
+                        <span className="text-sm shrink-0">📚</span>
+                        <div>
+                          <strong className="block text-foreground font-bold">Standard Modules</strong>
+                          <p className="text-[11px] text-muted-foreground">Fertilizers, Mandi Intelligence, Government Schemes, Smart Tech.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
               /* Visual Box & Arrow Pipeline Flow Diagram (Default for all other features or when tab selected) */
               <div className="p-6 rounded-2xl border border-border bg-card shadow-sm space-y-4">
@@ -1137,6 +1469,23 @@ export default function ArchitecturePage() {
                         className="px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 bg-card shadow-sm text-foreground border border-border"
                       >
                         <GitFork className="h-3.5 w-3.5 text-green-500" /> Pipeline Flow
+                      </button>
+                    </div>
+                  )}
+
+                  {activeFeature.id === "learning" && (
+                    <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/60 border border-border text-xs shrink-0">
+                      <button
+                        onClick={() => setLearningViewTab("multi_factor")}
+                        className="px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <Globe className="h-3.5 w-3.5 text-green-500" /> Multi-Factor Pipeline
+                      </button>
+                      <button
+                        onClick={() => setLearningViewTab("pipeline")}
+                        className="px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 bg-card shadow-sm text-foreground border border-border"
+                      >
+                        <GitFork className="h-3.5 w-3.5 text-blue-500" /> Pipeline Flow
                       </button>
                     </div>
                   )}

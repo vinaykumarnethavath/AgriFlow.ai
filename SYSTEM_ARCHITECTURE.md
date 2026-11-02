@@ -371,24 +371,70 @@ graph TD
 
 ## 8. Learning Hub & Agricultural Video Tutorials
 
+### Proposed Multi-Factor Pipeline
+
+```mermaid
+graph TD
+    subgraph MultiFactorInputs ["Multi-Factor Telemetry Streams"]
+        W["Weather & 7-Day Forecast"]
+        C["Crops + Growth Stage"]
+        P["Plots + Soil Profiles"]
+        H["Crop Health & Pest Status"]
+    end
+
+    AFCE["Aggregated Farm Context Engine"]
+    RCS["Rich Context Signals"]
+    CAQB["Context-Aware Query Builder"]
+    PQ["Personalized Stage, Soil, Weather & Health Queries"]
+    WRS["Weighted Relevance Scorer"]
+    BV["Badged & Reasoned Videos"]
+    UI["Tailored Learning Hub UI"]
+
+    W --> AFCE
+    C --> AFCE
+    P --> AFCE
+    H --> AFCE
+    AFCE -->|Rich Context Signals| CAQB
+    CAQB -->|Personalized Stage, Soil, Weather & Health Queries| WRS
+    WRS -->|Badged & Reasoned Videos| UI
+```
+
+### End-to-End Service Flow & YouTube Quota Resiliency
+
 ```mermaid
 graph LR
     subgraph LearningUI ["Learning Hub View"]
+        Context_Badge["Personalized Farm Context Pills\n(Active Crop, Growth Stage, Soil Type)"]
         Search_Bar["Smart Search Bar\n(Query by crop, pest, season)"]
         Lang_Filter["Language Tabs\n(All, Hindi, Telugu, Tamil, English)"]
-        Video_Grid["Video Cards & Video Player Modal\n(YouTube Embedded Player)"]
+        Video_Grid["Video Cards & Player Modal\n(Embedded YouTube Player + Reason Tags)"]
         Liked_List["Locally Saved Videos\n(Browser LocalStorage)"]
     end
 
-    subgraph LearningRouter ["FastAPI Learning Router (/api/learning)"]
-        EP_Videos["GET /api/learning/videos\n(query, language, max_results)"]
+    subgraph LearningRouter ["FastAPI Learning Router (/learning)"]
+        EP_Context["GET /learning/context\n(Server-side farm context aggregation)"]
+        EP_Videos["GET /learning/videos\n(query, language, max_results, context overrides)"]
         EP_Fallback["Curated Fallback Registry\n(Guaranteed High-Yield Agriculture Playlists)"]
+    end
+
+    subgraph InternalServices ["Internal Agricultural Services"]
+        DB_Crops[("Crops & Sowing Dates")]
+        DB_Soil[("Soil Profiles & Chemistry")]
+        DB_Health[("Crop Disease & Pest Logs")]
+        Svc_Weather["Open-Meteo Weather Cache"]
     end
 
     subgraph Ext_YouTubeEngine ["YouTube Data API v3"]
         YT_Search["GET /youtube/v3/search\n(type=video, q=farming+query, relevanceLanguage)"]
     end
 
+    DB_Crops --> EP_Context
+    DB_Soil --> EP_Context
+    DB_Health --> EP_Context
+    Svc_Weather --> EP_Context
+
+    EP_Context --> Context_Badge
+    Context_Badge --> EP_Videos
     Search_Bar --> EP_Videos
     Lang_Filter --> EP_Videos
     EP_Videos --> YT_Search
@@ -397,6 +443,30 @@ graph LR
     EP_Fallback --> Video_Grid
     Video_Grid --> Liked_List
 ```
+
+### Key Design Decisions
+
+#### Decision 1: Server-Side Context Aggregation with Client Override Option
+- **Choice**: The backend `/learning/videos` and `/learning/context` endpoints autonomously read the authenticated farmer's `Crop`, `SoilProfile`, `CropHealthStatus`, and cached `Weather` data directly from the database and internal services.
+- **Why**: Keeps the frontend lightweight and secure. The frontend simply asks for "my recommendations" and the server computes the exact agricultural stage without sending bulky payloads back and forth.
+- **Fallback**: The endpoint also accepts optional query parameters (`crop_names`, `soil_type`, `weather_alert`) for testing or client-side overrides.
+
+#### Decision 2: Contextual Stage Calculator
+- **Choice**: Implement an automated Growth Stage Estimator:
+  $$\text{Progress } \% = \frac{\text{Current Date} - \text{Sowing Date}}{\text{Harvest Date} - \text{Sowing Date}} \times 100$$
+  - **0% – 20%**: **Sowing & Seedling** (Germination, initial root development, seedling treatment)
+  - **21% – 50%**: **Vegetative Growth** (Tillering, branch growth, nitrogen boost, weed control)
+  - **51% – 75%**: **Flowering & Reproductive** (Panicle initiation, boll formation, micronutrients, pest defense)
+  - **76% – 100%**: **Grain Filling & Pre-Harvest** (Moisture control, ripening, harvest preparation)
+  - **> 100%**: **Harvest & Storage** (Threshing, moisture testing, grain storage, mandi sales)
+
+#### Decision 3: Dynamic Category Prioritization & Badging
+Instead of fixed categories, categories dynamically reorder based on real-time urgency:
+- 🚨 **Urgent Priority**: If `CropHealthStatus` has active disease/pest issues $\rightarrow$ Category #1 becomes **Crop Health Emergency** (e.g., *Cotton Pink Bollworm Control*).
+- 🌦️ **Weather Alert**: If upcoming 48h precipitation $> 15\text{mm}$ or temperature $> 38^\circ\text{C}$ $\rightarrow$ Category #2 becomes **Weather Advisory**.
+- 🌱 **Current Growth Stage**: Category #3 becomes **Stage-Specific Guide** (e.g., *Paddy Flowering Care*).
+- 🧪 **Soil Specifics**: Category #4 becomes **Soil Management** (e.g., *Black Cotton Soil Drainage & Nutrients*).
+- 📚 **Standard Modules**: Fertilizers, Mandi Intelligence, Government Schemes, Smart Tech.
 
 ---
 
