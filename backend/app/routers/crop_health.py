@@ -1,9 +1,10 @@
 """
 AI Crop Health Diagnosis Router
 ================================
-Deep-learning based disease diagnosis via mobile photos.
-Uses Groq Vision API (Llama 3.2 Vision) to analyze crop images
+Multimodal AI crop disease diagnosis via mobile photos.
+Uses Google Gemini 3.8 Flash Vision API to analyze crop images
 and provide instant treatment + pesticide recommendations.
+Fallback chain: Gemini Vision → JSON parse → regex extraction → mock diagnosis.
 """
 
 import os
@@ -16,7 +17,7 @@ from typing import Optional
 import aiofiles
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
-from groq import AsyncGroq
+import google.generativeai as genai
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -142,16 +143,22 @@ If the image is NOT a crop/plant, respond with:
 
 
 # ---------------------------------------------------------------------------
-# Helper: Call Groq Vision API
+# Helper: Call Gemini Vision API
 # ---------------------------------------------------------------------------
 
 async def analyze_crop_image(image_base64: str, mime_type: str, crop_name: Optional[str] = None) -> dict:
-    """Send image to Hugging Face Vision model for crop disease analysis."""
-    api_key = os.getenv("HUGGINGFACE_API_KEY", "")
+    """Send image to Google Gemini 3.8 Flash Vision for crop disease analysis.
+    
+    Fallback chain:
+      1. GEMINI_API_KEY missing → mock diagnosis
+      2. Gemini API error → mock diagnosis
+      3. JSON parse failure → regex extract → mock diagnosis
+    """
+    api_key = os.getenv("GEMINI_API_KEY", "")
     
     # If API key is not configured, fallback to mock response
-    if not api_key or api_key == "your_token_here":
-        print("[CropHealth] Hugging Face API key not configured. Falling back to mock response.")
+    if not api_key or api_key == "your_key_here":
+        print("[CropHealth] Gemini API key not configured. Falling back to mock response.")
         return get_mock_diagnosis(crop_name)
 
     user_message = "Analyze this crop image for any diseases, pest damage, or health issues. Provide a complete diagnosis."
@@ -159,46 +166,29 @@ async def analyze_crop_image(image_base64: str, mime_type: str, crop_name: Optio
         user_message += f"\n\nThe farmer has identified this crop as: {crop_name}. Use this context for more accurate diagnosis."
 
     try:
-        import httpx
-        url = "https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-11B-Vision-Instruct/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
+        # Configure Gemini with the API key
+        genai.configure(api_key=api_key)
         
-        payload = {
-            "model": "meta-llama/Llama-3.2-11B-Vision-Instruct",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": f"{DIAGNOSIS_SYSTEM_PROMPT}\n\n{user_message}"
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{mime_type};base64,{image_base64}"
-                            }
-                        }
-                    ]
-                }
-            ],
-            "max_tokens": 2048,
-            "temperature": 0.1
-        }
-
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(url, headers=headers, json=payload)
-            
-            if response.status_code != 200:
-                print(f"[CropHealth] HF API Error {response.status_code}: {response.text}")
-                # Fallback to mock on error (e.g. model loading)
-                return get_mock_diagnosis(crop_name)
-                
-            data = response.json()
-            raw_text = data["choices"][0]["message"]["content"] or ""
+        # Use gemini-3.8-flash for multimodal vision analysis
+        model = genai.GenerativeModel("gemini-3.8-flash")
+        
+        # Decode base64 to raw bytes for Gemini SDK
+        image_bytes = base64.b64decode(image_base64)
+        image_part = {"mime_type": mime_type, "data": image_bytes}
+        
+        # Build the prompt: system prompt + user message as text, image as inline data
+        prompt_text = f"{DIAGNOSIS_SYSTEM_PROMPT}\n\n{user_message}"
+        
+        # Call Gemini Vision with text + image parts
+        response = await model.generate_content_async(
+            [prompt_text, image_part],
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.1,
+                max_output_tokens=2048,
+            )
+        )
+        
+        raw_text = response.text or ""
         
         # Try to parse JSON from the response
         # Sometimes the model wraps JSON in markdown code blocks
@@ -221,13 +211,13 @@ async def analyze_crop_image(image_base64: str, mime_type: str, crop_name: Optio
                 result = json.loads(json_match.group())
             else:
                 # Return a fallback response
+                print(f"[CropHealth] Could not parse JSON from Gemini response: {raw_text[:200]}")
                 result = get_mock_diagnosis(crop_name)
 
         return result
 
     except Exception as e:
-        print(f"[CropHealth] Hugging Face Vision API error: {e}")
-        import traceback
+        print(f"[CropHealth] Gemini Vision API error: {e}")
         traceback.print_exc()
         
         print("[CropHealth] Falling back to mock response due to exception.")
@@ -241,7 +231,7 @@ def get_mock_diagnosis(crop_name: Optional[str]) -> dict:
             "disease_name": "Leaf Blight (Simulated)",
             "confidence": "High",
             "severity": "Moderate",
-            "description": "This is a simulated response because the Hugging Face API key is missing or the API failed. Leaf blight is a common fungal disease characterized by dark, necrotic spots on leaves with yellow halos.",
+            "description": "This is a simulated response because the Gemini API key is missing or the API returned an error. Leaf blight is a common fungal disease characterized by dark, necrotic spots on leaves with yellow halos.",
             "affected_parts": ["Leaves", "Stems"],
             "causes": ["Fungal infection", "High humidity", "Poor air circulation"]
         },
@@ -340,7 +330,7 @@ async def diagnose_crop(
     # Convert to base64
     image_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
-    # Call Groq Vision API
+    # Call Gemini Vision API
     result = await analyze_crop_image(image_base64, content_type, crop_name)
 
     # Validate and return structured response

@@ -114,8 +114,8 @@ async def _translate_batch_gemini(texts: list[str], source_lang: str, target_lan
         return None
 
     genai.configure(api_key=api_key)
-    # Production available Gemini models
-    candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+    # Production available Gemini models (gemini-3.8-flash is current, older models kept as fallback)
+    candidate_models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
     
     src_name = SUPPORTED_LANGUAGES.get(source_lang, "English")
     tgt_name = SUPPORTED_LANGUAGES.get(target_lang, "Hindi")
