@@ -58,7 +58,7 @@ graph TD
         Ext_News["NewsAPI\n(Agri News & Mandi Prices)"]
         Ext_Razorpay["Razorpay\n(Payments & Checkout)"]
         Ext_YouTube["YouTube Data API v3\n(Farming Video Feed)"]
-        Ext_HF["Hugging Face API\n(Crop Disease Vision Model)"]
+        Ext_Gemini["Google Gemini 3.8 Flash Vision\n(Multimodal Crop Disease AI)"]
     end
 
     UI_Farmer --> APIGateway
@@ -80,7 +80,7 @@ graph TD
     Router_News --> Ext_News
     Router_Orders --> Ext_Razorpay
     Router_Learning --> Ext_YouTube
-    Router_CropHealth --> Ext_HF
+    Router_CropHealth --> Ext_Gemini
 ```
 
 ---
@@ -210,33 +210,34 @@ graph LR
     end
 
     subgraph BackendEndpoints ["Backend Endpoints"]
-        EP_Upload["POST /api/upload/image\n(Save file to local /uploads)"]
-        EP_Diagnose["POST /api/crop-health/diagnose\n(Process image tensor)"]
+        EP_Upload["POST /crop-health/diagnose\n(Multipart image + crop context)"]
+        EP_History["GET /crop-health/history/{crop_id}\n(Diagnosis records)"]
     end
 
-    subgraph AIModelPipeline ["AI Vision Pipeline"]
-        Preprocess["Resize & Normalize (224x224)\nImage Tensor Conversion"]
-        HF_Inference["Hugging Face Vision API\n(Crop Disease ResNet / ViT)"]
-        Fallback_Rules["Rule-Based Agricultural Knowledge\n(Crop Leaf Symptom Heuristic)"]
-        Remedy_DB["Curated Treatment Database\n(Organic Neem / Fungicide / Fertilizer)"]
+    subgraph AIModelPipeline ["AI Vision Pipeline & Fallback Chain"]
+        Base64Decode["Base64 / InlineData Conversion\n(JPEG / PNG / WebP)"]
+        Gemini_Vision["Google Gemini 3.8 Flash Vision\n(Multimodal Pathology Analysis)"]
+        JSON_Extract["JSON Extraction Engine\n(Markdown strip -> json.loads -> regex)"]
+        Mock_Fallback["Simulated Agricultural Diagnosis\n(Graceful Offline Fallback)"]
     end
 
     subgraph StorageEngine ["Storage & Logs"]
-        FS_Uploads["Persistent Disk: /uploads/leaves/"]
-        T_CropDiag[("crop_disease_logs\n(crop_name, disease, confidence, image_url)")]
+        FS_Uploads["Disk: /uploads/diagnoses/"]
+        T_CropDiag[("crop_diagnoses\n(crop_id, disease, severity, confidence, full_json)")]
     end
 
     Comp_Upload --> EP_Upload
     EP_Upload --> FS_Uploads
-    Comp_Upload --> EP_Diagnose
+    EP_Upload --> Base64Decode
 
-    EP_Diagnose --> Preprocess
-    Preprocess --> HF_Inference
-    HF_Inference -. If Timeout / No Key .-> Fallback_Rules
-    HF_Inference --> Remedy_DB
-    Fallback_Rules --> Remedy_DB
-    Remedy_DB --> T_CropDiag
-    Remedy_DB --> Comp_Results
+    Base64Decode --> Gemini_Vision
+    Gemini_Vision --> JSON_Extract
+    Gemini_Vision -. If Error / Quota .-> Mock_Fallback
+    JSON_Extract -. If Parse Error .-> Mock_Fallback
+    JSON_Extract --> T_CropDiag
+    Mock_Fallback --> Comp_Results
+    JSON_Extract --> Comp_Results
+    T_CropDiag --> EP_History
 ```
 
 ---
