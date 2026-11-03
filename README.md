@@ -1,268 +1,291 @@
-# 🌾 AgriFlow AI (AgriChain)
+# 🌾 AgriFlow.AI
 
 <div align="center">
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Next.js](https://img.shields.io/badge/Next.js-16.1+-black.svg?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.2+-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38B2AC.svg?style=for-the-badge&logo=tailwind_css&logoColor=white)](https://tailwindcss.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-336791.svg?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-3.8%20Flash%20Vision-4285F4.svg?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
-[![Groq AI](https://img.shields.io/badge/Groq-Llama%203.3%2070B-F55036.svg?style=for-the-badge&logoColor=white)](https://groq.com/)
-[![YouTube API](https://img.shields.io/badge/YouTube%20Data-v3-FF0000.svg?style=for-the-badge&logo=youtube&logoColor=white)](https://developers.google.com/youtube/v3)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![FastAPI](https://img.shields.io/badge/FASTAPI-0.115+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/NEXT.JS-16.1+-000000.svg?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/REACT-19.2+-61DAFB.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TailwindCSS](https://img.shields.io/badge/TAILWINDCSS-v4-38B2AC.svg?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![PostgreSQL](https://img.shields.io/badge/POSTGRESQL-16+-336791.svg?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-**Enterprise-grade, full-stack digital agriculture and farm-to-fork supply chain intelligence platform.**
+[![Google Gemini](https://img.shields.io/badge/GOOGLE%20GEMINI-3.8%20Flash%20Vision-4285F4.svg?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Groq](https://img.shields.io/badge/GROQ-Llama%203.3%2070B-F55036.svg?style=flat-square)](https://groq.com/)
+[![YouTube](https://img.shields.io/badge/YOUTUBE%20DATA-v3-FF0000.svg?style=flat-square&logo=youtube&logoColor=white)](https://developers.google.com/youtube/v3)
+[![Razorpay](https://img.shields.io/badge/RAZORPAY-Payments-2D68C4.svg?style=flat-square)](https://razorpay.com/)
+[![License](https://img.shields.io/badge/LICENSE-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-[5-Year Demo](#-5-year-comprehensive-demo-ecosystem-2021--2026) • [Key Features](#-key-functional-modules) • [Context Learning Hub](#-context-aware-learning-hub--multi-factor-pipeline) • [Gemini Vision](#-ai-crop-health-diagnosis-google-gemini-38-flash) • [System Architecture](#-system-architecture) • [Setup Guide](#️-local-setup-guide)
+**Enterprise-grade full-stack digital agriculture & farm-to-fork supply chain platform**
+
+Unifying **Farmers** · **Input Shops** · **Processing Mills** · **Consumers** into one AI-powered, blockchain-auditable ecosystem
+
+[Demo Credentials](#-5-year-demo-ecosystem-2021--2026) · [All Features](#-complete-feature-map) · [Architecture](#-system-architecture) · [Quick Start](#-quick-start)
 
 </div>
 
 ---
 
-**AgriFlow AI** unifies four vital agricultural stakeholders — **Farmers**, **Input & Fertilizer Retailers**, **Grain Processing Mills / Manufacturers**, and **Retail Consumers** — into a single, cryptographically auditable, and AI-powered operational ecosystem.
+## 🌟 5-Year Demo Ecosystem (2021 – 2026)
 
-The platform comes pre-packaged with a **5-Year Comprehensive Demo Ecosystem (2021 – 2026)**, allowing developers, stakeholders, and reviewers to instantly explore multi-year crop cycles, historical shop accounting ledgers, industrial milling runs, and consumer orders with zero initial setup.
+Pre-loaded with authentic multi-year data. **1-click launch** via the green `5-Yr Demo` button on login screen.
 
----
-
-## 🌟 5-Year Comprehensive Demo Ecosystem (2021 – 2026)
-
-AgriFlow provides an authentic, multi-year dataset spanning **2021 through 2026** across all 4 connected roles. You can launch any role with **1-click** from the interactive top-navigation **"5-Yr Demo"** button or log in using the credentials below:
-
-| Role | Profile & Organization | Email | Password | 5-Year Dataset Highlights (2021 – 2026) |
-| :--- | :--- | :--- | :--- | :--- |
-| 🌾 **Farmer** | **Ravi Kumar Reddy**<br>Krishna District, AP | `demo@farmer.com` | `demo123` | • **14 Seasonal Crop Cycles** (Paddy, Cotton, Maize, Wheat, Tomato, Moong)<br>• **₹18.5L+ Turnover** with seasonal mandi & mill sales<br>• **SBI Kisan Credit Card (KCC)** & PACS loan ledgers<br>• **PMFBY / WBCIS Insurance** with settled flood/drought claims<br>• **3 Biennial Soil Health Cards** (2021, 2023, 2025) & e-NWR storage |
-| 🏪 **Shop Owner** | **Krishna Agro Center**<br>Venkat Rao Potti | `demo@shop.com` | `demo123` | • **134+ Orders** across 2021–2026 (Completed, Dispatched, Confirmed, Pending)<br>• **15 Agricultural Input Products** (Seeds, Fertilizers, Bio-nutrients)<br>• **60 Continuous Months (5 Years)** of shop accounting P&L ledgers<br>• Real-time POS checkout with automatic stock decrement on order confirmation |
-| 🏭 **Mill Owner** | **Sri Venkateswara Mill**<br>Prasad Babu Reddy | `demo@manufacturer.com` | `demo123` | • **120 Ton/Day Capacity** Rice & Flour Milling Plant<br>• **11 Farm-Gate Procurements** (310+ Quintals Paddy & Wheat)<br>• **60+ Industrial Milling Batches** & By-Product Recovery<br>• **210 Factory Expense Entries** & Wholesale B2B Sales Orders |
-| 🛍️ **Customer** | **Priya Sharma**<br>Direct Farm Consumer | `demo@customer.com` | `demo123` | • **45+ Consumer Orders (2021–2026)** of fresh produce & packaged staples<br>• Full order history tracking with downloadable GST tax invoices<br>• Multi-item cart checkout with Razorpay payment flow |
-
-> [!TIP]
-> **Instant 1-Click Launch**: Click the green **"5-Yr Demo"** button on the top-right of the login screen or top-bar to open the visual timeline drawer and launch any role immediately without typing credentials.
+| Role | Email | Password | Key Data |
+| :--- | :--- | :--- | :--- |
+| 🌾 **Farmer** — Ravi Kumar Reddy, Krishna Dist. | `demo@farmer.com` | `demo123` | 14 crop cycles · ₹18.5L turnover · KCC loans · PMFBY claims · 3 soil cards |
+| 🏪 **Shop** — Krishna Agro Center | `demo@shop.com` | `demo123` | 134+ orders · 15 products · 60 months P&L · Auto-decrement POS |
+| 🏭 **Mill** — Sri Venkateswara Mill | `demo@manufacturer.com` | `demo123` | 120 TPD capacity · 310+ Qtl procured · 60+ batches · 210 expenses |
+| 🛍️ **Customer** — Priya Sharma | `demo@customer.com` | `demo123` | 45+ orders · GST invoices · Razorpay cart checkout |
 
 ---
 
-## 🚀 Key Functional Modules
+## 🗺️ Complete Feature Map
 
-### 1. 🌾 Farmer Operations & Agronomic Intelligence
-- **Multi-Season Cultivation Tracking**: Complete sowing-to-harvest crop cycle management with expense logging (seeds, fertilizers, pesticides, labor, irrigation, machinery) and gross revenue calculations.
-- **Fair Moisture & Weighbridge Deduction Calculator**: Scientific FCI-standard moisture deduction formula ($W_{std} = W_{act} \times \frac{100 - M_{act}}{100 - M_{std}}$) protecting farmers against arbitrary Mandi/Mill weight cuts on Paddy, Wheat, Maize, and Soybeans with live interactive sliders.
-- **Digital Gate Pass & QR Token Allocation**: Reserve intake queue slots (Morning, Afternoon, Evening) with vehicle info (Tractor, Mini Truck, 10-Wheeler) and tamper-proof SVG QR gate passes.
-- **Small-Farmer Collective Selling (Load Pooling Hub)**: Aggregate smallholder harvests (10–25 Qtl) into commercial 10-ton truckloads (`/dashboard/farmer/mills/load-pools`), eliminating middleman commission haircuts.
-- **Soil Moisture & Agro-Meteorological Intelligence (Open-Meteo)**: Volumetric soil water content telemetry across 5 root depth layers (0–1cm, 1–3cm, 3–9cm, 9–27cm, 27–81cm), 7-day agricultural forecasts, ET₀ evapotranspiration rates, and automated spray advisories.
-- **Crop Health Indicator (🟢🟡🔴) & Gemini 3.8 Flash Vision**: Deep-learning multimodal pathology diagnosis using Google Gemini 3.8 Flash Vision with immediate pesticide and treatment steps.
-- **Institutional Farm Report Generator (PDF)**: Download official bank-ready financial statements generated via ReportLab for Kisan Credit Card (KCC) renewal, equipment financing, and PMFBY claims.
-- **Soil Profile & Government Soil Health Card (SHC)**: Track Available N-P-K, pH, Organic Carbon %, and micronutrients with ICAR fertility benchmark scores (0–100).
-- **Post-Harvest Produce Storage (e-NWR)**: Cold storage and warehouse deposit tracking with dynamic monthly rent calculations and mandi peak price release alerts.
-- **Hands-Free Multilingual Voice Assistant & Chatbot**: Interactive agronomic voice assistant with live audio waveform visualizer supporting 9 regional languages powered by Groq Llama 3.3 70B and Web Speech API.
-- **Emergency Directory & Priority SOS Banner**: Direct-dial emergency hotlines: Kisan Call Center (`1551`), PMFBY Calamity Claim Line (`14447`), and Rural Electricity Breakdown (`1912`).
-
-### 2. 🏪 Input Shop & Retail POS
-- **Inventory Management with Auto-Decrement**: Dynamic product catalog across seeds, fertilizers, and crop protection inputs. Product inventory quantities automatically deduct upon order confirmation.
-- **Order Lifecycle State Machine (FSM)**: Strict state-machine progression (`pending` ➔ `confirmed` ➔ `dispatched` ➔ `completed`, or `cancelled`/`rejected`) shared synchronously between farmer and shop dashboards.
-- **Shop Auto-Confirmation & Safety Buffer**: Configurable shop modes (`manual`, `auto_all`, `auto_selected`) with a `low_stock_buffer` safeguard overriding auto-confirm if stock falls below threshold.
-- **60-Month Accounting Ledger**: Apportioned rent, payroll, logistics, electricity, and shop overhead expenses categorized for real-time monthly and annual P&L reporting.
-- **Omnichannel POS**: Process cash, credit, and digital UPI sales with customer khata ledger management.
-
-### 3. 🏭 Grain Processing Mill & Industrial Manufacturing
-- **Direct Farm Gate Procurement**: Create procurement contracts, schedule batch intakes, and record farmer arrivals.
-- **Official Digital Weighment Slip (Dharamkanta Receipt / Parchi)**: Record Gross, Tare, Net Harvest Weight, and FCI moisture cut breakdown with printable formal receipts.
-- **Industrial Milling Runs & Production Batches**: Convert raw paddy/grain into branded packaged outputs (SV Supreme Atta, SV Sharbati Rice) with yield conversion analysis.
-- **By-Product Inventory & Secondary Recovery**: Manage secondary milling outputs (Rice Bran, Husk, Broken Rice, Mustard DOC) with in-stock valuation and buyer dispatch tracking.
-- **Factory Accounting**: Dedicated 5-year operational expense tracking for machinery maintenance, labor wages, power tariffs, and bulk transport.
-
-### 4. 🛍️ Consumer Marketplace & Public Traceability
-- **Direct Farm-to-Fork Marketplace**: Browse farm-fresh fruits, vegetables, and mill-packaged grains with transparent farmer pricing.
-- **Immutable Blockchain Ledger**: SHA-256 cryptographic hash-chaining and Proof-of-Work (PoW) block explorer verifying organic certificates, mill processing dates, and transit hops.
-- **Public QR Traceability (`/trace/[id]`)**: Scan any retail product QR code to view its provenance timeline from seed sowing to supermarket shelf.
-- **Consumer Order History & Invoices**: Persistent order tracking, invoice generation, and status timeline.
-
-### 5. 💳 Razorpay Payments Integration
-- Secure checkout flow for farm inputs and retail groceries.
-- Supports Cards, Netbanking, Wallets, and configurable UPI modes with server-side HMAC-SHA256 signature verification.
-- Enforced order dispatch gating: disallow dispatch until `payment_status == 'paid'`.
-
----
-
-## 🔬 AI Crop Health Diagnosis (Google Gemini 3.8 Flash)
-
-The Crop Health module provides instant plant pathology diagnostics from mobile leaf photos, powered by **Google Gemini 3.8 Flash Vision** (`backend/app/routers/crop_health.py`).
+### 🌾 Farmer — 22 Modules
 
 ```mermaid
-flowchart LR
-    A["Farmer Photo Upload<br/>(JPEG / PNG / WebP)"] --> B["FastAPI Backend<br/>POST /crop-health/diagnose"]
-    B --> C{"GEMINI_API_KEY<br/>Configured?"}
-    C -->|Yes| D["Google Gemini 3.8 Flash<br/>(Multimodal Vision API)"]
-    C -->|No| G["Simulated Fallback<br/>(Agricultural Heuristics)"]
-    D --> E{"Structured JSON<br/>Parse Valid?"}
-    E -->|Yes| F["Complete Diagnosis<br/>(Disease, Severity, Pesticides, Care)"]
-    E -->|No| H{"Regex JSON<br/>Extraction?"}
-    H -->|Match| F
-    H -->|Fail| G
-    G --> F
-```
-
-### Fallback Chain & Safety Net
-1. **Gemini 3.8 Flash Multimodal Call**: Image bytes + `DIAGNOSIS_SYSTEM_PROMPT` sent natively via `google.generativeai`.
-2. **JSON Extraction Engine**: Strips markdown code blocks (` ```json `), validates required schema fields (`is_healthy`, `disease`, `treatment_steps`, `pesticide_recommendations`, `prevention_tips`).
-3. **Regex Extraction Safety Net**: Recovers embedded JSON structures from text if formatting deviates.
-4. **Offline Simulated Diagnosis**: Gracefully falls back to structured agricultural guidance if API quota or connectivity is interrupted, ensuring zero frontend crashes.
-
----
-
-## 🧠 Context-Aware Learning Hub & Multi-Factor Pipeline
-
-The Learning Hub (`/dashboard/farmer/learning`) delivers personalized agricultural video tutorials grounded in the farmer's live telemetry streams, avoiding irrelevant general content.
-
-### Proposed Multi-Factor Pipeline
-```mermaid
-graph TD
-    subgraph MultiFactorInputs ["Input Telemetry Streams"]
-        W["Weather & 7-Day Forecast<br/>(Temp, Rain >15mm, Alerts)"]
-        C["Crops + Growth Stage<br/>(Sowing/Harvest Dates)"]
-        P["Plots + Soil Profiles<br/>(Texture, N-P-K, pH)"]
-        H["Crop Health & Pest Status<br/>(Recent Pathologies)"]
+graph LR
+    subgraph CROPS["Crop & Land Management"]
+        A1["🌱 Multi-Season\nCultivation Tracker"]
+        A2["💰 Expense & Revenue\nLogging"]
+        A3["📊 Season vs Season\nComparison"]
+        A4["📋 Annual Financial\nAudit Ledger"]
     end
 
-    AFCE["Aggregated Farm Context Engine<br/>(Server-Side /learning/context)"]
-    CAQB["Context-Aware Query Builder<br/>(Personalized Query Vectors)"]
-    WRS["Weighted Relevance Scorer<br/>(YouTube API v3 + Dynamic Weights)"]
-    UI["Tailored Learning Hub UI<br/>(Dynamic Category Ordering & Badges)"]
+    subgraph AI_INTEL["AI & Intelligence"]
+        B1["🔬 Gemini 3.8 Flash\nVision Diagnosis"]
+        B2["🤖 RAG Chatbot\nGroq Llama 3.3"]
+        B3["🎙️ Voice Assistant\n9 Languages"]
+        B4["📹 Context-Aware\nLearning Hub"]
+    end
 
-    W --> AFCE
-    C --> AFCE
-    P --> AFCE
-    H --> AFCE
-    AFCE -->|Rich Context Signals| CAQB
-    CAQB -->|Personalized Queries| WRS
-    WRS -->|Badged & Reasoned Videos| UI
+    subgraph FIELD["Field & Soil"]
+        C1["🌡️ 5-Layer Soil\nMoisture Telemetry"]
+        C2["🌦️ 7-Day Weather\n& Spray Advisory"]
+        C3["🧪 Soil Health Card\nN-P-K · pH · ICAR Score"]
+        C4["🌿 Plot Nutrition\nFertilizer Planner"]
+    end
+
+    subgraph FINANCE["Finance & Risk"]
+        D1["🏦 Credit & KCC\nLoan Tracker"]
+        D2["🛡️ PMFBY Crop\nInsurance Claims"]
+        D3["🏬 e-NWR Cold\nStorage Tracker"]
+        D4["📄 ReportLab PDF\nBank Statements"]
+    end
+
+    subgraph MARKET["Market & Sales"]
+        E1["🏪 Input Shop\nMarketplace (50km)"]
+        E2["🏭 Mill Direct\nSelling & Gate Pass"]
+        E3["📦 Load Pooling\nCollective Selling"]
+        E4["⚖️ FCI Moisture\nDeduction Calculator"]
+    end
+
+    subgraph MISC["Utilities"]
+        F1["📅 Farm Activity\nCalendar"]
+        F2["🚨 SOS Emergency\nDirectory"]
+        F3["🔗 Blockchain\nHarvest QR"]
+        F4["🟢🟡🔴 Health\nIndicator Tags"]
+    end
 ```
 
-### 3 Key Architectural Decisions
+### 🏪 Shop — 8 Modules
 
-#### Decision 1: Server-Side Context Aggregation with Client Override Option
-- **Design**: The backend `/learning/videos` and `/learning/context` endpoints autonomously assemble the authenticated farmer's `Crop`, `SoilProfile`, `CropHealthStatus`, and cached `Weather` data directly from PostgreSQL and internal services.
-- **Advantage**: Keeps the frontend lightweight and secure. The UI simply requests recommendations without shipping heavy telemetry payloads.
-- **Fallback**: Optional client query parameters (`crop_names`, `soil_type`, `weather_alert`) allow instant testing and manual overrides.
+| Module | Description |
+| :--- | :--- |
+| 📦 **Inventory & Batch Tracking** | Product catalog with draft → active pipeline, batch-wise cost tracking, and low-stock alerts |
+| 🔄 **Order Lifecycle FSM** | `pending` → `confirmed` → `dispatched` → `completed` (or `cancelled`/`rejected`) with Razorpay gating |
+| ⚙️ **Auto-Confirm Engine** | 3 modes: `manual`, `auto_all`, `auto_selected` with `low_stock_buffer` safety override |
+| 💳 **Omnichannel POS** | Cash, credit, digital UPI sales with customer khata ledger |
+| 📊 **60-Month Accounting** | Rent, payroll, logistics, electricity — monthly & annual P&L with category breakdown |
+| 📈 **Sales Analytics** | Category performance, batch-wise profit margins, channel breakdown (Cash vs Online) |
+| 🏷️ **Quick Sell Interface** | Side-panel cart for rapid walk-in sales with discount and payment mode support |
+| 👤 **Profile & Settings** | Shop identity, license numbers, bank details, UPI IDs, notification preferences |
 
-#### Decision 2: Contextual Growth Stage Estimator
-Automated mathematical stage calculation based on crop calendar dates:
-$$\text{Progress } \% = \frac{\text{Current Date} - \text{Sowing Date}}{\text{Harvest Date} - \text{Sowing Date}} \times 100$$
+### 🏭 Manufacturer / Mill — 7 Modules
 
-| Progress % | Growth Stage | Curated Agronomic Video Focus |
-| :---: | :--- | :--- |
-| **0% – 20%** | **Sowing & Seedling** | Seed treatment, germination, root development, nursery care |
-| **21% – 50%** | **Vegetative Growth** | Tillering, foliage development, nitrogen top-dressing, weed management |
-| **51% – 75%** | **Flowering & Reproductive** | Panicle initiation, boll formation, micronutrient spray, pest protection |
-| **76% – 100%** | **Grain Filling & Pre-Harvest** | Moisture control, ripening monitoring, pre-harvest safety |
-| **> 100%** | **Harvest & Post-Harvest** | Threshing, grain moisture testing, warehouse storage, mandi sales |
+| Module | Description |
+| :--- | :--- |
+| 🚛 **Farm-Gate Procurement** | Farmer harvest offer triage with moisture content, vehicle specs, and delivery slot scheduling |
+| 🎫 **Token & Digital Gate Pass** | Sequential `TK-YYYYMMDD-XXXX` tokens with encrypted SVG QR for mill gate check-in |
+| ⚖️ **Dharamkanta Weighment Slip** | Gross/Tare/Net weight recording with FCI moisture deduction and printable formal receipts |
+| 🏭 **Milling Runs & Yield** | Raw grain → branded packaged output (SV Supreme Atta, SV Sharbati Rice) with conversion analysis |
+| ♻️ **By-Product Recovery** | Rice Bran, Husk, Broken Rice, Mustard DOC — in-stock valuation and buyer dispatch |
+| 💰 **Factory Accounting** | 5-year expense tracking: machinery maintenance, labor wages, power tariffs, transport |
+| 📦 **Wholesale B2B Sales** | Bulk packaged goods distribution with order tracking |
 
-#### Decision 3: Dynamic Category Prioritization & Reason Badges
-Categories dynamically reorder based on field urgency:
-1. 🚨 **Priority #1 — Crop Health Emergency**: Active disease or pest detected in diagnostics $\rightarrow$ category #1 shifts to emergency treatment (e.g. *Cotton Pink Bollworm Control*).
-2. 🌦️ **Priority #2 — Weather Advisory**: Rain $> 15\text{mm}$ or temperature $> 38^\circ\text{C}$ $\rightarrow$ category #2 becomes climate defense.
-3. 🌱 **Priority #3 — Stage-Specific Guide**: Videos aligned with the active crop's mathematical growth stage.
-4. 🧪 **Priority #4 — Soil Management**: Techniques specific to the plot's soil texture (Black, Alluvial, Red) and N-P-K balance.
-5. 📚 **Standard Modules**: Nutrient planning, mandi price trends, government welfare schemes, modern smart tech.
+### 🛍️ Consumer — 5 Modules
+
+| Module | Description |
+| :--- | :--- |
+| 🛒 **Farm-to-Fork Marketplace** | Browse certified produce with transparent farmer pricing and blockchain provenance |
+| 🛡️ **Blockchain Verified** | SHA-256 hash-chaining with PoW block explorer — organic certificates, transit hops, mill dates |
+| 📱 **QR Traceability** | Scan any product QR at `/trace/[id]` for complete seed-to-shelf journey timeline |
+| 💳 **Razorpay Checkout** | Cards, Netbanking, UPI, Wallets with server-side HMAC-SHA256 signature verification |
+| 📋 **Order History** | Persistent tracking, GST invoices, status timeline across all historical transactions |
+
+### 🤖 Cross-Role AI & Platform Services
+
+```mermaid
+graph LR
+    subgraph AI_SERVICES["AI & Intelligence Services"]
+        V["🔬 Gemini 3.8 Flash\nCrop Vision Diagnosis"]
+        C["🤖 Groq Llama 3.3\nRAG Chatbot"]
+        VO["🎙️ Web Speech API\nVoice Assistant"]
+        T["🌐 9-Language\nBatch Translation"]
+        L["📹 Context-Aware\nLearning Hub"]
+    end
+
+    subgraph PLATFORM["Platform Infrastructure"]
+        BC["🔗 SHA-256\nBlockchain Ledger"]
+        PAY["💳 Razorpay\nPayment Gateway"]
+        WX["🌦️ Open-Meteo\nWeather + Soil"]
+        GEO["📍 OpenCage\nGeocoding"]
+        OTP["📧 Brevo + Fast2SMS\nOTP Notifications"]
+    end
+```
 
 ---
 
-## 🌐 Regional Multilingual Engine (9 Languages)
-
-AgriFlow supports **9 Indian Languages** across all UI views and dynamic database content:
+## 🌐 9 Regional Languages
 
 <div align="center">
 
-| English | Hindi (हिन्दी) | Telugu (తెలుగు) | Tamil (தமிழ்) | Kannada (ಕನ್ನಡ) |
-| :---: | :---: | :---: | :---: | :---: |
-| `en` | `hi` | `te` | `ta` | `kn` |
-
-| Marathi (मराठी) | Bengali (বাংলা) | Gujarati (ગુજરાતી) | Punjabi (ਪੰਜਾਬੀ) |
-| :---: | :---: | :---: | :---: |
-| `mr` | `bn` | `gu` | `pa` |
+| `en` English | `hi` हिन्दी | `te` తెలుగు | `ta` தமிழ் | `kn` ಕನ್ನಡ | `mr` मराठी | `bn` বাংলা | `gu` ગુજરાતી | `pa` ਪੰਜਾਬੀ |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 
 </div>
 
-- **Single-Call Batch Translation**: High-speed JSON batch translation endpoint (`POST /api/translate`) translating up to 50 UI strings per API call.
-- **Failover Chain**: Google Gemini 3.8 Flash $\rightarrow$ Groq Llama 3.3 70B fallback $\rightarrow$ Original strings.
-- **In-Memory MD5 Cache**: Deterministic caching eliminates redundant API latency for frequently rendered UI labels.
+> Gemini 3.8 Flash → Groq Llama 3.3 fallback → MD5-cached batch translation across all UI views
 
 ---
 
 ## 📐 System Architecture
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              AgriFlow Users                                 │
-│      🌾 Farmer      🏪 Input Shop      🏭 Mill / Processor    🛍️ Consumer    │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                  Frontend Client Tier (Next.js 16 + React 19)               │
-│  - Role Portals: /farmer, /shop, /manufacturer, /customer                   │
-│  - 5-Year Demo Selector & Timeline Drawer (DemoButton.tsx)                  │
-│  - Interactive Docs & State Machine: /docs/architecture & /docs/api-keys    │
-│  - Public Traceability Journey (/trace/[id]) & Blockchain Explorer          │
-│  - Real-Time POS, Dharamkanta Slips, Gate Pass QR Generator, Leaflet Maps   │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                       │
-                                       ▼ (REST / JSON)
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                 FastAPI Asynchronous Gateway & Router Layer                 │
-│  - /api/auth               - /api/crops              - /api/manufacturer     │
-│  - /api/orders             - /api/credit-loan        - /api/farm-calendar    │
-│  - /api/crop-insurance     - /api/crop-storage       - /api/soil-profile     │
-│  - /api/annual-summary     - /api/farm-reports       - /api/shop-accounting  │
-│  - /crop-health            - /api/blockchain         - /api/weather          │
-│  - /api/chat (RAG)         - /api/nutrition          - /api/payments         │
-│  - /learning/videos        - /learning/context       - /api/translate        │
-└─────────────────────────────────────────────────────────────────────────────┘
-          │                   │                   │                   │
-          ▼                   ▼                   ▼                   ▼
-┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-│  AI / Vision     │ │  Payments Layer  │ │ Blockchain Ledger│ │ External Services│
-│ Gemini 3.8 Flash │ │ Razorpay Checkout│ │ SHA-256 PoW Block│ │ Open-Meteo Weather│
-│ Groq Llama 3.3   │ │ Signature Verify │ │ Trace Registry   │ │ YouTube Data v3  │
-└──────────────────┘ └──────────────────┘ └──────────────────┘ └──────────────────┘
-          │                   │                   │                   │
-          └───────────────────┴─────────┬─────────┴───────────────────┘
-                                        │
-                                        ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    Persistence & Data Storage Layer                         │
-│  - SQLModel / SQLAlchemy Async Engine (asyncpg / aiosqlite)                 │
-│  - PostgreSQL Database (127.0.0.1:5432 / Cloud Managed)                     │
-│  - 5-Year Synthetic Seeding Engine (app/seed_5year_demo.py)                 │
-└─────────────────────────────────────────────────────────────────────────────┘
+  🌾 Farmer    🏪 Shop    🏭 Mill    🛍️ Consumer
+       │           │          │           │
+       └───────────┴────┬─────┴───────────┘
+                        ▼
+    ┌────────────────────────────────────────┐
+    │   Next.js 16 + React 19 + Tailwind v4 │
+    │   4 Role Portals · Glassmorphism UI   │
+    │   Blockchain Explorer · Leaflet Maps  │
+    └────────────────┬───────────────────────┘
+                     ▼  REST / JSON
+    ┌────────────────────────────────────────┐
+    │     FastAPI Async Gateway (22+ APIs)   │
+    ├────────┬──────────┬──────────┬─────────┤
+    │ Gemini │ Razorpay │ SHA-256  │Open-Meteo│
+    │ Groq   │ Payments │Blockchain│ YouTube │
+    │ Vision │ HMAC-256 │ PoW+QR  │ Geocode │
+    └────────┴────┬─────┴──────────┴─────────┘
+                  ▼
+    ┌────────────────────────────────────────┐
+    │  PostgreSQL · SQLModel · asyncpg      │
+    │  5-Year Seeder (2021-2026)            │
+    └────────────────────────────────────────┘
 ```
+
+> [!NOTE]
+> For detailed per-module Mermaid diagrams, state machines, and data pipelines, see [**SYSTEM_ARCHITECTURE.md**](./SYSTEM_ARCHITECTURE.md).
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend Client
-- **Framework**: Next.js 16 (App Router), React 19, TypeScript
-- **Styling**: Tailwind CSS v4, Radix UI Primitives, Lucide Icons, Glassmorphism design language
-- **Mapping & Charts**: Leaflet (SSR-safe dynamic import), Recharts
-- **Audio & Media**: Web Speech API, HTML5 Canvas waveform visualizer, YouTube embedded player
-- **State & Storage**: React Context API (`AuthContext`), persistent LocalStorage caches
+<table>
+<tr>
+<td width="50%">
 
-### Backend API
-- **Framework**: FastAPI (Python 3.10+), Uvicorn ASGI
-- **ORM & Data**: SQLModel, SQLAlchemy 2.0 (Async), Alembic migrations
-- **Database**: PostgreSQL (Production with `asyncpg`) / SQLite + `aiosqlite` (Local fallback)
-- **Security & Auth**: OAuth2 Password Bearer flow, JWT (`python-jose`, `passlib`, `bcrypt`)
-- **PDF Generation**: ReportLab (formal bank-ready farm financial statements)
+**Frontend**
+| Tech | Purpose |
+| :--- | :--- |
+| Next.js 16 (App Router) | Framework & SSR |
+| React 19 + TypeScript | UI Components |
+| Tailwind CSS v4 | Styling & Glassmorphism |
+| Recharts | Data Visualization |
+| Leaflet | GPS Maps (SSR-safe) |
+| Web Speech API | Voice I/O & Waveform |
 
-### AI, Machine Learning & External Services
-- **Multimodal Vision**: Google Gemini 3.8 Flash Vision (`google-generativeai`)
-- **Conversational LLM**: Groq Cloud SDK (`llama-3.3-70b-versatile`)
-- **Agricultural Videos**: YouTube Data API v3 with curated playlist fallback
-- **Meteorology & Soil Telemetry**: Open-Meteo High-Resolution APIs & OpenWeatherMap
-- **Geocoding**: OpenCage Geocoding API (Reverse GPS resolution)
-- **Payments Gateway**: Razorpay API with server-side HMAC signature verification
-- **Notifications**: Brevo HTTP API (Port 443 HTTPS email OTP) & Fast2SMS API
+</td>
+<td width="50%">
+
+**Backend**
+| Tech | Purpose |
+| :--- | :--- |
+| FastAPI + Uvicorn | Async API Gateway |
+| SQLModel + SQLAlchemy 2.0 | Async ORM |
+| PostgreSQL / SQLite | Production / Local DB |
+| JWT + OAuth2 + bcrypt | Auth & Security |
+| ReportLab | PDF Bank Statements |
+| google-generativeai | Gemini Vision SDK |
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**External Services**
+| Service | Role |
+| :--- | :--- |
+| Google Gemini 3.8 Flash | Multimodal crop disease vision diagnosis |
+| Groq Cloud (Llama 3.3 70B) | Conversational RAG agricultural assistant |
+| YouTube Data API v3 | Context-aware farming video recommendations |
+| Open-Meteo + OpenWeatherMap | 5-layer soil moisture & 7-day forecast |
+| Razorpay | UPI / Card / Netbanking payment gateway |
+| OpenCage | Reverse GPS geocoding (50km shop fencing) |
+| Brevo + Fast2SMS | Email OTP (HTTPS P443) & SMS OTP |
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Quick Start
+
+<table>
+<tr>
+<td width="50%">
+
+**Backend**
+```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate        # Windows
+pip install -r requirements.txt
+cp .env.example .env         # Configure keys
+python seed_5year_demo.py    # Load 5yr demo
+uvicorn app.main:app --reload --port 8000
+```
+
+</td>
+<td width="50%">
+
+**Frontend**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+</td>
+</tr>
+</table>
+
+**Required `.env` keys:**
+```env
+DATABASE_URL=postgresql+asyncpg://postgres:pass@localhost:5432/agrichain
+JWT_SECRET=your-secret-key
+GEMINI_API_KEY=...    GROQ_API_KEY=...      YOUTUBE_API_KEY=...
+RAZORPAY_KEY_ID=...   RAZORPAY_KEY_SECRET=...
+```
+
+> [!TIP]
+> See [**API_KEYS_GUIDE.md**](./API_KEYS_GUIDE.md) for step-by-step instructions to get each API key.
+
+| Process | Command | URL |
+| :--- | :--- | :--- |
+| Backend API | `uvicorn app.main:app --reload --port 8000` | `http://localhost:8000/docs` |
+| Frontend UI | `npm run dev` | `http://localhost:3000` |
 
 ---
 
@@ -272,178 +295,28 @@ AgriFlow supports **9 Indian Languages** across all UI views and dynamic databas
 agri/
 ├── backend/
 │   ├── app/
-│   │   ├── routers/             # FastAPI modular endpoint routers
-│   │   │   ├── auth.py          # Dual Email/Phone OTP registration & login
-│   │   │   ├── crop_health.py   # Gemini 3.8 Flash Vision crop diagnosis
-│   │   │   ├── learning.py      # Context-aware video learning hub
-│   │   │   ├── translate.py     # Gemini & Groq 9-language batch translation
-│   │   │   ├── orders.py        # Order lifecycle FSM & Razorpay checkout
-│   │   │   ├── blockchain.py    # SHA-256 block mining & provenance chain
-│   │   │   ├── weather.py       # Open-Meteo & OpenWeatherMap telemetry
-│   │   │   ├── manufacturer.py  # Milling runs, moisture cuts, Dharamkanta
-│   │   │   └── ...              # Credit, insurance, storage, reports, etc.
-│   │   ├── services/            # Agronomic business logic engines
-│   │   │   ├── learning_context_service.py # Multi-factor farm context aggregator
-│   │   │   ├── youtube_service.py          # YouTube API query & playlist fallback
-│   │   │   └── ...
-│   │   ├── models/              # SQLModel database schemas
-│   │   ├── database.py          # Async engine & session lifecycle
-│   │   ├── deps.py              # Auth bearer token dependencies
-│   │   ├── main.py              # Application entrypoint & CORS config
-│   │   └── seed_5year_demo.py   # 5-Year comprehensive dataset generator
-│   ├── requirements.txt         # Python dependencies
-│   └── .env.example             # Environment template
-│
+│   │   ├── routers/           # 22+ FastAPI endpoint routers
+│   │   ├── services/          # Business logic (learning_context, youtube, etc.)
+│   │   ├── models/            # SQLModel database schemas
+│   │   ├── main.py            # App entrypoint & CORS
+│   │   └── seed_5year_demo.py # 5-year demo data generator
+│   ├── requirements.txt
+│   └── .env.example
 ├── frontend/
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── dashboard/       # Role-segregated application portals
-│   │   │   │   ├── farmer/      # Farmer operations, calendar, learning, credit
-│   │   │   │   ├── shop/        # Input retailer POS, inventory, accounting
-│   │   │   │   ├── manufacturer/# Milling runs, batch packing, intake queues
-│   │   │   │   └── customer/    # Marketplace, shopping cart, order history
-│   │   │   ├── docs/
-│   │   │   │   ├── architecture/# Interactive architecture & state machine UI
-│   │   │   │   └── api-keys/    # API configuration guide & key status
-│   │   │   ├── trace/[id]/      # Public blockchain provenance scan view
-│   │   │   ├── login/           # Multi-role authentication with demo selector
-│   │   │   └── ...
-│   │   ├── components/          # Reusable UI widgets (ChatBot, DemoButton, etc.)
-│   │   ├── context/             # Global AuthContext provider
-│   │   └── lib/                 # Demo data, API client, language registries
-│   ├── package.json             # Node dependencies
-│   └── tailwind.config.ts       # Tailwind CSS v4 configuration
-│
-├── API_KEYS_GUIDE.md            # Guide for acquiring all third-party API keys
-├── DEPLOYMENT.md                # Production hosting instructions (Railway/Vercel)
-├── FEATURES_AND_PLANS.md        # Feature roadmap & deep architectural decisions
-└── SYSTEM_ARCHITECTURE.md       # Comprehensive 22+ module architecture spec
+│   ├── src/app/
+│   │   ├── dashboard/         # farmer/ · shop/ · manufacturer/ · customer/
+│   │   ├── docs/              # architecture/ · api-keys/
+│   │   └── trace/[id]/        # Public blockchain provenance
+│   ├── src/components/        # ChatBot · DemoButton · ThemeToggle
+│   └── src/lib/               # API client · demo data · i18n
+├── SYSTEM_ARCHITECTURE.md     # 22+ module diagrams & state machines
+├── FEATURES_AND_PLANS.md      # Feature deep-dives & design decisions
+├── API_KEYS_GUIDE.md          # API key acquisition guide
+└── DEPLOYMENT.md              # Railway / Vercel / Docker deployment
 ```
-
----
-
-## ⚙️ Local Setup Guide
-
-### 1. Prerequisites
-- **Node.js**: v18.0 or higher (`node -v`)
-- **Python**: v3.10 or higher (`python --version`)
-- **PostgreSQL**: Running instance or local service (default port `5432`)
-
----
-
-### 2. Backend Setup
-
-```bash
-# 1. Navigate to the backend directory
-cd backend
-
-# 2. Create and activate a virtual environment
-python -m venv venv
-
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-
-# 3. Install Python dependencies
-pip install -r requirements.txt
-
-# 4. Configure environment variables
-cp .env.example .env
-```
-
-Ensure your `backend/.env` file is populated with your credentials:
-```env
-# Database Connection
-DATABASE_URL=postgresql+asyncpg://postgres:YourPassword@127.0.0.1:5432/agrichain
-
-# Authentication
-JWT_SECRET=your-secure-jwt-secret-key-min-32-chars
-
-# AI & Multimodal Vision
-GEMINI_API_KEY=your_google_gemini_api_key
-GROQ_API_KEY=your_groq_api_key
-
-# External Video Feed
-YOUTUBE_API_KEY=your_youtube_data_api_v3_key
-
-# Payments Gateway (Test Mode)
-RAZORPAY_KEY_ID=your_razorpay_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-
-# Optional Services (Weather, Geocoding, Notifications)
-OPENWEATHER_API_KEY=your_openweather_key
-OPENCAGE_API_KEY=your_opencage_key
-BREVO_API_KEY=your_brevo_api_key
-FAST2SMS_API_KEY=your_fast2sms_api_key
-```
-
-```bash
-# 5. Populate the comprehensive 5-Year Demo Dataset (2021 – 2026)
-python seed_5year_demo.py
-
-# 6. Start the FastAPI development server
-uvicorn app.main:app --reload --port 8000
-```
-Interactive Swagger API documentation will be available at: `http://localhost:8000/docs`
-
----
-
-### 3. Frontend Setup
-
-```bash
-# 1. Open a new terminal and navigate to frontend
-cd frontend
-
-# 2. Install Node dependencies
-npm install
-
-# 3. Start the Next.js development server
-npm run dev
-```
-
-The web application will be live at: `http://localhost:3000`
-
----
-
-## ⚡ Quick Daily Run
-
-Once installed, simply launch both services concurrently:
-
-| Process | Directory | Command | URL |
-| :--- | :--- | :--- | :--- |
-| **Backend API** | `backend/` | `uvicorn app.main:app --reload --port 8000` | `http://localhost:8000/docs` |
-| **Frontend UI** | `frontend/` | `npm run dev` | `http://localhost:3000` |
-| **Interactive Docs** | Browser | Navigate to `/docs/architecture` | `http://localhost:3000/docs/architecture` |
-| **API Keys Guide** | Browser | Navigate to `/docs/api-keys` | `http://localhost:3000/docs/api-keys` |
-
----
-
-## 🧪 Testing & Verification
-
-```bash
-# Verify backend models & run 5-year seeder
-python -c "import asyncio, sys; sys.path.insert(0, 'backend'); from app.seed_5year_demo import seed_5year_data; asyncio.run(seed_5year_data())"
-
-# Compile and validate Python backend routers
-python -m py_compile backend/app/routers/crop_health.py backend/app/routers/learning.py backend/app/routers/translate.py
-
-# Type-check frontend code
-cd frontend && npx tsc --noEmit
-```
-
----
-
-## 📖 Comprehensive Documentation Suite
-
-| Document | Purpose |
-| :--- | :--- |
-| 📐 [**SYSTEM_ARCHITECTURE.md**](./SYSTEM_ARCHITECTURE.md) | Comprehensive 22+ module architecture specifications with Mermaid diagrams, data pipelines, and security rules. |
-| 🗺️ [**FEATURES_AND_PLANS.md**](./FEATURES_AND_PLANS.md) | Deep dive into feature mechanics, role journeys, growth stage formulas, and dynamic prioritization rules. |
-| 🔑 [**API_KEYS_GUIDE.md**](./API_KEYS_GUIDE.md) | Step-by-step instructions for acquiring and configuring all third-party API keys (Gemini, Groq, YouTube, Razorpay, etc.). |
-| 🚀 [**DEPLOYMENT.md**](./DEPLOYMENT.md) | Production cloud deployment guide for Railway, Render, Fly.io, Vercel, and Docker containerization. |
 
 ---
 
 ## 📄 License
-This project is open-source under the [MIT License](LICENSE).
+
+Open-source under the [MIT License](LICENSE).
