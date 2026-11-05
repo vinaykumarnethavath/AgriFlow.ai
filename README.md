@@ -41,50 +41,14 @@ Pre-loaded with authentic multi-year data. **1-click launch** via the green `5-Y
 
 ### 🌾 Farmer — 22 Modules
 
-```mermaid
-graph LR
-    subgraph CROPS["Crop & Land Management"]
-        A1["🌱 Multi-Season\nCultivation Tracker"]
-        A2["💰 Expense & Revenue\nLogging"]
-        A3["📊 Season vs Season\nComparison"]
-        A4["📋 Annual Financial\nAudit Ledger"]
-    end
-
-    subgraph AI_INTEL["AI & Intelligence"]
-        B1["🔬 Gemini 3.8 Flash\nVision Diagnosis"]
-        B2["🤖 RAG Chatbot\nGroq Llama 3.3"]
-        B3["🎙️ Voice Assistant\n9 Languages"]
-        B4["📹 Context-Aware\nLearning Hub"]
-    end
-
-    subgraph FIELD["Field & Soil"]
-        C1["🌡️ 5-Layer Soil\nMoisture Telemetry"]
-        C2["🌦️ 7-Day Weather\n& Spray Advisory"]
-        C3["🧪 Soil Health Card\nN-P-K · pH · ICAR Score"]
-        C4["🌿 Plot Nutrition\nFertilizer Planner"]
-    end
-
-    subgraph FINANCE["Finance & Risk"]
-        D1["🏦 Credit & KCC\nLoan Tracker"]
-        D2["🛡️ PMFBY Crop\nInsurance Claims"]
-        D3["🏬 e-NWR Cold\nStorage Tracker"]
-        D4["📄 ReportLab PDF\nBank Statements"]
-    end
-
-    subgraph MARKET["Market & Sales"]
-        E1["🏪 Input Shop\nMarketplace (50km)"]
-        E2["🏭 Mill Direct\nSelling & Gate Pass"]
-        E3["📦 Load Pooling\nCollective Selling"]
-        E4["⚖️ FCI Moisture\nDeduction Calculator"]
-    end
-
-    subgraph MISC["Utilities"]
-        F1["📅 Farm Activity\nCalendar"]
-        F2["🚨 SOS Emergency\nDirectory"]
-        F3["🔗 Blockchain\nHarvest QR"]
-        F4["🟢🟡🔴 Health\nIndicator Tags"]
-    end
-```
+| Domain | Key Modules & Capabilities |
+| :--- | :--- |
+| 🌱 **Crop & Land** | **Multi-Season Cultivation Tracker** · **Expense & Revenue Logging** · **Season vs Season AI Comparison** · **Annual Financial Audit Ledger** |
+| 🤖 **AI & Intelligence** | **Gemini 3.8 Flash Vision Diagnosis** · **Groq Llama 3.3 RAG Chatbot** · **9-Language Voice Assistant** · **Context-Aware Learning Hub** |
+| 🧪 **Soil & Weather** | **5-Layer Soil Moisture (Open-Meteo)** · **7-Day Weather & Spray Advisory** · **Soil Health Card (ICAR Score)** · **Plot Nutrition Fertilizer Plan** |
+| 💳 **Finance & Risk** | **Institutional Credit & KCC Loans** · **PMFBY 72-Hr Calamity Claims** · **e-NWR Cold Storage Tracker** · **ReportLab PDF Bank Statements** |
+| ⚖️ **Market & Logistics** | **50km Input Shop Marketplace** · **Mill Direct Selling & Gate Pass** · **Load Pooling (Collective Selling)** · **FCI Moisture Deduction Calc** |
+| 🛠️ **Farm Utilities** | **Interactive Activity Calendar** · **Priority 3-Box SOS Directory** · **Blockchain Harvest QR** · **Crop Health Indicator Tags (🟢🟡🔴)** |
 
 ### 🏪 Shop — 8 Modules
 
@@ -123,24 +87,10 @@ graph LR
 
 ### 🤖 Cross-Role AI & Platform Services
 
-```mermaid
-graph LR
-    subgraph AI_SERVICES["AI & Intelligence Services"]
-        V["🔬 Gemini 3.8 Flash\nCrop Vision Diagnosis"]
-        C["🤖 Groq Llama 3.3\nRAG Chatbot"]
-        VO["🎙️ Web Speech API\nVoice Assistant"]
-        T["🌐 9-Language\nBatch Translation"]
-        L["📹 Context-Aware\nLearning Hub"]
-    end
-
-    subgraph PLATFORM["Platform Infrastructure"]
-        BC["🔗 SHA-256\nBlockchain Ledger"]
-        PAY["💳 Razorpay\nPayment Gateway"]
-        WX["🌦️ Open-Meteo\nWeather + Soil"]
-        GEO["📍 OpenCage\nGeocoding"]
-        OTP["📧 Brevo + Fast2SMS\nOTP Notifications"]
-    end
-```
+| Domain | Capabilities & Integrated Cloud Engines |
+| :--- | :--- |
+| 🧠 **AI & Intelligence** | **Gemini 3.8 Flash Vision** (Multimodal leaf pathology diagnosis) · **Groq Llama 3.3 70B** (Ultra-fast agricultural RAG assistant) · **Web Speech API** (Interactive voice assistant with waveform) · **YouTube Data v3** (Context-aware farming video feed) · **9-Language Batch i18n** (Single-call JSON translation with MD5 cache) |
+| ⚡ **Platform & Infra** | **SHA-256 Blockchain Ledger** (PoW block explorer & QR provenance at `/trace/[id]`) · **Razorpay Gateway** (Cards, UPI, Netbanking with HMAC signature verification) · **Open-Meteo API** (5-depth volumetric soil moisture & ET₀) · **OpenCage Geocoder** (50km shop geofencing) · **Dual OTP Engine** (Brevo HTTPS P443 email OTP + Fast2SMS) |
 
 ---
 
@@ -286,34 +236,6 @@ RAZORPAY_KEY_ID=...   RAZORPAY_KEY_SECRET=...
 | :--- | :--- | :--- |
 | Backend API | `uvicorn app.main:app --reload --port 8000` | `http://localhost:8000/docs` |
 | Frontend UI | `npm run dev` | `http://localhost:3000` |
-
----
-
-## 📂 Project Structure
-
-```text
-agri/
-├── backend/
-│   ├── app/
-│   │   ├── routers/           # 22+ FastAPI endpoint routers
-│   │   ├── services/          # Business logic (learning_context, youtube, etc.)
-│   │   ├── models/            # SQLModel database schemas
-│   │   ├── main.py            # App entrypoint & CORS
-│   │   └── seed_5year_demo.py # 5-year demo data generator
-│   ├── requirements.txt
-│   └── .env.example
-├── frontend/
-│   ├── src/app/
-│   │   ├── dashboard/         # farmer/ · shop/ · manufacturer/ · customer/
-│   │   ├── docs/              # architecture/ · api-keys/
-│   │   └── trace/[id]/        # Public blockchain provenance
-│   ├── src/components/        # ChatBot · DemoButton · ThemeToggle
-│   └── src/lib/               # API client · demo data · i18n
-├── SYSTEM_ARCHITECTURE.md     # 22+ module diagrams & state machines
-├── FEATURES_AND_PLANS.md      # Feature deep-dives & design decisions
-├── API_KEYS_GUIDE.md          # API key acquisition guide
-└── DEPLOYMENT.md              # Railway / Vercel / Docker deployment
-```
 
 ---
 
