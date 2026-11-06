@@ -33,7 +33,12 @@ import {
     MessageSquare,
     Truck,
     RefreshCw,
-    X
+    X,
+    User,
+    Phone,
+    MapPin,
+    ShieldCheck,
+    Check
 } from "lucide-react";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
 import { useLanguage } from "@/context/LanguageContext";
@@ -66,10 +71,20 @@ interface CartItem {
 interface ShopInfo {
     id: number;
     name: string;
+    owner_name?: string;
+    phone?: string;
+    contact_number?: string;
+    license_number?: string;
     village?: string;
     mandal?: string;
     district?: string;
     state?: string;
+    pincode?: string;
+    address?: string;
+    distance_km?: number | null;
+    rating?: number;
+    profile_picture_url?: string;
+    products_count?: number;
 }
 
 interface OrderItem {
@@ -209,7 +224,23 @@ function MarketPageContent() {
     const fetchProducts = async () => {
         try {
             const response = await api.get("/products/");
-            setProducts(response.data);
+            const prods: Product[] = response.data || [];
+            setProducts(prods);
+
+            // Ensure any shop that sells products is also represented
+            setShops(prevShops => {
+                const map = new Map<number, ShopInfo>();
+                prevShops.forEach(s => map.set(s.id, s));
+                prods.forEach(p => {
+                    if (p.user_id && !map.has(p.user_id)) {
+                        map.set(p.user_id, {
+                            id: p.user_id,
+                            name: p.seller_name || "Agri Input Dealer",
+                        });
+                    }
+                });
+                return Array.from(map.values());
+            });
         } catch (error) {
             console.error("Failed to fetch products:", error);
         } finally {
@@ -219,33 +250,92 @@ function MarketPageContent() {
 
     const fetchNearbyShops = async (radius: number) => {
         try {
-            const response = await api.get("/location/nearby/internal", {
-                params: {
-                    types: "shop",
-                    radius_km: radius,
-                    limit: 100,
-                },
-            });
-            const providers = (response.data || []) as Array<{
-                user_id: number;
-                name?: string;
-                village?: string;
-                mandal?: string;
-                district?: string;
-                state?: string;
-            }>;
-            const nextShops = providers
-                .filter(p => typeof p.user_id === "number")
-                .map(p => ({
-                    id: p.user_id,
-                    name: p.name || "Shop",
-                    village: p.village,
-                    mandal: p.mandal,
-                    district: p.district,
-                    state: p.state,
-                }));
-            setShops(nextShops);
-            const ids = new Set<number>(nextShops.map(s => s.id));
+            let allShopDetails: ShopInfo[] = [];
+
+            // 1. Fetch registered shops with full details from /products/shops
+            try {
+                const res = await api.get("/products/shops");
+                if (Array.isArray(res.data)) {
+                    allShopDetails = res.data.map((s: any) => ({
+                        id: s.id,
+                        name: s.name || "Agri Input Shop",
+                        owner_name: s.owner_name,
+                        phone: s.phone || s.contact_number,
+                        contact_number: s.contact_number || s.phone,
+                        license_number: s.license_number,
+                        village: s.village,
+                        mandal: s.mandal,
+                        district: s.district,
+                        state: s.state,
+                        pincode: s.pincode,
+                        address: s.address,
+                        products_count: s.products_count,
+                        distance_km: null,
+                    }));
+                }
+            } catch (err) {
+                console.error("Failed to fetch /products/shops:", err);
+            }
+
+            // 2. Fetch distance & location closeness from /location/nearby/internal
+            try {
+                const response = await api.get("/location/nearby/internal", {
+                    params: {
+                        types: "shop",
+                        radius_km: radius,
+                        limit: 100,
+                    },
+                });
+                const providers = (response.data || []) as Array<{
+                    user_id: number;
+                    name?: string;
+                    village?: string;
+                    mandal?: string;
+                    district?: string;
+                    state?: string;
+                    contact_number?: string;
+                    address?: string;
+                    distance_km?: number;
+                }>;
+
+                const shopMap = new Map<number, ShopInfo>();
+                allShopDetails.forEach(s => shopMap.set(s.id, s));
+
+                providers.forEach(p => {
+                    if (typeof p.user_id === "number") {
+                        const existing = shopMap.get(p.user_id);
+                        if (existing) {
+                            existing.distance_km = p.distance_km ?? existing.distance_km;
+                            if (!existing.phone && p.contact_number) existing.phone = p.contact_number;
+                            if (!existing.address && p.address) existing.address = p.address;
+                            if (!existing.village && p.village) existing.village = p.village;
+                            if (!existing.mandal && p.mandal) existing.mandal = p.mandal;
+                            if (!existing.district && p.district) existing.district = p.district;
+                            if (!existing.state && p.state) existing.state = p.state;
+                        } else {
+                            shopMap.set(p.user_id, {
+                                id: p.user_id,
+                                name: p.name || "Agri Shop",
+                                phone: p.contact_number,
+                                contact_number: p.contact_number,
+                                village: p.village,
+                                mandal: p.mandal,
+                                district: p.district,
+                                state: p.state,
+                                address: p.address,
+                                distance_km: p.distance_km ?? null,
+                            });
+                        }
+                    }
+                });
+
+                allShopDetails = Array.from(shopMap.values());
+            } catch (err) {
+                console.warn("Could not query /location/nearby/internal:", err);
+            }
+
+            setShops(allShopDetails);
+            const ids = new Set<number>(allShopDetails.map(s => s.id));
             setNearbyShopIds(ids);
 
             setSelectedShop(prev => {
@@ -293,8 +383,8 @@ function MarketPageContent() {
 
             const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
             const matchesShop = selectedShop === null || product.user_id === selectedShop;
-            // Gracefully handle empty nearbyShopIds (show all if empty/not yet loaded)
-            const matchesNearby = !nearbyShopIds || nearbyShopIds.size === 0 || nearbyShopIds.has(product.user_id);
+            // Gracefully handle empty nearbyShopIds (show all if empty/not yet loaded, or if shop is explicitly selected)
+            const matchesNearby = !nearbyShopIds || nearbyShopIds.size === 0 || nearbyShopIds.has(product.user_id) || selectedShop !== null;
 
             return matchesSearch && matchesCategory && matchesShop && matchesNearby;
         });
@@ -1074,47 +1164,30 @@ function MarketPageContent() {
                             <ArrowLeft className="h-4 w-4" /> {t("common.back", "Back")}
                         </Button>
                     </Link>
-                    <h1 className="text-2xl font-bold text-foreground">{t("marketPage.title", "Market")}</h1>
+                    <div>
+                        <h1 className="text-2xl font-bold text-foreground">{t("marketPage.title", "Buy Fertilizer & Agri Inputs")}</h1>
+                        <p className="text-xs text-muted-foreground">Certified local fertilizer & agri-input shops with direct ordering</p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <div className="flex bg-muted p-1 rounded-xl border border-border">
-                        <button
-                            onClick={() => { 
-                                setShowHistory(false); 
-                                setShowCart(false); 
-                                router.replace("/dashboard/farmer/market");
-                            }}
-                            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                                !showHistory && !showCart
-                                    ? "bg-background text-foreground shadow-xs font-bold"
-                                    : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                            <Store className="h-3.5 w-3.5" />
-                            Browse Catalog
-                        </button>
-                        <button
-                            onClick={() => { 
-                                setShowHistory(true); 
-                                setShowCart(false); 
-                                router.replace("/dashboard/farmer/market?tab=orders");
-                                fetchOrders(); 
-                            }}
-                            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                                showHistory
-                                    ? "bg-background text-foreground shadow-xs font-bold"
-                                    : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                            <Box className="h-3.5 w-3.5" />
-                            My Orders
-                            {orders.length > 0 && (
-                                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-green-500/15 text-green-700 dark:text-green-300 text-[10px]">
-                                    {orders.length}
-                                </span>
-                            )}
-                        </button>
-                    </div>
+                    <Button
+                        variant="outline"
+                        onClick={() => { 
+                            setShowHistory(true); 
+                            setShowCart(false); 
+                            router.replace("/dashboard/farmer/market?tab=orders");
+                            fetchOrders(); 
+                        }}
+                        className="border-gray-300 dark:border-zinc-700 text-foreground flex items-center gap-1.5"
+                    >
+                        <Box className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <span>My Orders</span>
+                        {orders.length > 0 && (
+                            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-700 dark:text-green-300 text-[10px] font-bold">
+                                {orders.length}
+                            </span>
+                        )}
+                    </Button>
 
                     <Button
                         onClick={() => { setShowCart(true); setShowHistory(false); }}
@@ -1131,7 +1204,166 @@ function MarketPageContent() {
                 </div>
             </div>
 
-            {/* Nearby Shops Quick Filter Removed completely */}
+            {/* Registered Agri Input & Fertilizer Shops Section */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                        <Store className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        <h2 className="text-lg font-bold text-foreground">
+                            Registered Agri Shops & Fertilizer Dealers
+                        </h2>
+                        {shops.length > 0 && (
+                            <span className="text-xs bg-green-100 dark:bg-green-950/60 text-green-800 dark:text-green-300 font-semibold px-2.5 py-0.5 rounded-full border border-green-200 dark:border-green-800">
+                                {shops.length} {shops.length === 1 ? "Shop" : "Shops"} Available
+                            </span>
+                        )}
+                    </div>
+                    {selectedShop !== null && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedShop(null)}
+                            className="text-xs text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-zinc-800 font-semibold flex items-center gap-1"
+                        >
+                            <X className="h-3.5 w-3.5" /> Show All Shops
+                        </Button>
+                    )}
+                </div>
+
+                {shops.length === 0 ? (
+                    <Card className="border-dashed border-gray-200 dark:border-zinc-800 bg-card">
+                        <CardContent className="p-6 text-center text-sm text-muted-foreground">
+                            <Store className="h-8 w-8 mx-auto mb-2 opacity-40 text-green-600" />
+                            Loading registered fertilizer dealers and shops...
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {shops.map((shop) => {
+                            const isSelected = selectedShop === shop.id;
+                            const shopProductCount = shop.products_count ?? products.filter(p => p.user_id === shop.id).length;
+                            const addressDisplay = shop.address || [shop.village, shop.mandal, shop.district, shop.state, shop.pincode].filter(Boolean).join(", ");
+                            const phoneDisplay = shop.phone || shop.contact_number;
+
+                            return (
+                                <Card
+                                    key={shop.id}
+                                    className={`relative transition-all duration-200 border-2 overflow-hidden ${
+                                        isSelected
+                                            ? "border-green-600 dark:border-green-500 bg-green-50/40 dark:bg-green-950/20 shadow-md ring-2 ring-green-500/20"
+                                            : "border-gray-200 dark:border-zinc-800 hover:border-green-400 dark:hover:border-green-600 bg-white dark:bg-zinc-900 hover:shadow-md"
+                                    }`}
+                                >
+                                    <CardContent className="p-4 space-y-3">
+                                        {/* Shop Header */}
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="flex items-start gap-2.5 min-w-0">
+                                                <div className="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center font-bold text-base flex-shrink-0 border border-green-200 dark:border-green-800">
+                                                    🏪
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h3 className="font-bold text-base text-foreground truncate" title={shop.name}>
+                                                        {shop.name}
+                                                    </h3>
+                                                    {shop.owner_name && (
+                                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                            <User className="h-3 w-3 text-muted-foreground" />
+                                                            <span>Owner: <strong className="text-foreground">{shop.owner_name}</strong></span>
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {isSelected ? (
+                                                <span className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-bold bg-green-600 text-white px-2 py-0.5 rounded-full shadow-xs">
+                                                    <Check className="h-3 w-3" /> Selected
+                                                </span>
+                                            ) : (
+                                                <span className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                                    <ShieldCheck className="h-3 w-3" /> Certified
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Shop Details */}
+                                        <div className="space-y-1.5 text-xs text-muted-foreground border-t border-border/60 pt-2.5">
+                                            {phoneDisplay && (
+                                                <div className="flex items-center gap-2">
+                                                    <Phone className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                                    <a
+                                                        href={`tel:${phoneDisplay}`}
+                                                        className="font-medium text-green-700 dark:text-green-400 hover:underline"
+                                                    >
+                                                        {phoneDisplay}
+                                                    </a>
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-start gap-2">
+                                                <MapPin className="h-3.5 w-3.5 text-rose-500 mt-0.5 flex-shrink-0" />
+                                                <span className="line-clamp-2">
+                                                    {addressDisplay || "Local Input Center"}
+                                                </span>
+                                            </div>
+
+                                            {shop.license_number && (
+                                                <div className="text-[11px] text-muted-foreground">
+                                                    License: <span className="font-mono text-foreground">{shop.license_number}</span>
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center justify-between text-[11px] pt-1 text-muted-foreground">
+                                                <span className="font-medium text-foreground">
+                                                    {shop.distance_km != null ? `📍 ${shop.distance_km.toFixed(1)} km away` : "📍 Serving Local Region"}
+                                                </span>
+                                                <span className="font-semibold text-green-700 dark:text-green-400">
+                                                    {shopProductCount} {shopProductCount === 1 ? "Product" : "Products"}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex items-center gap-2 pt-1 border-t border-border/60">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={isSelected ? "default" : "outline"}
+                                                onClick={() => setSelectedShop(isSelected ? null : shop.id)}
+                                                className={`flex-1 text-xs font-semibold ${
+                                                    isSelected
+                                                        ? "bg-green-600 hover:bg-green-700 text-white"
+                                                        : "border-gray-300 dark:border-zinc-700 text-foreground hover:bg-green-50 dark:hover:bg-zinc-800"
+                                                }`}
+                                            >
+                                                {isSelected ? "Clear Selection" : "View Products"}
+                                            </Button>
+
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setChatTarget({
+                                                        userId: shop.id,
+                                                        name: shop.name || shop.owner_name || "Agri Input Shop",
+                                                        role: "shop",
+                                                        phone: phoneDisplay,
+                                                    });
+                                                    setChatModalOpen(true);
+                                                }}
+                                                className="border-gray-300 dark:border-zinc-700 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-zinc-800 text-xs px-2.5"
+                                                title="Chat directly with this shopkeeper"
+                                            >
+                                                <MessageSquare className="h-3.5 w-3.5 mr-1" /> Chat
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
 
             {/* Search and Shop Filter */}
             <div className="flex flex-col md:flex-row gap-4">

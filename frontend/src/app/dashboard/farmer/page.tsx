@@ -11,7 +11,7 @@ import {
     Sprout, User, Plus, Trash2, ArrowRight, AlertTriangle,
     CloudRain, Sun, Wind, Droplets, Newspaper, Clock,
     PenSquare, Wallet, ShoppingCart, ChevronDown, ChevronUp, ShoppingBag,
-    Eye, EyeOff, Calendar, MessageSquare, Lightbulb, Activity, CreditCard, FileDown, PhoneCall, Box
+    Eye, EyeOff, Calendar, MessageSquare, Lightbulb, Activity, CreditCard, FileDown, Box
 } from "lucide-react";
 import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
@@ -1347,99 +1347,6 @@ export default function FarmerDashboard() {
             </div>
 
             {/* ═══════════════════════════════════════════════════
-                4. RECENT FERTILIZER & SHOP ORDERS
-               ═══════════════════════════════════════════════════ */}
-            <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                        <Box className="h-5 w-5 text-emerald-600" />
-                        {t('orders.recentOrders', 'Fertilizer & Shop Orders')}
-                    </h2>
-                    <div className="flex items-center gap-2">
-                        <Link href="/dashboard/farmer/market">
-                            <Button variant="ghost" size="sm" className="text-amber-700 hover:bg-amber-50 text-xs font-semibold">
-                                <ShoppingBag className="h-3.5 w-3.5 mr-1" /> {t('market.browseShop', 'Buy Fertilizer')}
-                            </Button>
-                        </Link>
-                        <Link href="/dashboard/farmer/market?tab=orders">
-                            <Button variant="ghost" size="sm" className="text-emerald-700 hover:bg-emerald-50 text-xs font-semibold">
-                                {t('common.viewAll', 'View All')} ({recentOrders.length}) <ArrowRight className="h-3 w-3 ml-1" />
-                            </Button>
-                        </Link>
-                    </div>
-                </div>
-
-                {recentOrders.length === 0 ? (
-                    <Card className="border border-dashed border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/50">
-                        <CardContent className="p-6 text-center">
-                            <Box className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                            <p className="text-sm font-semibold text-foreground">No recent fertilizer orders</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">Explore local agri shops for fertilizers, seeds, and farm supplies</p>
-                            <Link href="/dashboard/farmer/market" className="inline-block mt-3">
-                                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs">
-                                    <ShoppingBag className="h-3.5 w-3.5 mr-1.5" /> Browse Agri Shop
-                                </Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {recentOrders.map((ord) => {
-                            const statusColor = ord.status === 'completed'
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                : ord.status === 'dispatched'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
-                                : ord.status === 'confirmed'
-                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300'
-                                : ord.status === 'cancelled'
-                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300';
-
-                            return (
-                                <Card key={ord.id} className="border border-border/80 hover:border-emerald-500/50 hover:shadow-md transition-all">
-                                    <CardContent className="p-4 flex flex-col justify-between h-full">
-                                        <div>
-                                            <div className="flex items-center justify-between gap-2 mb-2">
-                                                <span className="font-mono font-bold text-xs text-muted-foreground">Order #{ord.id}</span>
-                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${statusColor}`}>
-                                                    {ord.status}
-                                                </span>
-                                            </div>
-                                            <h4 className="font-bold text-sm text-foreground line-clamp-1">
-                                                {ord.shop_name || "Agri Partner Shop"}
-                                            </h4>
-                                            <p className="text-xs text-muted-foreground mt-0.5">
-                                                {ord.items?.length || 0} items • ₹{Number(ord.total_price || 0).toLocaleString()}
-                                            </p>
-                                            {ord.items && ord.items.length > 0 && (
-                                                <p className="text-xs text-foreground/80 mt-2 bg-muted/40 p-2 rounded-lg line-clamp-1">
-                                                    🌾 {ord.items[0]?.product_name} {ord.items.length > 1 ? `+${ord.items.length - 1} more` : ''}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-                                            <span className="text-[11px] text-muted-foreground">
-                                                {new Date(ord.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                                            </span>
-                                            <Link href="/dashboard/farmer/market?tab=orders">
-                                                <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40">
-                                                    Track <ArrowRight className="h-3 w-3 ml-1" />
-                                                </Button>
-                                            </Link>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
-
-
-
-
-            {/* ═══════════════════════════════════════════════════
                 5. MARKET PRICES (Active Crops Only)
                ═══════════════════════════════════════════════════ */}
             <div>
@@ -1510,32 +1417,7 @@ export default function FarmerDashboard() {
                     </Card>
                 )
             }
-            {/* ═══════════════════════════════════════════════════
-                EMERGENCY SOS & HELPLINES BANNER
-               ═══════════════════════════════════════════════════ */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-500/10 via-red-500/5 to-amber-500/10 border border-rose-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-400 shrink-0">
-                        <PhoneCall className="h-5 w-5 animate-pulse" />
-                    </div>
-                    <div>
-                        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                            Emergency SOS & Crisis Helplines
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
-                                24/7 Hotlines
-                            </span>
-                        </h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                            Kisan Call Center (1551), PMFBY Crop Loss (14447), Discom (1912), KVK scientists & local contacts directory.
-                        </p>
-                    </div>
-                </div>
-                <Link href="/dashboard/farmer/emergency" className="shrink-0">
-                    <Button size="sm" variant="outline" className="border-rose-300 hover:bg-rose-500 hover:text-white dark:border-rose-800 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-300 text-xs font-bold gap-1.5 w-full sm:w-auto">
-                        Open SOS Directory <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                </Link>
-            </div>
+
 
             {/* ═══════════════════════════════════════════════════
                 8. AGRICULTURAL NEWS (Live, Past 15 Days)
