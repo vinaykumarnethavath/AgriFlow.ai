@@ -325,9 +325,9 @@ export function DemoButton() {
 
           {/* Footer */}
           <div className="mt-3 pt-2.5 border-t border-border/70 flex items-center justify-between text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1 font-medium">
-              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-              Password: <code className="bg-muted px-1 py-0.5 rounded text-foreground font-mono">demo123</code>
+            <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-3 w-3" />
+              1-Click Instant Preview
             </span>
             <span>Switch roles anytime inside</span>
           </div>

@@ -141,7 +141,7 @@ export default function ProductDetailsPage() {
                                     <time className="font-caveat font-medium text-indigo-500 text-xs">{new Date().toLocaleDateString()}</time>
                                 </div>
                                 <div className="text-muted-foreground text-sm">
-                                    Available on AgriChain Marketplace.
+                                    Available on AgriFlow.AI Marketplace.
                                 </div>
                             </div>
                         </div>

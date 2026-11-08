@@ -35,6 +35,10 @@ class CustomerOrder(SQLModel, table=True):
     customer_id: int = Field(foreign_key="user.id")
     total_amount: float
     status: str = "pending" # pending, confirmed, shipped, delivered, cancelled
+    payment_mode: str = "razorpay" # razorpay, cash, upi
+    payment_status: str = "pending" # pending, paid, failed
+    payment_id: Optional[str] = None
+    shipping_address: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     items: List["CustomerOrderItem"] = Relationship(back_populates="order")
@@ -60,6 +64,10 @@ class CustomerOrderRead(SQLModel):
     id: int
     total_amount: float
     status: str
+    payment_mode: Optional[str] = "razorpay"
+    payment_status: Optional[str] = "pending"
+    payment_id: Optional[str] = None
+    shipping_address: Optional[str] = None
     created_at: datetime
     items: List["CustomerOrderItemRead"]
 

@@ -260,52 +260,84 @@ async def read_products(
 @router.get("/shops", response_model=list)
 async def get_shops(session: AsyncSession = Depends(get_session)):
     """Get all registered shops with complete profile and contact details."""
-    statement = select(User, ShopProfile).outerjoin(ShopProfile, ShopProfile.user_id == User.id).where(User.role == "shop")
-    result = (await session.exec(statement)).all()
-    shops = []
-    for user, profile in result:
-        address_parts = []
-        if profile:
-            for p in [profile.shop_address, profile.landmark, profile.house_no, profile.street, profile.village, profile.mandal, profile.district, profile.state, profile.pincode]:
-                if p and str(p).strip() and str(p).strip() not in address_parts:
-                    address_parts.append(str(p).strip())
-        
-        prod_count_stmt = select(Product).where(Product.user_id == user.id, Product.status == "active")
-        prod_count = len((await session.exec(prod_count_stmt)).all())
-        
-        phone = None
-        if profile and profile.contact_number:
-            phone = profile.contact_number
-        elif profile and profile.phone_number:
-            phone = profile.phone_number
-        elif user.phone_number:
-            phone = user.phone_number
+    try:
+        # Query all shop users
+        users = (await session.exec(select(User).where(User.role == "shop"))).all()
+        if not users:
+            return []
 
-        name = None
-        if profile and profile.shop_name:
-            name = profile.shop_name
-        elif user.full_name:
-            name = user.full_name
-        else:
-            name = "Agri Input Shop"
+        user_ids = [u.id for u in users if u.id is not None]
 
-        shops.append({
-            "id": user.id,
-            "name": name,
-            "owner_name": (profile.owner_name if profile and profile.owner_name else None) or user.full_name,
-            "phone": phone,
-            "contact_number": phone,
-            "license_number": profile.license_number if profile else None,
-            "village": profile.village if profile else None,
-            "mandal": profile.mandal if profile else None,
-            "district": profile.district if profile else None,
-            "state": profile.state if profile else None,
-            "pincode": profile.pincode if profile else None,
-            "address": (profile.shop_address if profile and profile.shop_address else None) or (", ".join(address_parts) if address_parts else None),
-            "profile_picture_url": profile.profile_picture_url if profile else None,
-            "products_count": prod_count,
-        })
-    return shops
+        # Batch fetch shop profiles
+        profiles_by_user = {}
+        if user_ids:
+            try:
+                prof_stmt = select(ShopProfile).where(ShopProfile.user_id.in_(user_ids))
+                profiles = (await session.exec(prof_stmt)).all()
+                profiles_by_user = {p.user_id: p for p in profiles}
+            except Exception as pe:
+                print(f"[products/shops] Warning fetching profiles: {pe}")
+
+        # Batch fetch product counts
+        prod_counts = {}
+        if user_ids:
+            try:
+                prod_stmt = select(Product.user_id).where(Product.user_id.in_(user_ids), Product.status == "active")
+                prod_user_ids = (await session.exec(prod_stmt)).all()
+                for uid in prod_user_ids:
+                    prod_counts[uid] = prod_counts.get(uid, 0) + 1
+            except Exception as c_err:
+                print(f"[products/shops] Warning counting products: {c_err}")
+
+        shops = []
+        for user in users:
+            profile = profiles_by_user.get(user.id)
+            address_parts = []
+            if profile:
+                for p in [profile.shop_address, profile.landmark, profile.house_no, profile.street, profile.village, profile.mandal, profile.district, profile.state, profile.pincode]:
+                    if p and str(p).strip() and str(p).strip() not in address_parts:
+                        address_parts.append(str(p).strip())
+
+            phone = None
+            if profile and profile.contact_number:
+                phone = profile.contact_number
+            elif profile and profile.phone_number:
+                phone = profile.phone_number
+            elif user.phone_number:
+                phone = user.phone_number
+
+            name = None
+            if profile and profile.shop_name:
+                name = profile.shop_name
+            elif user.full_name:
+                name = user.full_name
+            else:
+                name = "Agri Input Shop"
+
+            shops.append({
+                "id": user.id,
+                "name": name,
+                "owner_name": (profile.owner_name if profile and profile.owner_name else None) or user.full_name,
+                "phone": phone,
+                "contact_number": phone,
+                "license_number": profile.license_number if profile else None,
+                "village": profile.village if profile else None,
+                "mandal": profile.mandal if profile else None,
+                "district": profile.district if profile else None,
+                "state": profile.state if profile else None,
+                "pincode": profile.pincode if profile else None,
+                "address": (profile.shop_address if profile and profile.shop_address else None) or (", ".join(address_parts) if address_parts else None),
+                "profile_picture_url": profile.profile_picture_url if profile else None,
+                "products_count": prod_counts.get(user.id, 0),
+            })
+        return shops
+    except Exception as e:
+        print(f"[products/shops] Error fetching shops: {e}")
+        try:
+            fallback_users = (await session.exec(select(User).where(User.role == "shop"))).all()
+            return [{"id": u.id, "name": u.full_name or "Agri Input Shop", "products_count": 0} for u in fallback_users]
+        except Exception:
+            return []
 
 @router.get("/{product_id}", response_model=ProductWithSeller)
 async def read_product(

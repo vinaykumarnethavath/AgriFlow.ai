@@ -97,61 +97,28 @@ export default function SalesPage() {
 
             // If Razorpay selected, open payment gateway
             if (data.payment_mode === "Razorpay") {
-                const { createPaymentOrder, verifyPayment, getRazorpayConfig, loadRazorpayScript } = await import("@/lib/payment-api");
-                const config = await getRazorpayConfig();
                 const totalAmount = (parseFloat(data.quantity) * parseFloat(data.selling_price)) - parseFloat(data.discount || 0);
-
-                const paymentOrder = await createPaymentOrder({
-                    amount: totalAmount,
-                    payment_for: "manufacturer_sale",
-                    reference_id: sale.id,
-                });
-
-                const loaded = await loadRazorpayScript();
-                if (!loaded) {
-                    alert("Failed to load Razorpay SDK. Please check your network connection.");
-                    return;
-                }
-
-                const options = {
-                    key: config.key_id,
-                    amount: Math.round(totalAmount * 100),
-                    currency: config.currency || "INR",
-                    name: "AgriChain Manufacturer",
-                    description: `Sale Invoice ${sale.invoice_id}`,
-                    order_id: paymentOrder.razorpay_order_id,
-                    theme: { color: "#9333ea" },
-                    handler: async (response: any) => {
-                        try {
-                            await verifyPayment({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                            });
+                if (totalAmount > 0) {
+                    const { executePaymentFlow } = await import("@/lib/payment-api");
+                    await executePaymentFlow({
+                        amount: totalAmount,
+                        payment_for: "manufacturer_sale",
+                        reference_id: sale.id,
+                        name: "AgriFlow.AI Manufacturer",
+                        description: `Sale Invoice ${sale.invoice_id}`,
+                        onSuccess: () => {
                             alert("Payment collected successfully!");
-                        } catch (err: any) {
-                            alert(err?.response?.data?.detail || "Payment verification failed.");
+                            fetchData();
+                            setIsModalOpen(false);
+                            reset();
+                        },
+                        onOpenMockPopup: (opts) => {
+                            setMockOptions(opts);
+                            setIsModalOpen(false);
                         }
-                        fetchData();
-                        setIsModalOpen(false);
-                        reset();
-                    },
-                };
-
-                const isMockMode = config.is_mock || config.key_id.startsWith("rzp_test_placeholder");
-
-                if (isMockMode) {
-                    setMockOptions(options);
+                    });
                     return;
                 }
-
-                const razorpay = new (window as any).Razorpay(options);
-                razorpay.on("payment.failed", (resp: any) => {
-                    console.error("Payment failed:", resp.error);
-                    alert(`Payment failed: ${resp.error?.description || "Transaction declined"}`);
-                });
-                razorpay.open();
-                return; // Don't close modal yet — Razorpay popup handles it
             }
 
             fetchData();

@@ -339,57 +339,21 @@ function CropDetailContent() {
             if (newExpense.payment_mode === "Razorpay" && !editingExpenseId) {
                 const totalCost = calculateTotalCost(newExpense);
                 if (totalCost > 0) {
-                    const { createPaymentOrder, verifyPayment, getRazorpayConfig, loadRazorpayScript } = await import("@/lib/payment-api");
-                    const config = await getRazorpayConfig();
-
-                    const paymentOrder = await createPaymentOrder({
+                    const { executePaymentFlow } = await import("@/lib/payment-api");
+                    await executePaymentFlow({
                         amount: totalCost,
                         payment_for: "farmer_expense",
                         reference_id: savedExpense?.id,
-                    });
-
-                    const loaded = await loadRazorpayScript();
-                    if (!loaded) {
-                        alert("Failed to load Razorpay SDK. Please check your network connection.");
-                        return;
-                    }
-
-                    const options = {
-                        key: config.key_id,
-                        amount: Math.round(totalCost * 100),
-                        currency: config.currency || "INR",
-                        name: "AgriChain",
-                        description: `Expense: ${newExpense.type || newExpense.category}`,
-                        order_id: paymentOrder.razorpay_order_id,
-                        theme: { color: "#16a34a" },
-                        handler: async (response: any) => {
-                            try {
-                                await verifyPayment({
-                                    razorpay_order_id: response.razorpay_order_id,
-                                    razorpay_payment_id: response.razorpay_payment_id,
-                                    razorpay_signature: response.razorpay_signature,
-                                });
-                                alert("Payment successful!");
-                            } catch (err: any) {
-                                alert(err?.response?.data?.detail || "Payment verification failed.");
-                            }
+                        name: "AgriFlow.AI",
+                        description: `Crop Expense: ${newExpense.type || newExpense.category}`,
+                        onSuccess: () => {
+                            alert("Payment successful! Crop expense recorded as paid.");
                             fetchData();
                         },
-                    };
-
-                    const isMockMode = config.is_mock || config.key_id.startsWith("rzp_test_placeholder");
-
-                    if (isMockMode) {
-                        setMockOptions(options);
-                        return;
-                    }
-
-                    const razorpay = new (window as any).Razorpay(options);
-                    razorpay.on("payment.failed", (resp: any) => {
-                        console.error("Payment failed:", resp.error);
-                        alert(`Payment failed: ${resp.error?.description || "Transaction declined"}`);
+                        onOpenMockPopup: (opts) => {
+                            setMockOptions(opts);
+                        }
                     });
-                    razorpay.open();
                 }
             }
 

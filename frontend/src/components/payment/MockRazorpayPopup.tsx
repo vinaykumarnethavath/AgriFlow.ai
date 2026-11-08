@@ -37,9 +37,9 @@ export default function MockRazorpayPopup({
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h2 className="font-bold text-foreground text-[17px]">Payment Options</h2>
+                        <h2 className="font-bold text-foreground text-[17px]">{options.name || "AgriFlow.AI Pay"}</h2>
                         <div className="text-xs text-muted-foreground font-medium">
-                            <span>1 item • Total: ₹{(options.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            <span>{options.description || "Secure Payment Gateway"} • Total: ₹{(options.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                         </div>
                     </div>
                 </div>

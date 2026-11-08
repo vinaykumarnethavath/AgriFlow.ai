@@ -249,19 +249,32 @@ async def _update_order_status_on_payment(payment: Payment, session: AsyncSessio
     After payment is verified, update the corresponding order/record status.
     """
     from ..models import CustomerOrder, ShopOrder
+    from ..models.crop import CropExpense
     from ..models.manufacturer import ManufacturerSale, ManufacturerPurchase
 
     if payment.payment_for == "customer_order" and payment.reference_id:
         order = await session.get(CustomerOrder, payment.reference_id)
         if order:
             order.status = "confirmed"  # paid → confirmed (ready for shipping)
+            order.payment_status = "paid"
+            order.payment_mode = "razorpay"
+            order.payment_id = payment.razorpay_payment_id
+            if payment.shipping_address:
+                order.shipping_address = payment.shipping_address
             session.add(order)
+
+    elif payment.payment_for == "farmer_expense" and payment.reference_id:
+        expense = await session.get(CropExpense, payment.reference_id)
+        if expense:
+            expense.payment_mode = "Razorpay"
+            session.add(expense)
 
     elif payment.payment_for == "shop_order" and payment.reference_id:
         order = await session.get(ShopOrder, payment.reference_id)
         if order:
             order.payment_status = "paid"
             order.payment_mode = "razorpay"
+            order.payment_id = payment.razorpay_payment_id
             if order.status == "pending":
                 order.status = "confirmed"
             session.add(order)

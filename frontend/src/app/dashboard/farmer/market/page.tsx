@@ -560,15 +560,6 @@ function MarketPageContent() {
 
     const handlePayNow = async (order: Order) => {
         try {
-            const { getRazorpayConfig, createPaymentOrder, verifyPayment, loadRazorpayScript } = await import("@/lib/payment-api");
-            const config = await getRazorpayConfig();
-            const paymentOrder = await createPaymentOrder({
-                amount: order.final_amount,
-                payment_for: "shop_order",
-                reference_id: order.id,
-                notes: "Deferred Farmer Payment"
-            });
-
             // Prefill user details if available
             let prefillInfo: any = {};
             try {
@@ -583,67 +574,23 @@ function MarketPageContent() {
                 }
             } catch (_) {}
 
-            const options: any = {
-                key: config.key_id,
-                amount: Math.round(paymentOrder.amount * 100),
-                currency: config.currency || "INR",
-                name: "AgriChain Market",
+            const { executePaymentFlow } = await import("@/lib/payment-api");
+            await executePaymentFlow({
+                amount: order.final_amount,
+                payment_for: "shop_order",
+                reference_id: order.id,
+                notes: "Farmer Input Shop Order",
+                name: "AgriFlow.AI Market",
                 description: `Payment for Order #${order.id}`,
-                order_id: paymentOrder.razorpay_order_id,
                 prefill: prefillInfo,
-                theme: { color: "#16a34a" },
-                config: {
-                    display: {
-                        blocks: {
-                            upi: {
-                                name: "Pay via UPI (GPay / PhonePe / Paytm / QR)",
-                                instruments: [
-                                    { method: "upi" }
-                                ]
-                            },
-                            other: {
-                                name: "Cards, Netbanking & Wallets",
-                                instruments: [
-                                    { method: "card" },
-                                    { method: "netbanking" },
-                                    { method: "wallet" }
-                                ]
-                            }
-                        },
-                        sequence: ["block.upi", "block.other"],
-                        preferences: {
-                            show_default_blocks: true
-                        }
-                    }
+                onSuccess: () => {
+                    alert("Payment successful! Order marked as paid.");
+                    fetchOrders();
                 },
-                handler: async (response: any) => {
-                    try {
-                        await verifyPayment({
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                        });
-                        alert("Payment successful! Order updated.");
-                        fetchOrders();
-                    } catch (err: any) {
-                        alert(err?.response?.data?.detail || "Payment verification failed.");
-                    }
+                onOpenMockPopup: (opts) => {
+                    setMockOptions(opts);
                 }
-            };
-            
-            const loaded = await loadRazorpayScript();
-            if (!loaded) {
-                // Fallback to mock popup only if script failed to load from CDN
-                setMockOptions(options);
-                return;
-            }
-
-            const razorpay = new (window as any).Razorpay(options);
-            razorpay.on("payment.failed", (resp: any) => {
-                console.error("Payment failed:", resp.error);
-                alert(`Payment failed: ${resp.error?.description || "Transaction declined"}`);
             });
-            razorpay.open();
         } catch (error: any) {
             console.error("Razorpay initiation failed", error);
             alert(error?.response?.data?.detail || "Could not initialize payment window.");

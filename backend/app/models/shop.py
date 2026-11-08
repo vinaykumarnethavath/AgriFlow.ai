@@ -53,6 +53,7 @@ class ShopProfileBase(SQLModel):
     ifsc_code: Optional[str] = None
     profile_picture_url: Optional[str] = None
     payment_accounts: Optional[List[dict]] = Field(default=None, sa_column=Column(JSON))
+    notification_preferences: Optional[str] = None
 
 class ShopProfile(ShopProfileBase, table=True):
     __tablename__ = "shop_profiles"

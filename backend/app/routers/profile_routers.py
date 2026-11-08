@@ -201,6 +201,56 @@ async def create_or_update_shop_profile(
     profile_read.contact_number = phone
     return profile_read
 
+@router.get("/shop/notification-preferences")
+async def get_shop_notification_preferences(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    if current_user.role != UserRole.SHOP:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    statement = select(ShopProfile).where(ShopProfile.user_id == current_user.id)
+    result = await session.exec(statement)
+    profile = result.first()
+    if profile and profile.notification_preferences:
+        import json
+        try:
+            return json.loads(profile.notification_preferences)
+        except Exception:
+            pass
+    return {
+        "sales_alerts": True,
+        "low_stock": True,
+        "daily_summary": False,
+        "weekly_reports": True,
+    }
+
+@router.post("/shop/notification-preferences")
+async def save_shop_notification_preferences(
+    prefs: dict,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    if current_user.role != UserRole.SHOP:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    import json
+    statement = select(ShopProfile).where(ShopProfile.user_id == current_user.id)
+    result = await session.exec(statement)
+    profile = result.first()
+    if not profile:
+        profile = ShopProfile(
+            shop_name=current_user.full_name or "Shop",
+            license_number="",
+            father_name="",
+            user_id=current_user.id,
+            notification_preferences=json.dumps(prefs)
+        )
+        session.add(profile)
+    else:
+        profile.notification_preferences = json.dumps(prefs)
+        session.add(profile)
+    await session.commit()
+    return {"status": "success", "notification_preferences": prefs}
+
 # --- Customer Profile Endpoints ---
 
 @router.get("/customer/profile", response_model=CustomerProfileRead)

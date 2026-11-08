@@ -73,7 +73,7 @@ export default function RazorpayCheckout({
                 key: config.key_id,
                 amount: Math.round(amount * 100), // paise
                 currency: config.currency || "INR",
-                name: "AgriChain",
+                name: "AgriFlow.AI",
                 description: `Payment for ${paymentFor.replace(/_/g, " ")}`,
                 order_id: order.razorpay_order_id,
                 prefill: {

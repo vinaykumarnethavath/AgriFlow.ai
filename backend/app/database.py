@@ -4,24 +4,54 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-load_dotenv()
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+backend_env = os.path.join(backend_dir, ".env")
+if os.path.exists(backend_env):
+    load_dotenv(backend_env, override=False)
+else:
+    load_dotenv(find_dotenv(usecwd=True), override=False)
 
 import app.models  # noqa: F401
 
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from sqlalchemy import text
 
+default_sqlite_path = os.path.join(backend_dir, "agrichain.db").replace("\\", "/")
+default_sqlite_url = f"sqlite+aiosqlite:///{default_sqlite_path}"
+
 # Default to SQLite if no DATABASE_URL is set; support Railway DATABASE_PUBLIC_URL as fallback
-raw_db_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE_PUBLIC_URL") or "sqlite+aiosqlite:///./agrichain.db"
+raw_db_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE_PUBLIC_URL") or default_sqlite_url
 DATABASE_URL = raw_db_url.strip()
+
+def _is_local_db_reachable(db_url: str) -> bool:
+    host = "127.0.0.1"
+    port = 5432
+    try:
+        parsed = urlparse(db_url)
+        host = parsed.hostname or "127.0.0.1"
+        port = parsed.port or 5432
+        if host in {"127.0.0.1", "localhost", "0.0.0.0"}:
+            import socket
+            s = socket.create_connection((host, port), timeout=0.5)
+            s.close()
+            return True
+        return True
+    except Exception as e:
+        print(f"[database] Warning: Local database at {host}:{port} is unreachable ({e}).")
+        return False
 
 # Railway provides DATABASE_URL starting with postgres:// but SQLAlchemy asyncpg needs postgresql+asyncpg://
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
 elif DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+# If configured for local PostgreSQL but port is closed/unreachable, gracefully fall back to SQLite
+if not DATABASE_URL.startswith("sqlite") and not _is_local_db_reachable(DATABASE_URL):
+    print(f"[database] Gracefully falling back to SQLite: {default_sqlite_url}")
+    DATABASE_URL = default_sqlite_url
 
 is_sqlite = DATABASE_URL.startswith("sqlite")
 
@@ -78,7 +108,28 @@ async_session_maker = sessionmaker(
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
-        
+
+    if is_sqlite:
+        # For SQLite, check if specific columns exist and add them if not
+        sqlite_cols = [
+            ("shop_profiles", "notification_preferences", "VARCHAR"),
+            ("customer_orders", "payment_mode", "VARCHAR DEFAULT 'razorpay'"),
+            ("customer_orders", "payment_status", "VARCHAR DEFAULT 'pending'"),
+            ("customer_orders", "payment_id", "VARCHAR"),
+            ("customer_orders", "shipping_address", "VARCHAR"),
+        ]
+        async with engine.connect() as conn:
+            for table, col, col_type in sqlite_cols:
+                try:
+                    res = await conn.execute(text(f"PRAGMA table_info({table})"))
+                    existing_cols = {row[1] for row in res.fetchall()}
+                    if col not in existing_cols:
+                        await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}"))
+                        await conn.commit()
+                except Exception:
+                    pass
+        return
+
     # Safely migrate new columns and performance indexes on existing database tables
     migration_statements = [
         # Farmer profile migrations
@@ -92,10 +143,15 @@ async def init_db():
         "ALTER TABLE farmerprofile ADD COLUMN IF NOT EXISTS preferred_language VARCHAR",
         "ALTER TABLE farmerprofile ADD COLUMN IF NOT EXISTS notification_preferences VARCHAR",
         
-        # Customer profile migrations
+        # Customer profile & orders migrations
         "ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
+        "ALTER TABLE customer_orders ADD COLUMN IF NOT EXISTS payment_mode VARCHAR DEFAULT 'razorpay'",
+        "ALTER TABLE customer_orders ADD COLUMN IF NOT EXISTS payment_status VARCHAR DEFAULT 'pending'",
+        "ALTER TABLE customer_orders ADD COLUMN IF NOT EXISTS payment_id VARCHAR",
+        "ALTER TABLE customer_orders ADD COLUMN IF NOT EXISTS shipping_address VARCHAR",
         
         # Shop profile migrations
+        "ALTER TABLE shop_profiles ADD COLUMN IF NOT EXISTS notification_preferences VARCHAR",
         "ALTER TABLE shop_profiles ADD COLUMN IF NOT EXISTS phone_number VARCHAR",
         "ALTER TABLE shop_profiles ADD COLUMN IF NOT EXISTS contact_number VARCHAR",
         "ALTER TABLE shop_profiles ADD COLUMN IF NOT EXISTS owner_name VARCHAR",

@@ -57,7 +57,7 @@ export default function BlockchainExplorerPage() {
     // Certification Issuance State
     const [certProductId, setCertProductId] = useState("");
     const [certType, setCertType] = useState("organic");
-    const [verifierName, setVerifierName] = useState("AgriChain Organic Certification Board");
+    const [verifierName, setVerifierName] = useState("AgriFlow Organic Certification Board");
     const [certDetails, setCertDetails] = useState("Soil health check: Passed\nPesticide residues: None detected\nCultivation standard: 100% Organic Eco-certified");
     const [issuing, setIssuing] = useState(false);
 
@@ -73,7 +73,7 @@ export default function BlockchainExplorerPage() {
     // Set default verifier name based on cert type selection
     useEffect(() => {
         if (certType === "organic") {
-            setVerifierName("AgriChain Organic Certification Board");
+            setVerifierName("AgriFlow Organic Certification Board");
             setCertDetails("Soil health check: Passed\nPesticide residues: None detected\nCultivation standard: 100% Organic Eco-certified");
         } else {
             setVerifierName("Fair-Trade India Association");
@@ -261,7 +261,7 @@ export default function BlockchainExplorerPage() {
                 <div>
                     <h1 className="text-3xl font-extrabold text-green-955 dark:text-zinc-50 flex items-center gap-3">
                         <Database className="h-8 w-8 text-green-600" />
-                        AgriChain Ledger
+                        AgriFlow Ledger
                     </h1>
                     <p className="text-gray-500 dark:text-zinc-400 mt-1">
                         Cryptographically secure, immutable proof of Organic Certification & Fair-Trade wage distributions.

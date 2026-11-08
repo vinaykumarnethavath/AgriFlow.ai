@@ -380,7 +380,7 @@ export default function TraceabilityPage() {
                 <div className="text-center pt-8 border-t border-gray-100">
                     <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
                         <Lock className="h-3.5 w-3.5 text-green-600" />
-                        Secured by <span className="font-bold text-green-650">AgriChain</span> Cryptographic Ledger
+                        Secured by <span className="font-bold text-green-650">AgriFlow.AI</span> Cryptographic Ledger
                     </p>
                 </div>
             </div>

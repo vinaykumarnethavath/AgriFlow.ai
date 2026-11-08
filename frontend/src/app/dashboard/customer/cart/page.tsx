@@ -56,23 +56,6 @@ export default function CartPage() {
             const orderId = order.id;
             const orderTotal = order.total_amount;
 
-            // 2. Now initiate Razorpay payment
-            const { createPaymentOrder, verifyPayment, getRazorpayConfig, loadRazorpayScript } = await import("@/lib/payment-api");
-
-            const config = await getRazorpayConfig();
-            const paymentOrder = await createPaymentOrder({
-                amount: orderTotal,
-                payment_for: "customer_order",
-                reference_id: orderId,
-                shipping_address: "To be updated",
-            });
-
-            // 3. Load Razorpay SDK
-            const loaded = await loadRazorpayScript();
-            if (!loaded) {
-                throw new Error("Could not load Razorpay checkout SDK. Please check your internet connection.");
-            }
-
             // Optional user prefill from local storage
             let prefillInfo: any = {};
             try {
@@ -87,69 +70,25 @@ export default function CartPage() {
                 }
             } catch (_) {}
 
-            // 4. Open Razorpay popup
-            const options: any = {
-                key: config.key_id,
-                amount: Math.round(orderTotal * 100),
-                currency: config.currency || "INR",
-                name: "AgriChain",
+            const { executePaymentFlow } = await import("@/lib/payment-api");
+            await executePaymentFlow({
+                amount: orderTotal,
+                payment_for: "customer_order",
+                reference_id: orderId,
+                name: "AgriFlow.AI",
                 description: `Order #${orderId}`,
-                order_id: paymentOrder.razorpay_order_id,
                 prefill: prefillInfo,
-                theme: { color: "#16a34a" },
-                config: {
-                    display: {
-                        blocks: {
-                            upi: {
-                                name: "Pay via UPI (GPay / PhonePe / Paytm / QR)",
-                                instruments: [
-                                    { method: "upi" }
-                                ]
-                            },
-                            other: {
-                                name: "Cards, Netbanking & Wallets",
-                                instruments: [
-                                    { method: "card" },
-                                    { method: "netbanking" },
-                                    { method: "wallet" }
-                                ]
-                            }
-                        },
-                        sequence: ["block.upi", "block.other"],
-                        preferences: {
-                            show_default_blocks: true
-                        }
-                    }
+                onSuccess: async () => {
+                    setCheckingOut(false);
+                    router.push("/dashboard/customer/orders");
                 },
-                handler: async (response: any) => {
-                    try {
-                        await verifyPayment({
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                        });
-                        router.push("/dashboard/customer/orders");
-                    } catch (err: any) {
-                        alert(err?.response?.data?.detail || "Payment verification failed. Please contact support.");
-                    } finally {
-                        setCheckingOut(false);
-                    }
+                onFailure: (err) => {
+                    setCheckingOut(false);
                 },
-                modal: {
-                    ondismiss: () => {
-                        setCheckingOut(false);
-                        alert("Payment cancelled. Your order is saved as pending.");
-                    },
-                },
-            };
-
-            const razorpay = new (window as any).Razorpay(options);
-            razorpay.on("payment.failed", (resp: any) => {
-                console.error("Razorpay payment failed:", resp.error);
-                alert(`Payment failed: ${resp.error?.description || "Transaction declined"}`);
-                setCheckingOut(false);
+                onOpenMockPopup: (opts) => {
+                    setMockOptions(opts);
+                }
             });
-            razorpay.open();
         } catch (error: any) {
             console.error("Checkout failed:", error);
             const message = error?.response?.data?.detail || "Checkout failed. Please try again.";

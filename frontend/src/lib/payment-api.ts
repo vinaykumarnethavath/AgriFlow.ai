@@ -106,3 +106,102 @@ export const updateShippingStatus = async (
     const response = await api.put(`/payments/${paymentId}/shipping`, null, { params });
     return response.data;
 };
+
+export interface ProcessPaymentParams {
+    amount: number;
+    payment_for: string;
+    reference_id?: number;
+    shipping_address?: string;
+    notes?: string;
+    name?: string;
+    description?: string;
+    prefill?: {
+        name?: string;
+        email?: string;
+        contact?: string;
+    };
+    onSuccess: (verifyResult: any) => Promise<void> | void;
+    onFailure?: (error: any) => void;
+    onOpenMockPopup: (options: any) => void;
+}
+
+export const executePaymentFlow = async ({
+    amount,
+    payment_for,
+    reference_id,
+    shipping_address,
+    notes,
+    name = "AgriFlow.AI",
+    description,
+    prefill,
+    onSuccess,
+    onFailure,
+    onOpenMockPopup,
+}: ProcessPaymentParams) => {
+    // 1. Create order on backend
+    const paymentOrder = await createPaymentOrder({
+        amount,
+        payment_for,
+        reference_id,
+        shipping_address,
+        notes,
+    });
+
+    // 2. Fetch config
+    const config = await getRazorpayConfig();
+
+    const options: any = {
+        key: config.key_id,
+        amount: Math.round(amount * 100),
+        currency: config.currency || "INR",
+        name,
+        description: description || `Order #${reference_id || paymentOrder.id}`,
+        order_id: paymentOrder.razorpay_order_id,
+        prefill: prefill || {},
+        theme: { color: "#16a34a" },
+        handler: async (response: any) => {
+            try {
+                const verifyRes = await verifyPayment({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                });
+                await onSuccess(verifyRes);
+            } catch (err: any) {
+                if (onFailure) onFailure(err);
+                else alert(err?.response?.data?.detail || "Payment verification failed.");
+            }
+        },
+        modal: {
+            ondismiss: () => {
+                if (onFailure) onFailure(new Error("Payment cancelled by user"));
+            }
+        }
+    };
+
+    // If mock mode or placeholder keys, directly open interactive MockRazorpayPopup
+    if (config.is_mock || !config.key_id || config.key_id.startsWith("rzp_test_placeholder")) {
+        onOpenMockPopup(options);
+        return;
+    }
+
+    // Try loading Razorpay SDK
+    const loaded = await loadRazorpayScript();
+    if (!loaded) {
+        onOpenMockPopup(options);
+        return;
+    }
+
+    try {
+        const razorpay = new (window as any).Razorpay(options);
+        razorpay.on("payment.failed", (resp: any) => {
+            console.error("Razorpay payment failed:", resp.error);
+            if (onFailure) onFailure(resp.error);
+            else alert(`Payment failed: ${resp.error?.description || "Transaction declined"}`);
+        });
+        razorpay.open();
+    } catch (err) {
+        console.warn("Failed to open Razorpay checkout, falling back to mock modal:", err);
+        onOpenMockPopup(options);
+    }
+};
