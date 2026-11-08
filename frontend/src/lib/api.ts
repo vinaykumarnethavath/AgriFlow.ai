@@ -101,6 +101,17 @@ export interface Crop {
     rent_amount?: number;
     lease_terms?: string;
     cultivator_name?: string;
+    
+    // Together Cultivation (Shared Farming)
+    is_shared_cultivation?: boolean;
+    shared_status?: "none" | "pending_acceptance" | "accepted" | "declined";
+    partner_farmer_id?: number;
+    partner_farmer_code?: string;
+    partner_name?: string;
+    partner_phone?: string;
+    partnership_share_ratio?: number;
+    creator_share_ratio?: number;
+
     total_cost?: number;
     total_revenue?: number;
     actual_yield?: number;
@@ -125,6 +136,14 @@ export interface CropUpdate {
     rent_amount?: number;
     lease_terms?: string;
     cultivator_name?: string;
+    is_shared_cultivation?: boolean;
+    shared_status?: "none" | "pending_acceptance" | "accepted" | "declined";
+    partner_farmer_id?: number;
+    partner_farmer_code?: string;
+    partner_name?: string;
+    partner_phone?: string;
+    partnership_share_ratio?: number;
+    creator_share_ratio?: number;
 }
 
 export interface CropExpense {
@@ -143,6 +162,40 @@ export interface CropExpense {
     stage?: string;
     bill_url?: string;
     notes?: string;
+    paid_by_user_id?: number;
+    paid_by_name?: string;
+}
+
+export interface PartnerLookupResult {
+    found: boolean;
+    user_id?: number;
+    farmer_id?: string;
+    full_name?: string;
+    phone_number?: string;
+    village?: string;
+    district?: string;
+    message?: string;
+}
+
+export interface CropSettlementParty {
+    name: string;
+    user_id: number;
+    share_percentage: number;
+    expenses_paid: number;
+    profit_share: number;
+    final_payout: number;
+}
+
+export interface CropSettlement {
+    crop_id: number;
+    crop_name: string;
+    is_shared_cultivation: boolean;
+    shared_status: string;
+    total_revenue: number;
+    total_expenses: number;
+    net_profit: number;
+    creator: CropSettlementParty;
+    partner: CropSettlementParty;
 }
 
 export interface CropHarvest {
@@ -239,6 +292,27 @@ export const createCropSale = async (cropId: number, sale: Partial<CropSale>) =>
 
 export const deleteCropSale = async (saleId: number) => {
     const response = await api.delete(`/farmer/crops/sales/${saleId}`);
+    return response.data;
+};
+
+// Together Cultivation Helpers
+export const lookupPartnerFarmer = async (query: string): Promise<PartnerLookupResult> => {
+    const response = await api.get<PartnerLookupResult>(`/crops/partner-lookup`, { params: { query } });
+    return response.data;
+};
+
+export const acceptCollaboration = async (cropId: number): Promise<Crop> => {
+    const response = await api.post<Crop>(`/crops/${cropId}/accept-collaboration`);
+    return response.data;
+};
+
+export const declineCollaboration = async (cropId: number): Promise<Crop> => {
+    const response = await api.post<Crop>(`/crops/${cropId}/decline-collaboration`);
+    return response.data;
+};
+
+export const getCropSettlement = async (cropId: number): Promise<CropSettlement> => {
+    const response = await api.get<CropSettlement>(`/crops/${cropId}/settlement`);
     return response.data;
 };
 

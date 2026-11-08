@@ -665,6 +665,77 @@ def generate():
             VALUES (?, 'Labor', 'Sowing & Field Labor', 13.0, 'days', 450.0, 5850.0, '2026-07-20', 'Cash', '1 day', '1 day', 'Sowing')
         """, (leased_crop_id,))
 
+        # Seed Together Cultivation ("Ummadi Vyavasayam") crops:
+        # Crop 1: Harvested Joint Bt Cotton (Vinay & Suresh Reddy - 50:50)
+        c.execute("SELECT id FROM crop WHERE user_id = ? AND name = 'Kharif Bt Cotton (Joint Cultivation - Vinay & Suresh)'", (u_farmer,))
+        joint_crop_row = c.fetchone()
+        if joint_crop_row:
+            joint_crop_id = joint_crop_row[0]
+            c.execute("""
+                UPDATE crop SET area = 5.0, season = 'Kharif 2025', variety = 'RCH-659 BG-II', crop_type = 'Cotton',
+                                sowing_date = '2025-06-20', expected_harvest_date = '2025-11-25', status = 'harvested',
+                                total_cost = 50000.0, total_revenue = 150000.0, net_profit = 100000.0, actual_yield = 20.0,
+                                selling_price_per_unit = 7500.0, land_ownership_type = 'own', cultivator_name = 'Vinay Kumar Nethavath',
+                                is_shared_cultivation = 1, shared_status = 'accepted', partner_farmer_id = ?, partner_farmer_code = 'FARMER-AP-ATP-002',
+                                partner_name = ?, partner_phone = '9849010002', creator_share_ratio = 0.50, partnership_share_ratio = 0.50
+                WHERE id = ?
+            """, (suresh_id, suresh_name, joint_crop_id))
+        else:
+            c.execute("""
+                INSERT INTO crop (user_id, name, area, season, variety, crop_type, sowing_date, expected_harvest_date, status,
+                                  total_cost, total_revenue, net_profit, actual_yield, selling_price_per_unit, created_at,
+                                  land_ownership_type, cultivator_name, is_shared_cultivation, shared_status, partner_farmer_id,
+                                  partner_farmer_code, partner_name, partner_phone, creator_share_ratio, partnership_share_ratio)
+                VALUES (?, 'Kharif Bt Cotton (Joint Cultivation - Vinay & Suresh)', 5.0, 'Kharif 2025', 'RCH-659 BG-II', 'Cotton',
+                        '2025-06-20', '2025-11-25', 'harvested', 50000.0, 150000.0, 100000.0, 20.0, 7500.0, ?,
+                        'own', 'Vinay Kumar Nethavath', 1, 'accepted', ?, 'FARMER-AP-ATP-002', ?, '9849010002', 0.50, 0.50)
+            """, (u_farmer, now_iso, suresh_id, suresh_name))
+            joint_crop_id = c.lastrowid
+
+        # Clear and seed expenses with attribution for joint crop
+        c.execute("DELETE FROM cropexpense WHERE crop_id = ?", (joint_crop_id,))
+        joint_expenses = [
+            # Vinay Paid (EA = 30,000)
+            ("Input", "Certified Bt Cotton Hybrid Seeds", 10.0, "packets", 800.0, 8000.0, "2025-06-22", "Razorpay", "450g", "1 day", "Sowing", u_farmer, "Vinay Kumar Nethavath"),
+            ("Machinery", "Tractor Deep Ploughing & Bed Making", 8.0, "hours", 1500.0, 12000.0, "2025-06-18", "Cash", "1 hr", "8 hrs", "Land Prep", u_farmer, "Vinay Kumar Nethavath"),
+            ("Input", "Basal DAP & MOP Complex Fertilizers", 5.0, "bags", 2000.0, 10000.0, "2025-06-25", "Razorpay", "50kg", "1 day", "Sowing", u_farmer, "Vinay Kumar Nethavath"),
+            # Suresh Reddy Paid (EB = 20,000)
+            ("Labor", "First & Second Round Manual Weeding", 16.0, "days", 500.0, 8000.0, "2025-07-20", "Cash", "1 day", "2 days", "Weeding", suresh_id, suresh_name),
+            ("Input", "Neem Oil & Sucking Pest Bio-Spray", 6.0, "liters", 1000.0, 6000.0, "2025-08-15", "Cash", "1 liter", "1 day", "Vegetative", suresh_id, suresh_name),
+            ("Labor", "Cotton Boll Harvesting & Picking Labor", 12.0, "days", 500.0, 6000.0, "2025-11-10", "Cash", "1 day", "3 days", "Harvesting", suresh_id, suresh_name),
+        ]
+        for cat, typ, q, u, uc, tc, dt, pm, usz, dur, stg, p_uid, p_name in joint_expenses:
+            c.execute("""
+                INSERT INTO cropexpense (crop_id, category, type, quantity, unit, unit_cost, total_cost, date, payment_mode, unit_size, duration, stage, paid_by_user_id, paid_by_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (joint_crop_id, cat, typ, q, u, uc, tc, dt, pm, usz, dur, stg, p_uid, p_name))
+
+        # Seed Harvest and Sale for joint crop
+        c.execute("DELETE FROM cropharvest WHERE crop_id = ?", (joint_crop_id,))
+        c.execute("DELETE FROM cropsale WHERE crop_id = ?", (joint_crop_id,))
+        c.execute("""
+            INSERT INTO cropharvest (crop_id, date, stage, quantity, unit, quality, selling_price_per_unit, total_revenue, buyer_type, status, created_at)
+            VALUES (?, '2025-11-25', 'Final Harvest', 20.0, 'Quintal', 'Premium Grade 1', 7500.0, 150000.0, 'Mill', 'sold', ?)
+        """, (joint_crop_id, now_iso))
+        c.execute("""
+            INSERT INTO cropsale (crop_id, date, buyer_type, buyer_name, buyer_id, quantity_quintals, total_bags, bag_size, price_per_quintal, total_revenue, payment_mode, status, created_at)
+            VALUES (?, '2025-11-28', 'Mill', 'Vinay Agro Industries & Rice Mill', ?, 20.0, 40, 50.0, 7500.0, 150000.0, 'Razorpay', 'sold', ?)
+        """, (joint_crop_id, str(u_mfr), now_iso))
+
+        # Crop 2: Pending Together Cultivation Invitation (Suresh invited Vinay)
+        c.execute("SELECT id FROM crop WHERE user_id = ? AND name = 'Sunflower Sunbred-275 (Pending Joint Farming)'", (suresh_id,))
+        pending_crop_row = c.fetchone()
+        if not pending_crop_row:
+            c.execute("""
+                INSERT INTO crop (user_id, name, area, season, variety, crop_type, sowing_date, expected_harvest_date, status,
+                                  total_cost, total_revenue, net_profit, actual_yield, selling_price_per_unit, created_at,
+                                  land_ownership_type, cultivator_name, is_shared_cultivation, shared_status, partner_farmer_id,
+                                  partner_farmer_code, partner_name, partner_phone, creator_share_ratio, partnership_share_ratio)
+                VALUES (?, 'Sunflower Sunbred-275 (Pending Joint Farming)', 3.5, 'Kharif 2026', 'Sunbred-275', 'Sunflower',
+                        '2026-08-01', '2026-11-15', 'growing', 15000.0, 0.0, -15000.0, 0.0, 5800.0, ?,
+                        'own', ?, 1, 'pending_acceptance', ?, 'FARM-5', 'Vinay Kumar Nethavath', '9876510001', 0.60, 0.40)
+            """, (suresh_id, now_iso, suresh_name, u_farmer))
+
     # Also seed 3 years of crops for the 16 surrounding farmers within 50 km!
     surr_crop_templates = [
         ("Kharif Paddy BPT-5204", "Paddy", 5.0, "BPT-5204", "2023-07-15", "2023-11-28", 102.0, 2350.0),

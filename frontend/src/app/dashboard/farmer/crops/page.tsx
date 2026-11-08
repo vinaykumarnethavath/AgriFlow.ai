@@ -3,12 +3,12 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import api, { Crop } from "@/lib/api";
+import api, { Crop, lookupPartnerFarmer, acceptCollaboration, declineCollaboration, PartnerLookupResult } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import { ArrowLeft, Plus, Sprout, ArrowRight, Stethoscope, LineChart, FileDown, ChevronDown, Lightbulb, Factory } from "lucide-react";
+import { ArrowLeft, Plus, Sprout, ArrowRight, Stethoscope, LineChart, FileDown, ChevronDown, Lightbulb, Factory, Users, UserCheck, CheckCircle2, XCircle } from "lucide-react";
 import ExportReportModal from "@/components/info/ExportReportModal";
 import BestCropRecommendationCard from "@/components/info/BestCropRecommendationCard";
 import CropRecommendationWidget from "@/components/info/CropRecommendationWidget";
@@ -38,9 +38,17 @@ export default function CropsListPage() {
         landowner_name: "",
         landowner_phone: "",
         rent_amount: "",
-        lease_terms: ""
+        lease_terms: "",
+        is_shared_cultivation: false,
+        partner_farmer_code: "",
+        partner_phone: "",
+        partner_name: "",
+        partnership_share_ratio: 0.50
     });
     const [addingCrop, setAddingCrop] = useState(false);
+    const [partnerQuery, setPartnerQuery] = useState("");
+    const [searchingPartner, setSearchingPartner] = useState(false);
+    const [partnerLookupResult, setPartnerLookupResult] = useState<PartnerLookupResult | null>(null);
 
     // Harvest State
     const [isHarvestModalOpen, setIsHarvestModalOpen] = useState(false);
@@ -242,6 +250,11 @@ export default function CropsListPage() {
             landowner_phone: newCrop.land_ownership_type === "rented" ? newCrop.landowner_phone || null : null,
             rent_amount: newCrop.land_ownership_type === "rented" && newCrop.rent_amount ? parseFloat(newCrop.rent_amount) : 0.0,
             lease_terms: newCrop.land_ownership_type === "rented" ? newCrop.lease_terms || null : null,
+            is_shared_cultivation: Boolean(newCrop.is_shared_cultivation),
+            partner_farmer_code: newCrop.is_shared_cultivation ? newCrop.partner_farmer_code || null : null,
+            partner_phone: newCrop.is_shared_cultivation ? newCrop.partner_phone || null : null,
+            partner_name: newCrop.is_shared_cultivation ? newCrop.partner_name || null : null,
+            partnership_share_ratio: newCrop.is_shared_cultivation ? newCrop.partnership_share_ratio || 0.50 : 0.50,
         };
 
         try {
@@ -260,8 +273,15 @@ export default function CropsListPage() {
                 landowner_name: "",
                 landowner_phone: "",
                 rent_amount: "",
-                lease_terms: ""
+                lease_terms: "",
+                is_shared_cultivation: false,
+                partner_farmer_code: "",
+                partner_phone: "",
+                partner_name: "",
+                partnership_share_ratio: 0.50
             });
+            setPartnerQuery("");
+            setPartnerLookupResult(null);
             fetchData();
         } catch (error: any) {
             console.error("Create crop error:", error.response?.data || error);
@@ -273,6 +293,49 @@ export default function CropsListPage() {
             alert(msg);
         } finally {
             setAddingCrop(false);
+        }
+    };
+
+    const handleSearchPartner = async () => {
+        if (!partnerQuery.trim()) return;
+        setSearchingPartner(true);
+        try {
+            const res = await lookupPartnerFarmer(partnerQuery.trim());
+            setPartnerLookupResult(res);
+            if (res.found) {
+                setNewCrop(prev => ({
+                    ...prev,
+                    partner_farmer_code: res.farmer_id || partnerQuery.trim(),
+                    partner_phone: res.phone_number || "",
+                    partner_name: res.full_name || "",
+                }));
+            }
+        } catch (err: any) {
+            setPartnerLookupResult({
+                found: false,
+                message: err.response?.data?.message || "Failed to search partner farmer"
+            });
+        } finally {
+            setSearchingPartner(false);
+        }
+    };
+
+    const handleAcceptCollaboration = async (cropId: number) => {
+        try {
+            await acceptCollaboration(cropId);
+            await fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to accept collaboration");
+        }
+    };
+
+    const handleDeclineCollaboration = async (cropId: number) => {
+        if (!confirm("Are you sure you want to decline this collaboration request?")) return;
+        try {
+            await declineCollaboration(cropId);
+            await fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to decline collaboration");
         }
     };
 
@@ -342,6 +405,54 @@ export default function CropsListPage() {
                     </Button>
                 </div>
             </div>
+
+            {/* Pending Together Cultivation Invitations Banner */}
+            {crops.filter(c => c.is_shared_cultivation && c.shared_status === "pending_acceptance" && (c.partner_farmer_id === profile?.user_id || c.partner_phone === profile?.phone_number)).length > 0 && (
+                <div className="space-y-3">
+                    {crops.filter(c => c.is_shared_cultivation && c.shared_status === "pending_acceptance" && (c.partner_farmer_id === profile?.user_id || c.partner_phone === profile?.phone_number)).map(inv => (
+                        <div key={inv.id} className="p-4 rounded-xl border border-purple-300 dark:border-purple-800 bg-gradient-to-r from-purple-50 via-indigo-50/50 to-white dark:from-purple-950/40 dark:via-indigo-950/30 dark:to-card shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <span className="p-2.5 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 text-2xl">
+                                    🤝
+                                </span>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h4 className="font-bold text-purple-950 dark:text-purple-200 text-base">
+                                            Together Cultivation Request
+                                        </h4>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-200 text-purple-900 dark:bg-purple-800 dark:text-purple-100 uppercase tracking-wide">
+                                            Action Needed
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-foreground/80 mt-0.5">
+                                        <strong className="text-foreground">{inv.cultivator_name || "A neighboring farmer"}</strong> invited you to partner on cultivating <strong className="text-purple-700 dark:text-purple-300">{inv.name}</strong> ({inv.area} Acres, {Math.round((inv.partnership_share_ratio || 0.5) * 100)}% Profit Share).
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        All expenses logged will be recognized by your name, and net profit will be distributed according to your partnership ratio upon harvest sale.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                <Button
+                                    size="sm"
+                                    onClick={() => handleAcceptCollaboration(inv.id)}
+                                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold flex items-center gap-1.5 shadow-xs"
+                                >
+                                    <CheckCircle2 className="w-4 h-4" /> Accept Connection
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDeclineCollaboration(inv.id)}
+                                    className="border-red-300 text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center gap-1.5"
+                                >
+                                    <XCircle className="w-4 h-4" /> Decline
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* AI Crop Recommendations & Smart Insights (Collapsible View/Hide) */}
             <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs">
@@ -416,7 +527,17 @@ export default function CropsListPage() {
                                                 </h3>
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                     <p className="text-sm text-muted-foreground">{crop.area} Acres</p>
-                                                    {crop.land_ownership_type === "rented" ? (
+                                                    {crop.is_shared_cultivation ? (
+                                                        <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold flex items-center gap-1 ${
+                                                            crop.shared_status === "accepted"
+                                                                ? "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-300"
+                                                                : crop.shared_status === "declined"
+                                                                ? "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 border border-red-300"
+                                                                : "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-300"
+                                                        }`}>
+                                                            🤝 Together
+                                                        </span>
+                                                    ) : crop.land_ownership_type === "rented" ? (
                                                         <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300">
                                                             🌾 Rented Land (Koulu)
                                                         </span>
@@ -426,7 +547,12 @@ export default function CropsListPage() {
                                                         </span>
                                                     )}
                                                 </div>
-                                                {crop.land_ownership_type === "rented" && crop.landowner_name && (
+                                                {crop.is_shared_cultivation && (
+                                                    <p className="text-xs text-purple-700 dark:text-purple-400 mt-1 font-medium">
+                                                        Partner: {crop.user_id === profile?.user_id ? (crop.partner_name || "Partner") : (crop.cultivator_name || "Co-Farmer")} ({Math.round((crop.partnership_share_ratio || 0.5) * 100)}% Share)
+                                                    </p>
+                                                )}
+                                                {!crop.is_shared_cultivation && crop.land_ownership_type === "rented" && crop.landowner_name && (
                                                     <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 font-medium">
                                                         Landlord: {crop.landowner_name} {crop.rent_amount ? `(₹${crop.rent_amount.toLocaleString()})` : ""}
                                                     </p>
@@ -532,7 +658,18 @@ export default function CropsListPage() {
                                                 </h3>
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                     <p className="text-sm text-muted-foreground">{crop.area} {t('farmer.acres')}</p>
-                                                    {crop.land_ownership_type === "rented" ? (
+                                                    {crop.is_shared_cultivation ? (
+                                                        <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold flex items-center gap-1 ${
+                                                            crop.shared_status === "accepted"
+                                                                ? "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-300"
+                                                                : crop.shared_status === "declined"
+                                                                ? "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 border border-red-300"
+                                                                : "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-300"
+                                                        }`}>
+                                                            🤝 Together
+                                                            {crop.shared_status === "pending_acceptance" && " (Pending)"}
+                                                        </span>
+                                                    ) : crop.land_ownership_type === "rented" ? (
                                                         <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300">
                                                             🌾 Rented Land (Koulu)
                                                         </span>
@@ -542,7 +679,12 @@ export default function CropsListPage() {
                                                         </span>
                                                     )}
                                                 </div>
-                                                {crop.land_ownership_type === "rented" && crop.landowner_name && (
+                                                {crop.is_shared_cultivation && (
+                                                    <p className="text-xs text-purple-700 dark:text-purple-400 mt-1 font-medium">
+                                                        Partner: {crop.user_id === profile?.user_id ? (crop.partner_name || "Partner") : (crop.cultivator_name || "Co-Farmer")} ({Math.round((crop.partnership_share_ratio || 0.5) * 100)}% Share)
+                                                    </p>
+                                                )}
+                                                {!crop.is_shared_cultivation && crop.land_ownership_type === "rented" && crop.landowner_name && (
                                                     <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 font-medium">
                                                         Landlord: {crop.landowner_name} {crop.rent_amount ? `(₹${crop.rent_amount.toLocaleString()})` : ""}
                                                     </p>
@@ -793,19 +935,19 @@ export default function CropsListPage() {
                         </div>
                     </div>
 
-                    {/* Land Ownership / Tenancy Selector */}
+                    {/* Land Tenure & Cultivation Mode Selector */}
                     <div className="space-y-3 p-3.5 bg-muted/40 border border-border rounded-xl">
                         <label className="text-sm font-semibold text-foreground flex items-center justify-between">
-                            <span>Land Ownership & Tenancy:</span>
-                            <span className="text-xs font-normal text-muted-foreground">Is this cultivated on your own land or rented?</span>
+                            <span>Cultivation & Tenure Mode:</span>
+                            <span className="text-xs font-normal text-muted-foreground">Select farming arrangement</span>
                         </label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                             <button
                                 type="button"
-                                onClick={() => setNewCrop({ ...newCrop, land_ownership_type: "own" })}
-                                className={`p-2.5 rounded-lg border text-sm font-medium transition-all text-center flex items-center justify-center gap-2 ${
-                                    newCrop.land_ownership_type === "own"
-                                        ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                                onClick={() => setNewCrop({ ...newCrop, land_ownership_type: "own", is_shared_cultivation: false })}
+                                className={`p-2.5 rounded-lg border text-xs sm:text-sm font-medium transition-all text-center flex items-center justify-center gap-1.5 ${
+                                    !newCrop.is_shared_cultivation && newCrop.land_ownership_type === "own"
+                                        ? "bg-emerald-600 text-white border-emerald-600 shadow-sm font-bold"
                                         : "bg-background text-foreground border-border hover:bg-muted"
                                 }`}
                             >
@@ -813,18 +955,30 @@ export default function CropsListPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setNewCrop({ ...newCrop, land_ownership_type: "rented" })}
-                                className={`p-2.5 rounded-lg border text-sm font-medium transition-all text-center flex items-center justify-center gap-2 ${
-                                    newCrop.land_ownership_type === "rented"
-                                        ? "bg-amber-600 text-white border-amber-600 shadow-sm"
+                                onClick={() => setNewCrop({ ...newCrop, land_ownership_type: "rented", is_shared_cultivation: false })}
+                                className={`p-2.5 rounded-lg border text-xs sm:text-sm font-medium transition-all text-center flex items-center justify-center gap-1.5 ${
+                                    !newCrop.is_shared_cultivation && newCrop.land_ownership_type === "rented"
+                                        ? "bg-amber-600 text-white border-amber-600 shadow-sm font-bold"
                                         : "bg-background text-foreground border-border hover:bg-muted"
                                 }`}
                             >
-                                <span>🌾 Rented Land (Koulu)</span>
+                                <span>🌾 Rented Land</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setNewCrop({ ...newCrop, is_shared_cultivation: true })}
+                                className={`p-2.5 rounded-lg border text-xs sm:text-sm font-medium transition-all text-center flex items-center justify-center gap-1.5 ${
+                                    newCrop.is_shared_cultivation
+                                        ? "bg-purple-600 text-white border-purple-600 shadow-sm font-bold"
+                                        : "bg-background text-foreground border-border hover:bg-muted"
+                                }`}
+                            >
+                                <span>🤝 Together</span>
                             </button>
                         </div>
 
-                        {newCrop.land_ownership_type === "rented" && (
+                        {/* Rented Land Fields */}
+                        {!newCrop.is_shared_cultivation && newCrop.land_ownership_type === "rented" && (
                             <div className="space-y-3 pt-2.5 border-t border-amber-500/20">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="space-y-1">
@@ -879,6 +1033,84 @@ export default function CropsListPage() {
                                             onChange={(e) => setNewCrop({ ...newCrop, lease_terms: e.target.value })}
                                         />
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Together Cultivation Partner Fields */}
+                        {newCrop.is_shared_cultivation && (
+                            <div className="space-y-3 pt-2.5 border-t border-purple-500/20">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                                        <span>Partner Farmer ID or Phone Number <span className="text-red-500">*</span></span>
+                                        <span className="text-[10px] text-muted-foreground">Search by Farmer ID or mobile</span>
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            required={newCrop.is_shared_cultivation}
+                                            placeholder="e.g. 9849010002 or FARM-10"
+                                            className="flex-1 border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-purple-500 bg-background"
+                                            value={partnerQuery}
+                                            onChange={(e) => setPartnerQuery(e.target.value)}
+                                        />
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            disabled={searchingPartner || !partnerQuery.trim()}
+                                            onClick={handleSearchPartner}
+                                            className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3"
+                                        >
+                                            {searchingPartner ? "Searching..." : "Verify Partner"}
+                                        </Button>
+                                    </div>
+                                    {partnerLookupResult && (
+                                        <div className={`mt-2 p-2.5 rounded-lg text-xs border ${
+                                            partnerLookupResult.found
+                                                ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200"
+                                                : "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800 text-red-900 dark:text-red-200"
+                                        }`}>
+                                            {partnerLookupResult.found ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-base">✅</span>
+                                                    <div>
+                                                        <p className="font-bold">{partnerLookupResult.full_name}</p>
+                                                        <p className="text-[11px] opacity-80">{partnerLookupResult.village}, {partnerLookupResult.district} • Ph: {partnerLookupResult.phone_number}</p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p>⚠️ {partnerLookupResult.message}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold text-foreground">
+                                        Profit Sharing Split Ratio
+                                    </label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                            { label: "50:50 (Equal)", ratio: 0.50 },
+                                            { label: "60:40", ratio: 0.40 },
+                                            { label: "70:30", ratio: 0.30 },
+                                        ].map(preset => (
+                                            <button
+                                                key={preset.ratio}
+                                                type="button"
+                                                onClick={() => setNewCrop({ ...newCrop, partnership_share_ratio: preset.ratio })}
+                                                className={`p-1.5 rounded-md border text-xs font-medium transition-all ${
+                                                    newCrop.partnership_share_ratio === preset.ratio
+                                                        ? "bg-purple-100 dark:bg-purple-950/50 border-purple-500 text-purple-900 dark:text-purple-200 font-bold"
+                                                        : "border-border hover:bg-muted text-muted-foreground"
+                                                }`}
+                                            >
+                                                {preset.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                        Partner receives {Math.round((newCrop.partnership_share_ratio || 0.50) * 100)}% of net profit after expenses are reimbursed to each farmer.
+                                    </p>
                                 </div>
                             </div>
                         )}

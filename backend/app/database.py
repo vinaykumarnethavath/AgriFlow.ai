@@ -124,6 +124,16 @@ async def init_db():
             ("crop", "rent_amount", "FLOAT DEFAULT 0.0"),
             ("crop", "lease_terms", "VARCHAR"),
             ("crop", "cultivator_name", "VARCHAR"),
+            ("crop", "is_shared_cultivation", "BOOLEAN DEFAULT 0"),
+            ("crop", "shared_status", "VARCHAR DEFAULT 'none'"),
+            ("crop", "partner_farmer_id", "INTEGER"),
+            ("crop", "partner_farmer_code", "VARCHAR"),
+            ("crop", "partner_name", "VARCHAR"),
+            ("crop", "partner_phone", "VARCHAR"),
+            ("crop", "partnership_share_ratio", "FLOAT DEFAULT 0.50"),
+            ("crop", "creator_share_ratio", "FLOAT DEFAULT 0.50"),
+            ("cropexpense", "paid_by_user_id", "INTEGER"),
+            ("cropexpense", "paid_by_name", "VARCHAR"),
         ]
         async with engine.connect() as conn:
             for table, col, col_type in sqlite_cols:

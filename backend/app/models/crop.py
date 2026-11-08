@@ -23,6 +23,16 @@ class CropBase(SQLModel):
     lease_terms: Optional[str] = None # e.g. "Annual Cash Lease ₹25,000/acre" or "Sharecropping 50:50"
     cultivator_name: Optional[str] = None
     
+    # Collaborative "Together Cultivation" (Shared / Joint Farming)
+    is_shared_cultivation: bool = Field(default=False)
+    shared_status: str = Field(default="none") # "none", "pending_acceptance", "accepted", "declined"
+    partner_farmer_id: Optional[int] = Field(default=None, foreign_key="user.id", nullable=True)
+    partner_farmer_code: Optional[str] = None # e.g. "FARMER-AP-ATP-002"
+    partner_name: Optional[str] = None
+    partner_phone: Optional[str] = None
+    partnership_share_ratio: Optional[float] = 0.50 # Partner share (e.g. 0.50 = 50%)
+    creator_share_ratio: Optional[float] = 0.50 # Creator share (e.g. 0.50 = 50%)
+    
     # Financials (Optional - updated incrementally)
     actual_harvest_date: Optional[datetime] = None
     actual_yield: Optional[float] = 0.0 # in quintals
@@ -80,6 +90,14 @@ class CropUpdate(SQLModel):
     rent_amount: Optional[float] = None
     lease_terms: Optional[str] = None
     cultivator_name: Optional[str] = None
+    is_shared_cultivation: Optional[bool] = None
+    shared_status: Optional[str] = None
+    partner_farmer_id: Optional[int] = None
+    partner_farmer_code: Optional[str] = None
+    partner_name: Optional[str] = None
+    partner_phone: Optional[str] = None
+    partnership_share_ratio: Optional[float] = None
+    creator_share_ratio: Optional[float] = None
 
 class CropRead(CropBase):
     id: int
@@ -99,6 +117,8 @@ class CropExpenseBase(SQLModel):
     stage: str = "General" # Sowing, Watering, Flowering, Harvesting, etc.
     bill_url: Optional[str] = None
     notes: Optional[str] = None
+    paid_by_user_id: Optional[int] = Field(default=None, foreign_key="user.id", nullable=True)
+    paid_by_name: Optional[str] = None
 
 class CropExpense(CropExpenseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

@@ -903,3 +903,142 @@ Dealers can configure how incoming orders are processed via `ShopOrderSettings`:
 - **Low-Stock Buffer Safety Override**:
   Regardless of auto-confirm mode, if ANY item in an incoming order has available inventory $\le \text{low\_stock\_buffer}$ (default: 5 units), the auto-confirm engine is bypassed. The order is forced into `pending` for manual triage to prevent stockouts and overselling.
 
+---
+
+## 16. Land Tenancy, Leased Cultivation & Collaborative "Together Cultivation" Architecture
+
+This subsystem governs the legal, operational, and financial relationships of agricultural land tenure across three distinct operational modes: **Own Land Cultivation**, **Rented Land Cultivation (Koulu)**, and **Collaborative Together Cultivation (Shared Farming)**.
+
+```mermaid
+graph TD
+    subgraph TenureModes ["Land Tenure & Cultivation Modes"]
+        M_Own["1. Own Land\n(Sole Farmer Ownership & Operation)"]
+        M_Rent["2. Rented Land (Koulu)\n(Leased Land with Landlord Rights & Rent Auto-Expense)"]
+        M_Together["3. Together Cultivation\n(Collaborative Farming, Attributed Expenses & Profit Settlement)"]
+    end
+
+    subgraph RentedFlow ["Rented Cultivation Dual Access"]
+        R_Crop["Crop Record\n(rent_amount, lease_terms, landowner_phone)"]
+        R_Expense["Auto CropExpense\n(Category: 'Land Lease', Amount: rent_amount)"]
+        R_Access["Dual Authorization\n(Cultivator & Landlord Access via /crops)"]
+        R_Crop --> R_Expense
+        R_Crop --> R_Access
+    end
+
+    subgraph TogetherFlow ["Together Cultivation Handshake & Settlement"]
+        T_Invite["Farmer A creates Crop\n(Inputs Farmer B ID/Phone)"]
+        T_Pending["Crop Status: 'pending_acceptance'\n(Invitation Alert to Farmer B)"]
+        T_Accept["Farmer B Accepts Connection\n(Status -> 'accepted')"]
+        T_Ledger["Attributed Expense Ledger\n(Farmer A & B log costs with paid_by_name)"]
+        T_Sale["Harvest Sale Proceeds (R)"]
+        T_Engine["Financial Settlement Engine\n1. Reimburse EA & EB\n2. Divide Net Profit P\n3. Calculate Final Payouts"]
+        
+        T_Invite --> T_Pending
+        T_Pending --> T_Accept
+        T_Accept --> T_Ledger
+        T_Ledger --> T_Sale
+        T_Sale --> T_Engine
+    end
+
+    M_Rent --> RentedFlow
+    M_Together --> TogetherFlow
+```
+
+### 1. Land Tenure Operational Modes
+
+| Dimension | 1. Own Land Cultivation | 2. Rented Land Cultivation (Koulu) | 3. Together Cultivation (Shared Farming) |
+| :--- | :--- | :--- | :--- |
+| **Land Ownership** | Farmer's registered survey parcel | Third-party landlord / leased property | Either owned by one partner or jointly leased |
+| **Cost Incurrence** | Sole cultivator | Sole cultivator + Land Lease rent expense | Split dynamically between Partner A and Partner B |
+| **Rent Accounting** | None | Automatic `CropExpense` under category `"Land Lease"` | Shared operational expense or individual contribution |
+| **Platform Access** | Cultivator only | **Dual Access**: Cultivator + Registered Landlord | **Collaborative**: Both partner farmers have full access |
+| **Revenue & Profit** | 100% retained by cultivator | 100% retained by tenant after deducting lease rent | Reimburses individual expenses, then splits net profit |
+
+---
+
+### 2. Rented Cultivation & Automated Lease Accounting Engine
+
+When a farmer registers a crop on rented land:
+1. **Landlord Metadata Capture**: Captures `landowner_name`, `landowner_phone`, `rent_amount`, and `lease_terms`.
+2. **Identity Linking**: If `landowner_phone` matches a registered user in `user` table, `landowner_id` is automatically linked.
+3. **Automated Expense Insertion**: The backend immediately creates a corresponding `CropExpense`:
+   - `category = "Land Lease"`
+   - `type = "Land Lease / Koulu Rent ({landowner_name})"`
+   - `unit_cost = rent_amount`, `total_cost = rent_amount`
+   - `stage = "Land Prep"`, `payment_mode = "Cash"`
+4. **Financial Recalculation**: `recalculate_crop_financials` updates `crop.total_cost` to incorporate lease expenses into crop balance sheets.
+5. **Shared Transparency**: The query in `GET /crops/` checks:
+   $$(Crop.user\_id == current\_user.id) \lor (Crop.landowner\_id == current\_user.id) \lor (Crop.landowner\_phone == user\_phone)$$
+   giving the landlord real-time read access to crop stage, soil health, and harvest records.
+
+---
+
+### 3. Collaborative "Together Cultivation" Workflow
+
+#### A. Connection Handshake State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending_acceptance: Farmer A inputs Farmer B's ID & Submits
+    pending_acceptance --> accepted: Farmer B Reviews & Clicks 'Accept Connection'
+    pending_acceptance --> declined: Farmer B Declines Invitation
+    declined --> [*]: Terminal (Crop reverts to single or cancelled)
+    accepted --> active_cultivation: Joint Workspace Active
+    active_cultivation --> harvested_sold: Harvesting & Market Sale Logged
+    harvested_sold --> settlement_finalized: Settlement Engine Computes Payouts
+    settlement_finalized --> [*]
+```
+
+1. **Initiation**: Farmer A enters Farmer B's unique **Farmer ID** (e.g. `FARMER-AP-ATP-002`) or registered mobile number.
+2. **Triage & Invitation**:
+   - Crop is created with `is_shared_cultivation = True`, `shared_status = "pending_acceptance"`.
+   - Farmer B receives an actionable invitation banner on their dashboard: *"Collaboration Request from Farmer A for Crop X (4.5 Ac, 50:50 share)"*.
+3. **Activation**: Upon Farmer B clicking **Accept Connection**, `shared_status` transitions to `"accepted"`. Both farmers now see the crop active in their dashboards.
+
+---
+
+### 4. Expense Ledger with Contributor Attribution
+
+In collaborative farming, both farmers incur separate out-of-pocket costs at different stages of the season:
+- **Backend Persistence**: Every `CropExpense` strictly records `paid_by_user_id` and `paid_by_name`.
+- **Farmer-Side UI Recognition**: For seamless usability and dignity, the UI identifies contributors **by name only**:
+  - `🟢 Paid by: Vinay Kumar (You) - ₹30,000`
+  - `🔵 Paid by: Suresh Reddy (Partner) - ₹20,000`
+- **Real-Time Visibility**: Any expense added by either farmer immediately updates the shared total crop expenditure and stage analytics for both accounts.
+
+---
+
+### 5. Financial Settlement & Payout Distribution Engine
+
+Upon harvesting and sale to a mill, market, or trader, the crop generates total revenue $R$. The settlement engine executes the two-phase payout algorithm:
+
+#### Mathematical Formulation
+
+$$\text{Total Expenses } (E_{total}) = E_A + E_B$$
+$$\text{Net Shared Profit } (P_{net}) = R - E_{total}$$
+
+Where:
+- $R$ = Gross Revenue from harvest sale
+- $E_A$ = Total expenses paid out-of-pocket by Farmer A
+- $E_B$ = Total expenses paid out-of-pocket by Farmer B
+- $s_A, s_B$ = Agreed partnership share ratios ($s_A + s_B = 1.0$, default $0.50 : 0.50$)
+
+$$\text{Farmer A Profit Share } (P_A) = P_{net} \times s_A$$
+$$\text{Farmer B Profit Share } (P_B) = P_{net} \times s_B$$
+
+#### Final Payout Calculation:
+$$\text{Payout}_A = E_A + P_A \quad \text{(Reimbursed Individual Expenses } + \text{Profit Share)}$$
+$$\text{Payout}_B = E_B + P_B \quad \text{(Reimbursed Individual Expenses } + \text{Profit Share)}$$
+
+$$\text{Proof of Conservation: } \text{Payout}_A + \text{Payout}_B = (E_A + P_A) + (E_B + P_B) = (E_A + E_B) + (P_A + P_B) = E_{total} + P_{net} = R$$
+
+#### Example Settlement Breakdown:
+- **Gross Revenue ($R$):** ₹1,50,000
+- **Farmer A Expenditure ($E_A$ - Seeds, Fertilizer, Tractor):** ₹30,000
+- **Farmer B Expenditure ($E_B$ - Weeding Labor, Irrigation, Transport):** ₹20,000
+- **Total Expenses ($E_{total}$):** ₹50,000
+- **Net Shared Profit ($P_{net}$):** ₹1,00,000
+- **Farmer A Payout:** ₹30,000 (Expense Refund) + ₹50,000 (50% Profit) = **₹80,000**
+- **Farmer B Payout:** ₹20,000 (Expense Refund) + ₹50,000 (50% Profit) = **₹70,000**
+
+

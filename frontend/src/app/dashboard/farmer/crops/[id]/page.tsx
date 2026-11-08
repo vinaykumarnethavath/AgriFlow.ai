@@ -24,7 +24,11 @@ import api, {
     getCropSales,
     createCropSale,
     deleteCropSale,
-    CropSale
+    CropSale,
+    getCropSettlement,
+    acceptCollaboration,
+    declineCollaboration,
+    CropSettlement
 } from "@/lib/api";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
 import { AICropDiagnosis } from "@/components/AICropDiagnosis";
@@ -33,7 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label"; // Ensure Label is available or use standard label
-import { ArrowLeft, Plus, Trash2, Sprout, TrendingUp, IndianRupee, Tractor, Droplets, Truck, Pickaxe, Package, Pencil, AlertTriangle, CheckCircle, Info, Lightbulb, QrCode, Store, ShoppingCart, Factory, Landmark } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Sprout, TrendingUp, IndianRupee, Tractor, Droplets, Truck, Pickaxe, Package, Pencil, AlertTriangle, CheckCircle, Info, Lightbulb, QrCode, Store, ShoppingCart, Factory, Landmark, Users, CheckCircle2, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
 import { useLanguage } from "@/context/LanguageContext";
@@ -243,6 +247,7 @@ function CropDetailContent() {
     });
     const [sellListings, setSellListings] = useState<CropSale[]>([]);
     const [sellSubmitting, setSellSubmitting] = useState(false);
+    const [settlement, setSettlement] = useState<CropSettlement | null>(null);
 
     // Harvest multi-select for batch selling
     const [selectedHarvestIds, setSelectedHarvestIds] = useState<number[]>([]);
@@ -272,14 +277,15 @@ function CropDetailContent() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [cropData, expenseData, aiData, profileRes, cropsRes, salesData, harvestsData] = await Promise.all([
+            const [cropData, expenseData, aiData, profileRes, cropsRes, salesData, harvestsData, settlementData] = await Promise.all([
                 getCropDetails(cropId),
                 getCropExpenses(cropId),
                 getCropInsights(cropId).catch(() => ({ insights: [], prediction: null })),
                 api.get("/farmer/profile").catch(() => ({ data: null })),
                 api.get("/crops/").catch(() => ({ data: [] })),
                 getCropSales(cropId).catch(() => []),
-                getCropHarvests(cropId).catch(() => [])
+                getCropHarvests(cropId).catch(() => []),
+                getCropSettlement(cropId).catch(() => null)
             ]);
 
             setCrop(cropData);
@@ -290,10 +296,30 @@ function CropDetailContent() {
             setAllCrops(cropsRes?.data || []);
             setSellListings(salesData || []);
             setHarvests(harvestsData || []);
+            setSettlement(settlementData);
         } catch (error) {
             console.error("Error fetching crop details:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAcceptCollaboration = async () => {
+        try {
+            await acceptCollaboration(cropId);
+            await fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to accept collaboration");
+        }
+    };
+
+    const handleDeclineCollaboration = async () => {
+        if (!confirm("Are you sure you want to decline this collaboration request?")) return;
+        try {
+            await declineCollaboration(cropId);
+            await fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to decline collaboration");
         }
     };
 
@@ -325,7 +351,9 @@ function CropDetailContent() {
         try {
             const expenseToSave = {
                 ...newExpense,
-                total_cost: calculateTotalCost(newExpense)
+                total_cost: calculateTotalCost(newExpense),
+                paid_by_name: (newExpense as any).paid_by_name || profile?.full_name || crop?.cultivator_name,
+                paid_by_user_id: (newExpense as any).paid_by_user_id || profile?.user_id
             };
 
             let savedExpense: any;
@@ -397,6 +425,8 @@ function CropDetailContent() {
             unit_size: expense.unit_size || 1,
             duration: expense.duration || 1,
             stage: expense.stage || "General",
+            paid_by_name: expense.paid_by_name || crop?.cultivator_name,
+            paid_by_user_id: expense.paid_by_user_id || crop?.user_id,
             area_acres: (expense as any).area_acres || crop?.area || 0,
             cost_per_acre: (expense as any).cost_per_acre || 0,
             direct_total: expense.total_cost || 0,
@@ -628,6 +658,62 @@ function CropDetailContent() {
                 </div>
             )}
 
+            {/* Together Cultivation ("Ummadi Vyavasayam") Collaboration Banner */}
+            {crop.is_shared_cultivation && (
+                <div className={`p-4 rounded-xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs ${
+                    crop.shared_status === "accepted" 
+                        ? "bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-emerald-300 dark:border-emerald-800"
+                        : crop.shared_status === "pending_acceptance"
+                        ? "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800"
+                        : "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800"
+                }`}>
+                    <div className="flex items-start sm:items-center gap-3">
+                        <span className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border text-2xl shadow-xs">
+                            🤝
+                        </span>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-bold text-base text-foreground">
+                                    Together Cultivation ("Ummadi Vyavasayam")
+                                </h4>
+                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${
+                                    crop.shared_status === "accepted"
+                                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200"
+                                        : crop.shared_status === "pending_acceptance"
+                                        ? "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200"
+                                        : "bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200"
+                                }`}>
+                                    {crop.shared_status === "accepted" ? "Active Partnership" : crop.shared_status === "pending_acceptance" ? "Pending Acceptance" : "Declined"}
+                                </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Partners: <strong className="text-foreground">{crop.cultivator_name || "Initiator"}</strong> &amp; <strong className="text-foreground">{crop.partner_name || "Partner Farmer"}</strong>
+                                <span className="mx-2">•</span>
+                                Agreed Split Ratio: <span className="font-semibold text-emerald-700 dark:text-emerald-400">{Math.round((crop.creator_share_ratio || 0.5) * 100)}% : {Math.round((crop.partnership_share_ratio || 0.5) * 100)}%</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-stretch md:self-auto justify-end">
+                        {crop.shared_status === "pending_acceptance" && (
+                            <div className="flex items-center gap-2">
+                                <Button size="sm" onClick={handleAcceptCollaboration} className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium">
+                                    Accept Partnership
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={handleDeclineCollaboration} className="border-red-300 text-red-600 hover:bg-red-50">
+                                    Decline
+                                </Button>
+                            </div>
+                        )}
+                        {crop.shared_status === "accepted" && (
+                            <div className="text-xs text-right bg-white/80 dark:bg-zinc-900/80 px-3 py-1.5 rounded-lg border">
+                                <span className="text-muted-foreground">Collaborative Expenses &amp; Profit Active</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Tabs Navigation */}
             <div className="flex gap-2 border-b overflow-x-auto pb-1">
                 {["overview", "expenses", "harvest"].map((tab) => (
@@ -713,6 +799,101 @@ function CropDetailContent() {
                             </CardContent>
                         </Card>
 
+                        {/* Together Cultivation Settlement Summary Card */}
+                        {crop.is_shared_cultivation && settlement && (
+                            <Card className="md:col-span-3 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-white dark:from-emerald-950/20 dark:via-zinc-900 dark:to-zinc-900 border-2 border-emerald-300/80 dark:border-emerald-800 shadow-md">
+                                <CardHeader className="pb-2">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <CardTitle className="text-emerald-900 dark:text-emerald-200 flex items-center gap-2 text-lg">
+                                            <span>🤝</span> Together Cultivation Settlement &amp; Payout Distribution
+                                        </CardTitle>
+                                        <span className="text-xs bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full font-semibold">
+                                            Status: {settlement.shared_status === "accepted" ? "Active Partnership" : settlement.shared_status}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Transparent 2-phase settlement: Out-of-pocket expenses are reimbursed first from total revenue, then remaining net profit is split according to the agreed ratio.
+                                    </p>
+                                </CardHeader>
+                                <CardContent className="space-y-4 pt-2">
+                                    {/* Top Level Summary Cards */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div className="p-3 bg-white dark:bg-zinc-800 rounded-lg border">
+                                            <div className="text-xs text-muted-foreground font-medium">Total Revenue (R)</div>
+                                            <div className="text-xl font-bold text-foreground">₹{settlement.total_revenue?.toLocaleString()}</div>
+                                        </div>
+                                        <div className="p-3 bg-white dark:bg-zinc-800 rounded-lg border">
+                                            <div className="text-xs text-muted-foreground font-medium">Total Expenses Reimbursed</div>
+                                            <div className="text-xl font-bold text-amber-600 dark:text-amber-400">₹{settlement.total_expenses?.toLocaleString()}</div>
+                                        </div>
+                                        <div className="p-3 bg-white dark:bg-zinc-800 rounded-lg border">
+                                            <div className="text-xs text-muted-foreground font-medium">Net Shared Profit (P_net)</div>
+                                            <div className={`text-xl font-bold ${settlement.net_profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                                                ₹{settlement.net_profit?.toLocaleString()}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Payout Distribution per Farmer */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                        {/* Farmer A (Creator) */}
+                                        <div className="p-4 rounded-xl bg-white dark:bg-zinc-800 border-2 border-emerald-200 dark:border-emerald-800/80 shadow-xs">
+                                            <div className="flex items-center justify-between mb-3 border-b pb-2">
+                                                <div>
+                                                    <span className="text-xs text-muted-foreground font-medium">Primary Farmer</span>
+                                                    <h5 className="font-bold text-base text-foreground">{settlement.creator.name}</h5>
+                                                </div>
+                                                <span className="px-2.5 py-1 rounded-md bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
+                                                    {settlement.creator.share_percentage}% Share
+                                                </span>
+                                            </div>
+                                            <div className="space-y-2 text-xs">
+                                                <div className="flex justify-between text-muted-foreground">
+                                                    <span>Reimbursed Expenses (Paid by {settlement.creator.name}):</span>
+                                                    <span className="font-semibold text-foreground">₹{settlement.creator.expenses_paid?.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between text-muted-foreground">
+                                                    <span>Profit Share ({settlement.creator.share_percentage}% of Net Profit):</span>
+                                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">₹{settlement.creator.profit_share?.toLocaleString()}</span>
+                                                </div>
+                                                <div className="border-t pt-2 flex justify-between items-center text-sm font-bold text-foreground">
+                                                    <span>Final Payout:</span>
+                                                    <span className="text-lg text-emerald-700 dark:text-emerald-300">₹{settlement.creator.final_payout?.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Farmer B (Partner) */}
+                                        <div className="p-4 rounded-xl bg-white dark:bg-zinc-800 border-2 border-teal-200 dark:border-teal-800/80 shadow-xs">
+                                            <div className="flex items-center justify-between mb-3 border-b pb-2">
+                                                <div>
+                                                    <span className="text-xs text-muted-foreground font-medium">Partner Farmer</span>
+                                                    <h5 className="font-bold text-base text-foreground">{settlement.partner.name}</h5>
+                                                </div>
+                                                <span className="px-2.5 py-1 rounded-md bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300 font-bold text-xs">
+                                                    {settlement.partner.share_percentage}% Share
+                                                </span>
+                                            </div>
+                                            <div className="space-y-2 text-xs">
+                                                <div className="flex justify-between text-muted-foreground">
+                                                    <span>Reimbursed Expenses (Paid by {settlement.partner.name}):</span>
+                                                    <span className="font-semibold text-foreground">₹{settlement.partner.expenses_paid?.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between text-muted-foreground">
+                                                    <span>Profit Share ({settlement.partner.share_percentage}% of Net Profit):</span>
+                                                    <span className="font-semibold text-teal-600 dark:text-teal-400">₹{settlement.partner.profit_share?.toLocaleString()}</span>
+                                                </div>
+                                                <div className="border-t pt-2 flex justify-between items-center text-sm font-bold text-foreground">
+                                                    <span>Final Payout:</span>
+                                                    <span className="text-lg text-teal-700 dark:text-teal-300">₹{settlement.partner.final_payout?.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
                         <div className="md:col-span-3">
                             <h3 className="text-lg font-semibold mb-4"><T>Expense Breakdown</T></h3>
                             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -753,6 +934,8 @@ function CropDetailContent() {
                                     unit_size: 1,
                                     duration: 1,
                                     stage: "General",
+                                    paid_by_name: profile?.full_name || crop?.cultivator_name || "",
+                                    paid_by_user_id: profile?.user_id || crop?.user_id,
                                     area_acres: crop?.area || 0,
                                     cost_per_acre: 0,
                                     direct_total: 0,
@@ -790,6 +973,29 @@ function CropDetailContent() {
                                                 placeholder="Expense Name"
                                             />
                                         </div>
+                                        {crop.is_shared_cultivation && (
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium flex items-center gap-1.5">
+                                                    <span>👤</span> Expense Paid By
+                                                </label>
+                                                <select
+                                                    className="w-full p-2 border rounded-md bg-background"
+                                                    value={(newExpense as any).paid_by_name || crop.cultivator_name || ""}
+                                                    onChange={(e) => {
+                                                        const selectedName = e.target.value;
+                                                        const isPartner = selectedName === crop.partner_name;
+                                                        setNewExpense({
+                                                            ...newExpense,
+                                                            paid_by_name: selectedName,
+                                                            paid_by_user_id: isPartner ? crop.partner_farmer_id : crop.user_id,
+                                                        } as any);
+                                                    }}
+                                                >
+                                                    <option value={crop.cultivator_name || "Cultivator"}>{crop.cultivator_name || "Primary Farmer"}</option>
+                                                    <option value={crop.partner_name || "Partner"}>{crop.partner_name || "Partner Farmer"}</option>
+                                                </select>
+                                            </div>
+                                        )}
                                         <div className="space-y-2 col-span-2">
                                             <label className="text-sm font-medium">Description (Optional)</label>
                                             <Input
@@ -1048,6 +1254,9 @@ function CropDetailContent() {
                                         <th className="text-left p-4 font-medium text-muted-foreground">Date</th>
                                         <th className="text-left p-4 font-medium text-muted-foreground">Category</th>
                                         <th className="text-left p-4 font-medium text-muted-foreground">Details</th>
+                                        {crop.is_shared_cultivation && (
+                                            <th className="text-left p-4 font-medium text-muted-foreground">Paid By</th>
+                                        )}
                                         <th className="text-left p-4 font-medium text-muted-foreground">Description</th>
                                         <th className="text-right p-4 font-medium text-muted-foreground">Cost</th>
                                         <th className="p-4"></th>
@@ -1056,7 +1265,7 @@ function CropDetailContent() {
                                 <tbody>
                                     {expenses.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="p-8 text-center text-muted-foreground">No expenses recorded yet.</td>
+                                            <td colSpan={crop.is_shared_cultivation ? 7 : 6} className="p-8 text-center text-muted-foreground">No expenses recorded yet.</td>
                                         </tr>
                                     ) : (
                                         expenses.map(expense => (
@@ -1107,6 +1316,14 @@ function CropDetailContent() {
                                                         </div>
                                                     )}
                                                 </td>
+                                                {crop.is_shared_cultivation && (
+                                                    <td className="p-4">
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                            <span>👤</span>
+                                                            <span>{expense.paid_by_name || crop.cultivator_name || "Partner"}</span>
+                                                        </span>
+                                                    </td>
+                                                )}
                                                 <td className="p-4 text-sm text-muted-foreground">
                                                     {expense.notes || "-"}
                                                 </td>
