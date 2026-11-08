@@ -94,6 +94,13 @@ export interface Crop {
     expected_harvest_date?: string;
     status: string;
     notes?: string;
+    land_ownership_type?: "own" | "rented";
+    landowner_name?: string;
+    landowner_phone?: string;
+    landowner_id?: number;
+    rent_amount?: number;
+    lease_terms?: string;
+    cultivator_name?: string;
     total_cost?: number;
     total_revenue?: number;
     actual_yield?: number;
@@ -111,6 +118,13 @@ export interface CropUpdate {
     expected_harvest_date?: string;
     status?: string;
     notes?: string;
+    land_ownership_type?: "own" | "rented";
+    landowner_name?: string;
+    landowner_phone?: string;
+    landowner_id?: number;
+    rent_amount?: number;
+    lease_terms?: string;
+    cultivator_name?: string;
 }
 
 export interface CropExpense {

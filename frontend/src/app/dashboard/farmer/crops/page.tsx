@@ -33,7 +33,12 @@ export default function CropsListPage() {
         variety: "",
         sowing_date: new Date().toISOString().split("T")[0],
         expected_harvest_date: "",
-        notes: ""
+        notes: "",
+        land_ownership_type: "own" as "own" | "rented",
+        landowner_name: "",
+        landowner_phone: "",
+        rent_amount: "",
+        lease_terms: ""
     });
     const [addingCrop, setAddingCrop] = useState(false);
 
@@ -231,7 +236,12 @@ export default function CropsListPage() {
             crop_type: "Other",
             sowing_date: formatAsISO(newCrop.sowing_date) || new Date().toISOString(),
             expected_harvest_date: formatAsISO(newCrop.expected_harvest_date),
-            notes: newCrop.notes || null
+            notes: newCrop.notes || null,
+            land_ownership_type: newCrop.land_ownership_type || "own",
+            landowner_name: newCrop.land_ownership_type === "rented" ? newCrop.landowner_name || null : null,
+            landowner_phone: newCrop.land_ownership_type === "rented" ? newCrop.landowner_phone || null : null,
+            rent_amount: newCrop.land_ownership_type === "rented" && newCrop.rent_amount ? parseFloat(newCrop.rent_amount) : 0.0,
+            lease_terms: newCrop.land_ownership_type === "rented" ? newCrop.lease_terms || null : null,
         };
 
         try {
@@ -245,7 +255,12 @@ export default function CropsListPage() {
                 variety: "",
                 sowing_date: new Date().toISOString().split("T")[0],
                 expected_harvest_date: "",
-                notes: ""
+                notes: "",
+                land_ownership_type: "own",
+                landowner_name: "",
+                landowner_phone: "",
+                rent_amount: "",
+                lease_terms: ""
             });
             fetchData();
         } catch (error: any) {
@@ -399,7 +414,23 @@ export default function CropsListPage() {
                                                                         '🌿'}</span>
                                                     {crop.name}
                                                 </h3>
-                                                <p className="text-sm text-muted-foreground">{crop.area} Acres</p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <p className="text-sm text-muted-foreground">{crop.area} Acres</p>
+                                                    {crop.land_ownership_type === "rented" ? (
+                                                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300">
+                                                            🌾 Rented Land (Koulu)
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200">
+                                                            🌱 Own Land
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {crop.land_ownership_type === "rented" && crop.landowner_name && (
+                                                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 font-medium">
+                                                        Landlord: {crop.landowner_name} {crop.rent_amount ? `(₹${crop.rent_amount.toLocaleString()})` : ""}
+                                                    </p>
+                                                )}
                                             </div>
                                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${crop.status === 'Harvested' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                                                 {crop.status}
@@ -499,7 +530,23 @@ export default function CropsListPage() {
                                                                         '🌿'}</span>
                                                     {crop.name}
                                                 </h3>
-                                                <p className="text-sm text-muted-foreground">{crop.area} {t('farmer.acres')}</p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <p className="text-sm text-muted-foreground">{crop.area} {t('farmer.acres')}</p>
+                                                    {crop.land_ownership_type === "rented" ? (
+                                                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300">
+                                                            🌾 Rented Land (Koulu)
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200">
+                                                            🌱 Own Land
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {crop.land_ownership_type === "rented" && crop.landowner_name && (
+                                                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 font-medium">
+                                                        Landlord: {crop.landowner_name} {crop.rent_amount ? `(₹${crop.rent_amount.toLocaleString()})` : ""}
+                                                    </p>
+                                                )}
                                             </div>
                                             <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
                                                 {crop.status === 'Growing' ? t('status.growing') : crop.status === 'Harvested' ? t('status.harvested') : t('status.sold')}
@@ -744,6 +791,97 @@ export default function CropsListPage() {
                             />
                             <p className="text-[10px] text-muted-foreground italic">Max .39 guntas per acre (e.g. 1.39 → 2.00)</p>
                         </div>
+                    </div>
+
+                    {/* Land Ownership / Tenancy Selector */}
+                    <div className="space-y-3 p-3.5 bg-muted/40 border border-border rounded-xl">
+                        <label className="text-sm font-semibold text-foreground flex items-center justify-between">
+                            <span>Land Ownership & Tenancy:</span>
+                            <span className="text-xs font-normal text-muted-foreground">Is this cultivated on your own land or rented?</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setNewCrop({ ...newCrop, land_ownership_type: "own" })}
+                                className={`p-2.5 rounded-lg border text-sm font-medium transition-all text-center flex items-center justify-center gap-2 ${
+                                    newCrop.land_ownership_type === "own"
+                                        ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                                        : "bg-background text-foreground border-border hover:bg-muted"
+                                }`}
+                            >
+                                <span>🌱 Own Land</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setNewCrop({ ...newCrop, land_ownership_type: "rented" })}
+                                className={`p-2.5 rounded-lg border text-sm font-medium transition-all text-center flex items-center justify-center gap-2 ${
+                                    newCrop.land_ownership_type === "rented"
+                                        ? "bg-amber-600 text-white border-amber-600 shadow-sm"
+                                        : "bg-background text-foreground border-border hover:bg-muted"
+                                }`}
+                            >
+                                <span>🌾 Rented Land (Koulu)</span>
+                            </button>
+                        </div>
+
+                        {newCrop.land_ownership_type === "rented" && (
+                            <div className="space-y-3 pt-2.5 border-t border-amber-500/20">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-foreground">
+                                            Landowner Full Name <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            required={newCrop.land_ownership_type === "rented"}
+                                            placeholder="e.g. Sri Venkateswara Rao"
+                                            className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 bg-background"
+                                            value={newCrop.landowner_name}
+                                            onChange={(e) => setNewCrop({ ...newCrop, landowner_name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-foreground">
+                                            Landowner Phone Number
+                                        </label>
+                                        <input
+                                            placeholder="e.g. 9849012345"
+                                            className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 bg-background"
+                                            value={newCrop.landowner_phone}
+                                            onChange={(e) => setNewCrop({ ...newCrop, landowner_phone: e.target.value })}
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Registered landowners get view-access to track cultivation progress.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-foreground">
+                                            Agreed Rent / Lease Amount (₹)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="e.g. 25000"
+                                            className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 bg-background"
+                                            value={newCrop.rent_amount}
+                                            onChange={(e) => setNewCrop({ ...newCrop, rent_amount: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-foreground">
+                                            Lease Agreement / Terms
+                                        </label>
+                                        <input
+                                            placeholder="e.g. ₹25,000/Ac per year or 50:50 crop share"
+                                            className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 bg-background"
+                                            value={newCrop.lease_terms}
+                                            onChange={(e) => setNewCrop({ ...newCrop, lease_terms: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">

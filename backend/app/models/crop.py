@@ -14,6 +14,15 @@ class CropBase(SQLModel):
     crop_type: str = Field(default="Other") # Cereal, Pulse, Oilseed, Vegetable, Fruit, Commercial, Spice, Other
     notes: Optional[str] = None
     
+    # Ownership & Tenancy (Own land vs Rented / Leased "Koulu" cultivation)
+    land_ownership_type: str = Field(default="own") # "own" or "rented"
+    landowner_name: Optional[str] = None
+    landowner_phone: Optional[str] = None
+    landowner_id: Optional[int] = Field(default=None, foreign_key="user.id", nullable=True)
+    rent_amount: Optional[float] = 0.0 # Rental cost per acre / total agreed lease in ₹
+    lease_terms: Optional[str] = None # e.g. "Annual Cash Lease ₹25,000/acre" or "Sharecropping 50:50"
+    cultivator_name: Optional[str] = None
+    
     # Financials (Optional - updated incrementally)
     actual_harvest_date: Optional[datetime] = None
     actual_yield: Optional[float] = 0.0 # in quintals
@@ -64,6 +73,13 @@ class CropUpdate(SQLModel):
     expected_harvest_date: Optional[datetime] = None
     status: Optional[str] = None
     notes: Optional[str] = None
+    land_ownership_type: Optional[str] = None
+    landowner_name: Optional[str] = None
+    landowner_phone: Optional[str] = None
+    landowner_id: Optional[int] = None
+    rent_amount: Optional[float] = None
+    lease_terms: Optional[str] = None
+    cultivator_name: Optional[str] = None
 
 class CropRead(CropBase):
     id: int

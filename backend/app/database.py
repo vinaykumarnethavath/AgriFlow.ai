@@ -117,6 +117,13 @@ async def init_db():
             ("customer_orders", "payment_status", "VARCHAR DEFAULT 'pending'"),
             ("customer_orders", "payment_id", "VARCHAR"),
             ("customer_orders", "shipping_address", "VARCHAR"),
+            ("crop", "land_ownership_type", "VARCHAR DEFAULT 'own'"),
+            ("crop", "landowner_name", "VARCHAR"),
+            ("crop", "landowner_phone", "VARCHAR"),
+            ("crop", "landowner_id", "INTEGER"),
+            ("crop", "rent_amount", "FLOAT DEFAULT 0.0"),
+            ("crop", "lease_terms", "VARCHAR"),
+            ("crop", "cultivator_name", "VARCHAR"),
         ]
         async with engine.connect() as conn:
             for table, col, col_type in sqlite_cols:

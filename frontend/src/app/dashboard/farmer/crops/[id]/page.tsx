@@ -33,7 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label"; // Ensure Label is available or use standard label
-import { ArrowLeft, Plus, Trash2, Sprout, TrendingUp, IndianRupee, Tractor, Droplets, Truck, Pickaxe, Package, Pencil, AlertTriangle, CheckCircle, Info, Lightbulb, QrCode, Store, ShoppingCart, Factory } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Sprout, TrendingUp, IndianRupee, Tractor, Droplets, Truck, Pickaxe, Package, Pencil, AlertTriangle, CheckCircle, Info, Lightbulb, QrCode, Store, ShoppingCart, Factory, Landmark } from "lucide-react";
 import { motion } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
 import { useLanguage } from "@/context/LanguageContext";
@@ -45,6 +45,7 @@ const EXPENSE_CATEGORIES = [
     { value: "Machinery", label: "Machinery & Operations (Tractor, Fuel)", icon: Tractor },
     { value: "Irrigation", label: "Irrigation (Electricity, Water)", icon: Droplets },
     { value: "Logistics", label: "Logistics (Transport, Storage)", icon: Truck },
+    { value: "Land Lease", label: "Land Lease (Rent, Koulu)", icon: Landmark },
     { value: "Miscellaneous", label: "Miscellaneous (Insurance, Testing)", icon: Package },
 ];
 
@@ -584,6 +585,49 @@ function CropDetailContent() {
                 </div>
             </div>
 
+            {/* Land Tenancy & Cultivation Access Banner */}
+            {crop.land_ownership_type === "rented" ? (
+                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                    <div className="flex items-center gap-3">
+                        <span className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xl">
+                            🌾
+                        </span>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-amber-900 dark:text-amber-200 text-sm">
+                                    Rented Land Cultivation ("Koulu")
+                                </h4>
+                                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-200 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                                    Shared Access
+                                </span>
+                            </div>
+                            <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5">
+                                Landowner: <strong className="text-amber-950 dark:text-amber-100">{crop.landowner_name || "Landlord"}</strong>
+                                {crop.landowner_phone && <span> • Contact: {crop.landowner_phone}</span>}
+                                {crop.cultivator_name && <span> • Cultivator: <strong>{crop.cultivator_name}</strong></span>}
+                            </p>
+                        </div>
+                    </div>
+                    {(crop.rent_amount || crop.lease_terms) && (
+                        <div className="text-left sm:text-right text-xs bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800/60">
+                            {crop.rent_amount ? <div className="font-bold text-amber-900 dark:text-amber-200">Rent: ₹{crop.rent_amount.toLocaleString()}</div> : null}
+                            {crop.lease_terms ? <div className="text-muted-foreground">{crop.lease_terms}</div> : null}
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/50 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300">
+                        <span>🌱</span>
+                        <span className="font-medium">Cultivated on Own Land</span>
+                        <span className="text-muted-foreground">• Full ownership records verified</span>
+                    </div>
+                    {crop.cultivator_name && (
+                        <span className="text-muted-foreground">Owner-Cultivator: <strong className="text-foreground">{crop.cultivator_name}</strong></span>
+                    )}
+                </div>
+            )}
+
             {/* Tabs Navigation */}
             <div className="flex gap-2 border-b overflow-x-auto pb-1">
                 {["overview", "expenses", "harvest"].map((tab) => (
@@ -671,7 +715,7 @@ function CropDetailContent() {
 
                         <div className="md:col-span-3">
                             <h3 className="text-lg font-semibold mb-4"><T>Expense Breakdown</T></h3>
-                            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
                                 {EXPENSE_CATEGORIES.map(cat => {
                                     const total = calculateCategoryTotal(cat.value);
                                     const Icon = cat.icon;

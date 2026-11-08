@@ -1,4 +1,5 @@
 from typing import List, Optional
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, col
@@ -46,11 +47,50 @@ async def create_crop(
             if hasattr(crop_data[date_field], "tzinfo") and crop_data[date_field].tzinfo:
                 crop_data[date_field] = crop_data[date_field].replace(tzinfo=None)
                 
+    # Set cultivator name
+    if not crop_data.get("cultivator_name"):
+        crop_data["cultivator_name"] = current_user.full_name
+
+    # If rented, link landowner_id if landowner is a registered user
+    if crop_data.get("land_ownership_type") == "rented" and crop_data.get("landowner_phone"):
+        lo_phone = str(crop_data["landowner_phone"]).strip()
+        lo_stmt = select(User).where(User.phone_number == lo_phone)
+        lo_res = await session.exec(lo_stmt)
+        lo_user = lo_res.first()
+        if lo_user:
+            crop_data["landowner_id"] = lo_user.id
+            if not crop_data.get("landowner_name"):
+                crop_data["landowner_name"] = lo_user.full_name
+
     db_crop = Crop(**crop_data, user_id=current_user.id)
     
     session.add(db_crop)
     await session.commit()
     await session.refresh(db_crop)
+
+    # When land is rented for a particular amount, add that money in crop expenses
+    if db_crop.land_ownership_type == "rented" and (db_crop.rent_amount or 0) > 0:
+        sow_date = db_crop.sowing_date.isoformat() if db_crop.sowing_date else datetime.utcnow().isoformat()
+        rent_expense = CropExpense(
+            crop_id=db_crop.id,
+            category="Land Lease",
+            type=f"Land Lease / Koulu Rent ({db_crop.landowner_name or 'Landlord'})",
+            quantity=1.0,
+            unit="lease",
+            unit_cost=float(db_crop.rent_amount),
+            total_cost=float(db_crop.rent_amount),
+            date=sow_date,
+            payment_mode="Cash",
+            stage="Land Prep",
+            notes=f"Agreed tenancy rent to {db_crop.landowner_name or 'Landowner'}. {db_crop.lease_terms or ''}".strip(),
+            duration="1 season",
+            unit_size="1 plot"
+        )
+        session.add(rent_expense)
+        await session.commit()
+        await recalculate_crop_financials(db_crop.id, session)
+        await session.refresh(db_crop)
+
     return db_crop
 
 @router.get("/", response_model=List[CropRead])
@@ -58,7 +98,18 @@ async def read_my_crops(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    statement = select(Crop).where(Crop.user_id == current_user.id)
+    user_phone = (current_user.phone_number or "").strip()
+    if user_phone:
+        statement = select(Crop).where(
+            (Crop.user_id == current_user.id) |
+            (Crop.landowner_id == current_user.id) |
+            (Crop.landowner_phone == user_phone)
+        ).order_by(Crop.sowing_date.desc())
+    else:
+        statement = select(Crop).where(
+            (Crop.user_id == current_user.id) |
+            (Crop.landowner_id == current_user.id)
+        ).order_by(Crop.sowing_date.desc())
     result = await session.exec(statement)
     return result.all()
 
@@ -80,7 +131,12 @@ async def read_crop_detail(
     crop = await session.get(Crop, crop_id)
     if not crop:
         raise HTTPException(status_code=404, detail="Crop not found")
-    if crop.user_id != current_user.id:
+
+    user_phone = (current_user.phone_number or "").strip()
+    is_cultivator = crop.user_id == current_user.id
+    is_landowner = (crop.landowner_id == current_user.id) or (user_phone and crop.landowner_phone == user_phone)
+
+    if not (is_cultivator or is_landowner):
          raise HTTPException(status_code=403, detail="Not authorized to view this crop")
     return crop
 
@@ -111,6 +167,50 @@ async def update_crop(
     session.add(db_crop)
     await session.commit()
     await session.refresh(db_crop)
+
+    # When land is rented or rent amount changes, synchronize the rent expense
+    if any(k in crop_data for k in ["land_ownership_type", "rent_amount", "landowner_name", "lease_terms"]):
+        rent_stmt = select(CropExpense).where(
+            CropExpense.crop_id == db_crop.id,
+            (CropExpense.category == "Land Lease") | (CropExpense.type.like("Land Lease%"))
+        )
+        rent_res = await session.exec(rent_stmt)
+        existing_rent_exp = rent_res.first()
+
+        if db_crop.land_ownership_type == "rented" and (db_crop.rent_amount or 0) > 0:
+            if existing_rent_exp:
+                existing_rent_exp.unit_cost = float(db_crop.rent_amount)
+                existing_rent_exp.total_cost = float(db_crop.rent_amount)
+                existing_rent_exp.type = f"Land Lease / Koulu Rent ({db_crop.landowner_name or 'Landlord'})"
+                existing_rent_exp.notes = f"Agreed tenancy rent to {db_crop.landowner_name or 'Landowner'}. {db_crop.lease_terms or ''}".strip()
+                session.add(existing_rent_exp)
+            else:
+                sow_date = db_crop.sowing_date.isoformat() if db_crop.sowing_date else datetime.utcnow().isoformat()
+                new_rent_exp = CropExpense(
+                    crop_id=db_crop.id,
+                    category="Land Lease",
+                    type=f"Land Lease / Koulu Rent ({db_crop.landowner_name or 'Landlord'})",
+                    quantity=1.0,
+                    unit="lease",
+                    unit_cost=float(db_crop.rent_amount),
+                    total_cost=float(db_crop.rent_amount),
+                    date=sow_date,
+                    payment_mode="Cash",
+                    stage="Land Prep",
+                    notes=f"Agreed tenancy rent to {db_crop.landowner_name or 'Landowner'}. {db_crop.lease_terms or ''}".strip(),
+                    duration="1 season",
+                    unit_size="1 plot"
+                )
+                session.add(new_rent_exp)
+            await session.commit()
+            await recalculate_crop_financials(db_crop.id, session)
+            await session.refresh(db_crop)
+        elif existing_rent_exp and (db_crop.land_ownership_type != "rented" or (db_crop.rent_amount or 0) == 0):
+            await session.delete(existing_rent_exp)
+            await session.commit()
+            await recalculate_crop_financials(db_crop.id, session)
+            await session.refresh(db_crop)
+
     return db_crop
 
 # --- Expense Management ---
@@ -159,7 +259,10 @@ async def get_crop_expenses(
     crop = await session.get(Crop, crop_id)
     if not crop:
          raise HTTPException(status_code=404, detail="Crop not found")
-    if crop.user_id != current_user.id:
+    user_phone = (current_user.phone_number or "").strip()
+    is_cultivator = crop.user_id == current_user.id
+    is_landowner = (crop.landowner_id == current_user.id) or (user_phone and crop.landowner_phone == user_phone)
+    if not (is_cultivator or is_landowner):
         raise HTTPException(status_code=403, detail="Not authorized")
         
     statement = select(CropExpense).where(CropExpense.crop_id == crop_id).order_by(col(CropExpense.date).desc())
