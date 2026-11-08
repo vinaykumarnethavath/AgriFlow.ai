@@ -582,6 +582,66 @@ export const cancelFarmerOrder = async (orderId: number) => {
   return response.data;
 };
 
+// ---------------------------------------------------------------------------
+// SHOP DISCOVERY & FERTILIZER DEMAND FORECAST INTERFACES
+// ---------------------------------------------------------------------------
+
+export interface DemandedInputFarmer {
+  farmer_name: string;
+  crop: string;
+  acres: number;
+  quantity: number;
+  stage: string;
+  timing: string;
+}
+
+export interface DemandedInputItem {
+  input_name: string;
+  category: string;
+  unit: string;
+  total_quantity_needed: number;
+  total_acres: number;
+  farmers_count: number;
+  crops_affected: string;
+  current_shop_stock: number;
+  stock_status: "sufficient" | "low_stock" | "deficit";
+  shortage_quantity: number;
+  action_needed: string;
+  participating_farmers: DemandedInputFarmer[];
+}
+
+export interface WeeklyDemandWindow {
+  window_id: string;
+  title: string;
+  days_range: string;
+  urgency: "critical" | "high" | "normal";
+  farmer_count: number;
+  demanded_inputs: DemandedInputItem[];
+}
+
+export interface TopFertilizerDemanded {
+  input_name: string;
+  category: string;
+  unit: string;
+  total_quantity: number;
+  farmers_count: number;
+  total_acres: number;
+}
+
+export interface FertilizerDemandForecast {
+  total_farmers_needing_fertilizers_next_14d: number;
+  total_acres_next_14d: number;
+  total_bags_needed_next_14d: number;
+  harvest_stage_crops_excluded: number;
+  active_growing_crops_count: number;
+  time_windows: {
+    week_1: WeeklyDemandWindow;
+    week_2: WeeklyDemandWindow;
+    weeks_3_4: WeeklyDemandWindow;
+  };
+  top_demanded_fertilizers: TopFertilizerDemanded[];
+}
+
 export interface ChatChannelInfo {
   id: number;
   name: string;

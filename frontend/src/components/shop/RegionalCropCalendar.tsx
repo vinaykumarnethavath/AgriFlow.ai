@@ -67,8 +67,19 @@ export function RegionalCropCalendar({
     onSelectInput
 }: RegionalCropCalendarProps) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [urgencyFilter, setUrgencyFilter] = useState<"all" | "critical" | "harvest_ready">("all");
+    const [urgencyFilter, setUrgencyFilter] = useState<"all" | "critical" | "high_demand">("all");
     const [expandedCrop, setExpandedCrop] = useState<string | null>(null);
+
+    // Strictly filter out harvest-stage crops or crops requiring no further inputs
+    const activeCrops = useMemo(() => {
+        return (crops || []).filter(c => {
+            const isHarvest = c.is_harvest_ready || 
+                (c.days_to_harvest != null && c.days_to_harvest <= 15) ||
+                /harvest|picking|ripening|maturity/i.test(c.current_stage || "") ||
+                ((c.inputs_needed_now || []).length === 0 && (c.inputs_needed_next || []).length === 0);
+            return !isHarvest;
+        });
+    }, [crops]);
 
     // Auto expand and focus selected crop when set from charts
     React.useEffect(() => {
@@ -82,7 +93,7 @@ export function RegionalCropCalendar({
     }, [selectedCrop]);
 
     const filteredCrops = useMemo(() => {
-        return crops.filter(c => {
+        return activeCrops.filter(c => {
             const matchesSearch = c.crop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 c.current_stage.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 c.inputs_needed_now.some(inp => inp.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -90,30 +101,23 @@ export function RegionalCropCalendar({
             if (!matchesSearch) return false;
 
             if (urgencyFilter === "critical") {
-                return c.stage_urgency === "critical" || c.stage_urgency === "high";
+                return c.stage_urgency === "critical";
             }
-            if (urgencyFilter === "harvest_ready") {
-                return c.is_harvest_ready;
+            if (urgencyFilter === "high_demand") {
+                return c.stage_urgency === "high";
             }
             return true;
         });
-    }, [crops, searchQuery, urgencyFilter]);
+    }, [activeCrops, searchQuery, urgencyFilter]);
 
     const stats = useMemo(() => {
-        const criticalCount = crops.filter(c => c.stage_urgency === "critical").length;
-        const harvestCount = crops.filter(c => c.is_harvest_ready).length;
-        const activeCount = crops.length;
-        return { criticalCount, harvestCount, activeCount };
-    }, [crops]);
+        const criticalCount = activeCrops.filter(c => c.stage_urgency === "critical").length;
+        const highDemandCount = activeCrops.filter(c => c.stage_urgency === "high").length;
+        const activeCount = activeCrops.length;
+        return { criticalCount, highDemandCount, activeCount };
+    }, [activeCrops]);
 
-    const getUrgencyBadge = (urgency: string, isHarvest: boolean) => {
-        if (isHarvest) {
-            return (
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                    🌾 Harvest Window
-                </span>
-            );
-        }
+    const getUrgencyBadge = (urgency: string) => {
         switch (urgency) {
             case "critical":
                 return (
@@ -194,7 +198,7 @@ export function RegionalCropCalendar({
                                     : "bg-gray-100 dark:bg-zinc-800 text-muted-foreground hover:text-foreground"
                             }`}
                         >
-                            All Crops ({crops.length})
+                            All Active Crops ({activeCrops.length})
                         </button>
                         <button
                             onClick={() => setUrgencyFilter("critical")}
@@ -204,17 +208,17 @@ export function RegionalCropCalendar({
                                     : "bg-gray-100 dark:bg-zinc-800 text-muted-foreground hover:text-foreground"
                             }`}
                         >
-                            ⚡ Needs Top-Dress / Protection ({stats.criticalCount})
+                            ⚡ Peak Input Stages ({stats.criticalCount})
                         </button>
                         <button
-                            onClick={() => setUrgencyFilter("harvest_ready")}
+                            onClick={() => setUrgencyFilter("high_demand")}
                             className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                                urgencyFilter === "harvest_ready"
-                                    ? "bg-amber-600 text-white shadow-xs"
+                                urgencyFilter === "high_demand"
+                                    ? "bg-orange-600 text-white shadow-xs"
                                     : "bg-gray-100 dark:bg-zinc-800 text-muted-foreground hover:text-foreground"
                             }`}
                         >
-                            🌾 Pre-Harvest ({stats.harvestCount})
+                            🌱 High Demand ({stats.highDemandCount})
                         </button>
                     </div>
                 </div>
@@ -260,7 +264,7 @@ export function RegionalCropCalendar({
                                             <div>
                                                 <div className="flex items-center gap-2 flex-wrap mb-1">
                                                     <h3 className="font-bold text-base text-foreground">{crop.crop_name}</h3>
-                                                    {getUrgencyBadge(crop.stage_urgency, crop.is_harvest_ready)}
+                                                    {getUrgencyBadge(crop.stage_urgency)}
                                                 </div>
                                                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                                     <span><strong className="text-foreground">{crop.total_acres.toLocaleString()}</strong> Acres</span>
@@ -280,15 +284,9 @@ export function RegionalCropCalendar({
                                                     Current Stage: {crop.current_stage}
                                                 </span>
                                                 <span className="text-muted-foreground font-semibold">
-                                                    {crop.days_to_harvest > 0 ? (
-                                                        <span className="text-amber-700 dark:text-amber-400 flex items-center gap-1">
-                                                            <Clock className="w-3.5 h-3.5" /> {crop.days_to_harvest} days to harvest
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-emerald-700 dark:text-emerald-400 font-bold">
-                                                            🌾 Ready for Harvest
-                                                        </span>
-                                                    )}
+                                                    <span className="text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                                                        <Sparkles className="w-3.5 h-3.5" /> Active Input Window
+                                                    </span>
                                                 </span>
                                             </div>
                                             

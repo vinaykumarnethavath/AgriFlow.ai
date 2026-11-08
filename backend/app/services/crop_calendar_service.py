@@ -1255,3 +1255,292 @@ def match_catalog_products_for_inputs(input_names: List[str]) -> List[Dict[str, 
             break
             
     return matched
+
+
+# ---------------------------------------------------------------------------
+# 4. UPCOMING FERTILIZER DEMAND FORECASTING ENGINE
+# ---------------------------------------------------------------------------
+
+STANDARD_DOSAGES = {
+    "urea": {"unit": "bags (45 kg)", "rate_per_acre": 1.0, "category": "Fertilizer"},
+    "dap": {"unit": "bags (50 kg)", "rate_per_acre": 1.0, "category": "Fertilizer"},
+    "mop": {"unit": "bags (50 kg)", "rate_per_acre": 0.5, "category": "Fertilizer"},
+    "potash": {"unit": "bags (50 kg)", "rate_per_acre": 0.5, "category": "Fertilizer"},
+    "zinc": {"unit": "kg", "rate_per_acre": 5.0, "category": "Micronutrient"},
+    "boron": {"unit": "kg", "rate_per_acre": 0.5, "category": "Micronutrient"},
+    "19-19-19": {"unit": "kg (Foliar)", "rate_per_acre": 1.0, "category": "Nutrient"},
+    "19:19:19": {"unit": "kg (Foliar)", "rate_per_acre": 1.0, "category": "Nutrient"},
+    "13-0-45": {"unit": "kg (Foliar)", "rate_per_acre": 1.0, "category": "Nutrient"},
+    "nano urea": {"unit": "bottles (500ml)", "rate_per_acre": 1.0, "category": "Fertilizer"},
+    "chlorpyrifos": {"unit": "liters", "rate_per_acre": 1.0, "category": "Insecticide"},
+    "pretilachlor": {"unit": "liters", "rate_per_acre": 0.8, "category": "Herbicide"},
+    "mancozeb": {"unit": "kg", "rate_per_acre": 1.0, "category": "Fungicide"},
+    "tricyclazole": {"unit": "kg", "rate_per_acre": 0.3, "category": "Fungicide"},
+    "emamectin": {"unit": "packets (100g)", "rate_per_acre": 1.0, "category": "Insecticide"},
+    "cartap": {"unit": "kg", "rate_per_acre": 5.0, "category": "Insecticide"},
+}
+
+def _resolve_standard_dosage(input_name: str) -> Dict[str, Any]:
+    name_l = input_name.lower()
+    for key, spec in STANDARD_DOSAGES.items():
+        if key in name_l:
+            return spec
+    # Fallback
+    if "fertilizer" in name_l or "top-dress" in name_l:
+        return {"unit": "bags (45 kg)", "rate_per_acre": 1.0, "category": "Fertilizer"}
+    elif "spray" in name_l or "foliar" in name_l or "liquid" in name_l:
+        return {"unit": "liters", "rate_per_acre": 1.0, "category": "Agro-Chemical"}
+    return {"unit": "units", "rate_per_acre": 1.0, "category": "Agri-Input"}
+
+
+def calculate_upcoming_fertilizer_demand(
+    crops: List[Any],
+    shop_inventory: Optional[List[Dict[str, Any]]] = None,
+    ref_date: Optional[datetime] = None,
+    days_ahead: int = 28
+) -> Dict[str, Any]:
+    """
+    Analyzes all active standing crops in the catchment area:
+    1. Strictly filters out crops that have reached harvest/ripening stage or no longer require inputs.
+    2. Projects upcoming fertilizer & agro-chemical requirements for the next 7, 14, and 28 days.
+    3. Aggregates distinct farmer counts, standing acreages, and total required quantities.
+    4. Compares with current shop inventory to flag stocking deficits.
+    """
+    if ref_date is None:
+        ref_date = datetime.utcnow()
+
+    # Stock lookup map: lowercase keyword -> current stock quantity
+    stock_map = {}
+    if shop_inventory:
+        for item in shop_inventory:
+            if isinstance(item, dict):
+                name_clean = item.get("name", "").lower()
+                stock_qty = item.get("stock_quantity", item.get("quantity", item.get("stock", 0)))
+            else:
+                name_clean = getattr(item, "name", "").lower()
+                stock_qty = getattr(item, "quantity", getattr(item, "stock_quantity", 0))
+            stock_map[name_clean] = stock_qty
+
+    # Initialize time window buckets
+    windows = {
+        "week_1": {
+            "window_id": "week_1",
+            "title": "Next 7 Days (Immediate Demand)",
+            "days_range": "Days 1 – 7",
+            "urgency": "critical",
+            "farmer_ids": set(),
+            "farmer_details": [],
+            "inputs_map": {}, # input_name -> {name, category, unit, total_qty, farmers: set(), acres: float}
+        },
+        "week_2": {
+            "window_id": "week_2",
+            "title": "Days 8 – 14 (Approaching Application)",
+            "days_range": "Days 8 – 14",
+            "urgency": "high",
+            "farmer_ids": set(),
+            "farmer_details": [],
+            "inputs_map": {},
+        },
+        "weeks_3_4": {
+            "window_id": "weeks_3_4",
+            "title": "Days 15 – 28 (Advance Procurement Pipeline)",
+            "days_range": "Days 15 – 28",
+            "urgency": "normal",
+            "farmer_ids": set(),
+            "farmer_details": [],
+            "inputs_map": {},
+        }
+    }
+
+    active_growing_crops = []
+    harvest_stage_crops_excluded = 0
+
+    for crop in crops:
+        sowing_dt = getattr(crop, "sowing_date", None)
+        c_name = getattr(crop, "name", "Crop")
+        c_area = float(getattr(crop, "area", 1.0) or 1.0)
+        u_id = getattr(crop, "user_id", None)
+        c_farmer = getattr(crop, "cultivator_name", None) or f"Farmer #{u_id}"
+
+        # Sowing date parsing
+        if isinstance(sowing_dt, str):
+            try:
+                sowing_dt = datetime.fromisoformat(sowing_dt.replace("Z", "+00:00"))
+            except Exception:
+                sowing_dt = ref_date - timedelta(days=40)
+
+        stage_info = calculate_crop_stage(sowing_dt, c_name, ref_date)
+
+        # ── FILTRATION CRITERIA: EXCLUDE HARVEST-STAGE CROPS ──
+        # A crop in harvest stage or with zero remaining inputs is irrelevant to a fertilizer shop
+        is_harvest = (
+            stage_info["is_harvest_ready"] or 
+            stage_info["days_to_harvest"] <= 15 or
+            any(w in stage_info["current_stage_name"].lower() for w in ["harvest", "picking", "ripening", "maturity"]) or
+            (len(stage_info["inputs_needed_now"]) == 0 and len(stage_info["inputs_needed_next"]) == 0)
+        )
+
+        if is_harvest:
+            harvest_stage_crops_excluded += 1
+            continue
+
+        active_growing_crops.append(crop)
+
+        # ── MAP INPUTS TO TIME WINDOWS ──
+        # 1. Inputs needed NOW (Current Stage) -> Week 1 (Days 1–7)
+        for inp in stage_info["inputs_needed_now"]:
+            dosage = _resolve_standard_dosage(inp)
+            qty_needed = round(c_area * dosage["rate_per_acre"], 1)
+            w1 = windows["week_1"]
+            if u_id: w1["farmer_ids"].add(u_id)
+            
+            if inp not in w1["inputs_map"]:
+                w1["inputs_map"][inp] = {
+                    "input_name": inp,
+                    "category": dosage["category"],
+                    "unit": dosage["unit"],
+                    "total_quantity": 0.0,
+                    "total_acres": 0.0,
+                    "farmers_count": 0,
+                    "crops_affected": set(),
+                    "participating_farmers": []
+                }
+            w1["inputs_map"][inp]["total_quantity"] += qty_needed
+            w1["inputs_map"][inp]["total_acres"] += c_area
+            w1["inputs_map"][inp]["crops_affected"].add(c_name)
+            w1["inputs_map"][inp]["participating_farmers"].append({
+                "farmer_name": c_farmer,
+                "crop": c_name,
+                "acres": c_area,
+                "quantity": qty_needed,
+                "stage": stage_info["current_stage_name"],
+                "timing": "Immediate (Next 7 Days)"
+            })
+
+        # 2. Inputs needed NEXT (Upcoming Stage) -> determine if within Week 1, Week 2, or Weeks 3-4
+        days_to_next = stage_info.get("days_to_next_stage", 10)
+        target_win = "week_1" if days_to_next <= 7 else ("week_2" if days_to_next <= 14 else "weeks_3_4")
+        win_label = "Next 7 Days" if days_to_next <= 7 else (f"In ~{days_to_next} Days (Week 2)" if days_to_next <= 14 else f"In ~{days_to_next} Days (Weeks 3-4)")
+
+        for inp in stage_info["inputs_needed_next"]:
+            dosage = _resolve_standard_dosage(inp)
+            qty_needed = round(c_area * dosage["rate_per_acre"], 1)
+            w = windows[target_win]
+            if u_id: w["farmer_ids"].add(u_id)
+            
+            if inp not in w["inputs_map"]:
+                w["inputs_map"][inp] = {
+                    "input_name": inp,
+                    "category": dosage["category"],
+                    "unit": dosage["unit"],
+                    "total_quantity": 0.0,
+                    "total_acres": 0.0,
+                    "farmers_count": 0,
+                    "crops_affected": set(),
+                    "participating_farmers": []
+                }
+            w["inputs_map"][inp]["total_quantity"] += qty_needed
+            w["inputs_map"][inp]["total_acres"] += c_area
+            w["inputs_map"][inp]["crops_affected"].add(c_name)
+            w["inputs_map"][inp]["participating_farmers"].append({
+                "farmer_name": c_farmer,
+                "crop": c_name,
+                "acres": c_area,
+                "quantity": qty_needed,
+                "stage": f"Upcoming: {stage_info.get('next_stage_name', 'Next Growth Stage')}",
+                "timing": win_label
+            })
+
+    # ── AGGREGATE SUMMARY & INVENTORY SHORTAGE COMPARISON ──
+    formatted_windows = {}
+    top_demanded_inputs_agg = {}
+
+    for w_key, w_data in windows.items():
+        formatted_inputs = []
+        for inp_name, inp_obj in w_data["inputs_map"].items():
+            tot_qty = round(inp_obj["total_quantity"], 1)
+            tot_acres = round(inp_obj["total_acres"], 1)
+            f_count = len({pf["farmer_name"] for pf in inp_obj["participating_farmers"]})
+            crops_str = ", ".join(inp_obj["crops_affected"])
+
+            # Check shop inventory
+            curr_stock = 0
+            for s_name, s_qty in stock_map.items():
+                if inp_name.lower() in s_name or any(k in s_name for k in inp_name.lower().split()):
+                    curr_stock += s_qty
+
+            stock_status = "sufficient" if curr_stock >= tot_qty else ("low_stock" if curr_stock > 0 else "deficit")
+            shortage = max(0.0, tot_qty - curr_stock)
+
+            item_res = {
+                "input_name": inp_name,
+                "category": inp_obj["category"],
+                "unit": inp_obj["unit"],
+                "total_quantity_needed": tot_qty,
+                "total_acres": tot_acres,
+                "farmers_count": f_count,
+                "crops_affected": crops_str,
+                "current_shop_stock": curr_stock,
+                "stock_status": stock_status,
+                "shortage_quantity": shortage,
+                "action_needed": f"Reorder {shortage} {inp_obj['unit']} from wholesaler" if shortage > 0 else "Stock levels sufficient",
+                "participating_farmers": inp_obj["participating_farmers"][:6] # Top farmers
+            }
+            formatted_inputs.append(item_res)
+
+            # Global aggregation
+            if inp_name not in top_demanded_inputs_agg:
+                top_demanded_inputs_agg[inp_name] = {
+                    "input_name": inp_name,
+                    "category": inp_obj["category"],
+                    "unit": inp_obj["unit"],
+                    "total_quantity": 0.0,
+                    "farmers_count": set(),
+                    "total_acres": 0.0
+                }
+            top_demanded_inputs_agg[inp_name]["total_quantity"] += tot_qty
+            top_demanded_inputs_agg[inp_name]["total_acres"] += tot_acres
+            for pf in inp_obj["participating_farmers"]:
+                top_demanded_inputs_agg[inp_name]["farmers_count"].add(pf["farmer_name"])
+
+        formatted_windows[w_key] = {
+            "window_id": w_data["window_id"],
+            "title": w_data["title"],
+            "days_range": w_data["days_range"],
+            "urgency": w_data["urgency"],
+            "farmer_count": len(w_data["farmer_ids"]),
+            "demanded_inputs": sorted(formatted_inputs, key=lambda x: x["total_quantity_needed"], reverse=True)
+        }
+
+    # High-level KPIs for next 14 days (Week 1 + Week 2)
+    next_14d_farmer_ids = windows["week_1"]["farmer_ids"].union(windows["week_2"]["farmer_ids"])
+    next_14d_acres = sum(
+        inp["total_acres"] for w in ["week_1", "week_2"] for inp in formatted_windows[w]["demanded_inputs"]
+    )
+    # Estimate total fertilizer bags in next 14 days
+    next_14d_bags = sum(
+        inp["total_quantity_needed"] for w in ["week_1", "week_2"] for inp in formatted_windows[w]["demanded_inputs"] if "bag" in inp["unit"].lower()
+    )
+
+    top_fertilizers_list = []
+    for k, v in top_demanded_inputs_agg.items():
+        top_fertilizers_list.append({
+            "input_name": v["input_name"],
+            "category": v["category"],
+            "unit": v["unit"],
+            "total_quantity": round(v["total_quantity"], 1),
+            "farmers_count": len(v["farmers_count"]),
+            "total_acres": round(v["total_acres"], 1)
+        })
+    top_fertilizers_list = sorted(top_fertilizers_list, key=lambda x: x["total_quantity"], reverse=True)
+
+    return {
+        "total_farmers_needing_fertilizers_next_14d": len(next_14d_farmer_ids),
+        "total_acres_next_14d": round(next_14d_acres, 1),
+        "total_bags_needed_next_14d": int(next_14d_bags),
+        "harvest_stage_crops_excluded": harvest_stage_crops_excluded,
+        "active_growing_crops_count": len(active_growing_crops),
+        "time_windows": formatted_windows,
+        "top_demanded_fertilizers": top_fertilizers_list[:8]
+    }
+

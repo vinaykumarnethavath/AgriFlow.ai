@@ -1124,5 +1124,76 @@ stateDiagram-v2
     Completed --> [*]
 ```
 
+---
+
+## 18. Shop Crop Calendar Fertilizer Demand Forecast & Harvest Filtration Architecture
+
+Agri-input retail shops stock and sell fertilizers, seeds, and agro-chemicals. Standing crops that reach harvest, maturity, or picking phases have zero input demand due to Pre-Harvest Interval (PHI) restrictions. Showing harvest crops on the shopkeeper's calendar creates operational noise. 
+
+This subsystem filters out all mature/harvest crops and calculates forward-looking fertilizer demand grouped into 3 distinct operational replenishment windows (Week 1, Week 2, Weeks 3–4) across a 50km catchment radius.
+
+```mermaid
+flowchart TD
+    subgraph FarmerPlots ["Catchment Standing Crops (50km Radius)"]
+        Plot1["Plot A: Paddy (Active Tillering)"]
+        Plot2["Plot B: Maize (Knee-High)"]
+        Plot3["Plot C: Groundnut (Pegging)"]
+        Plot4["Plot D: Tomato (Harvest Window / Picking)"]
+    end
+
+    subgraph FiltrationEngine ["Input Demand & PHI Gatekeeper"]
+        Check1{"Is Harvest Ready\nor DaysToHarvest <= 15\nor InputsNeeded == 0?"}
+    end
+
+    subgraph TimelineGrouping ["Temporal Window Allocation Engine"]
+        W1["Week 1: Days 1–7 (Immediate Need)\nUrgency: Critical | Field Top-Dressing"]
+        W2["Week 2: Days 8–14 (Approaching Stage)\nUrgency: High | Pre-Stage Sourcing"]
+        W3["Weeks 3–4: Days 15–28 (Advance Pipeline)\nUrgency: Normal | Wholesale Replenishment"]
+    end
+
+    subgraph ShopInventoryComparison ["Live Shop Stock Comparison"]
+        StockCheck{"Current Store Stock\nvs Total Demand"}
+        Deficit["🚨 Shortage Alert (Reorder from Wholesaler)"]
+        LowStock["⚠️ Low Stock Warning"]
+        Sufficient["✅ Sufficient Stock Available"]
+    end
+
+    subgraph ShopUI ["Shop Crop Calendar View (/dashboard/shop/crop-calendar)"]
+        KPI["Fertilizer Demand (Next 14d)\nX Farmers • Y Bags • Z Acres"]
+        TabDemand["⚡ Fertilizer & Input Demand Tab"]
+        WindowCards["Weekly Timeline Cards with Farmer Details"]
+    end
+
+    Plot1 --> Check1
+    Plot2 --> Check1
+    Plot3 --> Check1
+    Plot4 --> Check1
+
+    Check1 -->|YES - Harvest / Zero Input| Exclude["🚫 Exclude from Shop Calendar & Demand Count"]
+    Check1 -->|NO - Active Growing Phase| TimelineGrouping
+
+    W1 --> StockCheck
+    W2 --> StockCheck
+    W3 --> StockCheck
+
+    StockCheck -->|Stock < Demand| Deficit
+    StockCheck -->|Stock < Buffer| LowStock
+    StockCheck -->|Stock >= Demand| Sufficient
+
+    Deficit --> ShopUI
+    LowStock --> ShopUI
+    Sufficient --> ShopUI
+    TimelineGrouping --> ShopUI
+```
+
+### Key Technical Rules:
+1. **Harvest Stage Filtration Rule:**
+   - Any crop where `is_harvest_ready == True` or `days_to_harvest <= 15` or stage name contains `Harvest / Picking / Ripening / Maturity` or `len(inputs_needed_now) == 0 and len(inputs_needed_next) == 0` is excluded from the Shop Crop Calendar and demand tallies.
+2. **Aggregated Dosage Resolution:**
+   - Evaluates standing acreage $\times$ standard dosage rate per acre for standard fertilizers (e.g., Urea: 45 kg/acre, DAP: 50 kg/acre, Potash/MOP: 25 kg/acre, Gypsum: 200 kg/acre, Zinc: 5 kg/acre).
+3. **Inventory Reorder Alerting:**
+   - Compares total demanded quantity across local farmers against current store inventory, giving retailers exact replenishment shortages in standard commercial packaging units (bags, packets, liters).
+
+
 
 

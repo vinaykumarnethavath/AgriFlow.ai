@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import api from "@/lib/api";
+import api, { FertilizerDemandForecast } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 import { RegionalCropCalendar, RegionalCrop } from "@/components/shop/RegionalCropCalendar";
 import { CropCalendarCharts } from "@/components/shop/CropCalendarCharts";
@@ -22,7 +22,9 @@ import {
     BarChart3,
     Sparkles,
     SlidersHorizontal,
-    X
+    X,
+    Flame,
+    Users
 } from "lucide-react";
 
 // Robust agronomic fallback data ensuring immediate rich display
@@ -92,29 +94,27 @@ const FALLBACK_REGIONAL_CROPS: RegionalCrop[] = [
         total_acres: 210.4,
         plot_count: 22,
         color: "#ef4444",
-        current_stage: "Fruit Ripening & Pre-Harvest",
-        stage_description: "Red pod ripening. Picking begins in 10-15 days. High demand for post-harvest drying tarpaulins and fruit rot fungicides.",
-        stage_urgency: "high",
-        progress_pct: 85,
-        days_since_sowing: 115,
-        days_to_harvest: 12,
+        current_stage: "Flowering & Fruit Development",
+        stage_description: "Active flowering and fruit elongation. Heavy demand for water soluble fertilizers, flower stimulants, and sucking pest protection.",
+        stage_urgency: "critical",
+        progress_pct: 55,
+        days_since_sowing: 60,
+        days_to_harvest: 55,
         is_harvest_ready: false,
-        inputs_needed_now: ["Mancozeb 75% WP", "Calcium Nitrate (Fruit Firmness)", "Drying Tarpaulins"],
-        inputs_needed_next: ["HDPE Crates", "Post-Harvest Storage Bags"],
+        inputs_needed_now: ["19:19:19 WSF", "Boron 20% Soluble", "Planofix Flower Stimulant"],
+        inputs_needed_next: ["Calcium Nitrate", "Fipronil 5% SC"],
         matched_products_now: [
-            { name: "Indofil M-45 Mancozeb", category: "Fungicide", company: "Indofil", dosage: "2.5 g/L" },
-            { name: "YaraLiva Nitrabor Calcium Nitrate", category: "Micronutrient", company: "Yara", dosage: "5 kg/acre" }
+            { name: "IFFCO WSF 19-19-19", category: "Fertilizer", company: "IFFCO", dosage: "5 g/L" },
+            { name: "Boron 20% Soluble", category: "Micronutrient", company: "Multiplex", dosage: "1 g/L" }
         ],
         matched_products_next: [
-            { name: "Agricultural Drying Tarpaulins 250 GSM", category: "Hardware", company: "Supreme", dosage: "Per Plot" }
+            { name: "YaraLiva Calcium Nitrate", category: "Micronutrient", company: "Yara", dosage: "5 kg/acre" }
         ],
         stage_timeline: [
             { name: "Nursery & Transplanting", start_day: 0, end_day: 35, description: "Seedling establishment", recommended_inputs: ["Copper Oxychloride"], urgency: "normal", status: "completed" },
             { name: "Vegetative Branching", start_day: 36, end_day: 65, description: "Bushy canopy growth", recommended_inputs: ["19-19-19", "Imidacloprid"], urgency: "high", status: "completed" },
-            { name: "Flowering & Fruit Set", start_day: 66, end_day: 95, description: "Abundant flower buds", recommended_inputs: ["Gibberellic Acid", "Boron 20%"], urgency: "critical", status: "completed" },
-            { name: "Fruit Ripening & Pre-Harvest", start_day: 96, end_day: 125, description: "Pods turning deep red", recommended_inputs: ["Mancozeb", "Calcium Nitrate", "Tarpaulins"], urgency: "high", status: "current" },
-            { name: "Primary Pickings (Harvest)", start_day: 126, end_day: 155, description: "Pod hand harvesting", recommended_inputs: ["Harvest Bags", "Crates"], urgency: "normal", status: "upcoming" },
-            { name: "Ratoon Flush", start_day: 156, end_day: 180, description: "Secondary picking stimulus", recommended_inputs: ["Urea Boost"], urgency: "normal", status: "upcoming" }
+            { name: "Flowering & Fruit Set", start_day: 66, end_day: 95, description: "Abundant flower buds", recommended_inputs: ["Gibberellic Acid", "Boron 20%"], urgency: "critical", status: "current" },
+            { name: "Fruit Sizing", start_day: 96, end_day: 125, description: "Pods enlarging", recommended_inputs: ["0-52-34", "Calcium Nitrate"], urgency: "high", status: "upcoming" }
         ]
     },
     {
@@ -148,33 +148,31 @@ const FALLBACK_REGIONAL_CROPS: RegionalCrop[] = [
         ]
     },
     {
-        crop_name: "Tomato",
-        total_acres: 145.2,
-        plot_count: 16,
-        color: "#f43f5e",
-        current_stage: "Peak Fruit Picking",
-        stage_description: "Ripening clusters ready for multi-flush harvest. Daily harvesting underway. High immediate demand for plastic crates and bio-stimulants.",
-        stage_urgency: "normal",
-        progress_pct: 95,
-        days_since_sowing: 98,
-        days_to_harvest: 5,
-        is_harvest_ready: true,
-        inputs_needed_now: ["Plastic Harvest Crates (20kg)", "Bio-NPK Consortia", "Post-Harvest Wash"],
-        inputs_needed_next: ["Soil Conditioner (Post-Crop)"],
+        crop_name: "Groundnut",
+        total_acres: 165.0,
+        plot_count: 15,
+        color: "#f97316",
+        current_stage: "Pegging & Pod Formation",
+        stage_description: "Pegs penetrating soil. Critical requirement for Gypsum application to supply Calcium and Sulphur for pod filling.",
+        stage_urgency: "critical",
+        progress_pct: 48,
+        days_since_sowing: 45,
+        days_to_harvest: 50,
+        is_harvest_ready: false,
+        inputs_needed_now: ["Agricultural Gypsum (200 kg/acre)", "Zinc Sulphate 21%", "Mancozeb 75% WP (Tikka Disease)"],
+        inputs_needed_next: ["Boron 20% Soluble", "Potassium Schoenite"],
         matched_products_now: [
-            { name: "Heavy Duty Perforated Vegetable Crates", category: "Hardware", company: "Nilkamal", dosage: "Per Plot" },
-            { name: "Multiplex Bio-Jodi Biofertilizer", category: "Bio-Input", company: "Multiplex", dosage: "2 L/acre" }
+            { name: "Soil Grade Agricultural Gypsum", category: "Fertilizer", company: "FCI Aravali", dosage: "200 kg/acre" },
+            { name: "Tata Zinc Sulphate 21%", category: "Micronutrient", company: "Tata Rallis", dosage: "10 kg/acre" }
         ],
         matched_products_next: [
-            { name: "Humic Acid 98% Flakes", category: "Conditioner", company: "Geolife", dosage: "500 g/acre" }
+            { name: "Multiplex Multibor Boron", category: "Micronutrient", company: "Multiplex", dosage: "1 g/L" }
         ],
         stage_timeline: [
-            { name: "Transplanting & Staking", start_day: 0, end_day: 25, description: "Erecting bamboo stakes & trellising", recommended_inputs: ["Carbendazim Drench"], urgency: "normal", status: "completed" },
-            { name: "Vegetative & Flowering", start_day: 26, end_day: 50, description: "Truss blooming", recommended_inputs: ["19-19-19", "Boron"], urgency: "high", status: "completed" },
-            { name: "Fruit Development", start_day: 51, end_day: 75, description: "Green fruit sizing", recommended_inputs: ["0-52-34", "Calcium Nitrate"], urgency: "critical", status: "completed" },
-            { name: "Color Break (Breaker Stage)", start_day: 76, end_day: 90, description: "Turning red from blossom end", recommended_inputs: ["Potassium Nitrate"], urgency: "high", status: "completed" },
-            { name: "Peak Fruit Picking", start_day: 91, end_day: 110, description: "Continuous morning harvests", recommended_inputs: ["Harvest Crates", "Bio-NPK"], urgency: "normal", status: "current" },
-            { name: "Field Clearance", start_day: 111, end_day: 120, description: "Residue mulching", recommended_inputs: ["Decomposer"], urgency: "normal", status: "upcoming" }
+            { name: "Sowing & Emergence", start_day: 0, end_day: 15, description: "Seedling establishment", recommended_inputs: ["Trichoderma Seed Treatment"], urgency: "normal", status: "completed" },
+            { name: "Vegetative Growth & Flowering", start_day: 16, end_day: 35, description: "Yellow blossom bloom", recommended_inputs: ["DAP 18-46-0", "Chlorpyrifos"], urgency: "high", status: "completed" },
+            { name: "Pegging & Pod Formation", start_day: 36, end_day: 65, description: "Peg penetration", recommended_inputs: ["Gypsum", "Zinc Sulphate", "Mancozeb"], urgency: "critical", status: "current" },
+            { name: "Pod Filling", start_day: 66, end_day: 85, description: "Kernel enlargement", recommended_inputs: ["Boron", "SOP 0-0-50"], urgency: "high", status: "upcoming" }
         ]
     },
     {
@@ -212,6 +210,7 @@ const FALLBACK_REGIONAL_CROPS: RegionalCrop[] = [
 export default function ShopCropCalendarPage() {
     const { t } = useLanguage();
     const [regionalCropCalendar, setRegionalCropCalendar] = useState<RegionalCrop[]>([]);
+    const [fertilizerDemand, setFertilizerDemand] = useState<FertilizerDemandForecast | null>(null);
     const [totalCultivationArea, setTotalCultivationArea] = useState<number>(0);
     const [regionInfo, setRegionInfo] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -221,10 +220,25 @@ export default function ShopCropCalendarPage() {
     const fetchCalendarData = async () => {
         try {
             const { data } = await api.get("/analytics/shop/discovery");
-            if (data.regional_crop_calendar && data.regional_crop_calendar.length > 0) {
-                setRegionalCropCalendar(data.regional_crop_calendar);
+            
+            // Filter out harvest-ready or no-input crops
+            const rawCalendar: RegionalCrop[] = data.regional_crop_calendar || [];
+            const activeOnly = rawCalendar.filter((c: RegionalCrop) => {
+                const isHarvest = c.is_harvest_ready || 
+                    (c.days_to_harvest != null && c.days_to_harvest <= 15) ||
+                    /harvest|picking|ripening|maturity/i.test(c.current_stage || "") ||
+                    ((c.inputs_needed_now || []).length === 0 && (c.inputs_needed_next || []).length === 0);
+                return !isHarvest;
+            });
+
+            if (activeOnly.length > 0) {
+                setRegionalCropCalendar(activeOnly);
             } else {
                 setRegionalCropCalendar(FALLBACK_REGIONAL_CROPS);
+            }
+
+            if (data.fertilizer_demand_forecast) {
+                setFertilizerDemand(data.fertilizer_demand_forecast);
             }
 
             if (data.total_cultivation_area && data.total_cultivation_area > 0) {
@@ -240,18 +254,18 @@ export default function ShopCropCalendarPage() {
                 setRegionInfo({
                     name: "Regional Catchment Area",
                     radius_km: 50,
-                    total_farmers: 135,
+                    total_farmers: 16,
                     market_share_pct: 18.5
                 });
             }
         } catch (err) {
             console.error("Failed to fetch crop calendar data, using rich agronomic fallback:", err);
             setRegionalCropCalendar(FALLBACK_REGIONAL_CROPS);
-            setTotalCultivationArea(1571.1);
+            setTotalCultivationArea(1110.9);
             setRegionInfo({
                 name: "Regional Catchment Area",
                 radius_km: 50,
-                total_farmers: 135,
+                total_farmers: 16,
                 market_share_pct: 18.5
             });
         } finally {
@@ -275,14 +289,11 @@ export default function ShopCropCalendarPage() {
         const criticalCount = regionalCropCalendar.filter(
             c => c.stage_urgency === "critical" || c.stage_urgency === "high"
         ).length;
-        const harvestCount = regionalCropCalendar.filter(
-            c => c.is_harvest_ready || (c.days_to_harvest != null && c.days_to_harvest <= 20)
-        ).length;
         const totalInputsNow = regionalCropCalendar.reduce(
             (acc, c) => acc + (c.inputs_needed_now?.length || 0), 0
         );
 
-        return { totalCrops, criticalCount, harvestCount, totalInputsNow };
+        return { totalCrops, criticalCount, totalInputsNow };
     }, [regionalCropCalendar]);
 
     const handleSelectInputFilter = (inputName: string) => {
@@ -307,15 +318,15 @@ export default function ShopCropCalendarPage() {
                         <div>
                             <div className="flex items-center gap-2.5 flex-wrap">
                                 <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                                    {t("sidebar.cropCalendar", "Regional Crop Calendar & Growth Stages")}
+                                    {t("sidebar.cropCalendar", "Regional Crop Calendar & Input Demand")}
                                 </h1>
                                 <span className="bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
                                     <Sparkles className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                                    Interactive Visual Charts & Graphs
+                                    Demand Forecast & Stocking Insights
                                 </span>
                             </div>
                             <p className="text-sm text-muted-foreground mt-1 max-w-3xl leading-relaxed">
-                                Explore interactive graphs of regional crop stages, harvest countdowns, and stage-specific fertilizer & chemical requirements to stock items proactively before peak farmer demand.
+                                Track standing crop growth stages and upcoming 2-to-4-week fertilizer and chemical demand from catchment farmers. Harvested and mature crops are excluded so your shop focuses purely on active input demand.
                             </p>
                         </div>
                     </div>
@@ -367,9 +378,9 @@ export default function ShopCropCalendarPage() {
                 <Card className="border-gray-200 dark:border-zinc-800 shadow-2xs hover:shadow-xs transition-shadow">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
-                            <p className="text-xs text-muted-foreground font-medium">Regional Crops</p>
+                            <p className="text-xs text-muted-foreground font-medium">Active Input Crops</p>
                             <h3 className="text-2xl font-bold text-foreground mt-0.5">{kpis.totalCrops}</h3>
-                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Cultivated in region</p>
+                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Requiring Fertilizers/Inputs</p>
                         </div>
                         <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
                             <Sprout className="w-5 h-5" />
@@ -403,15 +414,20 @@ export default function ShopCropCalendarPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-gray-200 dark:border-zinc-800 shadow-2xs hover:shadow-xs transition-shadow">
+                {/* REPLACED: Upcoming Harvests -> Fertilizer Demand (Next 14 Days) */}
+                <Card className="border-emerald-200/70 dark:border-emerald-900/50 bg-gradient-to-br from-emerald-50/60 to-teal-50/60 dark:from-emerald-950/20 dark:to-teal-950/20 shadow-2xs hover:shadow-xs transition-shadow">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
-                            <p className="text-xs text-muted-foreground font-medium">Upcoming Harvests</p>
-                            <h3 className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-0.5">{kpis.harvestCount}</h3>
-                            <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">In harvest window / soon</p>
+                            <p className="text-xs text-muted-foreground font-semibold">Fertilizer Demand (Next 14d)</p>
+                            <h3 className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
+                                {fertilizerDemand?.total_farmers_needing_fertilizers_next_14d ?? 16} <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Farmers</span>
+                            </h3>
+                            <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400 font-medium">
+                                ~{fertilizerDemand?.total_bags_needed_next_14d ?? 142} Bags • {fertilizerDemand?.total_acres_next_14d ?? totalCultivationArea.toFixed(0)} acres
+                            </p>
                         </div>
-                        <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
-                            <Clock className="w-5 h-5" />
+                        <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                            <Flame className="w-5 h-5" />
                         </div>
                     </CardContent>
                 </Card>
@@ -425,6 +441,7 @@ export default function ShopCropCalendarPage() {
                 loading={loading}
                 totalAcres={totalCultivationArea}
                 selectedCrop={selectedCrop}
+                fertilizerDemand={fertilizerDemand}
                 onSelectCrop={setSelectedCrop}
                 onSelectInput={handleSelectInputFilter}
             />

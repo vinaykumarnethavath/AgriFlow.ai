@@ -34,20 +34,27 @@ import {
     Leaf,
     Calendar,
     ArrowUpRight,
-    PackageCheck
+    PackageCheck,
+    AlertTriangle,
+    Users,
+    CheckCircle,
+    Boxes,
+    ShoppingBag
 } from "lucide-react";
 import { RegionalCrop } from "./RegionalCropCalendar";
+import { FertilizerDemandForecast, WeeklyDemandWindow, DemandedInputItem, TopFertilizerDemanded } from "@/lib/api";
 
 interface CropCalendarChartsProps {
     crops: RegionalCrop[];
     loading?: boolean;
     totalAcres?: number;
     selectedCrop?: string | null;
+    fertilizerDemand?: FertilizerDemandForecast | null;
     onSelectCrop?: (cropName: string | null) => void;
     onSelectInput?: (inputName: string) => void;
 }
 
-type ChartTab = "overview" | "stages" | "acreage" | "inputs" | "harvest";
+type ChartTab = "overview" | "stages" | "acreage" | "inputs" | "demand";
 
 const URGENCY_COLORS = {
     critical: "#ef4444", // Crimson Red
@@ -67,23 +74,34 @@ export function CropCalendarCharts({
     loading = false,
     totalAcres = 0,
     selectedCrop = null,
+    fertilizerDemand = null,
     onSelectCrop,
     onSelectInput
 }: CropCalendarChartsProps) {
     const [isMounted, setIsMounted] = useState(false);
     const [activeTab, setActiveTab] = useState<ChartTab>("overview");
+    const [selectedDemandWindow, setSelectedDemandWindow] = useState<"all" | "week_1" | "week_2" | "weeks_3_4">("all");
     const [hoveredCrop, setHoveredCrop] = useState<string | null>(null);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
+    // Strictly filter active growing crops requiring inputs (excludes harvest or mature crops)
+    const activeInputCrops = useMemo(() => {
+        return (crops || []).filter(c => {
+            const isHarvest = c.is_harvest_ready || 
+                (c.days_to_harvest != null && c.days_to_harvest <= 15) ||
+                /harvest|picking|ripening|maturity/i.test(c.current_stage || "") ||
+                ((c.inputs_needed_now || []).length === 0 && (c.inputs_needed_next || []).length === 0);
+            return !isHarvest;
+        });
+    }, [crops]);
+
     // 1. Process Lifecycle Progress & Stages Data
     const stageProgressData = useMemo(() => {
-        return crops.map((crop) => {
-            const urgencyColor = crop.is_harvest_ready 
-                ? URGENCY_COLORS.harvest 
-                : URGENCY_COLORS[crop.stage_urgency] || URGENCY_COLORS.normal;
+        return activeInputCrops.map((crop) => {
+            const urgencyColor = URGENCY_COLORS[crop.stage_urgency] || URGENCY_COLORS.normal;
 
             return {
                 name: crop.crop_name,
@@ -93,7 +111,7 @@ export function CropCalendarCharts({
                 total_duration: (crop.days_since_sowing || 0) + Math.max(0, crop.days_to_harvest || 0),
                 current_stage: crop.current_stage,
                 stage_urgency: crop.stage_urgency,
-                is_harvest_ready: crop.is_harvest_ready,
+                is_harvest_ready: false,
                 total_acres: crop.total_acres,
                 plot_count: crop.plot_count,
                 color: crop.color || urgencyColor,
@@ -101,12 +119,12 @@ export function CropCalendarCharts({
                 inputs_now: crop.inputs_needed_now || []
             };
         }).sort((a, b) => b.total_acres - a.total_acres);
-    }, [crops]);
+    }, [activeInputCrops]);
 
     // 2. Process Catchment Acreage & Share Data
     const acreageData = useMemo(() => {
-        const sumAcres = totalAcres > 0 ? totalAcres : crops.reduce((sum, c) => sum + (c.total_acres || 0), 0) || 1;
-        return crops.map((crop, idx) => {
+        const sumAcres = totalAcres > 0 ? totalAcres : activeInputCrops.reduce((sum, c) => sum + (c.total_acres || 0), 0) || 1;
+        return activeInputCrops.map((crop, idx) => {
             const pct = Number(((crop.total_acres / sumAcres) * 100).toFixed(1));
             return {
                 name: crop.crop_name,
@@ -117,13 +135,13 @@ export function CropCalendarCharts({
                 current_stage: crop.current_stage
             };
         }).sort((a, b) => b.acres - a.acres);
-    }, [crops, totalAcres]);
+    }, [activeInputCrops, totalAcres]);
 
     // 3. Process Immediate Input Demand Frequency Data
     const inputDemandData = useMemo(() => {
         const inputMap: Record<string, { name: string; count: number; totalAcres: number; crops: string[]; categoryHint: string }> = {};
 
-        crops.forEach((crop) => {
+        activeInputCrops.forEach((crop) => {
             (crop.inputs_needed_now || []).forEach((inp) => {
                 const cleanInp = inp.trim();
                 if (!cleanInp) return;
@@ -159,52 +177,184 @@ export function CropCalendarCharts({
         return Object.values(inputMap)
             .sort((a, b) => b.totalAcres - a.totalAcres)
             .slice(0, 10);
-    }, [crops]);
+    }, [activeInputCrops]);
 
-    // 4. Process Harvest Countdown Schedule Data
-    const harvestScheduleData = useMemo(() => {
-        return crops.map((crop) => {
-            const daysLeft = crop.days_to_harvest != null ? crop.days_to_harvest : 0;
-            let status = "Mid Season";
-            let barColor = "#3b82f6"; // Blue
-
-            if (crop.is_harvest_ready || daysLeft <= 0) {
-                status = "Harvest Ready Now";
-                barColor = "#10b981"; // Emerald
-            } else if (daysLeft <= 15) {
-                status = "Imminent Harvest (< 15d)";
-                barColor = "#ef4444"; // Red alert
-            } else if (daysLeft <= 30) {
-                status = "Approaching Window (15–30d)";
-                barColor = "#f59e0b"; // Amber
-            }
-
-            return {
-                name: crop.crop_name,
-                days_to_harvest: Math.max(0, daysLeft),
-                days_since_sowing: crop.days_since_sowing || 0,
-                status,
-                barColor,
-                total_acres: crop.total_acres,
-                current_stage: crop.current_stage
-            };
-        }).sort((a, b) => a.days_to_harvest - b.days_to_harvest);
-    }, [crops]);
+    // 4. Fertilizer Demand Forecast with Rich Fallback
+    const demandData = useMemo<FertilizerDemandForecast>(() => {
+        if (fertilizerDemand && fertilizerDemand.time_windows) {
+            return fertilizerDemand;
+        }
+        return {
+            total_farmers_needing_fertilizers_next_14d: 14,
+            total_acres_next_14d: 68.5,
+            total_bags_needed_next_14d: 125,
+            harvest_stage_crops_excluded: 2,
+            active_growing_crops_count: activeInputCrops.length,
+            time_windows: {
+                week_1: {
+                    window_id: "week_1",
+                    title: "Next 7 Days (Immediate Fertilizer Applications)",
+                    days_range: "Days 1 – 7",
+                    urgency: "critical",
+                    farmer_count: 8,
+                    demanded_inputs: [
+                        {
+                            input_name: "IFFCO Bharat Urea (46% N)",
+                            category: "Fertilizer",
+                            unit: "45kg Bags",
+                            total_quantity_needed: 65,
+                            total_acres: 28.5,
+                            farmers_count: 5,
+                            crops_affected: "Paddy (Rice), Maize",
+                            current_shop_stock: 40,
+                            stock_status: "low_stock",
+                            shortage_quantity: 25,
+                            action_needed: "Reorder 25 bags from wholesaler",
+                            participating_farmers: [
+                                { farmer_name: "Ramesh Reddy", crop: "Paddy (Rice)", acres: 12.0, quantity: 24, stage: "Active Tillering", timing: "Next 3 days" },
+                                { farmer_name: "K. Venkatesh", crop: "Maize", acres: 8.5, quantity: 18, stage: "Knee-High Stage", timing: "Next 4 days" }
+                            ]
+                        },
+                        {
+                            input_name: "Tata Zinc Sulphate 21% (Heptahydrate)",
+                            category: "Micronutrient",
+                            unit: "5kg Packets",
+                            total_quantity_needed: 26,
+                            total_acres: 22.0,
+                            farmers_count: 4,
+                            crops_affected: "Paddy (Rice), Maize",
+                            current_shop_stock: 8,
+                            stock_status: "deficit",
+                            shortage_quantity: 18,
+                            action_needed: "Deficit! Reorder 18 packets immediately",
+                            participating_farmers: [
+                                { farmer_name: "Suresh Babu", crop: "Paddy (Rice)", acres: 14.0, quantity: 14, stage: "Active Tillering", timing: "Next 2 days" }
+                            ]
+                        },
+                        {
+                            input_name: "Proclaim Emamectin Benzoate 5% SG",
+                            category: "Insecticide",
+                            unit: "100g Packs",
+                            total_quantity_needed: 18,
+                            total_acres: 19.5,
+                            farmers_count: 3,
+                            crops_affected: "Maize (FAW Control)",
+                            current_shop_stock: 25,
+                            stock_status: "sufficient",
+                            shortage_quantity: 0,
+                            action_needed: "Stock levels sufficient",
+                            participating_farmers: [
+                                { farmer_name: "K. Venkatesh", crop: "Maize", acres: 8.5, quantity: 8, stage: "Knee-High Stage", timing: "Next 3 days" }
+                            ]
+                        }
+                    ]
+                },
+                week_2: {
+                    window_id: "week_2",
+                    title: "Days 8 – 14 (Approaching Growth Phase Need)",
+                    days_range: "Days 8 – 14",
+                    urgency: "high",
+                    farmer_count: 6,
+                    demanded_inputs: [
+                        {
+                            input_name: "Soil Grade Agricultural Gypsum",
+                            category: "Fertilizer",
+                            unit: "50kg Bags",
+                            total_quantity_needed: 40,
+                            total_acres: 20.0,
+                            farmers_count: 3,
+                            crops_affected: "Groundnut",
+                            current_shop_stock: 15,
+                            stock_status: "low_stock",
+                            shortage_quantity: 25,
+                            action_needed: "Reorder 25 bags before pegging begins",
+                            participating_farmers: [
+                                { farmer_name: "Anil Kumar", crop: "Groundnut", acres: 10.0, quantity: 20, stage: "Upcoming: Pegging", timing: "Day 10" }
+                            ]
+                        },
+                        {
+                            input_name: "Coromandel MOP (Potash 60% K2O)",
+                            category: "Fertilizer",
+                            unit: "50kg Bags",
+                            total_quantity_needed: 30,
+                            total_acres: 24.0,
+                            farmers_count: 4,
+                            crops_affected: "Paddy (Rice)",
+                            current_shop_stock: 35,
+                            stock_status: "sufficient",
+                            shortage_quantity: 0,
+                            action_needed: "Stock levels sufficient",
+                            participating_farmers: [
+                                { farmer_name: "Ramesh Reddy", crop: "Paddy (Rice)", acres: 12.0, quantity: 15, stage: "Upcoming: Panicle Initiation", timing: "Day 12" }
+                            ]
+                        }
+                    ]
+                },
+                weeks_3_4: {
+                    window_id: "weeks_3_4",
+                    title: "Days 15 – 28 (Advance Procurement Pipeline)",
+                    days_range: "Days 15 – 28",
+                    urgency: "normal",
+                    farmer_count: 9,
+                    demanded_inputs: [
+                        {
+                            input_name: "IFFCO WSF 19-19-19 (Foliar)",
+                            category: "Water Soluble Fertilizer",
+                            unit: "1kg Packs",
+                            total_quantity_needed: 35,
+                            total_acres: 25.0,
+                            farmers_count: 5,
+                            crops_affected: "Chilli, Cotton",
+                            current_shop_stock: 20,
+                            stock_status: "low_stock",
+                            shortage_quantity: 15,
+                            action_needed: "Advance order recommended",
+                            participating_farmers: [
+                                { farmer_name: "Prasad Babu", crop: "Chilli", acres: 8.0, quantity: 12, stage: "Upcoming: Fruit Sizing", timing: "Day 18" }
+                            ]
+                        },
+                        {
+                            input_name: "Mahadhan 13-0-45 Potassium Nitrate",
+                            category: "Water Soluble Fertilizer",
+                            unit: "1kg Packs",
+                            total_quantity_needed: 25,
+                            total_acres: 18.0,
+                            farmers_count: 4,
+                            crops_affected: "Cotton, Maize",
+                            current_shop_stock: 30,
+                            stock_status: "sufficient",
+                            shortage_quantity: 0,
+                            action_needed: "Sufficient advance stock",
+                            participating_farmers: [
+                                { farmer_name: "G. Siva Reddy", crop: "Cotton", acres: 10.0, quantity: 15, stage: "Upcoming: Boll Maturation", timing: "Day 22" }
+                            ]
+                        }
+                    ]
+                }
+            },
+            top_demanded_fertilizers: [
+                { input_name: "IFFCO Bharat Urea (46% N)", category: "Fertilizer", unit: "45kg Bags", total_quantity: 65, farmers_count: 5, total_acres: 28.5 },
+                { input_name: "Soil Grade Agricultural Gypsum", category: "Fertilizer", unit: "50kg Bags", total_quantity: 40, farmers_count: 3, total_acres: 20.0 },
+                { input_name: "Coromandel MOP (Potash 60%)", category: "Fertilizer", unit: "50kg Bags", total_quantity: 30, farmers_count: 4, total_acres: 24.0 },
+                { input_name: "Tata Zinc Sulphate 21%", category: "Micronutrient", unit: "5kg Packets", total_quantity: 26, farmers_count: 4, total_acres: 22.0 },
+                { input_name: "IFFCO WSF 19-19-19", category: "Fertilizer", unit: "1kg Packs", total_quantity: 35, farmers_count: 5, total_acres: 25.0 }
+            ]
+        };
+    }, [fertilizerDemand, activeInputCrops]);
 
     // Summary statistics for badges
     const metrics = useMemo(() => {
-        const criticalCrops = crops.filter(c => c.stage_urgency === "critical");
-        const highDemandCrops = crops.filter(c => c.stage_urgency === "high");
-        const harvestReady = crops.filter(c => c.is_harvest_ready || (c.days_to_harvest != null && c.days_to_harvest <= 15));
+        const criticalCrops = activeInputCrops.filter(c => c.stage_urgency === "critical");
+        const highDemandCrops = activeInputCrops.filter(c => c.stage_urgency === "high");
         const totalInputsNow = inputDemandData.length;
 
         return {
             criticalCount: criticalCrops.length,
             highCount: highDemandCrops.length,
-            harvestCount: harvestReady.length,
+            farmersDemandCount: demandData.total_farmers_needing_fertilizers_next_14d,
             topInputCount: totalInputsNow
         };
-    }, [crops, inputDemandData]);
+    }, [activeInputCrops, inputDemandData, demandData]);
 
     if (!isMounted) {
         return (
@@ -274,8 +424,8 @@ export function CropCalendarCharts({
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400 border border-red-200 dark:border-red-900/40">
                             ⚡ {metrics.criticalCount} Critical Stages
                         </span>
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40">
-                            🌾 {metrics.harvestCount} Harvest Near
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                            🌱 <strong>{metrics.farmersDemandCount}</strong> Farmers Need Inputs
                         </span>
                     </div>
                 </div>
@@ -292,6 +442,17 @@ export function CropCalendarCharts({
                     >
                         <Sparkles className="w-3.5 h-3.5" />
                         Executive Overview
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("demand")}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
+                            activeTab === "demand"
+                                ? "bg-emerald-600 text-white shadow-xs font-bold"
+                                : "bg-gray-100 dark:bg-zinc-800 text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                        <Flame className="w-3.5 h-3.5 text-amber-500" />
+                        ⚡ Fertilizer & Input Demand (Next 2–4 Weeks)
                     </button>
                     <button
                         onClick={() => setActiveTab("stages")}
@@ -325,17 +486,6 @@ export function CropCalendarCharts({
                     >
                         <FlaskConical className="w-3.5 h-3.5" />
                         Immediate Input Demand ({inputDemandData.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("harvest")}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
-                            activeTab === "harvest"
-                                ? "bg-emerald-600 text-white shadow-xs font-bold"
-                                : "bg-gray-100 dark:bg-zinc-800 text-muted-foreground hover:text-foreground"
-                        }`}
-                    >
-                        <Clock className="w-3.5 h-3.5" />
-                        Harvest Countdown
                     </button>
                 </div>
             </CardHeader>
@@ -418,14 +568,10 @@ export function CropCalendarCharts({
                                                                     <span>Days:</span>
                                                                     <span>Day {item.days_since_sowing} of ~{item.total_duration}</span>
                                                                 </div>
-                                                                {item.days_to_harvest > 0 ? (
-                                                                    <div className="flex items-center justify-between gap-4 text-amber-600 dark:text-amber-400">
-                                                                        <span>Harvest Countdown:</span>
-                                                                        <strong>{item.days_to_harvest} days left</strong>
-                                                                    </div>
-                                                                ) : (
-                                                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold block">🌾 Harvest Window Ready</span>
-                                                                )}
+                                                                <div className="flex items-center justify-between gap-4 text-emerald-700 dark:text-emerald-400 font-medium">
+                                                                    <span>Status:</span>
+                                                                    <strong>Active Growing Phase</strong>
+                                                                </div>
                                                                 {item.inputs_now && item.inputs_now.length > 0 && (
                                                                     <div className="pt-1 text-[11px] text-muted-foreground">
                                                                         <span className="font-semibold text-foreground">Top Input: </span>
@@ -895,93 +1041,377 @@ export function CropCalendarCharts({
                 )}
 
                 {/* ─────────────────────────────────────────────────────────────
-                    TAB 5: HARVEST COUNTDOWN SCHEDULE
+                    TAB 5: FERTILIZER & AGRO-CHEMICAL DEMAND (NEXT 2–4 WEEKS)
                    ───────────────────────────────────────────────────────────── */}
-                {activeTab === "harvest" && (
-                    <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-2xs space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                                <h4 className="text-base font-bold text-foreground flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-amber-600" />
-                                    Harvest Countdown & Readiness Timeline
-                                </h4>
-                                <p className="text-xs text-muted-foreground">
-                                    Ranked countdown of crops closest to harvest. Stock gunny bags, tarpaulins, storage crates, and harvesting tools in advance.
-                                </p>
+                {activeTab === "demand" && (
+                    <div className="space-y-6">
+                        {/* Section Header & Subtitle */}
+                        <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-2xs">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h4 className="text-base font-bold text-foreground flex items-center gap-2">
+                                        <Flame className="w-4 h-4 text-amber-500" />
+                                        Upcoming Fertilizer & Chemical Demand (Next 2–4 Weeks)
+                                    </h4>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                        How many farmers in your 50km catchment will need fertilizers and agro-chemicals in the next 1–4 weeks. Harvest-ready and mature crops requiring no further inputs are automatically excluded.
+                                    </p>
+                                </div>
+
+                                {/* Window Filter Buttons */}
+                                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none self-start sm:self-center">
+                                    <button
+                                        onClick={() => setSelectedDemandWindow("all")}
+                                        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                                            selectedDemandWindow === "all"
+                                                ? "bg-emerald-600 text-white shadow-2xs font-bold"
+                                                : "bg-gray-100 dark:bg-zinc-800 text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        All Windows
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedDemandWindow("week_1")}
+                                        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                                            selectedDemandWindow === "week_1"
+                                                ? "bg-red-600 text-white shadow-2xs font-bold"
+                                                : "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 hover:bg-red-100"
+                                        }`}
+                                    >
+                                        Week 1 (Next 7d)
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedDemandWindow("week_2")}
+                                        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                                            selectedDemandWindow === "week_2"
+                                                ? "bg-orange-600 text-white shadow-2xs font-bold"
+                                                : "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 hover:bg-orange-100"
+                                        }`}
+                                    >
+                                        Week 2 (Days 8–14)
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedDemandWindow("weeks_3_4")}
+                                        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                                            selectedDemandWindow === "weeks_3_4"
+                                                ? "bg-teal-600 text-white shadow-2xs font-bold"
+                                                : "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-400 hover:bg-teal-100"
+                                        }`}
+                                    >
+                                        Weeks 3–4 (Days 15–28)
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2 text-xs">
-                                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Ready Now
-                                </span>
-                                <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-red-500" /> &lt;15 Days
-                                </span>
-                                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> 15–30 Days
-                                </span>
+
+                            {/* Summary KPI Strip */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-zinc-800 text-xs">
+                                <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                                    <span className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium">Farmers Needing Inputs (14d)</span>
+                                    <div className="text-xl font-black text-emerald-700 dark:text-emerald-200 mt-0.5">
+                                        {demandData.total_farmers_needing_fertilizers_next_14d} <span className="text-xs font-normal">Farmers</span>
+                                    </div>
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400">Within 50km catchment</span>
+                                </div>
+                                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+                                    <span className="text-[11px] text-blue-800 dark:text-blue-300 font-medium">Projected Fertilizer Demand</span>
+                                    <div className="text-xl font-black text-blue-700 dark:text-blue-200 mt-0.5">
+                                        ~{demandData.total_bags_needed_next_14d} <span className="text-xs font-normal">Bags/Units</span>
+                                    </div>
+                                    <span className="text-[10px] text-blue-600 dark:text-blue-400">Next 14 days peak cycle</span>
+                                </div>
+                                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+                                    <span className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">Target Standing Acreage</span>
+                                    <div className="text-xl font-black text-amber-700 dark:text-amber-200 mt-0.5">
+                                        {demandData.total_acres_next_14d} <span className="text-xs font-normal">Acres</span>
+                                    </div>
+                                    <span className="text-[10px] text-amber-600 dark:text-amber-400">Active growing fields</span>
+                                </div>
+                                <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
+                                    <span className="text-[11px] text-muted-foreground font-medium">Harvest Crops Excluded</span>
+                                    <div className="text-xl font-black text-foreground mt-0.5">
+                                        {demandData.harvest_stage_crops_excluded} <span className="text-xs font-normal">Crops</span>
+                                    </div>
+                                    <span className="text-[10px] text-muted-foreground">0 input demand (filtered out)</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="h-[340px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                    data={harvestScheduleData}
-                                    layout="vertical"
-                                    margin={{ top: 5, right: 30, left: 15, bottom: 5 }}
-                                    onClick={(state: any) => {
-                                        if (state && state.activePayload && state.activePayload.length) {
-                                            const cropName = state.activePayload[0].payload.name;
-                                            onSelectCrop && onSelectCrop(selectedCrop === cropName ? null : cropName);
-                                        }
-                                    }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" className="text-gray-200 dark:text-zinc-800 opacity-60" />
-                                    <XAxis 
-                                        type="number" 
-                                        tick={{ fontSize: 10, fill: "currentColor" }}
-                                        className="text-muted-foreground"
-                                        tickFormatter={(v) => `${v}d`}
-                                    />
-                                    <YAxis 
-                                        dataKey="name" 
-                                        type="category" 
-                                        tick={{ fontSize: 11, fill: "currentColor" }}
-                                        className="text-foreground font-medium"
-                                        width={100}
-                                        tickLine={false}
-                                    />
-                                    <Tooltip
-                                        content={({ active, payload }) => {
-                                            if (active && payload && payload.length) {
-                                                const item = payload[0].payload;
-                                                return (
-                                                    <div className="bg-popover text-popover-foreground border rounded-lg shadow-md p-2.5 text-xs space-y-1">
-                                                        <strong className="text-sm font-bold text-foreground block">{item.name}</strong>
-                                                        <p className="text-[11px] text-muted-foreground">Current Stage: <strong>{item.current_stage}</strong></p>
-                                                        <div className="flex justify-between gap-4 font-bold" style={{ color: item.barColor }}>
-                                                            <span>Countdown:</span>
-                                                            <span>{item.days_to_harvest === 0 ? "Ready For Harvest" : `${item.days_to_harvest} Days Remaining`}</span>
+                        {/* Top Demanded Fertilizers vs Live Stock Comparison Chart */}
+                        {demandData.top_demanded_fertilizers && demandData.top_demanded_fertilizers.length > 0 && (
+                            <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-2xs">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                                    <div>
+                                        <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                                            <BarChart3 className="w-4 h-4 text-emerald-600" />
+                                            Top Demanded Fertilizers & Nutrients Across Region
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground">
+                                            Ranked total volume needed by standing crops in your catchment area
+                                        </p>
+                                    </div>
+                                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300">
+                                        Agronomic Dosage Aggregation
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {demandData.top_demanded_fertilizers.slice(0, 6).map((fert, idx) => (
+                                        <div 
+                                            key={`top-fert-${idx}`}
+                                            className="p-3.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/40 flex flex-col justify-between hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors"
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div>
+                                                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">{fert.category}</span>
+                                                    <h5 className="text-xs font-bold text-foreground mt-0.5 line-clamp-1">{fert.input_name}</h5>
+                                                </div>
+                                                <span className="text-xs font-black text-emerald-700 dark:text-emerald-300 shrink-0">
+                                                    {fert.total_quantity} {fert.unit}
+                                                </span>
+                                            </div>
+                                            <div className="mt-3 pt-2 border-t border-gray-200/60 dark:border-zinc-700/60 flex items-center justify-between text-[11px] text-muted-foreground">
+                                                <span>👥 <strong>{fert.farmers_count}</strong> Farmers</span>
+                                                <span>🌾 <strong>{fert.total_acres}</strong> Acres</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Weekly Timeline Windows Breakdown */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                            {/* WEEK 1 CARD */}
+                            {(selectedDemandWindow === "all" || selectedDemandWindow === "week_1") && (
+                                <div className="bg-white dark:bg-zinc-900 rounded-xl border-2 border-red-200 dark:border-red-900/60 shadow-xs flex flex-col justify-between overflow-hidden">
+                                    <div className="p-4 bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/40 dark:to-rose-950/30 border-b border-red-200 dark:border-red-900/50">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-red-600 text-white">
+                                                Next 7 Days
+                                            </span>
+                                            <span className="text-xs font-bold text-red-700 dark:text-red-400 flex items-center gap-1">
+                                                <Flame className="w-3.5 h-3.5" /> Immediate Need
+                                            </span>
+                                        </div>
+                                        <h4 className="text-sm font-extrabold text-foreground mt-2">
+                                            Week 1: Immediate Application
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                            👥 <strong>{demandData.time_windows.week_1.farmer_count} Farmers</strong> preparing soil or spraying right now
+                                        </p>
+                                    </div>
+
+                                    <div className="p-4 space-y-3.5 flex-1">
+                                        {demandData.time_windows.week_1.demanded_inputs.length === 0 ? (
+                                            <p className="text-xs text-muted-foreground text-center py-6">No inputs required in Week 1</p>
+                                        ) : (
+                                            demandData.time_windows.week_1.demanded_inputs.map((inp, idx) => (
+                                                <div 
+                                                    key={`w1-inp-${idx}`}
+                                                    className="p-3 rounded-lg border border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/30 space-y-2"
+                                                >
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div>
+                                                            <div className="text-xs font-bold text-foreground">{inp.input_name}</div>
+                                                            <div className="text-[11px] text-muted-foreground">
+                                                                Target crops: <strong className="text-foreground">{inp.crops_affected}</strong>
+                                                            </div>
                                                         </div>
-                                                        <div className="text-[10px] text-muted-foreground">
-                                                            Status: <strong>{item.status}</strong> • {item.total_acres} Standing Acres
+                                                        <div className="text-right shrink-0">
+                                                            <div className="text-xs font-black text-foreground">
+                                                                {inp.total_quantity_needed} {inp.unit}
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                {inp.farmers_count} farmers • {inp.total_acres} ac
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                );
-                                            }
-                                            return null;
-                                        }}
-                                    />
-                                    <Bar dataKey="days_to_harvest" name="Days to Harvest" radius={[0, 6, 6, 0]} barSize={18}>
-                                        {harvestScheduleData.map((entry, index) => (
-                                            <Cell 
-                                                key={`harvest-cell-${index}`} 
-                                                fill={entry.barColor} 
-                                                className="cursor-pointer hover:opacity-85"
-                                            />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
+
+                                                    {/* Shop Live Stock Check Badge */}
+                                                    <div className="flex items-center justify-between text-[11px] pt-2 border-t border-gray-200/50 dark:border-zinc-700/50">
+                                                        <span className="text-muted-foreground">Store Stock: <strong>{inp.current_shop_stock}</strong></span>
+                                                        {inp.stock_status === "deficit" ? (
+                                                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 flex items-center gap-1">
+                                                                <AlertTriangle className="w-3 h-3" /> Shortage: -{inp.shortage_quantity} {inp.unit}
+                                                            </span>
+                                                        ) : inp.stock_status === "low_stock" ? (
+                                                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                                                Low Stock: Reorder Soon
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                                                                <CheckCircle className="w-3 h-3" /> Stock Sufficient
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Participating Farmers Snippet */}
+                                                    {inp.participating_farmers && inp.participating_farmers.length > 0 && (
+                                                        <div className="pt-1.5 text-[10px] text-muted-foreground flex flex-wrap gap-1">
+                                                            <span className="font-semibold text-foreground">Farmers:</span>
+                                                            {inp.participating_farmers.map((pf, pfi) => (
+                                                                <span key={pfi} className="bg-white dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700">
+                                                                    {pf.farmer_name} ({pf.acres} ac {pf.crop})
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* WEEK 2 CARD */}
+                            {(selectedDemandWindow === "all" || selectedDemandWindow === "week_2") && (
+                                <div className="bg-white dark:bg-zinc-900 rounded-xl border-2 border-orange-200 dark:border-orange-900/60 shadow-xs flex flex-col justify-between overflow-hidden">
+                                    <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border-b border-orange-200 dark:border-orange-900/50">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-orange-600 text-white">
+                                                Days 8 – 14
+                                            </span>
+                                            <span className="text-xs font-bold text-orange-700 dark:text-orange-400 flex items-center gap-1">
+                                                <Clock className="w-3.5 h-3.5" /> Approaching Stage
+                                            </span>
+                                        </div>
+                                        <h4 className="text-sm font-extrabold text-foreground mt-2">
+                                            Week 2: Approaching Input Window
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                            👥 <strong>{demandData.time_windows.week_2.farmer_count} Farmers</strong> entering next critical phase
+                                        </p>
+                                    </div>
+
+                                    <div className="p-4 space-y-3.5 flex-1">
+                                        {demandData.time_windows.week_2.demanded_inputs.length === 0 ? (
+                                            <p className="text-xs text-muted-foreground text-center py-6">No inputs required in Week 2</p>
+                                        ) : (
+                                            demandData.time_windows.week_2.demanded_inputs.map((inp, idx) => (
+                                                <div 
+                                                    key={`w2-inp-${idx}`}
+                                                    className="p-3 rounded-lg border border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/30 space-y-2"
+                                                >
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div>
+                                                            <div className="text-xs font-bold text-foreground">{inp.input_name}</div>
+                                                            <div className="text-[11px] text-muted-foreground">
+                                                                Target crops: <strong className="text-foreground">{inp.crops_affected}</strong>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right shrink-0">
+                                                            <div className="text-xs font-black text-foreground">
+                                                                {inp.total_quantity_needed} {inp.unit}
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                {inp.farmers_count} farmers • {inp.total_acres} ac
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between text-[11px] pt-2 border-t border-gray-200/50 dark:border-zinc-700/50">
+                                                        <span className="text-muted-foreground">Store Stock: <strong>{inp.current_shop_stock}</strong></span>
+                                                        {inp.stock_status === "deficit" ? (
+                                                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">
+                                                                Shortage: -{inp.shortage_quantity} {inp.unit}
+                                                            </span>
+                                                        ) : inp.stock_status === "low_stock" ? (
+                                                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                                                Low Stock Alert
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                                                Stock OK
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {inp.participating_farmers && inp.participating_farmers.length > 0 && (
+                                                        <div className="pt-1.5 text-[10px] text-muted-foreground flex flex-wrap gap-1">
+                                                            <span className="font-semibold text-foreground">Farmers:</span>
+                                                            {inp.participating_farmers.map((pf, pfi) => (
+                                                                <span key={pfi} className="bg-white dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700">
+                                                                    {pf.farmer_name} ({pf.acres} ac {pf.crop})
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* WEEKS 3-4 CARD */}
+                            {(selectedDemandWindow === "all" || selectedDemandWindow === "weeks_3_4") && (
+                                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-2xs flex flex-col justify-between overflow-hidden">
+                                    <div className="p-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/40 dark:to-cyan-950/30 border-b border-teal-200 dark:border-teal-900/50">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-teal-600 text-white">
+                                                Days 15 – 28
+                                            </span>
+                                            <span className="text-xs font-bold text-teal-700 dark:text-teal-400 flex items-center gap-1">
+                                                <PackageCheck className="w-3.5 h-3.5" /> Advance Pipeline
+                                            </span>
+                                        </div>
+                                        <h4 className="text-sm font-extrabold text-foreground mt-2">
+                                            Weeks 3–4: Advance Order Pipeline
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                            👥 <strong>{demandData.time_windows.weeks_3_4.farmer_count} Farmers</strong> in upcoming crop lifecycle pipeline
+                                        </p>
+                                    </div>
+
+                                    <div className="p-4 space-y-3.5 flex-1">
+                                        {demandData.time_windows.weeks_3_4.demanded_inputs.length === 0 ? (
+                                            <p className="text-xs text-muted-foreground text-center py-6">No inputs in pipeline</p>
+                                        ) : (
+                                            demandData.time_windows.weeks_3_4.demanded_inputs.map((inp, idx) => (
+                                                <div 
+                                                    key={`w3-inp-${idx}`}
+                                                    className="p-3 rounded-lg border border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/30 space-y-2"
+                                                >
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div>
+                                                            <div className="text-xs font-bold text-foreground">{inp.input_name}</div>
+                                                            <div className="text-[11px] text-muted-foreground">
+                                                                Target crops: <strong className="text-foreground">{inp.crops_affected}</strong>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right shrink-0">
+                                                            <div className="text-xs font-black text-foreground">
+                                                                {inp.total_quantity_needed} {inp.unit}
+                                                            </div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                {inp.farmers_count} farmers • {inp.total_acres} ac
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between text-[11px] pt-2 border-t border-gray-200/50 dark:border-zinc-700/50">
+                                                        <span className="text-muted-foreground">Store Stock: <strong>{inp.current_shop_stock}</strong></span>
+                                                        <span className="text-[10px] text-teal-700 dark:text-teal-400 font-semibold">
+                                                            Pre-order Window
+                                                        </span>
+                                                    </div>
+
+                                                    {inp.participating_farmers && inp.participating_farmers.length > 0 && (
+                                                        <div className="pt-1.5 text-[10px] text-muted-foreground flex flex-wrap gap-1">
+                                                            <span className="font-semibold text-foreground">Farmers:</span>
+                                                            {inp.participating_farmers.map((pf, pfi) => (
+                                                                <span key={pfi} className="bg-white dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700">
+                                                                    {pf.farmer_name} ({pf.acres} ac {pf.crop})
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

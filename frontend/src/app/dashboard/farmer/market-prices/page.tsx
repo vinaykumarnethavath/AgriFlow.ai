@@ -96,9 +96,9 @@ export default function MarketPricesPage() {
             </div>
 
             {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-48 animate-pulse bg-gray-100 rounded-xl" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="h-40 animate-pulse bg-gray-100 dark:bg-zinc-800 rounded-xl" />
                     ))}
                 </div>
             ) : filteredPrices.length === 0 ? (
@@ -107,40 +107,42 @@ export default function MarketPricesPage() {
                     <p className="font-medium">No crops found matching &quot;{searchQuery}&quot;</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
                     {filteredPrices.map((crop, idx) => (
-                        <Card key={idx} className="hover:shadow-lg transition-shadow overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-between pb-3 bg-gray-50/80 dark:bg-zinc-800/80 border-b">
-                                <div className="flex items-center gap-3">
-                                    <CardTitle className="text-xl font-bold text-foreground">{crop.crop_name}</CardTitle>
+                        <Card key={idx} className="hover:shadow-md transition-shadow overflow-hidden border border-border/80 flex flex-col justify-between">
+                            <CardHeader className="flex flex-row items-center justify-between py-2 px-3.5 bg-gray-50/80 dark:bg-zinc-800/80 border-b">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <CardTitle className="text-sm font-bold text-foreground truncate">{crop.crop_name}</CardTitle>
                                     {crop.msp_comparison === 'above' && (
-                                        <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
+                                        <span className="text-[9px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200 whitespace-nowrap">
                                             {t('marketPrices.priceUp')}
                                         </span>
                                     )}
                                     {crop.msp_comparison === 'below' && (
-                                        <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full border border-red-200">
+                                        <span className="text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full border border-red-200 whitespace-nowrap">
                                             {t('marketPrices.priceDown')}
                                         </span>
                                     )}
                                 </div>
-                                <span className={`text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1 ${crop.trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                    {crop.trend === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0 ${crop.trend === 'up' ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'}`}>
+                                    {crop.trend === 'up' ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                                     ₹{Math.abs(crop.change)}
                                 </span>
                             </CardHeader>
-                            <CardContent className="pt-4 space-y-4">
+                            <CardContent className="p-3 space-y-2.5 flex-1 flex flex-col justify-between">
                                 {/* Primary Price */}
-                                <div className="flex items-end justify-between">
+                                <div className="flex items-baseline justify-between">
                                     <div>
-                                        <p className="text-xs text-muted-foreground mb-0.5">{t('marketPrices.maxPrice')}</p>
-                                        <p className="text-3xl font-bold text-foreground">₹{crop.market_price.toLocaleString()}</p>
-                                        <p className="text-xs text-muted-foreground mt-0.5">{t('marketPrices.perQuintal')}</p>
+                                        <div className="flex items-baseline gap-1.5">
+                                            <span className="text-xl font-extrabold text-foreground">₹{crop.market_price.toLocaleString()}</span>
+                                            <span className="text-[11px] text-muted-foreground font-normal">{t('marketPrices.perQuintal')}</span>
+                                        </div>
+                                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('marketPrices.maxPrice')}</span>
                                     </div>
                                     {crop.msp > 0 && (
                                         <div className="text-right">
-                                            <p className="text-[10px] text-muted-foreground">{t('marketPrices.mandi')} (MSP)</p>
-                                            <p className="text-sm font-bold text-muted-foreground">₹{crop.msp.toLocaleString()}</p>
+                                            <span className="text-[10px] text-muted-foreground block leading-tight">{t('marketPrices.mandi')} (MSP)</span>
+                                            <span className="text-xs font-bold text-muted-foreground">₹{crop.msp.toLocaleString()}</span>
                                         </div>
                                     )}
                                 </div>
@@ -148,29 +150,29 @@ export default function MarketPricesPage() {
                                 {/* Scrollable Nearby Markets */}
                                 {crop.markets && crop.markets.length > 0 && (
                                     <div>
-                                        <p className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wider">{t('marketPrices.mandi')}</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wider">{t('marketPrices.mandi')}</p>
                                         <div className="relative">
                                             <button
                                                 onClick={() => scrollMarkets(crop.crop_name, 'left')}
-                                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 dark:bg-zinc-800/95 shadow-md rounded-full p-1 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 -ml-2"
+                                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 dark:bg-zinc-800/95 shadow-xs rounded-full p-0.5 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 -ml-1.5"
                                             >
-                                                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                                                <ChevronLeft className="h-3 w-3 text-muted-foreground" />
                                             </button>
                                             <div
                                                 ref={el => { scrollRefs.current[crop.crop_name] = el; }}
-                                                className="flex gap-2.5 overflow-x-auto px-3 py-1"
+                                                className="flex gap-2 overflow-x-auto px-2 py-0.5"
                                                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                                             >
                                                 {crop.markets.map((market: any, mIdx: number) => (
                                                     <div
                                                         key={mIdx}
-                                                        className="flex-shrink-0 bg-gradient-to-b from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3 min-w-[160px] hover:border-green-300 dark:hover:border-green-700 hover:shadow-sm transition-all cursor-pointer"
+                                                        className="flex-shrink-0 bg-gradient-to-b from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 min-w-[125px] hover:border-green-300 dark:hover:border-green-700 hover:shadow-2xs transition-all cursor-pointer"
                                                     >
-                                                        <p className="text-xs font-bold text-foreground truncate">{market.market_name}</p>
-                                                        <p className="text-lg font-bold text-foreground mt-1">₹{market.price.toLocaleString()}</p>
-                                                        <div className="flex items-center justify-between mt-1.5">
-                                                            <span className="text-[10px] text-muted-foreground bg-gray-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded">{market.distance_km} km</span>
-                                                            <span className={`text-[10px] font-bold flex items-center gap-0.5 ${market.trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
+                                                        <p className="text-[11px] font-semibold text-foreground truncate">{market.market_name}</p>
+                                                        <p className="text-sm font-black text-foreground mt-0.5">₹{market.price.toLocaleString()}</p>
+                                                        <div className="flex items-center justify-between mt-1 text-[9px]">
+                                                            <span className="text-muted-foreground bg-gray-100 dark:bg-zinc-700 px-1 py-0.2 rounded">{market.distance_km} km</span>
+                                                            <span className={`font-bold flex items-center gap-0.5 ${market.trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
                                                                 {market.trend === 'up' ? '↑' : '↓'}₹{Math.abs(market.change)}
                                                             </span>
                                                         </div>
@@ -179,17 +181,17 @@ export default function MarketPricesPage() {
                                             </div>
                                             <button
                                                 onClick={() => scrollMarkets(crop.crop_name, 'right')}
-                                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 dark:bg-zinc-800/95 shadow-md rounded-full p-1 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 -mr-2"
+                                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/95 dark:bg-zinc-800/95 shadow-xs rounded-full p-0.5 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 -mr-1.5"
                                             >
-                                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                                                <ChevronRight className="h-3 w-3 text-muted-foreground" />
                                             </button>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Decision Hint */}
-                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-lg p-2.5">
-                                    <p className="text-xs text-blue-700 dark:text-blue-400 font-medium">
+                                <div className="bg-blue-50/70 dark:bg-blue-900/20 border border-blue-100/80 dark:border-blue-800/50 rounded-md px-2 py-1">
+                                    <p className="text-[11px] text-blue-700 dark:text-blue-400 font-medium leading-tight">
                                         💡 <T>{crop.trend === 'up' ? 'Prices increasing. Consider waiting for better rates.' : 'Prices declining. Check MSP before selling.'}</T>
                                     </p>
                                 </div>

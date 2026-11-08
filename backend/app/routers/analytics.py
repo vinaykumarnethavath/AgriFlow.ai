@@ -14,6 +14,7 @@ from ..services.crop_calendar_service import (
     normalize_crop_name,
     get_crop_lifecycle,
     match_catalog_products_for_inputs,
+    calculate_upcoming_fertilizer_demand,
     CROP_LIFECYCLES,
 )
 
@@ -793,6 +794,24 @@ async def get_shop_discovery(
             fallback_past_q = select(Crop.name, func.sum(Crop.area)).where(Crop.status.in_(["Harvested", "Sold"])).group_by(Crop.name)
             past_crops_data = (await session.exec(fallback_past_q)).all()
 
+    # Populate farmer names for crops to show in demand forecasts
+    farmer_user_ids = list({c.user_id for c in active_crops if c.user_id})
+    user_name_map = {}
+    if farmer_user_ids:
+        users_q = select(User.id, User.full_name).where(User.id.in_(farmer_user_ids))
+        users_res = (await session.exec(users_q)).all()
+        user_name_map = {uid: uname for uid, uname in users_res}
+    for c in active_crops:
+        setattr(c, "cultivator_name", user_name_map.get(c.user_id, f"Farmer #{c.user_id}"))
+
+    # Compute upcoming fertilizer & chemical demand forecast (Weeks 1 to 4)
+    # Strictly excludes harvest stage crops and crops requiring no further inputs
+    fertilizer_demand_forecast = calculate_upcoming_fertilizer_demand(
+        crops=active_crops,
+        shop_inventory=shop_products,
+        ref_date=datetime.utcnow()
+    )
+
     # 4. Canonical Colors & Normalization
     CROP_COLORS = {
         "Chickpea": "#8b5cf6", "Bengal Gram": "#a78bfa", "Potato": "#d97706",
@@ -856,6 +875,16 @@ async def get_shop_discovery(
             "inputs_next": stage_info["inputs_needed_next"],
             "area": total_crop_area
         }
+
+        # Exclude harvest-stage crops and crops requiring zero agricultural inputs from the shop calendar
+        is_harvest_or_no_input = (
+            stage_info["is_harvest_ready"] or 
+            stage_info["days_to_harvest"] <= 15 or 
+            any(w in stage_info["current_stage_name"].lower() for w in ["harvest", "picking", "ripening", "maturity"]) or
+            (len(stage_info["inputs_needed_now"]) == 0 and len(stage_info["inputs_needed_next"]) == 0)
+        )
+        if is_harvest_or_no_input:
+            continue
 
         regional_crop_calendar.append({
             "crop_name": canonical_name,
@@ -1415,6 +1444,7 @@ async def get_shop_discovery(
         "total_past_area": round(total_past_area, 1),
         "active_crops_count": len(crop_cultivation),
         "regional_crop_calendar": regional_crop_calendar,
+        "fertilizer_demand_forecast": fertilizer_demand_forecast,
         "historical_demand_patterns": historical_demand_patterns,
         "recommendations": recommendations,
         "new_product_alerts": new_product_alerts
