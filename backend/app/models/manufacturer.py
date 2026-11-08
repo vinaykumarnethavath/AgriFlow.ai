@@ -459,7 +459,10 @@ class FarmerLoadPool(SQLModel, table=True):
     __tablename__ = "farmer_load_pools"
     id: Optional[int] = Field(default=None, primary_key=True)
     creator_id: int = Field(foreign_key="user.id", index=True)
+    crop_id: Optional[int] = Field(default=None, foreign_key="crop.id", index=True)
     crop_name: str
+    crop_variety: Optional[str] = None
+    harvest_date: Optional[str] = None
     target_quantity: float
     current_quantity: float = 0.0
     unit: str = "quintal"
@@ -486,6 +489,7 @@ class FarmerLoadPoolMember(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     pool_id: int = Field(foreign_key="farmer_load_pools.id", index=True)
     farmer_id: int = Field(foreign_key="user.id", index=True)
+    crop_id: Optional[int] = Field(default=None, foreign_key="crop.id", index=True)
     farmer_name: str
     farmer_phone: Optional[str] = None
     quantity: float
@@ -494,7 +498,10 @@ class FarmerLoadPoolMember(SQLModel, table=True):
     joined_at: datetime = Field(default_factory=datetime.utcnow)
 
 class FarmerLoadPoolCreate(SQLModel):
+    crop_id: Optional[int] = None
     crop_name: str
+    crop_variety: Optional[str] = None
+    harvest_date: Optional[str] = None
     target_quantity: float
     unit: str = "quintal"
     village: str
@@ -509,6 +516,7 @@ class FarmerLoadPoolCreate(SQLModel):
     my_quantity: float  # Creator's own contribution
 
 class FarmerLoadPoolJoin(SQLModel):
+    crop_id: Optional[int] = None
     quantity: float
     unit: str = "quintal"
     quality_grade: Optional[str] = "FAQ"
@@ -517,7 +525,10 @@ class FarmerLoadPoolRead(SQLModel):
     id: int
     creator_id: int
     creator_name: Optional[str] = None
+    crop_id: Optional[int] = None
     crop_name: str
+    crop_variety: Optional[str] = None
+    harvest_date: Optional[str] = None
     target_quantity: float
     current_quantity: float
     unit: str
@@ -542,6 +553,7 @@ class FarmerLoadPoolMemberRead(SQLModel):
     id: int
     pool_id: int
     farmer_id: int
+    crop_id: Optional[int] = None
     farmer_name: str
     farmer_phone: Optional[str] = None
     quantity: float

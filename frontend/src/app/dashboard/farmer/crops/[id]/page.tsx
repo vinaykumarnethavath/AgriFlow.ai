@@ -28,7 +28,16 @@ import api, {
     getCropSettlement,
     acceptCollaboration,
     declineCollaboration,
-    CropSettlement
+    CropSettlement,
+    getCropLoadPoolsContext,
+    createCropLoadPool,
+    joinCropLoadPool,
+    leaveCropLoadPool,
+    submitLoadPoolToMill,
+    CropLoadPoolsContext,
+    FarmerLoadPool,
+    getMillsMarketplace,
+    MillMarketplaceItem
 } from "@/lib/api";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
 import { AICropDiagnosis } from "@/components/AICropDiagnosis";
@@ -249,6 +258,24 @@ function CropDetailContent() {
     const [sellSubmitting, setSellSubmitting] = useState(false);
     const [settlement, setSettlement] = useState<CropSettlement | null>(null);
 
+    // Collective Selling (Load Pooling) States
+    const [poolingContext, setPoolingContext] = useState<CropLoadPoolsContext | null>(null);
+    const [availableMills, setAvailableMills] = useState<MillMarketplaceItem[]>([]);
+    const [showCreatePoolModal, setShowCreatePoolModal] = useState(false);
+    const [showJoinPoolModal, setShowJoinPoolModal] = useState(false);
+    const [selectedPoolToJoin, setSelectedPoolToJoin] = useState<FarmerLoadPool | null>(null);
+    const [joinQuantity, setJoinQuantity] = useState(15);
+    const [poolSubmitting, setPoolSubmitting] = useState(false);
+    const [createPoolForm, setCreatePoolForm] = useState({
+        target_quantity: 100,
+        my_quantity: 20,
+        delivery_date: "",
+        preferred_mill_id: undefined as number | undefined,
+        min_quality_grade: "Grade A",
+        expected_price_per_unit: 2400,
+        notes: ""
+    });
+
     // Harvest multi-select for batch selling
     const [selectedHarvestIds, setSelectedHarvestIds] = useState<number[]>([]);
 
@@ -277,7 +304,7 @@ function CropDetailContent() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [cropData, expenseData, aiData, profileRes, cropsRes, salesData, harvestsData, settlementData] = await Promise.all([
+            const [cropData, expenseData, aiData, profileRes, cropsRes, salesData, harvestsData, settlementData, poolingData, millsData] = await Promise.all([
                 getCropDetails(cropId),
                 getCropExpenses(cropId),
                 getCropInsights(cropId).catch(() => ({ insights: [], prediction: null })),
@@ -285,7 +312,9 @@ function CropDetailContent() {
                 api.get("/crops/").catch(() => ({ data: [] })),
                 getCropSales(cropId).catch(() => []),
                 getCropHarvests(cropId).catch(() => []),
-                getCropSettlement(cropId).catch(() => null)
+                getCropSettlement(cropId).catch(() => null),
+                getCropLoadPoolsContext(cropId).catch(() => null),
+                getMillsMarketplace().catch(() => [])
             ]);
 
             setCrop(cropData);
@@ -297,10 +326,91 @@ function CropDetailContent() {
             setSellListings(salesData || []);
             setHarvests(harvestsData || []);
             setSettlement(settlementData);
+            setPoolingContext(poolingData);
+            setAvailableMills(millsData || []);
         } catch (error) {
             console.error("Error fetching crop details:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleOpenCreatePool = () => {
+        if (!crop) return;
+        const estYield = crop.actual_yield && crop.actual_yield > 0 ? crop.actual_yield : Math.round((crop.area || 1) * 15);
+        setCreatePoolForm({
+            target_quantity: 100,
+            my_quantity: estYield > 0 ? estYield : 20,
+            delivery_date: crop.expected_harvest_date ? new Date(crop.expected_harvest_date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+            preferred_mill_id: undefined,
+            min_quality_grade: "Grade A",
+            expected_price_per_unit: crop.selling_price_per_unit || 2400,
+            notes: `Collective selling pool for ${crop.name} (${crop.variety || 'Standard'})`
+        });
+        setShowCreatePoolModal(true);
+    };
+
+    const handleCreatePoolSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setPoolSubmitting(true);
+        try {
+            await createCropLoadPool(cropId, createPoolForm);
+            alert("Collective Load Pool created successfully!");
+            setShowCreatePoolModal(false);
+            fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to create load pool");
+        } finally {
+            setPoolSubmitting(false);
+        }
+    };
+
+    const handleOpenJoinPool = (pool: FarmerLoadPool) => {
+        setSelectedPoolToJoin(pool);
+        const estYield = crop?.actual_yield && crop.actual_yield > 0 ? crop.actual_yield : 15;
+        const remaining = Math.max(1, pool.target_quantity - pool.current_quantity);
+        setJoinQuantity(Math.min(estYield, remaining));
+        setShowJoinPoolModal(true);
+    };
+
+    const handleJoinPoolSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedPoolToJoin) return;
+        setPoolSubmitting(true);
+        try {
+            await joinCropLoadPool(cropId, selectedPoolToJoin.id, {
+                quantity: Number(joinQuantity),
+                quality_grade: selectedPoolToJoin.min_quality_grade || "Grade A"
+            });
+            alert(`Successfully joined pool with ${joinQuantity} ${selectedPoolToJoin.unit}!`);
+            setShowJoinPoolModal(false);
+            fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to join load pool");
+        } finally {
+            setPoolSubmitting(false);
+        }
+    };
+
+    const handleLeavePool = async (poolId: number) => {
+        if (!confirm("Are you sure you want to withdraw this crop from the collective load pool?")) return;
+        try {
+            await leaveCropLoadPool(cropId, poolId);
+            alert("Withdrawn from load pool.");
+            fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to withdraw from pool");
+        }
+    };
+
+    const handleSubmitPoolToMill = async (poolId: number) => {
+        if (!confirm("Submit this combined truckload to the preferred mill for procurement?")) return;
+        try {
+            await submitLoadPoolToMill(poolId);
+            alert("Pool successfully submitted to the mill!");
+            fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to submit pool to mill");
         }
     };
 
@@ -1703,6 +1813,171 @@ function CropDetailContent() {
                             </div>
                         </div>
 
+                        {/* ── Active Crop-Specific Collective Selling (Small Farmers Load Pooling) ── */}
+                        <div className="rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-50/70 via-blue-50/40 to-white dark:from-indigo-950/30 dark:via-zinc-900 dark:to-zinc-900 p-6 shadow-sm">
+                            {poolingContext?.enrolled_pool ? (
+                                <div className="space-y-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 dark:border-indigo-900/60 pb-4">
+                                        <div className="flex items-center gap-3">
+                                            <span className="p-2.5 rounded-xl bg-indigo-600 text-white shadow-sm text-xl">
+                                                <Truck className="w-6 h-6" />
+                                            </span>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-extrabold text-lg text-foreground">
+                                                        Active Collective Pool #{poolingContext.enrolled_pool.id} ({poolingContext.enrolled_pool.crop_name})
+                                                    </h3>
+                                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                                                        poolingContext.enrolled_pool.status === "full" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300" :
+                                                        poolingContext.enrolled_pool.status === "submitted" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300" :
+                                                        "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300"
+                                                    }`}>
+                                                        {poolingContext.enrolled_pool.status === "full" ? "Truckload Ready" :
+                                                         poolingContext.enrolled_pool.status === "submitted" ? "Submitted to Mill" : "Collecting Produce"}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground mt-0.5">
+                                                    Delivery Date: <strong className="text-foreground">{new Date(poolingContext.enrolled_pool.delivery_date).toLocaleDateString()}</strong>
+                                                    {poolingContext.enrolled_pool.preferred_mill_name && (
+                                                        <span> • Destination: <strong className="text-indigo-700 dark:text-indigo-400">{poolingContext.enrolled_pool.preferred_mill_name}</strong></span>
+                                                    )}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            {poolingContext.enrolled_pool.creator_id === profile?.user_id && poolingContext.enrolled_pool.status !== "submitted" && (
+                                                <Button size="sm" onClick={() => handleSubmitPoolToMill(poolingContext.enrolled_pool!.id)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">
+                                                    <Factory className="w-4 h-4 mr-1.5" /> Submit to Mill
+                                                </Button>
+                                            )}
+                                            {poolingContext.enrolled_pool.status !== "submitted" && (
+                                                <Button size="sm" variant="outline" onClick={() => handleLeavePool(poolingContext.enrolled_pool!.id)} className="border-red-300 text-red-600 hover:bg-red-50">
+                                                    Withdraw
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Fill progress bar */}
+                                    <div className="space-y-1.5">
+                                        <div className="flex justify-between text-xs font-semibold">
+                                            <span className="text-muted-foreground flex items-center gap-1.5">
+                                                <span>🚚 Truckload Progress</span>
+                                                <span className="text-indigo-600 font-bold">({poolingContext.enrolled_pool.fill_percentage}%)</span>
+                                            </span>
+                                            <span className="text-foreground">
+                                                {poolingContext.enrolled_pool.current_quantity} / {poolingContext.enrolled_pool.target_quantity} {poolingContext.enrolled_pool.unit}
+                                            </span>
+                                        </div>
+                                        <div className="w-full h-3 rounded-full bg-indigo-100 dark:bg-zinc-800 overflow-hidden">
+                                            <div 
+                                                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-500"
+                                                style={{ width: `${Math.min(100, poolingContext.enrolled_pool.fill_percentage)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Participating Farmers in this Crop's Pool */}
+                                    <div>
+                                        <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                                            <Users className="w-3.5 h-3.5" /> Participating Farmers in this Pool ({poolingContext.enrolled_pool.members?.length || 0})
+                                        </h5>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                            {poolingContext.enrolled_pool.members?.map((m) => (
+                                                <div key={m.id} className="p-2.5 rounded-lg bg-white dark:bg-zinc-800 border text-xs flex items-center justify-between shadow-2xs">
+                                                    <div>
+                                                        <div className="font-semibold text-foreground">👤 {m.farmer_name}</div>
+                                                        <div className="text-[11px] text-muted-foreground">{m.quality_grade || "Grade A"}</div>
+                                                    </div>
+                                                    <span className="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-1 rounded">
+                                                        {m.quantity} {m.unit}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-400 text-amber-950 uppercase tracking-wide">
+                                                    🚀 Collective Selling
+                                                </span>
+                                                <h3 className="font-extrabold text-lg text-foreground flex items-center gap-2">
+                                                    <Users className="w-5 h-5 text-indigo-600" />
+                                                    Small Farmers Load Pooling for {crop.name}
+                                                </h3>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground max-w-2xl">
+                                                Have a small harvest (10–30 quintals)? Combine produce from this {crop.area}-acre crop with neighboring farmers harvesting around {crop.expected_harvest_date ? new Date(crop.expected_harvest_date).toLocaleDateString() : 'now'} to dispatch a full 100-quintal truckload, getting direct mill rates (+₹150–₹250/Qtl) and saving 40% on transport!
+                                            </p>
+                                        </div>
+                                        <Button onClick={handleOpenCreatePool} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md whitespace-nowrap">
+                                            <Plus className="w-4 h-4 mr-1.5" /> Start a Pool for this Crop
+                                        </Button>
+                                    </div>
+
+                                    {/* Nearby Matching Open Pools for this Crop */}
+                                    <div className="pt-2 border-t border-indigo-100 dark:border-indigo-900/50">
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center justify-between">
+                                            <span>Available Neighbor Pools for {crop.crop_type || crop.name} ({poolingContext?.matching_pools?.length || 0})</span>
+                                            <span className="text-[11px] font-normal lowercase text-muted-foreground">within 50 km matching harvest window</span>
+                                        </h4>
+
+                                        {(!poolingContext?.matching_pools || poolingContext.matching_pools.length === 0) ? (
+                                            <div className="text-center py-6 border border-dashed rounded-xl bg-white/60 dark:bg-zinc-800/40 text-xs text-muted-foreground">
+                                                No open collective pools found for this crop in your mandal yet. 
+                                                <br />
+                                                <strong className="text-indigo-600 cursor-pointer hover:underline mt-1 inline-block" onClick={handleOpenCreatePool}>
+                                                    Click here to start the first pool for your neighborhood!
+                                                </strong>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {poolingContext.matching_pools.map((p) => (
+                                                    <div key={p.id} className="p-3.5 rounded-xl bg-white dark:bg-zinc-800 border-2 border-indigo-100 dark:border-indigo-900 shadow-xs flex flex-col justify-between gap-3">
+                                                        <div>
+                                                            <div className="flex justify-between items-start">
+                                                                <div>
+                                                                    <h5 className="font-bold text-sm text-foreground">Pool #{p.id}: {p.crop_name}</h5>
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        📍 {p.village}, {p.district} • By <strong>{p.creator_name}</strong>
+                                                                    </div>
+                                                                </div>
+                                                                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded">
+                                                                    ₹{p.expected_price_per_unit}/Qtl
+                                                                </span>
+                                                            </div>
+                                                            <div className="mt-2 text-xs text-muted-foreground">
+                                                                Delivery Date: <span className="font-semibold text-foreground">{new Date(p.delivery_date).toLocaleDateString()}</span>
+                                                                {p.preferred_mill_name && <span> • {p.preferred_mill_name}</span>}
+                                                            </div>
+                                                            {/* Mini progress bar */}
+                                                            <div className="mt-2 space-y-1">
+                                                                <div className="flex justify-between text-[11px]">
+                                                                    <span className="text-muted-foreground">{p.current_quantity} / {p.target_quantity} {p.unit}</span>
+                                                                    <span className="font-semibold text-indigo-600">{p.fill_percentage}%</span>
+                                                                </div>
+                                                                <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                                                                    <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.min(100, p.fill_percentage)}%` }} />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Button size="sm" onClick={() => handleOpenJoinPool(p)} className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-800">
+                                                            <Users className="w-3.5 h-3.5 mr-1.5" /> Join Pool with this Crop
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         {showSellForm && (
                             <Card className="border-green-200 bg-green-50/30">
                                 <CardHeader>
@@ -2129,6 +2404,163 @@ function CropDetailContent() {
                         </Button>
                     </div>
                 </div>
+            </Modal>
+
+            {/* Create Collective Load Pool Modal */}
+            <Modal isOpen={showCreatePoolModal} onClose={() => setShowCreatePoolModal(false)} title={`Start Collective Pool: ${crop?.name}`}>
+                <form onSubmit={handleCreatePoolSubmit} className="space-y-4 p-2">
+                    <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-200">
+                        Combine your harvest with neighboring farmers to reach 100 quintals (full truckload) for direct mill procurement at premium bulk prices.
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">Crop Name &amp; Variety</label>
+                            <Input disabled value={`${crop?.name} (${crop?.variety || 'Standard'})`} className="bg-muted text-xs font-medium" />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">Target Delivery Date (Harvest)</label>
+                            <Input
+                                type="date"
+                                required
+                                value={createPoolForm.delivery_date}
+                                onChange={(e) => setCreatePoolForm({ ...createPoolForm, delivery_date: e.target.value })}
+                                className="text-xs"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">My Contribution Quantity (Quintals)</label>
+                            <Input
+                                type="number"
+                                required
+                                min="1"
+                                max="100"
+                                value={createPoolForm.my_quantity}
+                                onChange={(e) => setCreatePoolForm({ ...createPoolForm, my_quantity: Number(e.target.value) })}
+                                className="text-xs"
+                            />
+                            <p className="text-[11px] text-muted-foreground">Pledged from this crop's harvest</p>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">Target Truckload (Quintals)</label>
+                            <Input
+                                type="number"
+                                required
+                                min="50"
+                                max="500"
+                                value={createPoolForm.target_quantity}
+                                onChange={(e) => setCreatePoolForm({ ...createPoolForm, target_quantity: Number(e.target.value) })}
+                                className="text-xs"
+                            />
+                            <p className="text-[11px] text-muted-foreground">Standard 10-wheeler = 100 Qtl</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">Expected Price (₹/Quintal)</label>
+                            <Input
+                                type="number"
+                                required
+                                value={createPoolForm.expected_price_per_unit}
+                                onChange={(e) => setCreatePoolForm({ ...createPoolForm, expected_price_per_unit: Number(e.target.value) })}
+                                className="text-xs"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground">Minimum Quality Grade</label>
+                            <select
+                                className="w-full p-2 border rounded-md text-xs bg-background"
+                                value={createPoolForm.min_quality_grade}
+                                onChange={(e) => setCreatePoolForm({ ...createPoolForm, min_quality_grade: e.target.value })}
+                            >
+                                <option value="Grade A">Grade A (Super Fine / Premium)</option>
+                                <option value="Grade B">Grade B (Standard Market)</option>
+                                <option value="FAQ">FAQ (Fair Average Quality)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Preferred Processing Mill (Optional)</label>
+                        <select
+                            className="w-full p-2 border rounded-md text-xs bg-background"
+                            value={createPoolForm.preferred_mill_id || ""}
+                            onChange={(e) => setCreatePoolForm({ ...createPoolForm, preferred_mill_id: e.target.value ? Number(e.target.value) : undefined })}
+                        >
+                            <option value="">Any Verified Local Mill (Best Rate)</option>
+                            {availableMills.map((m) => (
+                                <option key={m.id} value={m.user_id}>
+                                    {m.mill_name} ({m.district} • {m.crops_accepted || 'All Grains'})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Pool Notes / Instructions</label>
+                        <Input
+                            placeholder="e.g., Moisture strictly below 14%, loading at Chinna Vaduguru village gate"
+                            value={createPoolForm.notes}
+                            onChange={(e) => setCreatePoolForm({ ...createPoolForm, notes: e.target.value })}
+                            className="text-xs"
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t">
+                        <Button type="button" variant="outline" size="sm" onClick={() => setShowCreatePoolModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" size="sm" disabled={poolSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                            {poolSubmitting ? "Creating..." : "Create Collective Pool"}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Join Collective Load Pool Modal */}
+            <Modal isOpen={showJoinPoolModal} onClose={() => setShowJoinPoolModal(false)} title={`Join Pool #${selectedPoolToJoin?.id} with ${crop?.name}`}>
+                <form onSubmit={handleJoinPoolSubmit} className="space-y-4 p-2">
+                    <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs">
+                        <div className="font-bold text-foreground">Pool #{selectedPoolToJoin?.id}: {selectedPoolToJoin?.crop_name}</div>
+                        <div className="text-muted-foreground mt-0.5">
+                            Target: {selectedPoolToJoin?.current_quantity} / {selectedPoolToJoin?.target_quantity} {selectedPoolToJoin?.unit} • Delivery: {selectedPoolToJoin?.delivery_date}
+                        </div>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Produce Source</label>
+                        <Input disabled value={`${crop?.name} (${crop?.area} Acres, ${crop?.variety || 'Standard'})`} className="bg-muted text-xs font-medium" />
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Quantity to Contribute (Quintals)</label>
+                        <Input
+                            type="number"
+                            required
+                            min="1"
+                            max={selectedPoolToJoin ? Math.max(1, selectedPoolToJoin.target_quantity - selectedPoolToJoin.current_quantity) : 100}
+                            value={joinQuantity}
+                            onChange={(e) => setJoinQuantity(Number(e.target.value))}
+                            className="text-xs"
+                        />
+                        <p className="text-[11px] text-muted-foreground">
+                            Remaining needed to fill truckload: {selectedPoolToJoin ? Math.max(0, selectedPoolToJoin.target_quantity - selectedPoolToJoin.current_quantity) : 0} {selectedPoolToJoin?.unit}
+                        </p>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t">
+                        <Button type="button" variant="outline" size="sm" onClick={() => setShowJoinPoolModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" size="sm" disabled={poolSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                            {poolSubmitting ? "Joining..." : "Confirm & Join Pool"}
+                        </Button>
+                    </div>
+                </form>
             </Modal>
 
             {mockOptions && <MockRazorpayPopup options={mockOptions} onClose={() => setMockOptions(null)} />}

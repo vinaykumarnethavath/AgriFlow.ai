@@ -1054,26 +1054,44 @@ def generate():
             VALUES (?, ?, 'Paddy (Sona Masoori BPT-5204)', 120.0, 'quintal', 2420.0, 'Grade A', 13.8, '2026-08-15', ?, ?, 'Tadipatri Circle', 'Direct harvest delivery slot booked with mill.', 'approved', '2026-08-28', 'Tractor Trailer', 'AP 04 TC 8812', ?, ?, ?)
         """, (u_mfr, s_fid, f_n, f_p, f"TOK-ATP-00{p_idx+1}", now_iso, now_iso))
 
-    # Active Farmer Load Pool & Pool Members
+    # Active Farmer Load Pool & Pool Members tied to Vinay's Active Paddy Crop
+    active_paddy_id = vinay_crop_ids[-2]
     c.execute("""
-        INSERT OR REPLACE INTO farmer_load_pools (creator_id, crop_name, target_quantity, current_quantity, unit, village, mandal, district, state, delivery_date, preferred_mill_id, preferred_mill_name, status, min_quality_grade, expected_price_per_unit, notes, created_at, updated_at)
-        VALUES (?, 'Paddy (Sona Masoori)', 180.0, 125.0, 'quintal', 'Chinna Vaduguru', 'Tadipatri', 'Anantapur', 'Andhra Pradesh', '2026-08-30', ?, 'Vinay Agro Industries & Rice Mill', 'open', 'Grade A', 2450.0, 'Direct collective dispatch to Vinay Agro Mill. Free offloading and zero wait time.', ?, ?)
-    """, (u_farmer, u_mfr, now_iso, now_iso))
+        INSERT OR REPLACE INTO farmer_load_pools (creator_id, crop_id, crop_name, crop_variety, harvest_date, target_quantity, current_quantity, unit, village, mandal, district, state, delivery_date, preferred_mill_id, preferred_mill_name, status, min_quality_grade, expected_price_per_unit, notes, created_at, updated_at)
+        VALUES (?, ?, 'Paddy', 'BPT-5204 Samba Masoori', '2026-11-28', 100.0, 75.0, 'quintal', 'Chinna Vaduguru', 'Tadipatri', 'Anantapur', 'Andhra Pradesh', '2026-11-28', ?, 'Vinay Agro Industries & Rice Mill', 'open', 'Grade A', 2450.0, 'Direct collective dispatch to Vinay Agro Mill. Free offloading and zero wait time.', ?, ?)
+    """, (u_farmer, active_paddy_id, u_mfr, now_iso, now_iso))
     pool_id = c.lastrowid
 
     c.execute("DELETE FROM farmer_load_pool_members WHERE pool_id = ?", (pool_id,))
     c.execute("""
-        INSERT INTO farmer_load_pool_members (pool_id, farmer_id, farmer_name, farmer_phone, quantity, unit, quality_grade, joined_at)
-        VALUES (?, ?, 'Vinay Kumar Nethavath', '9876510001', 50.0, 'quintal', 'Grade A', ?)
-    """, (pool_id, u_farmer, now_iso))
+        INSERT INTO farmer_load_pool_members (pool_id, farmer_id, crop_id, farmer_name, farmer_phone, quantity, unit, quality_grade, joined_at)
+        VALUES (?, ?, ?, 'Vinay Kumar Nethavath', '9876510001', 35.0, 'quintal', 'Grade A', ?)
+    """, (pool_id, u_farmer, active_paddy_id, now_iso))
     c.execute("""
-        INSERT INTO farmer_load_pool_members (pool_id, farmer_id, farmer_name, farmer_phone, quantity, unit, quality_grade, joined_at)
-        VALUES (?, ?, 'Suresh Reddy', '9849010002', 40.0, 'quintal', 'Grade A', ?)
+        INSERT INTO farmer_load_pool_members (pool_id, farmer_id, crop_id, farmer_name, farmer_phone, quantity, unit, quality_grade, joined_at)
+        VALUES (?, ?, NULL, 'Suresh Reddy', '9849010002', 25.0, 'quintal', 'Grade A', ?)
     """, (pool_id, all_farmer_ids[2], now_iso))
     c.execute("""
-        INSERT INTO farmer_load_pool_members (pool_id, farmer_id, farmer_name, farmer_phone, quantity, unit, quality_grade, joined_at)
-        VALUES (?, ?, 'Balaji Chowdary', '9849010004', 35.0, 'quintal', 'Grade A', ?)
+        INSERT INTO farmer_load_pool_members (pool_id, farmer_id, crop_id, farmer_name, farmer_phone, quantity, unit, quality_grade, joined_at)
+        VALUES (?, ?, NULL, 'Balaji Chowdary', '9849010004', 15.0, 'quintal', 'Grade A', ?)
     """, (pool_id, all_farmer_ids[4], now_iso))
+
+    # Also seed a matching nearby pool for Sweet Corn created by Suresh Reddy (available for Vinay's active sweet corn crop)
+    c.execute("DELETE FROM farmer_load_pools WHERE creator_id = ? AND crop_name = 'Sweet Corn'", (all_farmer_ids[2],))
+    c.execute("""
+        INSERT INTO farmer_load_pools (creator_id, crop_id, crop_name, crop_variety, harvest_date, target_quantity, current_quantity, unit, village, mandal, district, state, delivery_date, preferred_mill_id, preferred_mill_name, status, min_quality_grade, expected_price_per_unit, notes, created_at, updated_at)
+        VALUES (?, NULL, 'Sweet Corn', 'Sugar-75 Hybrid', '2026-10-30', 100.0, 45.0, 'quintal', 'Vanganur', 'Tadipatri', 'Anantapur', 'Andhra Pradesh', '2026-10-30', ?, 'Pamidi Modern Grain Processing Mill', 'open', 'Grade A', 1850.0, 'Collective truckload dispatch to Pamidi Processing Mill. Direct mill rate.', ?, ?)
+    """, (all_farmer_ids[2], all_mill_ids[2], now_iso, now_iso))
+    corn_pool_id = c.lastrowid
+    c.execute("DELETE FROM farmer_load_pool_members WHERE pool_id = ?", (corn_pool_id,))
+    c.execute("""
+        INSERT INTO farmer_load_pool_members (pool_id, farmer_id, crop_id, farmer_name, farmer_phone, quantity, unit, quality_grade, joined_at)
+        VALUES (?, ?, NULL, 'Suresh Reddy', '9849010002', 30.0, 'quintal', 'Grade A', ?)
+    """, (corn_pool_id, all_farmer_ids[2], now_iso))
+    c.execute("""
+        INSERT INTO farmer_load_pool_members (pool_id, farmer_id, crop_id, farmer_name, farmer_phone, quantity, unit, quality_grade, joined_at)
+        VALUES (?, ?, NULL, 'K. Ramanjaneyulu', '9849010005', 15.0, 'quintal', 'Grade A', ?)
+    """, (corn_pool_id, all_farmer_ids[5], now_iso))
 
     print(f" [OK] Seeded Mill Procurements, Weighment Slips, Moisture Logs, Milling Batches, Sales & Farmer Load Pool.")
 

@@ -10,6 +10,7 @@ from ..models import (
     CropExpense, CropExpenseCreate, CropExpenseRead,
     FarmerProfile
 )
+from ..models.manufacturer import FarmerLoadPool, FarmerLoadPoolMember, MillProfile
 from ..models.plot_nutrition import PlotSoilData, FertilizerApplication
 from ..deps import get_current_user
 from ..services.crop_service import recalculate_crop_financials
@@ -556,3 +557,258 @@ async def record_harvest_sale(
     crop.status = "Harvested"
     updated_crop = await recalculate_crop_financials(crop.id, session)
     return updated_crop
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature: Active Crop-Specific Collective Selling (Small Farmers Load Pooling)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/{crop_id}/load-pools")
+async def get_crop_load_pools(
+    crop_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    crop = await session.get(Crop, crop_id)
+    if not crop:
+        raise HTTPException(status_code=404, detail="Crop not found")
+        
+    user_phone = (current_user.phone_number or "").strip()
+    is_cultivator = crop.user_id == current_user.id
+    is_partner = (crop.partner_farmer_id == current_user.id) or (user_phone and crop.partner_phone == user_phone)
+    if not (is_cultivator or (is_partner and crop.shared_status == "accepted")):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # 1. Check if this crop is already enrolled in any pool
+    enrolled_pool_res = None
+    
+    # Check pool created for this crop
+    pool_stmt = select(FarmerLoadPool).where(FarmerLoadPool.crop_id == crop_id).where(FarmerLoadPool.status.in_(["open", "full", "submitted", "completed"]))
+    created_pool = (await session.exec(pool_stmt)).first()
+    
+    enrolled_pool_obj = created_pool
+    if not enrolled_pool_obj:
+        # Check member table
+        member_stmt = select(FarmerLoadPoolMember).where(FarmerLoadPoolMember.crop_id == crop_id)
+        member_row = (await session.exec(member_stmt)).first()
+        if member_row:
+            enrolled_pool_obj = await session.get(FarmerLoadPool, member_row.pool_id)
+            if enrolled_pool_obj and enrolled_pool_obj.status in ("cancelled",):
+                enrolled_pool_obj = None
+
+    if enrolled_pool_obj:
+        # Fetch members
+        m_stmt = select(FarmerLoadPoolMember).where(FarmerLoadPoolMember.pool_id == enrolled_pool_obj.id)
+        members = (await session.exec(m_stmt)).all()
+        creator = await session.get(User, enrolled_pool_obj.creator_id)
+        fill_pct = round((enrolled_pool_obj.current_quantity / enrolled_pool_obj.target_quantity * 100), 1) if enrolled_pool_obj.target_quantity > 0 else 0.0
+        enrolled_pool_res = {
+            **enrolled_pool_obj.dict(),
+            "creator_name": creator.full_name if creator else "Farmer",
+            "member_count": len(members),
+            "fill_percentage": fill_pct,
+            "members": [m.dict() for m in members]
+        }
+
+    # 2. Search for matching open pools for this crop
+    matching_pools_res = []
+    crop_keywords = [k for k in [crop.crop_type, crop.name, (crop.name.split()[0] if crop.name else "")] if k]
+    
+    all_open_stmt = select(FarmerLoadPool).where(FarmerLoadPool.status.in_(["open", "full"]))
+    all_open_pools = (await session.exec(all_open_stmt)).all()
+    
+    for p in all_open_pools:
+        # Don't include the already enrolled pool
+        if enrolled_pool_obj and p.id == enrolled_pool_obj.id:
+            continue
+            
+        # Match crop name or crop type
+        p_name = (p.crop_name or "").lower()
+        matches_crop = any(kw.lower() in p_name or p_name in kw.lower() for kw in crop_keywords)
+        if matches_crop:
+            m_stmt = select(FarmerLoadPoolMember).where(FarmerLoadPoolMember.pool_id == p.id)
+            p_members = (await session.exec(m_stmt)).all()
+            p_creator = await session.get(User, p.creator_id)
+            fill_pct = round((p.current_quantity / p.target_quantity * 100), 1) if p.target_quantity > 0 else 0.0
+            matching_pools_res.append({
+                **p.dict(),
+                "creator_name": p_creator.full_name if p_creator else "Farmer",
+                "member_count": len(p_members),
+                "fill_percentage": fill_pct,
+                "members": [m.dict() for m in p_members]
+            })
+
+    # Get farmer profile for default location
+    fp_stmt = select(FarmerProfile).where(FarmerProfile.user_id == current_user.id)
+    fp = (await session.exec(fp_stmt)).first()
+
+    return {
+        "crop_id": crop.id,
+        "crop_name": crop.name,
+        "crop_type": crop.crop_type or crop.name,
+        "variety": crop.variety,
+        "area": crop.area,
+        "status": crop.status,
+        "sowing_date": crop.sowing_date,
+        "expected_harvest_date": crop.expected_harvest_date,
+        "actual_yield": crop.actual_yield or 0.0,
+        "village": fp.village if fp else "",
+        "mandal": fp.mandal if fp else "",
+        "district": fp.district if fp else "",
+        "state": fp.state if fp else "Andhra Pradesh",
+        "enrolled_pool": enrolled_pool_res,
+        "matching_pools": matching_pools_res
+    }
+
+@router.post("/{crop_id}/create-pool")
+async def create_crop_load_pool(
+    crop_id: int,
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    crop = await session.get(Crop, crop_id)
+    if not crop:
+        raise HTTPException(status_code=404, detail="Crop not found")
+        
+    user_phone = (current_user.phone_number or "").strip()
+    is_cultivator = crop.user_id == current_user.id
+    is_partner = (crop.partner_farmer_id == current_user.id) or (user_phone and crop.partner_phone == user_phone)
+    if not (is_cultivator or (is_partner and crop.shared_status == "accepted")):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    fp_stmt = select(FarmerProfile).where(FarmerProfile.user_id == current_user.id)
+    fp = (await session.exec(fp_stmt)).first()
+
+    pref_mill_name = None
+    pref_mill_id = data.get("preferred_mill_id")
+    if pref_mill_id:
+        mill_stmt = select(MillProfile).where(MillProfile.user_id == pref_mill_id)
+        m_prof = (await session.exec(mill_stmt)).first()
+        if m_prof:
+            pref_mill_name = m_prof.mill_name
+
+    target_qty = float(data.get("target_quantity", 100))
+    my_qty = float(data.get("my_quantity", 20))
+    delivery_dt = data.get("delivery_date") or crop.expected_harvest_date or datetime.utcnow().strftime("%Y-%m-%d")
+
+    pool = FarmerLoadPool(
+        creator_id=current_user.id,
+        crop_id=crop.id,
+        crop_name=crop.crop_type or crop.name,
+        crop_variety=crop.variety,
+        harvest_date=crop.expected_harvest_date,
+        target_quantity=target_qty,
+        current_quantity=my_qty,
+        unit=data.get("unit", "quintal"),
+        village=data.get("village") or (fp.village if fp else "Village"),
+        mandal=data.get("mandal") or (fp.mandal if fp else ""),
+        district=data.get("district") or (fp.district if fp else "District"),
+        state=data.get("state") or (fp.state if fp else "Andhra Pradesh"),
+        delivery_date=delivery_dt,
+        preferred_mill_id=pref_mill_id,
+        preferred_mill_name=pref_mill_name,
+        min_quality_grade=data.get("min_quality_grade", "Grade A"),
+        expected_price_per_unit=float(data.get("expected_price_per_unit", crop.selling_price_per_unit or 2400.0)),
+        notes=data.get("notes", f"Collective pool for {crop.name} ({crop.variety}) harvest"),
+        status="full" if my_qty >= target_qty else "open"
+    )
+    session.add(pool)
+    await session.commit()
+    await session.refresh(pool)
+
+    member = FarmerLoadPoolMember(
+        pool_id=pool.id,
+        farmer_id=current_user.id,
+        crop_id=crop.id,
+        farmer_name=current_user.full_name or "Farmer",
+        farmer_phone=current_user.phone_number or (fp.phone_number if fp else None),
+        quantity=my_qty,
+        unit=pool.unit,
+        quality_grade=pool.min_quality_grade,
+    )
+    session.add(member)
+    await session.commit()
+
+    return {"ok": True, "pool_id": pool.id, "message": f"Collective pool #{pool.id} created for {crop.name}"}
+
+@router.post("/{crop_id}/join-pool/{pool_id}")
+async def join_crop_load_pool(
+    crop_id: int,
+    pool_id: int,
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    crop = await session.get(Crop, crop_id)
+    if not crop:
+        raise HTTPException(status_code=404, detail="Crop not found")
+        
+    pool = await session.get(FarmerLoadPool, pool_id)
+    if not pool:
+        raise HTTPException(status_code=404, detail="Pool not found")
+    if pool.status not in ("open", "full"):
+        raise HTTPException(status_code=400, detail=f"Pool is {pool.status}, cannot join")
+
+    m_stmt = select(FarmerLoadPoolMember).where(FarmerLoadPoolMember.pool_id == pool_id).where(FarmerLoadPoolMember.farmer_id == current_user.id)
+    existing = (await session.exec(m_stmt)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="You have already joined this pool")
+
+    qty = float(data.get("quantity", 15))
+    fp_stmt = select(FarmerProfile).where(FarmerProfile.user_id == current_user.id)
+    fp = (await session.exec(fp_stmt)).first()
+
+    member = FarmerLoadPoolMember(
+        pool_id=pool_id,
+        farmer_id=current_user.id,
+        crop_id=crop.id,
+        farmer_name=current_user.full_name or "Farmer",
+        farmer_phone=current_user.phone_number or (fp.phone_number if fp else None),
+        quantity=qty,
+        unit=pool.unit,
+        quality_grade=data.get("quality_grade", pool.min_quality_grade),
+    )
+    session.add(member)
+    pool.current_quantity += qty
+    if pool.current_quantity >= pool.target_quantity:
+        pool.status = "full"
+    pool.updated_at = datetime.utcnow()
+    session.add(pool)
+    await session.commit()
+
+    return {"ok": True, "message": f"Successfully enrolled {qty} {pool.unit} of {crop.name} into Pool #{pool_id}"}
+
+@router.post("/{crop_id}/leave-pool/{pool_id}")
+async def leave_crop_load_pool(
+    crop_id: int,
+    pool_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    crop = await session.get(Crop, crop_id)
+    if not crop:
+        raise HTTPException(status_code=404, detail="Crop not found")
+    pool = await session.get(FarmerLoadPool, pool_id)
+    if not pool:
+        raise HTTPException(status_code=404, detail="Pool not found")
+    if pool.status in ("submitted", "completed"):
+        raise HTTPException(status_code=400, detail="Cannot leave a pool that has already been submitted to the mill")
+
+    if pool.creator_id == current_user.id:
+        pool.status = "cancelled"
+        session.add(pool)
+        await session.commit()
+        return {"ok": True, "message": "Pool cancelled by creator"}
+    else:
+        m_stmt = select(FarmerLoadPoolMember).where(FarmerLoadPoolMember.pool_id == pool_id).where(FarmerLoadPoolMember.farmer_id == current_user.id)
+        member = (await session.exec(m_stmt)).first()
+        if member:
+            pool.current_quantity = max(0.0, pool.current_quantity - member.quantity)
+            if pool.current_quantity < pool.target_quantity and pool.status == "full":
+                pool.status = "open"
+            session.add(pool)
+            await session.delete(member)
+            await session.commit()
+            return {"ok": True, "message": "Successfully withdrawn from pool"}
+        raise HTTPException(status_code=404, detail="Membership record not found")
+

@@ -1041,4 +1041,88 @@ $$\text{Proof of Conservation: } \text{Payout}_A + \text{Payout}_B = (E_A + P_A)
 - **Farmer A Payout:** ₹30,000 (Expense Refund) + ₹50,000 (50% Profit) = **₹80,000**
 - **Farmer B Payout:** ₹20,000 (Expense Refund) + ₹50,000 (50% Profit) = **₹70,000**
 
+---
+
+## 17. Active Crop-Specific Collective Selling (Load Pooling) Architecture
+
+### 1. Paradigm: From Open Generic Directory to Crop-Specific Collective Selling
+In smallholder agriculture, farmers cannot pool produce in the abstract. Each crop represents a distinct agronomic asset with specific physical and temporal constraints:
+- **Agronomic Specificity:** Grain moisture criteria (e.g. Paddy at 14% vs Maize at 12%), grain length, and variety (e.g., Samba Masoori vs Basmati).
+- **Temporal Alignment:** Harvesting timelines dictate when produce is ready for market delivery. A farmer harvesting in late November cannot pool with an October harvest.
+- **Yield Attribution:** Collective selling pledges must originate from actual harvested yield or cultivated acreage of an active crop.
+
+Therefore, the system embeds collective selling directly into the **Particular Active Crop Detail Page** (`/dashboard/farmer/crops/[id]`), while turning the general Mills marketplace into an **Active Crop Selector Gateway**.
+
+### 2. Architecture Diagram
+
+```mermaid
+flowchart TD
+    subgraph FarmerCropPage ["Particular Active Crop Detail Page (/dashboard/farmer/crops/[id])"]
+        Crop[Active Crop Record\nID: crop_id, Name: Paddy\nVariety: BPT-5204\nHarvest Date: 2026-11-28\nStatus: Growing / Harvested]
+        
+        Crop --> SellTab[Sell Crop Tab]
+        SellTab --> ModeChoice{Selling Channel}
+        
+        ModeChoice -->|Individual| SingleSale[Direct Mill or Mandi Listing]
+        ModeChoice -->|Collective| PoolEngine[Small Farmers Load Pooling Engine]
+        
+        PoolEngine --> MatchView[Nearby Matching Pools for THIS Crop\nFiltered by: Crop Type, District, Harvest Date]
+        PoolEngine --> CreateView[Start Collective Pool for THIS Crop\nPre-populated with Crop Metadata]
+    end
+
+    subgraph LoadPoolingBackend ["Load Pooling Orchestrator (Backend)"]
+        MatchView -->|Join Request| JoinAction["POST /crops/{id}/join-pool/{pool_id}\nAttaches crop_id to Member Record"]
+        CreateView -->|Create Request| CreateAction["POST /crops/{id}/create-pool\nCreates Pool with crop_id, variety, harvest_date"]
+        
+        JoinAction --> PoolTable[("farmer_load_pools & members\ncrop_id linked")]
+        CreateAction --> PoolTable
+        
+        PoolTable --> ProgressCheck{"Current Qty >= Target Qty (100 Qtl)?"}
+        ProgressCheck -->|No| OpenState[Status: Open / Filling]
+        ProgressCheck -->|Yes| FullState[Status: Full / Ready for Dispatch]
+    end
+
+    subgraph MillProcurement ["Mill Gate & Procurement Settlement"]
+        FullState --> SubmitMill["POST /load-pools/{id}/submit\nCombined Procurement Request"]
+        SubmitMill --> MillGate[Mill Weighment & Quality Verification]
+        MillGate --> Settlement[Automated Pro-Rata Payment to Each Pooled Crop]
+    end
+```
+
+### 3. Database Schema Extensions
+
+#### `farmer_load_pools`
+- `crop_id`: `INTEGER` (Foreign key to initiating `crop.id`)
+- `crop_variety`: `VARCHAR` (e.g., "BPT-5204 Samba Masoori")
+- `harvest_date`: `VARCHAR` (Synchronized from active crop's `expected_harvest_date`)
+
+#### `farmer_load_pool_members`
+- `crop_id`: `INTEGER` (Foreign key linking participating farmer's contributing `crop.id`)
+
+### 4. API Endpoints Contract
+
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/crops/{crop_id}/load-pools` | `GET` | Returns active pool state for this crop (enrolled pool or compatible nearby pools matching this crop and harvest window). |
+| `/crops/{crop_id}/create-pool` | `POST` | Initiates a 100-quintal pool pre-filled with this crop's parameters. |
+| `/crops/{crop_id}/join-pool/{pool_id}` | `POST` | Enrolls this crop's quantity into an existing matching pool. |
+| `/crops/{crop_id}/leave-pool/{pool_id}` | `POST` | Withdraws this crop from an open pool before submission. |
+
+### 5. Pool State Lifecycle for an Active Crop
+
+```mermaid
+stateDiagram-v2
+    [*] --> Unpooled: Crop Active (Growing / Harvested)
+    Unpooled --> CreatingPool: Farmer initiates pool for this crop
+    Unpooled --> JoiningPool: Farmer joins compatible nearby pool
+    CreatingPool --> OpenPool: Pool created with initial crop pledge
+    JoiningPool --> OpenPool: Crop enrolled in pool
+    OpenPool --> OpenPool: Co-farmers contribute (progress bar updates)
+    OpenPool --> FullPool: Target quantity reached (e.g., 100 Qtl truckload)
+    FullPool --> Submitted: Creator submits to preferred mill
+    Submitted --> Completed: Mill verifies weighment & issues payment
+    Completed --> [*]
+```
+
+
 

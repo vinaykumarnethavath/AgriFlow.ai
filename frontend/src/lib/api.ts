@@ -87,6 +87,7 @@ export interface Crop {
     id: number;
     user_id: number;
     name: string;
+    crop_type?: string;
     area: number;
     season?: string;
     variety?: string;
@@ -2935,6 +2936,7 @@ export interface FarmerLoadPoolMember {
     id: number;
     pool_id: number;
     farmer_id: number;
+    crop_id?: number | null;
     farmer_name: string;
     farmer_phone?: string | null;
     quantity: number;
@@ -2947,7 +2949,10 @@ export interface FarmerLoadPool {
     id: number;
     creator_id: number;
     creator_name?: string | null;
+    crop_id?: number | null;
     crop_name: string;
+    crop_variety?: string | null;
+    harvest_date?: string | null;
     target_quantity: number;
     current_quantity: number;
     unit: string;
@@ -2970,7 +2975,10 @@ export interface FarmerLoadPool {
 }
 
 export interface FarmerLoadPoolCreate {
+    crop_id?: number;
     crop_name: string;
+    crop_variety?: string;
+    harvest_date?: string;
     target_quantity: number;
     unit?: string;
     village: string;
@@ -2986,9 +2994,28 @@ export interface FarmerLoadPoolCreate {
 }
 
 export interface FarmerLoadPoolJoin {
+    crop_id?: number;
     quantity: number;
     unit?: string;
     quality_grade?: string;
+}
+
+export interface CropLoadPoolsContext {
+    crop_id: number;
+    crop_name: string;
+    crop_type: string;
+    variety?: string;
+    area: number;
+    status: string;
+    sowing_date: string;
+    expected_harvest_date: string;
+    actual_yield: number;
+    village?: string;
+    mandal?: string;
+    district?: string;
+    state?: string;
+    enrolled_pool?: FarmerLoadPool | null;
+    matching_pools: FarmerLoadPool[];
 }
 
 export const createLoadPool = async (data: FarmerLoadPoolCreate): Promise<FarmerLoadPool> => {
@@ -3023,6 +3050,25 @@ export const cancelLoadPool = async (poolId: number): Promise<{ ok: boolean; mes
     return response.data;
 };
 
+export const getCropLoadPoolsContext = async (cropId: number): Promise<CropLoadPoolsContext> => {
+    const response = await api.get<CropLoadPoolsContext>(`/crops/${cropId}/load-pools`);
+    return response.data;
+};
+
+export const createCropLoadPool = async (cropId: number, data: any): Promise<{ ok: boolean; pool_id: number; message: string }> => {
+    const response = await api.post(`/crops/${cropId}/create-pool`, data);
+    return response.data;
+};
+
+export const joinCropLoadPool = async (cropId: number, poolId: number, data: any): Promise<{ ok: boolean; message: string }> => {
+    const response = await api.post(`/crops/${cropId}/join-pool/${poolId}`, data);
+    return response.data;
+};
+
+export const leaveCropLoadPool = async (cropId: number, poolId: number): Promise<{ ok: boolean; message: string }> => {
+    const response = await api.post(`/crops/${cropId}/leave-pool/${poolId}`);
+    return response.data;
+};
 
 export default api;
 

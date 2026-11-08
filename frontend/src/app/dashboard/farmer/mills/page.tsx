@@ -451,13 +451,13 @@ function MillsMarketplaceContent() {
                 </div>
             )}
 
-            {/* Load Pooling Banner */}
+            {/* Load Pooling Banner — Contextualized to Farmer's Active Crops */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-900 to-slate-900 text-white p-5 shadow-lg border border-blue-800">
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-400 text-amber-950 uppercase tracking-wide">
-                                🚀 New Feature
+                                🚀 Collective Selling
                             </span>
                             <h3 className="font-extrabold text-lg text-white flex items-center gap-2">
                                 <Users className="w-5 h-5 text-amber-300" />
@@ -465,17 +465,38 @@ function MillsMarketplaceContent() {
                             </h3>
                         </div>
                         <p className="text-sm text-blue-100/90 max-w-2xl">
-                            Have 10–30 quintals? Combine your produce with neighboring farmers into a full truckload (100+ quintals) to secure direct mill bulk prices and reduce transport expenses by up to 40%!
+                            Pooling produce is tied to your individual active crops according to their harvest dates. Combine with neighboring farmers into a full truckload (100+ quintals) to secure direct mill bulk rates!
                         </p>
                     </div>
                     <Link href="/dashboard/farmer/mills/load-pools">
                         <Button className="bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold shadow-md whitespace-nowrap">
                             <Users className="w-4 h-4 mr-1.5" />
-                            Explore & Join Pools
+                            Explore All Regional Pools
                             <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>
                     </Link>
                 </div>
+
+                {/* Active Crops Quick Gateway */}
+                {crops.filter(c => c.status === 'Growing' || c.status === 'Harvested').length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-blue-800/80 flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span className="text-xs font-bold text-amber-300 uppercase tracking-wider whitespace-nowrap">
+                            Select Active Crop to Pool:
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                            {crops.filter(c => c.status === 'Growing' || c.status === 'Harvested').slice(0, 5).map(c => (
+                                <Link key={c.id} href={`/dashboard/farmer/crops/${c.id}?tab=sell`}>
+                                    <button className="px-3 py-1.5 rounded-lg bg-blue-900/80 hover:bg-blue-800 text-xs font-medium text-white border border-blue-700/60 hover:border-amber-400 transition-all flex items-center gap-1.5 shadow-2xs">
+                                        <span>🌱</span>
+                                        <span className="font-semibold">{c.name}</span>
+                                        <span className="text-blue-300 text-[11px]">({c.area} Ac • {c.season || c.status})</span>
+                                        <ChevronRight className="w-3 h-3 text-amber-400" />
+                                    </button>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Nav Tabs */}

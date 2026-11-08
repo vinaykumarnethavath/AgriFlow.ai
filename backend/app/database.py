@@ -243,6 +243,12 @@ async def init_db():
         "ALTER TABLE mill_procurement_requests ADD COLUMN IF NOT EXISTS token_number VARCHAR",
         "ALTER TABLE manufacturer_purchases ADD COLUMN IF NOT EXISTS payment_mode VARCHAR DEFAULT 'bank_transfer'",
         
+        # Crop-Centric Collective Selling (Load Pooling) migrations
+        "ALTER TABLE farmer_load_pools ADD COLUMN IF NOT EXISTS crop_id INTEGER",
+        "ALTER TABLE farmer_load_pools ADD COLUMN IF NOT EXISTS crop_variety VARCHAR",
+        "ALTER TABLE farmer_load_pools ADD COLUMN IF NOT EXISTS harvest_date VARCHAR",
+        "ALTER TABLE farmer_load_pool_members ADD COLUMN IF NOT EXISTS crop_id INTEGER",
+        
         # Performance Indexes (correct column names)
         "CREATE INDEX IF NOT EXISTS idx_mill_proc_req_mill_id ON mill_procurement_requests(mill_id)",
         "CREATE INDEX IF NOT EXISTS idx_mill_proc_req_farmer_id ON mill_procurement_requests(farmer_id)",
