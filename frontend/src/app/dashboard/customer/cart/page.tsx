@@ -14,6 +14,7 @@ export default function CartPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [checkingOut, setCheckingOut] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<"upi" | "card" | "cod">("upi");
     const [mockOptions, setMockOptions] = useState<any>(null);
     const router = useRouter();
 
@@ -56,6 +57,13 @@ export default function CartPage() {
             const orderId = order.id;
             const orderTotal = order.total_amount;
 
+            if (paymentMethod === "cod") {
+                alert("Order placed successfully with Cash on Delivery!");
+                setCheckingOut(false);
+                router.push("/dashboard/customer/orders");
+                return;
+            }
+
             // Optional user prefill from local storage
             let prefillInfo: any = {};
             try {
@@ -77,6 +85,7 @@ export default function CartPage() {
                 reference_id: orderId,
                 name: "AgriFlow.AI",
                 description: `Order #${orderId}`,
+                preferredMethod: paymentMethod === "card" ? "card" : "upi",
                 prefill: prefillInfo,
                 onSuccess: async () => {
                     setCheckingOut(false);
@@ -207,6 +216,72 @@ export default function CartPage() {
                                 <span className="text-muted-foreground">Taxes</span>
                                 <span className="text-foreground">₹0.00</span>
                             </div>
+                            <div className="border-t pt-3 mt-2 space-y-2">
+                                <label className="text-xs font-bold text-foreground uppercase tracking-wider block">
+                                    Choose Payment Option
+                                </label>
+                                <div className="space-y-1.5">
+                                    <div
+                                        onClick={() => setPaymentMethod("upi")}
+                                        className={`p-2.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between text-xs font-semibold ${
+                                            paymentMethod === "upi"
+                                                ? "border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 shadow-xs"
+                                                : "border-gray-200 dark:border-zinc-800 text-foreground hover:bg-gray-50 dark:hover:bg-zinc-900"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-black italic text-emerald-600 dark:text-emerald-400">UPI</span>
+                                            <span>UPI / QR Code</span>
+                                            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 rounded font-bold">Fast</span>
+                                        </div>
+                                        <input
+                                            type="radio"
+                                            checked={paymentMethod === "upi"}
+                                            onChange={() => setPaymentMethod("upi")}
+                                            className="text-emerald-600"
+                                        />
+                                    </div>
+
+                                    <div
+                                        onClick={() => setPaymentMethod("card")}
+                                        className={`p-2.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between text-xs font-semibold ${
+                                            paymentMethod === "card"
+                                                ? "border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 shadow-xs"
+                                                : "border-gray-200 dark:border-zinc-800 text-foreground hover:bg-gray-50 dark:hover:bg-zinc-900"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <span>💳 Cards & Netbanking</span>
+                                        </div>
+                                        <input
+                                            type="radio"
+                                            checked={paymentMethod === "card"}
+                                            onChange={() => setPaymentMethod("card")}
+                                            className="text-emerald-600"
+                                        />
+                                    </div>
+
+                                    <div
+                                        onClick={() => setPaymentMethod("cod")}
+                                        className={`p-2.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between text-xs font-semibold ${
+                                            paymentMethod === "cod"
+                                                ? "border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 shadow-xs"
+                                                : "border-gray-200 dark:border-zinc-800 text-foreground hover:bg-gray-50 dark:hover:bg-zinc-900"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <span>💵 Cash on Delivery</span>
+                                        </div>
+                                        <input
+                                            type="radio"
+                                            checked={paymentMethod === "cod"}
+                                            onChange={() => setPaymentMethod("cod")}
+                                            className="text-emerald-600"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="border-t pt-3 mt-2 flex justify-between font-bold text-lg">
                                 <span className="text-foreground">Total</span>
                                 <span className="text-green-700">₹{total.toLocaleString()}</span>

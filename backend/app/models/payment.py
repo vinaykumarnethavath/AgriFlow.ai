@@ -46,6 +46,8 @@ class PaymentVerifyRequest(SQLModel):
     razorpay_order_id: str
     razorpay_payment_id: str
     razorpay_signature: str
+    payment_method: Optional[str] = None
+    vpa: Optional[str] = None
 
 
 class PaymentRead(SQLModel):

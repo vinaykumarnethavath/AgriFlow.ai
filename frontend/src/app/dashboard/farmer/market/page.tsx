@@ -29,6 +29,7 @@ import {
     Star,
     ChevronDown,
     CreditCard,
+    Wallet,
     Box,
     MessageSquare,
     Truck,
@@ -189,7 +190,7 @@ function MarketPageContent() {
     const [radiusKm, setRadiusKm] = useState<number>(50);
     const [orderPlaced, setOrderPlaced] = useState(false);
     const [placingOrder, setPlacingOrder] = useState(false);
-    const [paymentMode, setPaymentMode] = useState<"cash" | "razorpay">("razorpay");
+    const [paymentMode, setPaymentMode] = useState<"cash" | "upi" | "razorpay">("upi");
     const [mockOptions, setMockOptions] = useState<any>(null);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [orderNotes, setOrderNotes] = useState("");
@@ -558,7 +559,7 @@ function MarketPageContent() {
         }
     };
 
-    const handlePayNow = async (order: Order) => {
+    const handlePayNow = async (order: Order, preferredMethod: "upi" | "card" | "netbanking" = "upi") => {
         try {
             // Prefill user details if available
             let prefillInfo: any = {};
@@ -582,6 +583,7 @@ function MarketPageContent() {
                 notes: "Farmer Input Shop Order",
                 name: "AgriFlow.AI Market",
                 description: `Payment for Order #${order.id}`,
+                preferredMethod,
                 prefill: prefillInfo,
                 onSuccess: () => {
                     alert("Payment successful! Order marked as paid.");
@@ -883,13 +885,23 @@ function MarketPageContent() {
                                                 </span>
                                             )}
                                             {selectedOrder.status === "confirmed" && selectedOrder.payment_status !== "paid" && (
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => handlePayNow(selectedOrder)}
-                                                    className="bg-green-600 hover:bg-green-700 text-white shadow-xs font-semibold"
-                                                >
-                                                    <CreditCard className="h-4 w-4 mr-1" /> Pay with Razorpay — ₹{selectedOrder.final_amount.toLocaleString()}
-                                                </Button>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handlePayNow(selectedOrder, "upi")}
+                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs font-semibold flex items-center gap-1.5"
+                                                    >
+                                                        <span className="font-black italic text-xs">UPI</span> Pay via UPI / QR — ₹{selectedOrder.final_amount.toLocaleString()}
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handlePayNow(selectedOrder, "card")}
+                                                        className="border-gray-300 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 text-foreground font-semibold flex items-center gap-1.5"
+                                                    >
+                                                        <CreditCard className="h-4 w-4 mr-1" /> Cards / Netbanking
+                                                    </Button>
+                                                </div>
                                             )}
                                             {selectedOrder.status === "pending" && (
                                                 <span className="text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 px-3 py-1.5 rounded-full border border-amber-300 dark:border-amber-800 flex items-center gap-1.5">
@@ -1053,22 +1065,46 @@ function MarketPageContent() {
                                     <div className="lg:col-span-8 space-y-4">
                                         <div className="bg-white/10 dark:bg-zinc-800/50 rounded-xl p-3.5 backdrop-blur-xs">
                                             <p className="text-green-100 text-xs font-bold uppercase tracking-wider mb-2">Payment Mode</p>
-                                            <div className="flex gap-2.5">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                <Button
+                                                    type="button"
+                                                    variant={paymentMode === "upi" ? "default" : "outline"}
+                                                    onClick={() => setPaymentMode("upi")}
+                                                    className={`py-2.5 px-2 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                                                        paymentMode === "upi"
+                                                            ? "bg-white dark:bg-zinc-900 text-green-700 dark:text-green-300 shadow-md ring-2 ring-emerald-400 font-bold"
+                                                            : "bg-transparent text-white border-green-400/80 hover:bg-green-700 hover:text-white"
+                                                    }`}
+                                                >
+                                                    <span className="font-black italic text-emerald-300">UPI</span>
+                                                    <span>Pay via UPI / QR</span>
+                                                    <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.2 rounded-full font-bold">Fast</span>
+                                                </Button>
                                                 <Button
                                                     type="button"
                                                     variant={paymentMode === "razorpay" ? "default" : "outline"}
                                                     onClick={() => setPaymentMode("razorpay")}
-                                                    className={`flex-1 py-2.5 font-semibold text-xs ${paymentMode === "razorpay" ? "bg-white dark:bg-zinc-900 text-green-700 dark:text-green-300 hover:bg-gray-100 shadow-sm" : "bg-transparent text-white border-green-400 hover:bg-green-700 hover:text-white"}`}
+                                                    className={`py-2.5 px-2 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                                                        paymentMode === "razorpay"
+                                                            ? "bg-white dark:bg-zinc-900 text-green-700 dark:text-green-300 shadow-md ring-2 ring-emerald-400 font-bold"
+                                                            : "bg-transparent text-white border-green-400/80 hover:bg-green-700 hover:text-white"
+                                                    }`}
                                                 >
-                                                    <CreditCard className="w-4 h-4 mr-2" /> Pay Online (Razorpay)
+                                                    <CreditCard className="w-3.5 h-3.5" />
+                                                    <span>Cards / Netbanking</span>
                                                 </Button>
                                                 <Button
                                                     type="button"
                                                     variant={paymentMode === "cash" ? "default" : "outline"}
                                                     onClick={() => setPaymentMode("cash")}
-                                                    className={`flex-1 py-2.5 font-semibold text-xs ${paymentMode === "cash" ? "bg-white dark:bg-zinc-900 text-green-700 dark:text-green-300 hover:bg-gray-100 shadow-sm" : "bg-transparent text-white border-green-400 hover:bg-green-700 hover:text-white"}`}
+                                                    className={`py-2.5 px-2 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                                                        paymentMode === "cash"
+                                                            ? "bg-white dark:bg-zinc-900 text-green-700 dark:text-green-300 shadow-md ring-2 ring-emerald-400 font-bold"
+                                                            : "bg-transparent text-white border-green-400/80 hover:bg-green-700 hover:text-white"
+                                                    }`}
                                                 >
-                                                    Cash on Delivery
+                                                    <Wallet className="w-3.5 h-3.5" />
+                                                    <span>Cash on Delivery</span>
                                                 </Button>
                                             </div>
                                         </div>

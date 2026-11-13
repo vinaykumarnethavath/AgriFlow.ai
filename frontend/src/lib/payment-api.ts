@@ -32,6 +32,8 @@ export interface VerifyPaymentRequest {
     razorpay_order_id: string;
     razorpay_payment_id: string;
     razorpay_signature: string;
+    payment_method?: string;
+    vpa?: string;
 }
 
 export interface RazorpayConfig {
@@ -115,10 +117,12 @@ export interface ProcessPaymentParams {
     notes?: string;
     name?: string;
     description?: string;
+    preferredMethod?: "upi" | "card" | "netbanking" | "wallet";
     prefill?: {
         name?: string;
         email?: string;
         contact?: string;
+        method?: string;
     };
     onSuccess: (verifyResult: any) => Promise<void> | void;
     onFailure?: (error: any) => void;
@@ -133,6 +137,7 @@ export const executePaymentFlow = async ({
     notes,
     name = "AgriFlow.AI",
     description,
+    preferredMethod = "upi",
     prefill,
     onSuccess,
     onFailure,
@@ -150,6 +155,8 @@ export const executePaymentFlow = async ({
     // 2. Fetch config
     const config = await getRazorpayConfig();
 
+    const methodPref = preferredMethod || "upi";
+
     const options: any = {
         key: config.key_id,
         amount: Math.round(amount * 100),
@@ -157,7 +164,48 @@ export const executePaymentFlow = async ({
         name,
         description: description || `Order #${reference_id || paymentOrder.id}`,
         order_id: paymentOrder.razorpay_order_id,
-        prefill: prefill || {},
+        preferredMethod: methodPref,
+        prefill: {
+            name: prefill?.name || "",
+            email: prefill?.email || "",
+            contact: prefill?.contact || "",
+            method: methodPref,
+        },
+        method: {
+            upi: true,
+            card: true,
+            netbanking: true,
+            wallet: true,
+            emi: false,
+            paylater: false,
+        },
+        config: {
+            display: {
+                blocks: {
+                    upi: {
+                        name: "Pay using UPI / QR Code",
+                        instruments: [
+                            {
+                                method: "upi",
+                                flows: ["qr", "collect", "intent"],
+                            },
+                        ],
+                    },
+                    other: {
+                        name: "Cards, Netbanking & Wallets",
+                        instruments: [
+                            { method: "card" },
+                            { method: "netbanking" },
+                            { method: "wallet" },
+                        ],
+                    },
+                },
+                sequence: methodPref === "upi" ? ["block.upi", "block.other"] : ["block.other", "block.upi"],
+                preferences: {
+                    show_default_blocks: true,
+                },
+            },
+        },
         theme: { color: "#16a34a" },
         handler: async (response: any) => {
             try {
@@ -165,6 +213,8 @@ export const executePaymentFlow = async ({
                     razorpay_order_id: response.razorpay_order_id,
                     razorpay_payment_id: response.razorpay_payment_id,
                     razorpay_signature: response.razorpay_signature,
+                    payment_method: response.razorpay_payment_method || methodPref,
+                    vpa: response.razorpay_vpa || undefined,
                 });
                 await onSuccess(verifyRes);
             } catch (err: any) {

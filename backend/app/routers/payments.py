@@ -224,11 +224,27 @@ async def verify_payment(
     db_payment.razorpay_signature = signature
     db_payment.paid_at = datetime.utcnow()
     db_payment.shipping_status = "pending"
+
+    # Identify payment method (UPI vs Card vs Netbanking)
+    detected_method = (req.payment_method or "").lower()
+    if not detected_method and client and not (is_mock or is_dummy_signature):
+        try:
+            rz_pay = client.payment.fetch(payment_id)
+            if rz_pay:
+                detected_method = (rz_pay.get("method") or "").lower()
+                if rz_pay.get("vpa"):
+                    db_payment.notes = (db_payment.notes or "") + f" [VPA: {rz_pay.get('vpa')}]"
+        except Exception:
+            pass
+
+    if req.vpa:
+        db_payment.notes = (db_payment.notes or "") + f" [VPA: {req.vpa}]"
+
     session.add(db_payment)
 
     # 6. Update the related order/transaction status based on payment_for safely
     try:
-        await _update_order_status_on_payment(db_payment, session)
+        await _update_order_status_on_payment(db_payment, session, detected_method)
     except Exception as exc:
         print(f"[Payment Status Update Warning] Error updating related domain record: {exc}")
 
@@ -241,10 +257,11 @@ async def verify_payment(
         "razorpay_payment_id": db_payment.razorpay_payment_id,
         "amount": db_payment.amount,
         "shipping_status": db_payment.shipping_status,
+        "payment_method": detected_method or "upi",
     }
 
 
-async def _update_order_status_on_payment(payment: Payment, session: AsyncSession):
+async def _update_order_status_on_payment(payment: Payment, session: AsyncSession, payment_method: Optional[str] = None):
     """
     After payment is verified, update the corresponding order/record status.
     """
@@ -252,12 +269,14 @@ async def _update_order_status_on_payment(payment: Payment, session: AsyncSessio
     from ..models.crop import CropExpense
     from ..models.manufacturer import ManufacturerSale, ManufacturerPurchase
 
+    resolved_mode = "upi" if (payment_method == "upi" or "upi" in (payment.razorpay_payment_id or "").lower()) else "razorpay"
+
     if payment.payment_for == "customer_order" and payment.reference_id:
         order = await session.get(CustomerOrder, payment.reference_id)
         if order:
             order.status = "confirmed"  # paid → confirmed (ready for shipping)
             order.payment_status = "paid"
-            order.payment_mode = "razorpay"
+            order.payment_mode = resolved_mode
             order.payment_id = payment.razorpay_payment_id
             if payment.shipping_address:
                 order.shipping_address = payment.shipping_address
@@ -266,14 +285,14 @@ async def _update_order_status_on_payment(payment: Payment, session: AsyncSessio
     elif payment.payment_for == "farmer_expense" and payment.reference_id:
         expense = await session.get(CropExpense, payment.reference_id)
         if expense:
-            expense.payment_mode = "Razorpay"
+            expense.payment_mode = "UPI" if resolved_mode == "upi" else "Razorpay"
             session.add(expense)
 
     elif payment.payment_for == "shop_order" and payment.reference_id:
         order = await session.get(ShopOrder, payment.reference_id)
         if order:
             order.payment_status = "paid"
-            order.payment_mode = "razorpay"
+            order.payment_mode = resolved_mode
             order.payment_id = payment.razorpay_payment_id
             if order.status == "pending":
                 order.status = "confirmed"
@@ -282,13 +301,13 @@ async def _update_order_status_on_payment(payment: Payment, session: AsyncSessio
     elif payment.payment_for == "manufacturer_sale" and payment.reference_id:
         sale = await session.get(ManufacturerSale, payment.reference_id)
         if sale:
-            sale.payment_mode = "Razorpay"
+            sale.payment_mode = "UPI" if resolved_mode == "upi" else "Razorpay"
             session.add(sale)
 
     elif payment.payment_for == "manufacturer_purchase" and payment.reference_id:
         purchase = await session.get(ManufacturerPurchase, payment.reference_id)
         if purchase:
-            purchase.payment_mode = "Razorpay"
+            purchase.payment_mode = "UPI" if resolved_mode == "upi" else "Razorpay"
             session.add(purchase)
 
 
