@@ -278,14 +278,6 @@ export default function LearningHubPage() {
                         </p>
                     </div>
                 </div>
-                <button
-                    onClick={() => fetchVideos(true)}
-                    disabled={refreshing}
-                    className="flex items-center gap-2 px-6 py-3 text-sm font-semibold bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl hover:shadow-lg hover:-translate-y-0.5 transition-all text-gray-700 dark:text-gray-200 disabled:opacity-50"
-                >
-                    <RefreshCcw className={`h-4 w-4 ${refreshing ? "animate-spin text-orange-500" : ""}`} />
-                    {refreshing ? "Refreshing..." : "Get Fresh Videos"}
-                </button>
             </div>
 
             {/* Live Farm Context & Personalization Bar */}
@@ -536,6 +528,17 @@ export default function LearningHubPage() {
                 >
                     <History className="h-4 w-4" />
                     <span className="hidden sm:inline">History</span>
+                </button>
+
+                {/* Refresh Videos Button */}
+                <button
+                    onClick={() => fetchVideos(true)}
+                    disabled={refreshing}
+                    className="shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-[#272727] text-gray-100 hover:bg-[#3f3f3f] border border-transparent transition-all flex items-center gap-2 disabled:opacity-50"
+                    title="Refresh / Get Fresh Videos"
+                >
+                    <RefreshCcw className={`h-4 w-4 ${refreshing ? "animate-spin text-orange-400" : ""}`} />
+                    <span className="hidden sm:inline">{refreshing ? "Refreshing..." : "Refresh"}</span>
                 </button>
             </div>
 
