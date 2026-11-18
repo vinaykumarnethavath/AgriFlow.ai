@@ -164,7 +164,7 @@ graph LR
 | Domain | Key Modules & Capabilities |
 | :--- | :--- |
 | 🌱 **Crops & Tenancy** | **Multi-Season Tracker** · **Together Cultivation ("Ummadi Vyavasayam")** · **Land Tenancy (Owned vs Rented)** · **Season vs Season AI Comparison** · **Crop Health Indicator Tags (🟢🟡🔴)** |
-| 🤖 **AI & Agronomy** | **Gemini 3.8 Flash Vision Diagnosis** (instant leaf pathology & chemical cures) · **Groq Llama 3.3 70B RAG** · **9-Language Voice Assistant with Waveform** · **Context-Aware YouTube Video Hub** |
+| 🤖 **AI & Agronomy** | **Gemini 3.8 Flash Vision Diagnosis** (instant leaf pathology & chemical cures) · **Groq Llama 3.3 70B RAG** · **9-Language Voice Assistant with Waveform** · **Context-Aware YouTube Video Hub** · [**AgriFlow-Brain Training Blueprint**](./TRAINING_PLAN.md) |
 | 🧪 **Soil & Weather** | **5-Layer Volumetric Soil Moisture (Open-Meteo)** · **7-Day Weather & Spray Advisory** · **Soil Health Card (ICAR Radar)** · **Plot-Specific N-P-K Fertilizer Calculator** |
 | 💳 **Finance & Risk** | **Institutional Credit & KCC Loans** · **PMFBY 72-Hr Calamity Claims** · **e-NWR Certified Cold Storage** · **Annual Financial Audit** · **ReportLab Bank Statements** |
 | ⚖️ **Market & Logistics** | **50km Input Shop Marketplace** · **Mill Direct Selling & Token Gate Pass** · **Crop-Centric Collective Selling (Load Pooling)** · **Fair Moisture & Cut Calculator** |
@@ -434,6 +434,7 @@ agri/
 │   └── package.json           # Node Dependencies & Build Scripts
 ├── API_KEYS_GUIDE.md          # Visual Guide for Third-Party API Keys
 ├── SYSTEM_ARCHITECTURE.md     # Deep-Dive 1200+ Line Architecture & Mermaid Diagrams
+├── TRAINING_PLAN.md           # Master Model Training & Domain AI Data Engineering Plan
 └── README.md                  # Master Project Overview
 ```
 
